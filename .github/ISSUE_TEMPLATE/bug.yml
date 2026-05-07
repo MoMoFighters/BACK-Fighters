@@ -1,0 +1,76 @@
+name: 🐞 Bug Report
+description: 버그 리포트 (BE)
+title: "[BUG] "
+labels: ["bug", "backend"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 발견한 버그를 리포트해주세요
+        재현 가능한 정보를 최대한 자세히 작성해주시면 빠르게 해결할 수 있습니다.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 버그 설명
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 재현 방법
+      value: |
+        1. 
+        2. 
+        3. 
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 예상 동작
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 실제 동작
+    validations:
+      required: true
+
+  - type: dropdown
+    id: env
+    attributes:
+      label: 환경
+      options:
+        - Local
+        - Dev
+        - Staging
+        - Production
+    validations:
+      required: true
+
+  - type: input
+    id: stack
+    attributes:
+      label: 스택 / 버전
+      placeholder: "예) Java 17, Spring Boot 3.2.0, MySQL 8.0"
+
+  - type: textarea
+    id: log
+    attributes:
+      label: 에러 로그 / 스택트레이스
+      render: shell
+
+  - type: textarea
+    id: request
+    attributes:
+      label: 요청 정보 (해당되는 경우)
+      description: API 호출 시 발생한 버그라면 요청 정보를 작성해주세요.
+      value: |
+        - Method: 
+        - Path: 
+        - Request Body: 

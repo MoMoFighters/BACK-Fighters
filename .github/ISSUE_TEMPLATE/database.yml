@@ -1,0 +1,67 @@
+name: 🗄️ Database
+description: DB 스키마 / 쿼리 관련 이슈
+title: "[DB] "
+labels: ["database", "backend"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## DB 관련 작업 이슈입니다
+        스키마 변경, 쿼리 최적화, 마이그레이션 등 DB 관련 작업을 작성해주세요.
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: 작업 유형
+      options:
+        - 스키마 변경 (테이블/컬럼 추가/수정/삭제)
+        - 신규 테이블 생성
+        - 쿼리 최적화
+        - 마이그레이션
+        - 인덱스 추가/변경
+        - 기타
+    validations:
+      required: true
+
+  - type: textarea
+    id: target
+    attributes:
+      label: 대상 테이블 / 도메인
+    validations:
+      required: true
+
+  - type: textarea
+    id: changes
+    attributes:
+      label: 변경 내용
+      description: DDL 또는 변경 사항을 구체적으로 작성해주세요.
+      render: sql
+    validations:
+      required: true
+
+  - type: textarea
+    id: reason
+    attributes:
+      label: 변경 사유
+
+  - type: dropdown
+    id: migration
+    attributes:
+      label: 마이그레이션 필요 여부
+      options:
+        - "Yes"
+        - "No"
+    validations:
+      required: true
+
+  - type: textarea
+    id: rollback
+    attributes:
+      label: 롤백 계획
+      description: 문제 발생 시 롤백할 수 있는 방법을 작성해주세요.
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: 영향 범위
+      description: API, 다른 도메인 등에 미치는 영향

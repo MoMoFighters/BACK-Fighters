@@ -1,0 +1,21 @@
+title: "[공지] "
+labels: ["announcement"]
+body:
+  - type: textarea
+    id: content
+    attributes:
+      label: 공지 내용
+    validations:
+      required: true
+
+  - type: input
+    id: deadline
+    attributes:
+      label: 마감 / 적용 일자
+      placeholder: "YYYY-MM-DD"
+
+  - type: textarea
+    id: action
+    attributes:
+      label: 필요한 액션
+      description: 팀원이 해야 할 일이 있다면 작성해주세요.

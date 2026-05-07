@@ -1,0 +1,32 @@
+title: "[IDEA] "
+labels: ["idea"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 아이디어를 자유롭게 제안해주세요
+        새로운 기능, 아키텍처 개선 아이디어 등 자유롭게 작성해주세요.
+
+  - type: textarea
+    id: idea
+    attributes:
+      label: 아이디어
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: 제안 배경
+      description: 왜 이 아이디어가 필요한가요?
+
+  - type: textarea
+    id: details
+    attributes:
+      label: 구체적인 내용
+      description: 동작 방식, 예상 구현 방향 등을 작성해주세요.
+
+  - type: textarea
+    id: reference
+    attributes:
+      label: 참고 자료

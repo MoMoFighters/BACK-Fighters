@@ -1,0 +1,52 @@
+title: "[ARCH] "
+labels: ["architecture"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 아키텍처 / 기술 의사결정 논의입니다
+        구조적인 결정이 필요한 사항을 팀과 논의하기 위한 템플릿입니다.
+
+  - type: textarea
+    id: topic
+    attributes:
+      label: 논의 주제
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: 배경 / 문제 상황
+      description: 왜 이 논의가 필요한가요?
+    validations:
+      required: true
+
+  - type: textarea
+    id: options
+    attributes:
+      label: 검토 가능한 옵션
+      description: 가능한 접근 방식들을 작성해주세요.
+      value: |
+        ### Option 1
+        - 설명: 
+        - 장점: 
+        - 단점: 
+
+        ### Option 2
+        - 설명: 
+        - 장점: 
+        - 단점: 
+    validations:
+      required: true
+
+  - type: textarea
+    id: preference
+    attributes:
+      label: 본인 의견
+      description: 어떤 방향을 선호하나요? 그 이유는?
+
+  - type: textarea
+    id: reference
+    attributes:
+      label: 참고 자료

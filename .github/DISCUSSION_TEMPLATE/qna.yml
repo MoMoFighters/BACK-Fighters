@@ -1,0 +1,26 @@
+title: "[Q&A] "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 궁금한 점을 질문해주세요
+        BE 개발 관련 질문, 기술 질문 모두 환영합니다.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: 질문 내용
+    validations:
+      required: true
+
+  - type: textarea
+    id: tried
+    attributes:
+      label: 시도해본 방법
+
+  - type: textarea
+    id: context
+    attributes:
+      label: 추가 정보
+      description: 관련 코드, 에러 메시지, 로그 등
