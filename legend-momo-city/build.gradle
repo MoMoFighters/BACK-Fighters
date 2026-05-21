@@ -1,0 +1,64 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.5.14'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.wanted'
+version = '0.0.1-SNAPSHOT'
+description = 'legend-momo-city'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    /* 설명. Spring Boot Starters */
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
+    /* 설명. JWT 토큰 (강의 버전) */
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.2'
+    runtimeOnly   'io.jsonwebtoken:jjwt-impl:0.11.2'
+    runtimeOnly   'io.jsonwebtoken:jjwt-jackson:0.11.2'
+
+    /* 설명. File Upload */
+    implementation 'commons-io:commons-io:2.16.1'
+
+    /* 설명. AWS S3 (영상 / 이미지) */
+    implementation platform('software.amazon.awssdk:bom:2.28.16')
+    implementation 'software.amazon.awssdk:s3'
+
+    /* 설명. Swagger - SpringDoc OpenAPI */
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
+
+    /* 설명. Lombok */
+    compileOnly         'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    /* 설명. Dev / Runtime */
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    runtimeOnly     'com.mysql:mysql-connector-j'
+
+    /* 설명. Test */
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testCompileOnly         'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+    testRuntimeOnly         'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
