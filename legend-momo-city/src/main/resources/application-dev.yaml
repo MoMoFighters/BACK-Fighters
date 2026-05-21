@@ -1,0 +1,86 @@
+spring:
+  application:
+    name: legend-momo-city
+
+  # ===== Database (MySQL) =====
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/momocity?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
+    username: ${DB_USERNAME:root} # 설정 해주셔야합니다
+    password: ${DB_PASSWORD:root} # 설정 해주셔야합니다
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # ===== JPA / Hibernate =====
+  jpa:
+    hibernate:
+      ddl-auto: update           # 초기 개발용. 운영 전엔 validate로 전환
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+    open-in-view: false
+    show-sql: true
+
+  # ===== Multipart (영상/이미지 업로드) =====
+  servlet:
+    multipart:
+      max-file-size: 1000MB
+      max-request-size: 1000MB
+
+  # ===== Redis (채팅 / 캐시 / 인증코드) =====
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost} # 설정 해주셔야합니다
+      port: ${REDIS_PORT:6379} # 설정 해주셔야합니다
+      password: ${REDIS_PASSWORD:} # 설정 해주셔야합니다
+
+  # ===== Mail (인증코드 발송) =====
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com} # 설정 해주셔야합니다
+    port: ${MAIL_PORT:587} # 설정 해주셔야합니다
+    username: ${MAIL_USERNAME:} # 설정 해주셔야합니다
+    password: ${MAIL_PASSWORD:} # 설정 해주셔야합니다
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+# ===== Server =====
+server:
+  port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+
+# ===== AWS S3 (영상 / 이미지) =====
+cloud:
+  aws:
+    s3:
+      bucket: ${AWS_S3_BUCKET:momocity-bucket} # 설정 해주셔야합니다
+      region: ${AWS_S3_REGION:ap-northeast-2} # 설정 해주셔야합니다
+    credentials:
+      access-key: ${AWS_ACCESS_KEY:} # 설정 해주셔야합니다
+      secret-key: ${AWS_SECRET_KEY:} # 설정 해주셔야합니다
+
+# ===== JWT =====
+jwt:
+  secret: ${JWT_SECRET:change-me-in-prod-this-must-be-at-least-256-bits-long-string}
+  access-token-expiration: 3600000       # 1시간
+  refresh-token-expiration: 1209600000   # 14일
+
+# ===== Swagger (SpringDoc) =====
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+  api-docs:
+    path: /v3/api-docs
+
+# ===== Logging =====
+logging:
+  level:
+    root: INFO
+    com.wanted.momocity: DEBUG
+    org.hibernate.SQL: DEBUG

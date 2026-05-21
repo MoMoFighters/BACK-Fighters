@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!--
+        logback-spring.xml 의 역할 — 한 줄 요약
+        "MDC 의 momoTraceId 를 로그 패턴에 노출해서, 모든 로그 라인 앞에 추적번호가 박히게 한다."
+
+        패턴 토큰 설명:
+        - %X{momoTraceId:-}  : MDC 값. 없으면 빈 문자열
+        - %d{HH:mm:ss.SSS}   : 시간 (밀리초까지)
+        - %-5level           : 로그 레벨 (5자리 정렬)
+        - %thread            : 스레드 이름
+        - %logger{36}        : 로거 이름 (최대 36자)
+        - %msg / %n          : 메시지 / 줄바꿈
+
+        Spring Boot 가 application.yaml 의 logging.level.* 을 기존 그대로 인식한다.
+        운영 환경에서 file appender 추가는 별도 이슈로 처리.
+    -->
+
+    <springProperty scope="context" name="LOG_LEVEL_ROOT"
+                    source="logging.level.root" defaultValue="INFO"/>
+
+    <property name="CONSOLE_PATTERN"
+              value="%d{HH:mm:ss.SSS} [%X{momoTraceId:-}] %-5level [%thread] %logger{36} - %msg%n"/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 우리 프로젝트 패키지 레벨은 application.yaml 의 logging.level.com.wanted.momocity 로 제어 -->
+
+    <root level="${LOG_LEVEL_ROOT}">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>
