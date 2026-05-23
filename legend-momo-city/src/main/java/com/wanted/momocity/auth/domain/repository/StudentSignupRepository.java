@@ -8,5 +8,5 @@ public interface StudentSignupRepository {
 
     User register(User user);
 
-    boolean existEmail(String email);
+    boolean existsByEmail(String email);
 }

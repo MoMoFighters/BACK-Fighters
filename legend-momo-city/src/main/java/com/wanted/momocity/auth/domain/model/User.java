@@ -1,5 +1,7 @@
 package com.wanted.momocity.auth.domain.model;
 
+import com.wanted.momocity.auth.infrastructure.persistence.UserJpaEntity;
+
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -68,5 +70,9 @@ public class User {
                 null,           // deletedAt
                 false           // isTempPwd
         );
+    }
+
+    public Long getUserId() {
+        return id;
     }
 }
