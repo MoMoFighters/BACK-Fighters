@@ -2,7 +2,7 @@ package com.wanted.momocity.auth.presentation.api;
 
 import com.wanted.momocity.auth.application.command.StudentSignupCommand;
 import com.wanted.momocity.auth.application.usecase.StudentSignupCommandUsecase;
-import com.wanted.momocity.auth.presentation.api.request.StudentSighupRequest;
+import com.wanted.momocity.auth.presentation.api.request.StudentSignupRequest;
 import com.wanted.momocity.auth.presentation.api.response.SignupResponseCode;
 import com.wanted.momocity.auth.presentation.api.response.SignupResponseMessage;
 import com.wanted.momocity.auth.presentation.api.response.StudentSignupResponse;
@@ -35,7 +35,7 @@ public class AuthController {
             description = "해당 api를 통해 회원가입 한 사람의 role을 STUDENT로 하여 user테이블에 추가하는 메서드"
     )
     public ResponseEntity<ApiResponse<StudentSignupResponse>> studentSignup (
-            @Valid @RequestBody StudentSighupRequest request){
+            @Valid @RequestBody StudentSignupRequest request){
 
         studentSignupCommandUsecase.signup(new StudentSignupCommand(request.email(),request.password(),request.name()));
 
