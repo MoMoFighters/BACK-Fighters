@@ -1,7 +1,7 @@
 package com.wanted.momocity.auth.presentation.api;
 
 import com.wanted.momocity.auth.application.command.StudentSignupCommand;
-import com.wanted.momocity.auth.application.usecase.StudentSignupCommandUsecase;
+import com.wanted.momocity.auth.application.usecase.StudentSignupUsecase;
 import com.wanted.momocity.auth.presentation.api.request.StudentSignupRequest;
 import com.wanted.momocity.auth.presentation.api.response.SignupResponseCode;
 import com.wanted.momocity.auth.presentation.api.response.SignupResponseMessage;
@@ -22,10 +22,10 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name="signup", description = "자체 회원가입을 위한 Auth api")
 public class AuthController {
 
-    private final StudentSignupCommandUsecase studentSignupCommandUsecase;
+    private final StudentSignupUsecase studentSignupUsecase;
 
-    public AuthController(StudentSignupCommandUsecase studentSignupCommandUsecase) {
-        this.studentSignupCommandUsecase = studentSignupCommandUsecase;
+    public AuthController(StudentSignupUsecase studentSignupUsecase) {
+        this.studentSignupUsecase = studentSignupUsecase;
     }
 
 
@@ -37,7 +37,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<StudentSignupResponse>> studentSignup (
             @Valid @RequestBody StudentSignupRequest request){
 
-        studentSignupCommandUsecase.signup(new StudentSignupCommand(request.email(),request.password(),request.name()));
+        studentSignupUsecase.signup(new StudentSignupCommand(request.email(),request.password(),request.name()));
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created(

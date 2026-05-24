@@ -1,6 +1,5 @@
 package com.wanted.momocity.auth.domain.model;
 
-import com.wanted.momocity.auth.infrastructure.persistence.UserJpaEntity;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -50,7 +49,16 @@ public class User {
         this.isTempPwd = isTempPwd;
     }
 
-    public static User createStudent(String email, String password, String name ) {
+    // getter
+    public Long getId() { return id; }
+    public String getEmail() { return email; }
+    public String getPassword() { return password; }
+    public String getName() { return name; }
+    public UserRole getRole() { return role; }
+
+
+    // 학생 생성
+    public static User studentRegister(String email, String password, String name ) {
         return new User(
                 null,           // id,
                 email, password, name,

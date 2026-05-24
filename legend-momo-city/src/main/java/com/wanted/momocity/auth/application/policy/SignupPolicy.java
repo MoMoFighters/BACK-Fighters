@@ -1,20 +1,20 @@
 package com.wanted.momocity.auth.application.policy;
 
-import com.wanted.momocity.auth.domain.repository.StudentSignupRepository;
+import com.wanted.momocity.auth.domain.repository.UserRepository;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import org.springframework.stereotype.Component;
 
 @Component
 public class SignupPolicy {
 
-    private final StudentSignupRepository studentSignupRepository;
+    private final UserRepository userRepository;
 
-    public SignupPolicy(StudentSignupRepository studentSignupRepository) {
-        this.studentSignupRepository = studentSignupRepository;
+    public SignupPolicy(UserRepository userRepository) {
+        this.userRepository = userRepository;
     }
 
     public void ensureEligible(String email){
-        if(studentSignupRepository.existEmail(email)){
+        if(userRepository.existsByEmail(email)){
             throw new DomainRuleViolationException("이미 가입된 이메일입니다.");
         }
     }
