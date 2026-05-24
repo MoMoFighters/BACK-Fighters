@@ -1,8 +1,10 @@
 package com.wanted.momocity.global.infrastructure.config;
 
+import com.wanted.momocity.auth.application.usecase.RefreshTokenUseCase;
 import com.wanted.momocity.auth.infrastructure.handler.CustomAccessDeniedHandler;
 import com.wanted.momocity.auth.infrastructure.handler.CustomAuthenticationEntryPoint;
 import com.wanted.momocity.auth.infrastructure.jwt.JwtAuthenticationFilter;
+import com.wanted.momocity.auth.infrastructure.jwt.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -42,17 +44,16 @@ import java.util.Arrays;
 public class SecurityConfig {
 
     private final CorsConfigurationSource corsConfigurationSource;
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final RefreshTokenUseCase refreshTokenUseCase;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
     @Autowired
-    public SecurityConfig(CorsConfigurationSource corsConfigurationSource,
-                          JwtAuthenticationFilter jwtAuthenticationFilter,
-                          CustomAccessDeniedHandler customAccessDeniedHandler,
-                          CustomAuthenticationEntryPoint customAuthenticationEntryPoint) {
+    public SecurityConfig(CorsConfigurationSource corsConfigurationSource, JwtTokenProvider jwtTokenProvider, RefreshTokenUseCase refreshTokenUseCase, CustomAccessDeniedHandler customAccessDeniedHandler, CustomAuthenticationEntryPoint customAuthenticationEntryPoint) {
         this.corsConfigurationSource = corsConfigurationSource;
-        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.refreshTokenUseCase = refreshTokenUseCase;
         this.customAccessDeniedHandler = customAccessDeniedHandler;
         this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
     }
@@ -128,13 +129,16 @@ public class SecurityConfig {
                         // 여기서 1차 인가 관련 방호벽
                         // /api/user/ 하위에 endpoint 중에 admin / user 권한 별로 접근하기 위해서는
                         // 메서드 레벨에서 2차 방호벽 구축
-                        .requestMatchers("/api/auth/**").permitAll() // 인증 없이 허용
+                        .requestMatchers("/api/v1/auth/**").permitAll() // 인증 없이 허용
                         .requestMatchers("/api/users/**").hasAnyAuthority( "ROLE_USER")
                         .requestMatchers("/api/admin/**").hasAnyAuthority("ROLE_ADMIN")
                         .anyRequest().authenticated()) // 나머지는 인증 필요
 //                ========================================================================
 
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(
+                        new JwtAuthenticationFilter(jwtTokenProvider, refreshTokenUseCase),
+                        UsernamePasswordAuthenticationFilter.class
+                )
 
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(customAuthenticationEntryPoint) // 인증되지 않은 사용자가 보호된 리소스 접근시 처리 방식 정의

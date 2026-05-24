@@ -30,10 +30,10 @@ public class JwtTokenProvider implements TokenProviderPort {
     @Value("${jwt.secret}")
     private String secretKey;
 
-    @Value("${jwt.access-token-validity-milliseconds}")
+    @Value("${jwt.access-token-expiration}")
     private long ACCESS_TOKEN_EXPIRE_TIME;
 
-    @Value("${jwt.refresh-token-validity-milliseconds}")
+    @Value("${jwt.refresh-token-expiration}")
     private long REFRESH_TOKEN_EXPIRE_TIME;
 
     private SecretKey key;
