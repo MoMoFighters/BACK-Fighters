@@ -14,9 +14,15 @@ public class SignupPolicy {
     }
 
     public void ensureEligible(String email){
+
+        // 이메일 중복 확인
         if(userRepository.existsByEmail(email)){
             throw new DomainRuleViolationException("이미 가입된 이메일입니다.");
         }
+
+        // 강사 파일 검증
+
+
     }
 
 }

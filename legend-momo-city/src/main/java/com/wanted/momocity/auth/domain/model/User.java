@@ -14,11 +14,10 @@ public class User {
     private final String nickname;
     private final LocalDate birth;
     private final String profileImageUrl;
-    private final UserRole role;          // STUDENT, TEACHER, ADMIN
-    private final UserStatus status;      // ACTIVE, SUSPENDED, BANNED, DELETED, BLACK
-    private final UserCategory category;  // HEALTH, STUDY, COOK, BEAUTY, ART
+    private final Role role;          // STUDENT, TEACHER, ADMIN
+    private final Status status;      // ACTIVE, SUSPENDED, BANNED, DELETED, BLACK
+    private final Category category;  // HEALTH, STUDY, COOK, BEAUTY, ART
     private final String proof;
-    private final ApplicationStatus applicationStatus; // NONE, PENDING, REJECTED, APPROVED
     private final Long point;
     private final Boolean isPaid;  // 결제를 했는지 안 했는지
     private final Boolean doNotDisturb; // 설정 끄기를 했는지 안 했는지
@@ -27,7 +26,7 @@ public class User {
     private final LocalDateTime deletedAt;
     private final Boolean isTempPwd;  // 이 사용자의 비밀번호가 임시비밀번호인지 아닌지
 
-    public User(Long id,  String email, String password, String name, String nickname, LocalDate birth, String profileImageUrl, UserRole role, UserStatus status, UserCategory category, String proof, ApplicationStatus applicationStatus, Long point, Boolean isPaid, Boolean doNotDisturb, Instant createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, Boolean isTempPwd) {
+    private User(Long id, String email, String password, String name, String nickname, LocalDate birth, String profileImageUrl, Role role, Status status, Category category, String proof, Long point, Boolean isPaid, Boolean doNotDisturb, Instant createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, Boolean isTempPwd) {
         this.id = id;
         this.email = email;
         this.password = password;
@@ -39,7 +38,6 @@ public class User {
         this.status = status;
         this.category = category;
         this.proof = proof;
-        this.applicationStatus = applicationStatus;
         this.point = point;
         this.isPaid = isPaid;
         this.doNotDisturb = doNotDisturb;
@@ -49,12 +47,20 @@ public class User {
         this.isTempPwd = isTempPwd;
     }
 
+    // DB에서 꺼내 쓸 메서드
+    public static User restore(Long id, String email, String password, String name, String nickname, LocalDate birth, String profileImageUrl, Role role, Status status, Category category, String proof, long point, boolean isPaid, boolean doNotDisturb, Instant createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, boolean isTempPwd) {
+        return new User(id, email, password, name, nickname, birth, profileImageUrl,
+                role, status, category, proof, point,
+                isPaid, doNotDisturb, createdAt, updatedAt, deletedAt, isTempPwd);
+    }
+
     // getter
     public Long getId() { return id; }
     public String getEmail() { return email; }
     public String getPassword() { return password; }
     public String getName() { return name; }
-    public UserRole getRole() { return role; }
+    public Role getRole() { return role; }
+
 
 
     // 학생 생성
@@ -65,11 +71,33 @@ public class User {
                 null,           // nickname
                 null,           // birth
                 null,           // profileImageUrl
-                UserRole.STUDENT,
-                UserStatus.ACTIVE,      // 가입 시 기본값
+                Role.STUDENT,
+                Status.ACTIVE,      // 가입 시 기본값
                 null,           // category (학생은 null)
                 null,           // proof
-                ApplicationStatus.NONE, // 가입 시 기본값
+                0L,              // point
+                false,          // isPaid
+                false,          // doNotDisturb
+                Instant.now(),    // createdAt
+                LocalDateTime.now(),    // updatedAt
+                null,           // deletedAt
+                false           // isTempPwd
+        );
+    }
+
+
+    // 강사 생성
+    public static User teacherRegister(String email, String password, String name, Category category, String proof ) {
+        return new User(
+                null,           // id,
+                email, password, name,
+                null,           // nickname
+                null,           // birth
+                null,           // profileImageUrl
+                Role.TEACHER,
+                Status.PENDING,      // 가입 시 기본값
+                category,           // category (학생은 null)
+                proof,           // proof
                 0L,              // point
                 false,          // isPaid
                 false,          // doNotDisturb
@@ -82,5 +110,17 @@ public class User {
 
     public Long getUserId() {
         return id;
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public Category getCategory() {
+        return category;
+    }
+
+    public String getProof() {
+        return proof;
     }
 }
