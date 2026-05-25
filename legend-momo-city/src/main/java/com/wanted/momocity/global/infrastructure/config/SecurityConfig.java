@@ -1,6 +1,6 @@
 package com.wanted.momocity.global.infrastructure.config;
 
-import com.wanted.momocity.auth.application.usecase.RefreshTokenUseCase;
+import com.wanted.momocity.auth.application.service.RefreshService;
 import com.wanted.momocity.auth.infrastructure.handler.CustomAccessDeniedHandler;
 import com.wanted.momocity.auth.infrastructure.handler.CustomAuthenticationEntryPoint;
 import com.wanted.momocity.auth.infrastructure.jwt.JwtAuthenticationFilter;
@@ -43,17 +43,15 @@ import java.util.Arrays;
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
-    private final CorsConfigurationSource corsConfigurationSource;
     private final JwtTokenProvider jwtTokenProvider;
-    private final RefreshTokenUseCase refreshTokenUseCase;
+    private final RefreshService refreshService;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
     @Autowired
-    public SecurityConfig(CorsConfigurationSource corsConfigurationSource, JwtTokenProvider jwtTokenProvider, RefreshTokenUseCase refreshTokenUseCase, CustomAccessDeniedHandler customAccessDeniedHandler, CustomAuthenticationEntryPoint customAuthenticationEntryPoint) {
-        this.corsConfigurationSource = corsConfigurationSource;
+    public SecurityConfig( JwtTokenProvider jwtTokenProvider, RefreshService refreshService, CustomAccessDeniedHandler customAccessDeniedHandler, CustomAuthenticationEntryPoint customAuthenticationEntryPoint) {
         this.jwtTokenProvider = jwtTokenProvider;
-        this.refreshTokenUseCase = refreshTokenUseCase;
+        this.refreshService = refreshService;
         this.customAccessDeniedHandler = customAccessDeniedHandler;
         this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
     }
@@ -136,7 +134,7 @@ public class SecurityConfig {
 //                ========================================================================
 
                 .addFilterBefore(
-                        new JwtAuthenticationFilter(jwtTokenProvider, refreshTokenUseCase),
+                        new JwtAuthenticationFilter(jwtTokenProvider, refreshService),
                         UsernamePasswordAuthenticationFilter.class
                 )
 

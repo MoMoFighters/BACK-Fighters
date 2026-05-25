@@ -1,6 +1,6 @@
 package com.wanted.momocity.auth.infrastructure.jwt;
 
-import com.wanted.momocity.auth.application.usecase.RefreshTokenUseCase;
+import com.wanted.momocity.auth.application.service.RefreshService;
 import com.wanted.momocity.auth.infrastructure.exception.ExpiredJwtCustomException;
 import com.wanted.momocity.auth.infrastructure.exception.InvalidJwtCustomException;
 import com.wanted.momocity.auth.infrastructure.exception.InvalidRefreshTokenException;
@@ -8,7 +8,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.context.annotation.Bean;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -16,16 +15,17 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     // OncePerRequestFilter를 상속 받아서
     // 하나의 요청에 딱 한 번만 자동으로 실행
 
     private final JwtTokenProvider jwtTokenProvider;
-    private final RefreshTokenUseCase refreshTokenUseCase;
+    private final RefreshService refreshService;
 
-    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, RefreshTokenUseCase refreshTokenUseCase) {
+    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, RefreshService refreshService) {
         this.jwtTokenProvider = jwtTokenProvider;
-        this.refreshTokenUseCase = refreshTokenUseCase;
+        this.refreshService = refreshService;
     }
 
     // 로그인 후 프론트는 우리가 준 토큰값을 가지고 Authorization: Bearer eyJhbGci... 헤더를 붙여서 요청을 보냄
@@ -47,7 +47,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
                 String refreshTokenValue = jwtTokenProvider.resolveRefreshToken(request);
                 if (refreshTokenValue != null) {
-                    String newAccessToken = refreshTokenUseCase.refreshAccessToken(refreshTokenValue); // 여기만 변경
+                    String newAccessToken = refreshService.refreshAccessToken(refreshTokenValue); // 여기만 변경
 
                     Authentication newAuthentication = jwtTokenProvider.getAuthentication(newAccessToken);
                     SecurityContextHolder.getContext().setAuthentication(newAuthentication);

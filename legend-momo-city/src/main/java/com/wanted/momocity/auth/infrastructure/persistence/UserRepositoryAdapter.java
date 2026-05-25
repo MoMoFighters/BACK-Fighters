@@ -13,6 +13,9 @@ import java.util.Optional;
 @Repository
 @Transactional
 public class UserRepositoryAdapter implements UserRepository, LoadUserPort {
+    // UserRepository → 회원가입 관련 (저장, 중복확인)
+    // LoadUserPort   → 인증 관련 (유저 조회)
+
 
     // 순수한 자바 객체를 엔티티 객체로 만듦
 
@@ -35,13 +38,13 @@ public class UserRepositoryAdapter implements UserRepository, LoadUserPort {
                 user.getStatus(),
                 user.getCategory(),
                 user.getProof(),
-                0,                       // point
+                user.getPoint(),                       // point
                 false,                   // isPaid
                 false,                   // doNotDisturb
-                Instant.now(),           // createdAt
+                user.getCreatedAt(),         // createdAt
                 LocalDateTime.now(),     // updatedAt
                 null,                    // deletedAt
-                false                    // isTempPwd
+                user.getIsTempPwd()                    // isTempPwd
         );
 
         UserJpaEntity saved = springDataUserRepository.save(entity);

@@ -66,8 +66,9 @@ public class JwtTokenProvider implements TokenProviderPort {
 
 
     // 🎯 RefreshToken 생성
-    public String createRefreshToken() {
+    public String createRefreshToken(String email) {
         return Jwts.builder()
+                .setSubject(email)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + REFRESH_TOKEN_EXPIRE_TIME))
                 .signWith(SignatureAlgorithm.HS512, key)

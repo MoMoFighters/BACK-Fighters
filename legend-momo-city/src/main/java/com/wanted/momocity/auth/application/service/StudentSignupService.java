@@ -5,7 +5,7 @@ import com.wanted.momocity.auth.application.policy.SignupPolicy;
 import com.wanted.momocity.auth.application.usecase.StudentSignupUsecase;
 import com.wanted.momocity.auth.domain.model.User;
 import com.wanted.momocity.auth.domain.repository.UserRepository;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,12 +15,12 @@ public class StudentSignupService implements StudentSignupUsecase {
 
     private final UserRepository userRepository;
     private final SignupPolicy signupPolicy;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
-    public StudentSignupService(UserRepository userRepository, SignupPolicy signupPolicy, BCryptPasswordEncoder passwordEncoder) {
+    public StudentSignupService(UserRepository userRepository, SignupPolicy signupPolicy, PasswordEncoder passwordEncoder1) {
         this.userRepository = userRepository;
         this.signupPolicy = signupPolicy;
-        this.passwordEncoder = passwordEncoder;
+        this.passwordEncoder = passwordEncoder1;
     }
 
     @Override
@@ -30,7 +30,7 @@ public class StudentSignupService implements StudentSignupUsecase {
         signupPolicy.ensureEligible(command.email());
 
         // 이메일(id), 비밀번호, 이름 넘겨서 새로운 학생 자바 객체 생성
-        User newStudent = userRepository.register(User.studentRegister(command.email(), passwordEncoder.encode(command.password()), command.name()));
+        userRepository.register(User.studentRegister(command.email(), passwordEncoder.encode(command.password()), command.name()));
 
     }
 }

@@ -54,6 +54,7 @@ public class User {
                 isPaid, doNotDisturb, createdAt, updatedAt, deletedAt, isTempPwd);
     }
 
+
     // getter
     public Long getId() { return id; }
     public String getEmail() { return email; }
@@ -122,5 +123,17 @@ public class User {
 
     public String getProof() {
         return proof;
+    }
+
+    public Long getPoint(){
+        return point;
+    }
+
+    public Instant getCreatedAt(){
+        return createdAt;
+    }
+
+    public Boolean getIsTempPwd() {
+        return isTempPwd;
     }
 }

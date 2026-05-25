@@ -4,7 +4,6 @@ import com.wanted.momocity.auth.domain.model.Category;
 import com.wanted.momocity.auth.domain.model.Role;
 import com.wanted.momocity.auth.domain.model.Status;
 import jakarta.persistence.*;
-import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -52,7 +51,7 @@ public class UserJpaEntity {
     private String proof;
 
     @Column(nullable = true)
-    private int point;
+    private Long point;
 
     @Column(name = "is_paid")
     private boolean isPaid;
@@ -75,7 +74,7 @@ public class UserJpaEntity {
 
     protected UserJpaEntity() {}
 
-    public UserJpaEntity(String email, String password, String name, String nickname, LocalDate birth, String profileImageUrl, Role role, Status status, Category category, String proof, int point, boolean isPaid, boolean doNotDisturb, Instant createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, boolean isTempPwd) {
+    public UserJpaEntity(String email, String password, String name, String nickname, LocalDate birth, String profileImageUrl, Role role, Status status, Category category, String proof, Long point, boolean isPaid, boolean doNotDisturb, Instant createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, boolean isTempPwd) {
         this.email = email;
         this.password = password;
         this.name = name;
@@ -95,8 +94,6 @@ public class UserJpaEntity {
         this.isTempPwd = isTempPwd;
     }
 
-    public UserJpaEntity(String email, String password, String name, Role role, Object status, Object category, Object proof) {
-    }
 
     public Long getId() {
         return id;
@@ -142,7 +139,7 @@ public class UserJpaEntity {
         return proof;
     }
 
-    public int getPoint() {
+    public long getPoint() {
         return point;
     }
 
