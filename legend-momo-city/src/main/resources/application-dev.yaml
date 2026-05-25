@@ -66,7 +66,7 @@ cloud:
 
 # ===== JWT =====
 jwt:
-  secret: Y2hhbmdlLW1lLWluLXByb2QtdGhpcy1tdXN0LWJlLWF0LWxlYXN0LTI1Ni1iaXRzLWxvbmctc3RyaW5n
+  secret: 8Fwve2M7zpJmBKVPoX64PUkEguxKl2xzrZmNreW9NeTS5x4/P6mtm3IYALPBpiHbwurLfJdGTimP+5KDGTuj0Q==
   access-token-expiration: 3600000       # 1시간
   refresh-token-expiration: 1209600000   # 14일
 

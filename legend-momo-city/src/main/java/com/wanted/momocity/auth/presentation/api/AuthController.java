@@ -1,15 +1,16 @@
 package com.wanted.momocity.auth.presentation.api;
 
+import com.wanted.momocity.auth.application.command.LoginCommand;
 import com.wanted.momocity.auth.application.command.StudentSignupCommand;
 import com.wanted.momocity.auth.application.command.TeacherSignupCommand;
+import com.wanted.momocity.auth.application.result.LoginResult;
+import com.wanted.momocity.auth.application.usecase.LoginUsecase;
 import com.wanted.momocity.auth.application.usecase.StudentSignupUsecase;
 import com.wanted.momocity.auth.application.usecase.TeacherSignupUseCase;
+import com.wanted.momocity.auth.presentation.api.request.LoginRequest;
 import com.wanted.momocity.auth.presentation.api.request.StudentSignupRequest;
 import com.wanted.momocity.auth.presentation.api.request.TeacherSignupRequest;
-import com.wanted.momocity.auth.presentation.api.response.SignupResponseCode;
-import com.wanted.momocity.auth.presentation.api.response.SignupResponseMessage;
-import com.wanted.momocity.auth.presentation.api.response.StudentSignupResponse;
-import com.wanted.momocity.auth.presentation.api.response.TeacherSignupResponse;
+import com.wanted.momocity.auth.presentation.api.response.*;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,10 +29,12 @@ public class AuthController {
 
     private final StudentSignupUsecase studentSignupUsecase;
     private final TeacherSignupUseCase teacherSignupUseCase;
+    private final LoginUsecase loginUsecase;
 
-    public AuthController(StudentSignupUsecase studentSignupUsecase, TeacherSignupUseCase teacherSignupUseCase) {
+    public AuthController(StudentSignupUsecase studentSignupUsecase, TeacherSignupUseCase teacherSignupUseCase, LoginUsecase loginUsecase) {
         this.studentSignupUsecase = studentSignupUsecase;
         this.teacherSignupUseCase = teacherSignupUseCase;
+        this.loginUsecase = loginUsecase;
     }
 
 
@@ -47,8 +50,8 @@ public class AuthController {
 
         return ResponseEntity.status(HttpStatus.CREATED) //201
                 .body(ApiResponse.created(
-                        SignupResponseCode.CREATED,
-                        SignupResponseMessage.STUDENT_CREATED,
+                        AuthResponseCode.CREATED,
+                        AuthResponseMessage.STUDENT_CREATED,
                         null
                 ));
     }
@@ -66,10 +69,31 @@ public class AuthController {
 
         return ResponseEntity.status(HttpStatus.CREATED) //201
                 .body(ApiResponse.created(
-                        SignupResponseCode.CREATED,
-                        SignupResponseMessage.TEACHER_CREATED,
+                        AuthResponseCode.CREATED,
+                        AuthResponseMessage.TEACHER_CREATED,
                         null
                 ));
     }
+
+
+    @PostMapping("/login")
+    @Operation(
+            summary = "자체 로그인",
+            description = "해당 api를 통해 로그인 하게 되면 토큰이 발급된다."
+    )
+    public ResponseEntity<ApiResponse<LoginResponse>> login(
+            @Valid @RequestBody LoginRequest request){
+
+        LoginResult result =loginUsecase.login(new LoginCommand(request.email(),request.password()));
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        AuthResponseCode.SUCCESS,
+                        AuthResponseMessage.LOGIN_SUCCESS,
+                        new LoginResponse(result.accessToken(), result.refreshToken())
+                ));
+
+    }
+
 
 }
