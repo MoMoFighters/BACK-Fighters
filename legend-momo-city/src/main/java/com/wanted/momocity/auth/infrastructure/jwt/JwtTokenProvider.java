@@ -161,6 +161,11 @@ public class JwtTokenProvider implements TokenProviderPort {
         return REFRESH_TOKEN_EXPIRE_TIME;
     }
 
+    @Override
+    public long getAccessTokenValidityMilliseconds() {
+        return ACCESS_TOKEN_EXPIRE_TIME;
+    }
+
 }
 
 

@@ -9,6 +9,7 @@ public interface TokenProviderPort {
     Authentication getAuthentication(String token);
     String getEmailFromToken(String token);
     long getRefreshTokenValidityMilliseconds();
+    long getAccessTokenValidityMilliseconds();
 
 
 }

@@ -90,7 +90,7 @@ public class AuthController {
                 .body(ApiResponse.success(
                         AuthResponseCode.SUCCESS,
                         AuthResponseMessage.LOGIN_SUCCESS,
-                        new LoginResponse(result.accessToken(), result.refreshToken())
+                        new LoginResponse(result.accessToken(), result.refreshToken(), result.expiresIn())
                 ));
 
     }
