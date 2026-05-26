@@ -1,8 +1,7 @@
 package com.wanted.momocity.auth.presentation.api;
 
 import com.wanted.momocity.auth.application.command.*;
-import com.wanted.momocity.auth.application.result.EmailSendResult;
-import com.wanted.momocity.auth.application.result.LoginResult;
+import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.auth.application.usecase.*;
 import com.wanted.momocity.auth.presentation.api.request.*;
 import com.wanted.momocity.auth.presentation.api.response.*;
@@ -10,14 +9,13 @@ import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/v1/auth")
 @Tag(name="signup", description = "자체 회원가입을 위한 Auth api")
 public class AuthController {
@@ -27,14 +25,7 @@ public class AuthController {
     private final LoginUsecase loginUsecase;
     private final EmailSendUsecase emailSendUsecase;
     private final EmailVerifyUsecase emailVerifyUsecase;
-
-    public AuthController(StudentSignupUsecase studentSignupUsecase, TeacherSignupUseCase teacherSignupUseCase, LoginUsecase loginUsecase, EmailSendUsecase emailSendUsecase, EmailVerifyUsecase emailVerifyUsecase) {
-        this.studentSignupUsecase = studentSignupUsecase;
-        this.teacherSignupUseCase = teacherSignupUseCase;
-        this.loginUsecase = loginUsecase;
-        this.emailSendUsecase = emailSendUsecase;
-        this.emailVerifyUsecase = emailVerifyUsecase;
-    }
+    private final S3UploadPort s3UploadPort;
 
 
     @PostMapping("/signup/student")
@@ -62,9 +53,11 @@ public class AuthController {
             description = "해당 api를 통해 회원가입 한 사람의 role을 TEACHER로, status는 PENDING으로 하여 user테이블에 추가하는 메서드"
     )
     public ResponseEntity<ApiResponse<Void>> teacherSignup (
-            @Valid @RequestBody TeacherSignupRequest request){
+            @Valid @ModelAttribute TeacherSignupRequest request){
 
-        teacherSignupUseCase.signup(new TeacherSignupCommand(request.email(),request.password(),request.name(),request.category(),request.proof()));
+        String proofUrl = s3UploadPort.upload(request.proof());  // 여기서 선언하고 값 넣어줌
+
+        teacherSignupUseCase.signup(new TeacherSignupCommand(request.email(),request.password(),request.name(),request.category(),proofUrl));
 
         return ResponseEntity.status(HttpStatus.CREATED) //201
                 .body(ApiResponse.created(
