@@ -1,7 +1,7 @@
-spring:
+ spring:
   application:
     name: legend-momo-city
 
-  # 환경변수 SPRING_PROFILES_ACTIVE 미지정 시 dev 프로파일로 부트
+    # 환경변수 SPRING_PROFILES_ACTIVE 미지정 시 dev 프로파일로 부트
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
