@@ -8,7 +8,9 @@ import com.wanted.momocity.lecture.domain.repository.LectureRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// LectureCommandService는 강의 등록 유스케이스의 실제 흐름을 담당
+/*
+ * LectureCommandService는 강의 등록 유스케이스의 실제 흐름을 담당한다.
+ */
 @Service
 @Transactional
 public class LectureCommandService implements LectureCommandUseCase {
@@ -27,12 +29,11 @@ public class LectureCommandService implements LectureCommandUseCase {
     @Override
     public Lecture createLecture(CreateLectureCommand command) {
         /*
-         * Authorization 토큰에서 얻은 email로 강사 id를 조회
-         * 이 과정에서 사용자가 존재하지 않거나 강사 권한이 아니면 예외가 발생.
+         * Authorization 토큰에서 얻은 email로 강사 id를 조회한다.
          */
         Long teacherId = teacherAccountPort.getTeacherId(command.teacherEmail());
 
-        // Lecture.create()에서 강의 생성에 필요한 도메인 검증을 수행한다.
+        // command.thumbnailUrl()은 S3 업로드 후 생성된 이미지 URL이다.
         Lecture lecture = Lecture.create(
                 teacherId,
                 command.title(),
@@ -41,7 +42,6 @@ public class LectureCommandService implements LectureCommandUseCase {
                 command.category()
         );
 
-         // DB 저장은 Repository Port를 통해 처리
         return lectureRepository.save(lecture);
     }
 }

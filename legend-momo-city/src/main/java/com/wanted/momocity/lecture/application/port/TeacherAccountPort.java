@@ -6,8 +6,6 @@ package com.wanted.momocity.lecture.application.port;
  */
 public interface TeacherAccountPort {
 
-    /*
-     * email로 강사 조회
-     */
+    // email로 강사 조회
     Long getTeacherId(String email);
 }
