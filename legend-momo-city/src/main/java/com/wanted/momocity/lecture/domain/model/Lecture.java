@@ -1,4 +1,227 @@
 package com.wanted.momocity.lecture.domain.model;
 
+import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
+
+import java.time.LocalDateTime;
+
+/*
+ * Lecture는 강의 도메인 모델이다.
+ *
+ * JPA Entity가 아니므로 DB 어노테이션을 알지 않고,
+ * 강의의 핵심 상태와 비즈니스 규칙만 표현한다.
+ */
 public class Lecture {
+
+    private final Long id;
+    private final Long teacherId;
+    private final String title;
+    private final String description;
+    private final String thumbnailUrl;
+    private final LectureCategory category;
+    private final LectureStatus status;
+    private final int completedUserCount;
+    private final LocalDateTime createdAt;
+    private final LocalDateTime updatedAt;
+
+    private Lecture(
+            Long id,
+            Long teacherId,
+            String title,
+            String description,
+            String thumbnailUrl,
+            LectureCategory category,
+            LectureStatus status,
+            int completedUserCount,
+            LocalDateTime createdAt,
+            LocalDateTime updatedAt
+    ) {
+        this.id = id;
+        this.teacherId = teacherId;
+        this.title = title;
+        this.description = description;
+        this.thumbnailUrl = thumbnailUrl;
+        this.category = category;
+        this.status = status;
+        this.completedUserCount = completedUserCount;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+    }
+
+    /*
+     * 신규 강의를 생성할 때 사용하는 정적 팩토리 메서드다.
+     *
+     * 생성 직후 id와 시간 값은 DB 저장 전이므로 null이다.
+     * 수강 완료 인원 수는 처음 생성 시 0명으로 시작한다.
+     */
+    public static Lecture create(
+            Long teacherId,
+            String title,
+            String description,
+            String thumbnailUrl,
+            LectureCategory category
+    ) {
+        validateTeacherId(teacherId);
+        validateTitle(title);
+        validateDescription(description);
+        validateCategory(category);
+
+        return new Lecture(
+                null,
+                teacherId,
+                title,
+                description,
+                thumbnailUrl,
+                category,
+                LectureStatus.WAITING,
+                0,
+                null,
+                null
+        );
+    }
+
+    /*
+     * DB에서 조회한 값을 도메인 모델로 복원할 때 사용한다.
+     *
+     * JPA Entity에서 id, 생성일, 수정일을 포함해 Lecture로 변환할 때 호출한다.
+     */
+    public static Lecture restore(
+            Long id,
+            Long teacherId,
+            String title,
+            String description,
+            String thumbnailUrl,
+            LectureCategory category,
+            LectureStatus status,
+            int completedUserCount,
+            LocalDateTime createdAt,
+            LocalDateTime updatedAt
+    ) {
+        return new Lecture(
+                id,
+                teacherId,
+                title,
+                description,
+                thumbnailUrl,
+                category,
+                status,
+                completedUserCount,
+                createdAt,
+                updatedAt
+        );
+    }
+
+    /*
+     * 강의 정보를 수정한다.
+     *
+     * 기존 강의의 id, teacherId, 상태, 생성일은 유지하고,
+     * 제목/설명/썸네일/카테고리만 새 값으로 교체한다.
+     */
+    public Lecture update(
+            String title,
+            String description,
+            String thumbnailUrl,
+            LectureCategory category
+    ) {
+        validateTitle(title);
+        validateDescription(description);
+        validateCategory(category);
+
+        return new Lecture(
+                id,
+                teacherId,
+                title,
+                description,
+                thumbnailUrl,
+                category,
+                status,
+                completedUserCount,
+                createdAt,
+                updatedAt
+        );
+    }
+
+    /*
+     * 요청한 teacherId가 이 강의의 소유자인지 확인한다.
+     *
+     * 수정/삭제 권한 검증에서 사용한다.
+     */
+    public boolean isOwnedBy(Long teacherId) {
+        return this.teacherId != null && this.teacherId.equals(teacherId);
+    }
+
+    /*
+     * 강사 정보가 없으면 강의를 생성할 수 없다.
+     */
+    private static void validateTeacherId(Long teacherId) {
+        if (teacherId == null) {
+            throw new DomainRuleViolationException("강사 정보는 필수입니다.");
+        }
+    }
+
+    /*
+     * 강의 제목은 필수 입력값이다.
+     */
+    private static void validateTitle(String title) {
+        if (title == null || title.isBlank()) {
+            throw new DomainRuleViolationException("강의 제목은 필수입니다.");
+        }
+    }
+
+    /*
+     * 강의 설명은 필수 입력값이다.
+     */
+    private static void validateDescription(String description) {
+        if (description == null || description.isBlank()) {
+            throw new DomainRuleViolationException("강의 설명은 필수입니다.");
+        }
+    }
+
+    /*
+     * 강의 카테고리는 필수 입력값이다.
+     */
+    private static void validateCategory(LectureCategory category) {
+        if (category == null) {
+            throw new DomainRuleViolationException("강의 카테고리는 필수입니다.");
+        }
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public Long getTeacherId() {
+        return teacherId;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getThumbnailUrl() {
+        return thumbnailUrl;
+    }
+
+    public LectureCategory getCategory() {
+        return category;
+    }
+
+    public LectureStatus getStatus() {
+        return status;
+    }
+
+    public int getCompletedUserCount() {
+        return completedUserCount;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
 }
