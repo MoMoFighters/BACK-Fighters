@@ -46,7 +46,7 @@ public class LoginService implements LoginUsecase {
 
         User user = loadUserPort.findByEmail(command.email()).get();
         if (user.getStatus() != Status.ACTIVE) {
-            throw new InactiveUserException("로그인이 제한된 계정입니다. 상태: " + user.getStatus());
+            throw new InactiveUserException("로그인이 제한된 계정입니다.");
         }
 
         // 인증 성공 후 액세스 토큰 발급
@@ -64,6 +64,6 @@ public class LoginService implements LoginUsecase {
         );
 
         // 컨트롤러로 보내서 프론트에게 전달할 수 있도록 리턴
-        return new LoginResponse(accessToken, refreshToken,tokenProviderPort.getAccessTokenValidityMilliseconds() / 1000 );
+        return new LoginResponse(accessToken, refreshToken,user.getStatus(),tokenProviderPort.getAccessTokenValidityMilliseconds() / 1000 );
     }
 }
