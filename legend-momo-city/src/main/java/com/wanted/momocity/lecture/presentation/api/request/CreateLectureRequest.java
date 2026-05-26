@@ -2,14 +2,15 @@ package com.wanted.momocity.lecture.presentation.api.request;
 
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.lecture.application.command.CreateLectureCommand;
+import com.wanted.momocity.lecture.application.command.LectureThumbnailFile;
 import com.wanted.momocity.lecture.domain.model.LectureCategory;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import org.springframework.web.multipart.MultipartFile;
 
-/*
- * CreateLectureRequest는 프론트에서 전달하는 강의 등록 요청 DTO
- * category는 enum으로 바로 받지 않고 String으로 받은 뒤 직접 변환
- * 그래야 허용되지 않은 카테고리 값이 들어왔을 때 500이 아니라 400 응답으로 처리
- */
+import java.io.IOException;
+
+// CreateLectureRequest는 multipart/form-data 요청을 받는 DTO
 public record CreateLectureRequest(
         @NotBlank(message = "강의 제목은 필수입니다.")
         String title,
@@ -17,18 +18,14 @@ public record CreateLectureRequest(
         @NotBlank(message = "강의 설명은 필수입니다.")
         String description,
 
-        String thumbnailUrl,
-
         @NotBlank(message = "강의 카테고리는 필수입니다.")
-        String category
+        String category,
+
+        @NotNull(message = "썸네일 이미지는 필수입니다.")
+        MultipartFile thumbnail
 ) {
 
-    /*
-     * presentation 요청 DTO를 application command로 변환한다.
-     *
-     * 이 과정에서 category 문자열을 LectureCategory enum으로 변환한다.
-     */
-    public CreateLectureCommand toCommand(String teacherEmail) {
+    public CreateLectureCommand toCommand(String teacherEmail, String thumbnailUrl) {
         return new CreateLectureCommand(
                 teacherEmail,
                 title,
@@ -38,16 +35,35 @@ public record CreateLectureRequest(
         );
     }
 
-    /*
-     * 요청으로 들어온 category 문자열을 LectureCategory enum으로 변환한다.
-     *
-     * 허용되지 않은 값이면 도메인 규칙 예외를 던져 400 응답으로 처리되게 한다.
-     */
+
+    // form-data로 받은 MultipartFile을 application 계층에서 사용할 파일 객체로 변환한다.
+
+    public LectureThumbnailFile toThumbnailFile() {
+        try {
+            return new LectureThumbnailFile(
+                    thumbnail.getOriginalFilename(),
+                    thumbnail.getContentType(),
+                    thumbnail.getSize(),
+                    thumbnail.getBytes()
+            );
+        } catch (IOException exception) {
+            throw new DomainRuleViolationException("썸네일 파일을 읽을 수 없습니다.");
+        }
+    }
+
     private LectureCategory parseCategory(String category) {
         try {
             return LectureCategory.valueOf(category);
         } catch (IllegalArgumentException exception) {
             throw new DomainRuleViolationException("허용되지 않은 강의 카테고리입니다.");
         }
+    }
+
+    /*
+     * category 값을 먼저 검증
+     * S3 업로드 전에 호출해서 잘못된 카테고리 요청일 때 파일이 업로드 X
+     */
+    public void validateCategory() {
+        parseCategory(category);
     }
 }
