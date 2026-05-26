@@ -35,10 +35,10 @@ spring:
 
   # ===== Mail (인증코드 발송) =====
   mail:
-    host: ${MAIL_HOST:smtp.gmail.com} # 설정 해주셔야합니다
-    port: ${MAIL_PORT:587} # 설정 해주셔야합니다
-    username: ${MAIL_USERNAME:} # 설정 해주셔야합니다
-    password: ${MAIL_PASSWORD:} # 설정 해주셔야합니다
+    host: smtp.gmail.com
+    port: 587
+    username: sooyoung040927@gmail.com
+    password: niku thru uuhz lqds
     properties:
       mail:
         smtp:
