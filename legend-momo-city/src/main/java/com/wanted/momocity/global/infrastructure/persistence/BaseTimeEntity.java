@@ -16,11 +16,11 @@ import java.time.LocalDateTime;
  *
  * 클린 아키텍처 위치:
  * - 도메인 모델은 JPA를 모른다.
- * - 각 컨텍스트의 infrastructure/persistence 패키지에 있는 XxxJpaEntity 가 이 클래스를 상속한다.
+ * - 각 컨텍스트의 infrastructure/persistence 패키지에 있는 XxxJpaEntity가 이 클래스를 상속한다.
  * - 도메인 ↔ JpaEntity 변환은 RepositoryAdapter가 담당한다.
  *
  * deleted_at(soft delete) 컬럼이 필요한 엔티티는
- * 별도 BaseSoftDeleteEntity를 정의하거나 각 JpaEntity 에서 직접 박는다.
+ * 별도 BaseSoftDeleteEntity를 정의하거나 각 JpaEntity에서 직접 박는다.
  *
  * 동작 조건:
  * - 메인 애플리케이션 또는 Config 클래스에 @EnableJpaAuditing 이 적용되어 있어야 한다.
