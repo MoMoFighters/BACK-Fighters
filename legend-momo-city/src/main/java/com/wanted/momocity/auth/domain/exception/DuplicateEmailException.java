@@ -1,4 +1,4 @@
-package com.wanted.momocity.auth.presentation.api.exception;
+package com.wanted.momocity.auth.domain.exception;
 
 public class DuplicateEmailException extends RuntimeException {
     public DuplicateEmailException(String message) {

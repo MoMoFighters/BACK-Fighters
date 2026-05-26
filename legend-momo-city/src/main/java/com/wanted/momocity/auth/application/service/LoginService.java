@@ -8,8 +8,9 @@ import com.wanted.momocity.auth.application.result.LoginResult;
 import com.wanted.momocity.auth.application.usecase.LoginUsecase;
 import com.wanted.momocity.auth.domain.model.Status;
 import com.wanted.momocity.auth.domain.model.User;
-import com.wanted.momocity.auth.presentation.api.exception.InactiveUserException;
-import com.wanted.momocity.auth.presentation.api.exception.InvalidCredentialsException;
+import com.wanted.momocity.auth.domain.exception.InactiveUserException;
+import com.wanted.momocity.auth.domain.exception.InvalidCredentialsException;
+import com.wanted.momocity.auth.presentation.api.response.LoginResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -32,7 +33,7 @@ public class LoginService implements LoginUsecase {
 
 
     @Override
-    public LoginResult login(LoginCommand command) {
+    public LoginResponse login(LoginCommand command) {
         // 이메일/비밀번호로 사용자 인증
         Authentication authentication;
         try{
@@ -64,6 +65,6 @@ public class LoginService implements LoginUsecase {
         );
 
         // 컨트롤러로 보내서 프론트에게 전달할 수 있도록 리턴
-        return new LoginResult(accessToken, refreshToken,tokenProviderPort.getAccessTokenValidityMilliseconds() / 1000 );
+        return new LoginResponse(accessToken, refreshToken,tokenProviderPort.getAccessTokenValidityMilliseconds() / 1000 );
     }
 }
