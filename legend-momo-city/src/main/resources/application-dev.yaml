@@ -38,7 +38,7 @@ spring:
     host: smtp.gmail.com
     port: 587
     username: yourmomocity@gmail.com
-    password: niku thru uuhz lqds
+    password: fnqi jnvy gskh czqy
     properties:
       mail:
         smtp:
@@ -58,11 +58,11 @@ server:
 cloud:
   aws:
     s3:
-      bucket: ${AWS_S3_BUCKET:momocity-bucket} # 설정 해주셔야합니다
-      region: ${AWS_S3_REGION:ap-northeast-2} # 설정 해주셔야합니다
+      bucket: momocity-bucket
+      region: ap-northeast-2
     credentials:
-      access-key: ${AWS_ACCESS_KEY:} # 설정 해주셔야합니다
-      secret-key: ${AWS_SECRET_KEY:} # 설정 해주셔야합니다
+      access-key: ${AWS_ACCESS_KEY}
+      secret-key: ${AWS_SECRET_KEY}
 
 # ===== JWT =====
 jwt:
