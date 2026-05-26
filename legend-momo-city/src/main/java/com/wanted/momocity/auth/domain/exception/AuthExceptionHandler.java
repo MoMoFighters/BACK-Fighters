@@ -60,4 +60,12 @@ public class AuthExceptionHandler {
                         "success", false, "message", e.getMessage()));
     }
 
+    // 임시 비밀번호 만료 시
+    @ExceptionHandler(TempPasswordExpiredException.class)
+    public ResponseEntity<?> handleTempPasswordExpired(TempPasswordExpiredException e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of(
+                        "success", false, "message", e.getMessage()));
+    }
+
 }

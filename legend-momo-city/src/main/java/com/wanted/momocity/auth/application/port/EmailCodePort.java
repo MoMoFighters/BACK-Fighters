@@ -11,5 +11,8 @@ public interface EmailCodePort {
     boolean isVerified(String email); // 인증 여부 확인
     void deleteVerified(String email);   // 가입 완료 후에 인증완료 표시 삭제
 
+    void saveTempPassword(String email, long ttlSeconds);
+    boolean isTempPasswordValid(String email);
+    void deleteTempPassword(String email);
 
 }
