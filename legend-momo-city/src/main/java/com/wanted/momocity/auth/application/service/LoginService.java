@@ -4,7 +4,6 @@ import com.wanted.momocity.auth.application.command.LoginCommand;
 import com.wanted.momocity.auth.application.port.LoadUserPort;
 import com.wanted.momocity.auth.application.port.RefreshTokenRepositoryPort;
 import com.wanted.momocity.auth.application.port.TokenProviderPort;
-import com.wanted.momocity.auth.application.result.LoginResult;
 import com.wanted.momocity.auth.application.usecase.LoginUsecase;
 import com.wanted.momocity.auth.domain.model.Status;
 import com.wanted.momocity.auth.domain.model.User;
