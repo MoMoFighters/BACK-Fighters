@@ -54,15 +54,15 @@ server:
       charset: UTF-8
       force: true
 
-# ===== AWS S3 (video / image) =====
+# ===== AWS S3 (영상 / 이미지) =====
 cloud:
   aws:
     s3:
-      bucket: ${AWS_S3_BUCKET:momocity-bucket} # required
-      region: ${AWS_S3_REGION:ap-northeast-2} # required
+      bucket: ${AWS_S3_BUCKET:momocity-bucket} # 설정 해주셔야합니다
+      region: ${AWS_S3_REGION:ap-northeast-2} # 설정 해주셔야합니다
     credentials:
-      access-key: ${AWS_ACCESS_KEY} # required
-      secret-key: ${AWS_SECRET_KEY} # required
+      access-key: ${AWS_ACCESS_KEY} # 설정 해주셔야합니다
+      secret-key: ${AWS_SECRET_KEY} # 설정 해주셔야합니다
 
 # ===== JWT =====
 jwt:
