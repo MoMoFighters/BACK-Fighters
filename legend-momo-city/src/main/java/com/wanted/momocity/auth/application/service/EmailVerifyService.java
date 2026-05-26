@@ -29,5 +29,7 @@ public class EmailVerifyService implements EmailVerifyUsecase {
         }
 
         emailCodePort.delete(command.email());
+        emailCodePort.saveVerified(command.email(), 180L);  // 인증 성공하면 그 값을 3분동안 유지하고
+
     }
 }
