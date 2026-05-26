@@ -2,6 +2,7 @@ package com.wanted.momocity.viewing.application.service;
 
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.viewing.application.command.SaveProgressCommand;
+import com.wanted.momocity.viewing.application.policy.EnrollmentAccessPolicy;
 import com.wanted.momocity.viewing.application.port.ChapterPort;
 import com.wanted.momocity.viewing.application.port.EnrollmentPort;
 import com.wanted.momocity.viewing.application.port.LecturePort;
@@ -49,12 +50,16 @@ public class ProgressService implements
     private final EnrollmentPort enrollmentPort;
     private final LearningHistoryRepository learningHistoryRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final EnrollmentAccessPolicy enrollmentAccessPolicy;
 //    private final SaveProgressUseCase saveProgressUseCase;
 
     @Override
     @Transactional
     // SaveProgressUseCase
     public SaveProgressResponse saveProgress(SaveProgressCommand command) {
+
+        // 수강 여부 확인 (Policy)
+        enrollmentAccessPolicy.ensureEnrolled(command.userId(), command.lectureId());
 
         // 챕터 정보 조회 (durationSec 필요)
         Chapter chapter = chapterPort.findById(command.chapterId());
@@ -94,9 +99,8 @@ public class ProgressService implements
     // GetTotalProgressUseCase
     public TotalProgressResponse getTotalProgress(Long userId, Long lectureId) {
 
-        // 수강 여부 확인
-       enrollmentPort.findByUserIdAndLectureId(userId, lectureId)
-                .orElseThrow(() -> new DomainRuleViolationException("수강 정보를 찾을 수 없습니다."));
+        // 수강 여부 확인 (Policy)
+        enrollmentAccessPolicy.ensureEnrolled(userId, lectureId);
 
         // 전체 챕터 수 조회
         List<Chapter> chapters = chapterPort.findAllByLectureId(lectureId);
@@ -118,6 +122,9 @@ public class ProgressService implements
     @Transactional(readOnly = true)
     // GetChapterProgressUseCase
     public ChapterProgressResponse getChapterProgress(Long userId, Long lectureId) {
+
+        // 수강 여부 확인 (Policy)
+        enrollmentAccessPolicy.ensureEnrolled(userId, lectureId);
 
         // 전체 챕터 목록 조회
         List<Chapter> chapters = chapterPort.findAllByLectureId(lectureId);
@@ -156,7 +163,7 @@ public class ProgressService implements
     // GetMyLectureUseCase
     public List<MyLectureResponse> getMyLectures(Long userId) {
 
-        // 수강 목록 전체 조회
+        // 수강 목록 전체 조회 (EnrollmentPort 직접 사용 - 목록 조회라서 Policy 뷸필요)
         return enrollmentPort.findAllByUserId(userId)
                 .stream()
                 .map(enrollment -> {

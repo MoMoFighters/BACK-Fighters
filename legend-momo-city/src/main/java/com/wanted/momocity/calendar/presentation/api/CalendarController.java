@@ -38,7 +38,11 @@ public class CalendarController {
     // 날짜별 캘린더 조회
     // GET /api/v1/calendar/daily?date=2026-05-26
     @GetMapping("/daily")
+    // HTTP 응답 객체<공통 응답 형식<실제 데이터 타입>>
+    // (status code, header, body)<(success, statusCode, message, data, error)<(date, todos[], errors[])>>
     public ResponseEntity<ApiResponse<DailyCalendarResponse>> getDailyCalendar (
+            // ISO.DATE 형식 : YYYY-MM-DD, 2026-05-26 (String) -> LocalDate.of(2026, 5, 26) 자동 변환
+            // @RequestParam : URL 쿼리 파라미터에서 가져옴
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)LocalDate date
     ) {
 
@@ -61,7 +65,8 @@ public class CalendarController {
     // POST /api/v1/calendar/todo
     @PostMapping("/todo")
     public ResponseEntity<ApiResponse<TodoResponse>> createTodo(
-            @RequestParam @Valid CreateTodoRequest request
+            // @RequestBody : HTTP Body 에서 JSON 으로 가져옴
+            @RequestBody @Valid CreateTodoRequest request
     ) {
 
         Long userId = 1L;
