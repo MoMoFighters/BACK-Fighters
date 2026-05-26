@@ -51,15 +51,15 @@ class TeacherLectureRegisterTest {
         /*
          * 응답에 들어갈 생성일/수정일을 고정한다.
          *
-         * 테스트에서는 시간이 매번 바뀌면 검증하기 어려우므로 고정값을 사용한다.
+         * 테스트에서는 시간이 매번 바뀌면 검증하기 어려우므로 고정값을 사용
          */
         LocalDateTime now = LocalDateTime.of(2026, 5, 19, 10, 30);
 
         /*
-         * UseCase가 반환할 가짜 Lecture 객체를 준비한다.
+         * UseCase가 반환할 가짜 Lecture 객체를 준비
          *
          * 실제 저장 로직은 실행하지 않고,
-         * 강의 등록이 성공했다고 가정한다.
+         * 강의 등록이 성공했다고 가정
          */
         Lecture lecture = Lecture.restore(
                 10L,
@@ -76,13 +76,13 @@ class TeacherLectureRegisterTest {
 
         /*
          * lectureCommandUseCase.createLecture(...)가 호출되면
-         * 위에서 만든 lecture를 반환하도록 설정한다.
+         * 위에서 만든 lecture를 반환하도록 설정
          */
         when(lectureCommandUseCase.createLecture(any()))
                 .thenReturn(lecture);
 
         /*
-         * API 명세에 맞춘 강의 등록 요청 JSON이다.
+         * API 명세에 맞춘 강의 등록 요청 JSON
          */
         String requestBody = """
                 {
@@ -121,10 +121,9 @@ class TeacherLectureRegisterTest {
     @DisplayName("강의 등록 시 필수값이 누락되면 400 응답을 반환한다")
     void createLectureFailByInvalidRequest() throws Exception {
         /*
-         * title은 빈 문자열이고 category는 null이다.
-         *
+         * title은 빈 문자열이고 category는 null
          * CreateLectureRequest의 @NotBlank, @NotNull 검증에 걸려
-         * Controller 진입 전 400 Bad Request가 발생한다.
+         * Controller 진입 전 400 Bad Request가 발생
          */
         String requestBody = """
             {
@@ -136,8 +135,7 @@ class TeacherLectureRegisterTest {
             """;
 
         /*
-         * 잘못된 요청을 보내고 400 응답이 내려오는지 확인한다.
-         *
+         * 잘못된 요청을 보내고 400 응답이 내려오는지 확인
          * 현재 ApiExceptionHandler는 첫 번째 validation error만 message에 담기 때문에,
          * title 또는 category 중 하나의 메시지만 내려올 수 있다.
          */

@@ -2,7 +2,6 @@ package com.wanted.momocity.lecture.presentation.api;
 
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
-import com.wanted.momocity.global.presentation.api.common.ApiResponseMessage;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCase;
 import com.wanted.momocity.lecture.domain.model.Lecture;
 import com.wanted.momocity.lecture.presentation.api.request.CreateLectureRequest;
