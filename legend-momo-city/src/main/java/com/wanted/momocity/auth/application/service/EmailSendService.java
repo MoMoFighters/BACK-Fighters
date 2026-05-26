@@ -6,6 +6,7 @@ import com.wanted.momocity.auth.application.port.EmailSendPort;
 import com.wanted.momocity.auth.application.port.LoadUserPort;
 import com.wanted.momocity.auth.application.usecase.EmailSendUsecase;
 import com.wanted.momocity.auth.domain.exception.DuplicateEmailException;
+import com.wanted.momocity.auth.domain.exception.UserNotFoundException;
 import com.wanted.momocity.auth.presentation.api.response.EmailSendResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,7 +28,7 @@ public class EmailSendService implements EmailSendUsecase{
     @Override
     public EmailSendResponse emailSend(EmailSendCommand command) {
         if (loadUserPort.findByEmail(command.email()).isPresent()) {
-            throw new DuplicateEmailException("이미 가입된 이메일입니다.");
+            throw new UserNotFoundException("이미 가입된 이메일입니다.");
         }
 
         String code = generateCode();

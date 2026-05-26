@@ -28,6 +28,8 @@ public class AuthController {
     private final LoginCompletedUsecase loginCompletedUsecase;
     private final EmailSendUsecase emailSendUsecase;
     private final EmailVerifyUsecase emailVerifyUsecase;
+    private final TempPasswordUsecase tempPasswordUsecase;
+
     private final S3UploadPort s3UploadPort;
 
 
@@ -148,7 +150,24 @@ public class AuthController {
 
     }
 
+    @PostMapping("/password/temp")
+    @Operation(
+            summary = "임시 비밀번호 발급하여 이메일로 전송",
+            description = "랜덤 숫자 8자리를 만들어 이메일로 전송해주고 db의 비밀번호를 해당 랜덤 값으로 변경하여 임시로그인 가능하게 함." +
+                    "임시비밀번호의 유효 시간은 3분으로 3분 안에 마이페이지에서 비밀번호를 변경하여야 한다."
+    )
+    public ResponseEntity<ApiResponse<Void>> tempPasswordSend(
+        @Valid @RequestBody EmailSendRequest request){
 
+        tempPasswordUsecase.sendTempPassword(new EmailSendCommand(request.email()));
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        AuthResponseCode.SUCCESS,
+                        AuthResponseMessage.TEMP_PASSWORD_CREATED,
+                        null
+                ));
+    }
 
 
 }

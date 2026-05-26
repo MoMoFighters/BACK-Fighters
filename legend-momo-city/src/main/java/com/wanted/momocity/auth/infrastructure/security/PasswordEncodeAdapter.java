@@ -1,0 +1,17 @@
+package com.wanted.momocity.auth.infrastructure.security;
+
+import com.wanted.momocity.auth.application.port.PasswordEncodePort;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
+
+@Component
+@RequiredArgsConstructor
+public class PasswordEncodeAdapter implements PasswordEncodePort {
+    private final PasswordEncoder passwordEncoder;
+
+    @Override
+    public String encode(String rawPassword) {
+        return passwordEncoder.encode(rawPassword);
+    }
+}

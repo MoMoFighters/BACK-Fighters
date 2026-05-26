@@ -1,6 +1,7 @@
 package com.wanted.momocity.auth.infrastructure.persistence;
 
 import com.wanted.momocity.auth.application.port.LoadUserPort;
+import com.wanted.momocity.auth.application.port.UpdatePasswordPort;
 import com.wanted.momocity.auth.domain.model.User;
 import com.wanted.momocity.auth.domain.repository.UserRepository;
 import org.springframework.stereotype.Repository;
@@ -12,7 +13,7 @@ import java.util.Optional;
 
 @Repository
 @Transactional
-public class UserRepositoryAdapter implements UserRepository, LoadUserPort {
+public class UserRepositoryAdapter implements UserRepository, LoadUserPort, UpdatePasswordPort {
     // UserRepository → 회원가입 관련 (저장, 중복확인)
     // LoadUserPort   → 인증 관련 (유저 조회)
 
@@ -84,5 +85,10 @@ public class UserRepositoryAdapter implements UserRepository, LoadUserPort {
     public Optional<User> findByEmail(String email) {
         return springDataUserRepository.findByEmail(email)
                 .map(this::toDomain);
+    }
+
+    @Override
+    public void updatePassword(String email, String encodedPassword) {
+        springDataUserRepository.updatePassword(email, encodedPassword);
     }
 }
