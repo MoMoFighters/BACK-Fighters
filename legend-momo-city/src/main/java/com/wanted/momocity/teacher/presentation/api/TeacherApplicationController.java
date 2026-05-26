@@ -26,19 +26,33 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/*
- * 강사 신청자 조회 및 승인/반려 컨트롤러.
- *
- * 다루는 API (모두 모듈03):
- *  - MS-3: GET  /api/v1/admin/users/instructor-applications
- *  - MS-4: GET  /api/v1/admin/users/instructor-applications/{userId}
- *  - MS-5: PATCH /api/v1/admin/users/{userId}/role
- *
- * REF: module00-clean-architecture catalog/presentation/api/CourseController.java
- *
- * 권한: 모든 엔드포인트 ADMIN 만 접근 가능 (@PreAuthorize). 인증/인가 팀 PR 머지 후
- *      hasRole('ADMIN') vs hasAuthority('ROLE_ADMIN') 컨벤션 1회 점검 필요.
+/* comment.
+    TeacherApplicationController 정리
+    1. 해당 클래스가 하는 일 : 강사 신청자 조회 및 승인/반려 HTTP API 진입점
+    2. 다루는 API 3개
+        - MS-3 : GET  /api/v1/admin/users/instructor-applications
+        - MS-4 : GET  /api/v1/admin/users/instructor-applications/{userId}
+        - MS-5 : PATCH /api/v1/admin/users/{userId}/role
+    3. 클래스 레벨 애노테이션 :
+        - @RestController : REST API 컨트롤러
+        - @RequestMapping("/api/v1/admin") : 공통 prefix
+        - @PreAuthorize("hasRole('ADMIN')") : 모든 핸들러 ADMIN 권한 필수
+        - @Tag : Swagger 문서화
+    4. 의존성 2개 :
+        - TeacherApplicationQueryUseCase : 조회용 (MS-3/4)
+        - TeacherApplicationCommandUseCase : 변경용 (MS-5)
+        - 인터페이스 타입 의존 (DIP)
+    5. Controller 의 책임 :
+        - HTTP 요청 → Command/Query 변환
+        - UseCase 호출
+        - 도메인 결과 → Response 변환
+        - ApiResponse 로 감싸서 반환
+    6. Controller 가 *하지 않는 일* :
+        - 비즈니스 로직 (UseCase/Service 책임)
+        - DB 직접 접근 (Repository/Adapter 책임)
+        - 도메인 검증 (Member/도메인 모델 책임)
  */
+
 @RestController
 @RequestMapping("/api/v1/admin")
 @PreAuthorize("hasRole('ADMIN')")

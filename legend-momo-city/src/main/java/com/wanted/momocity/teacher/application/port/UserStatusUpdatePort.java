@@ -1,15 +1,23 @@
 package com.wanted.momocity.teacher.application.port;
 
-/*
- * 강사 영역이 회원 영역에 "회원 상태 변경"을 요청하기 위한 인터페이스.
- *
- * 구현체: teacher/infrastructure/member/MemberUserAdapter
- *
- * 책임 분리:
- *  - 강사 영역의 응용 서비스는 user 테이블이나 Member 도메인 모델을 직접 조작하지 않는다.
- *  - 실제 상태 전이 검증(PENDING→ACTIVE / PENDING→REJECTED)과 저장은
- *    회원 영역의 Member 도메인 + MemberRepository 가 담당한다.
+/* comment.
+    userStatusUpdatePort 정리
+    1. 해당 클래스가 하는 일 : 강사 영역이 회원영역에 강사 승인/반려를 요청하는 약속
+    2. 위치 : teacher/application/port
+    3. UserQueryPort 와 짝꿍 (CQRS) :
+        - UserQueryPort       : 조회 (Query) 약속
+        - UserStatusUpdatePort : 변경 (Command) 약속
+        - 같은 영역(회원) 을 향하지만 *책임 분리*
+    4. 호출 흐름 :
+        강사 영역 CommandService
+        → UserStatusUpdatePort (이 인터페이스) → MemberUserAdapter
+        → MemberQueryService.findById (회원 조회)
+        → Member.approveAsTeacher() / rejectAsTeacher() (도메인 행위)
+        → MemberRepository.save (저장)
+    5. 메소드 반환이 void 인 이유 : Command 는 결과 없이 성공/실패만. 실패 시 예외
+    6. 도메인 검증은 어디서? : 회원 영역의 Member 도메인이 책임. 강사 영역은 요청만 진행하게 된다.
  */
+
 public interface UserStatusUpdatePort {
 
     void approveTeacher(Long userId);

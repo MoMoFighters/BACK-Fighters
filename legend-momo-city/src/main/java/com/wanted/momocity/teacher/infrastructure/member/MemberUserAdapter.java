@@ -11,19 +11,25 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 
-/*
- * REF: module00-clean-architecture enrollment/infrastructure/catalog/CatalogCourseAdapter.java
- *
- * MemberUserAdapter 는 강사 영역의 두 포트(UserQueryPort, UserStatusUpdatePort)를
- * 회원 영역(member BC)의 공개 컴포넌트(MemberQueryService, MemberRepository)로 구현하는 어댑터다.
- *
- * 이 어댑터가 있으므로 강사 영역의 응용 서비스는 회원 영역의 구체 클래스(UserJpaEntity, Member 등)를
- * 전혀 모르고도 동작한다.
- *
- * 주의:
- *  - 강사 신청자 필터(role='TEACHER' AND status='PENDING')는 이 어댑터에서 적용한다.
- *  - Member.approveAsTeacher() / Member.rejectAsTeacher() 호출도 이 어댑터 내부에서 수행한다.
+/* comment.
+    MemberUserAdapter 정리
+    1. 이 클래스가 하는 일 : 강사 영역의 두 포트 (UserQueryPort + UserStatusUpdatePort) 를 회원 영역 호출로 구현하는 어댑터
+    2. 위치 : teacher/infrastructure/member
+    3. 두 Port 동시 구현 (implements UserQueryPort, UserStatusUpdatePort) :
+        - 같은 대상(회원 영역)을 향하는 어댑터라 통합
+        - 어댑터 분리도 가능하지만 책임이 단순해서 한 클래스로
+    4. 회원 영역 의존 :
+        - MemberQueryService : 조회 (강사 신청자 필터)
+        - MemberRepository : 저장 (승인/반려 후 변경 사항 저장)
+    5. 진짜 변환 책임 :
+        - Member (회원 영역 도메인) → TeacherApplication (강사 영역 도메인)
+        - 강사 신청자 필터 (role='TEACHER', status='PENDING') 도 여기서 적용
+        - Member.approveAsTeacher() / rejectAsTeacher() 호출도 여기서
+    6. @Component (@Repository 아님) :
+        - 우리 영역의 데이터 저장소 아님
+        - 다른 영역으로 가는 어댑터라 @Component 가 적합
  */
+
 @Component
 @Transactional
 public class MemberUserAdapter implements UserQueryPort, UserStatusUpdatePort {
