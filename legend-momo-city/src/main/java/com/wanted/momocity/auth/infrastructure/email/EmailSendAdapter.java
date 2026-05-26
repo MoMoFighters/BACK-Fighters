@@ -1,7 +1,7 @@
 package com.wanted.momocity.auth.infrastructure.email;
 
 import com.wanted.momocity.auth.application.port.EmailSendPort;
-import com.wanted.momocity.auth.presentation.api.exception.EmailSendException;
+import com.wanted.momocity.auth.domain.exception.EmailSendException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;

@@ -83,7 +83,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<LoginResponse>> login(
             @Valid @RequestBody LoginRequest request){
 
-        LoginResult result =loginUsecase.login(new LoginCommand(request.email(),request.password()));
+        LoginResponse result =loginUsecase.login(new LoginCommand(request.email(),request.password()));
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(
@@ -102,7 +102,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<EmailSendResponse>> emailSend(
             @Valid @RequestBody EmailSendRequest request){
 
-        EmailSendResult result = emailSendUsecase.emailSend(new EmailSendCommand(request.email()));
+        EmailSendResponse result = emailSendUsecase.emailSend(new EmailSendCommand(request.email()));
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(

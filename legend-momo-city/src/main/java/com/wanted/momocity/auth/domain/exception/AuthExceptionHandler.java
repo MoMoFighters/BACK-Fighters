@@ -1,4 +1,4 @@
-package com.wanted.momocity.auth.presentation.api.exception;
+package com.wanted.momocity.auth.domain.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

@@ -3,7 +3,7 @@ package com.wanted.momocity.auth.application.service;
 import com.wanted.momocity.auth.application.command.EmailVerifyCommand;
 import com.wanted.momocity.auth.application.port.EmailCodePort;
 import com.wanted.momocity.auth.application.usecase.EmailVerifyUsecase;
-import com.wanted.momocity.auth.presentation.api.exception.InvalidVerificationCodeException;
+import com.wanted.momocity.auth.domain.exception.InvalidVerificationCodeException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
