@@ -5,8 +5,8 @@
   # ===== Database (MySQL) =====
   datasource:
     url: jdbc:mysql://localhost:3306/momomo
-    username: momomo # ?ㅼ젙 ?댁＜?붿빞?⑸땲??
-    password: momomo # ?ㅼ젙 ?댁＜?붿빞?⑸땲??
+    username: root # ?ㅼ젙 ?댁＜?붿빞?⑸땲??
+    password: root # ?ㅼ젙 ?댁＜?붿빞?⑸땲??
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   # ===== JPA / Hibernate =====
