@@ -1,0 +1,26 @@
+[33m0b30519[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeature/sooyoung0927-auth[m[33m)[m 강사 증빙자료 파일 업로드 S3 추가
+[33m0f6457a[m[33m ([m[1;32mdevelop[m[33m)[m 이메일 인증 여부에 따른 회원가입 예외처리
+[33mbb20bf5[m Merge pull request #55 from MoMoFighters/feature/sooyoung0927-auth
+[33m3e9171d[m[33m ([m[1;31morigin/feature/sooyoung0927-auth[m[33m)[m 클린 아키텍처 리펙토링
+[33me2f1634[m Merge pull request #42 from MoMoFighters/feature/sooyoung0927-auth
+[33m04f07eb[m 이메일 인증 코드 발송 및 인증 기능 구현
+[33m7f9484d[m 회원가입 / 로그인 예외처리
+[33mb106418[m 로그인 기능 구현
+[33m17d1d66[m Security Config 관련 수정
+[33mad21fe0[m Merge pull request #39 from MoMoFighters/feature/imnotquaso-viewing
+[33md444d4e[m JWT Security 에러 제거 - 검토 필요
+[33m32741a8[m 강사 회원가입 기능 구현
+[33mb8f27f2[m[33m ([m[1;31morigin/feature/imnotquaso-viewing[m[33m)[m [FEAT] - Viewing, Calendar 전체적인 파일구조 및 Viewing 기본적인 코드 작성
+[33m3fcaadf[m Security Config 리펙토링
+[33m10be8e7[m [모성진] 강의, 수강신청, 수강평 기본 폴더 구조
+[33m9637475[m [모성진] 강의, 수강신청, 수강평 기본 폴더 구조
+[33md6d0fa4[m 이메일 중복 검증 로직 완료 / jpa 엔티티 객체 생성 전까지 완료
+[33meeaba66[m 이메일 중복 방지 policy 추가
+[33m3eb3b3e[m user 테이블 확정 전 : 순수 자바 객체를 엔티티 객체로 바꾸는 작업 전까지 완료
+[33m0fd97eb[m[33m ([m[1;31morigin/feature/mnppi-admin[m[33m)[m [REFACT] AsyncConfig 외부 설정 분리 및 비동기 예외 안전망 구축
+[33m11e341e[m [REFACT] 기본적인 공통 설정 값 리팩토링
+[33m9165a34[m [CHORE] 공통 사용 패키지 생성
+[33m2424b50[m [Refactory] 템플릿 설정
+[33m5affb00[m 패키지명 변경
+[33m3b7a2d9[m [깃허브 템플릿 추가] 모성진 - 깃허브 기본 template 추가
+[33m1e953bf[m Initial commit

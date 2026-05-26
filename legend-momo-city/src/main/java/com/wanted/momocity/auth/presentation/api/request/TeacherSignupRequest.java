@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import org.springframework.web.multipart.MultipartFile;
 
 @Schema(description = "강사 수강 신청 요청")
 public record TeacherSignupRequest(
@@ -32,7 +33,7 @@ public record TeacherSignupRequest(
         Category category,
 
         @Schema(description = "회원가입 할 사용자 증빙자료 - 강사 회원가입을 위한 증빙 자료")
-        @NotBlank String proof
+        @NotNull MultipartFile proof
 
 
 ) {
