@@ -28,9 +28,9 @@ public record CreateLectureRequest(
      *
      * 이 과정에서 category 문자열을 LectureCategory enum으로 변환한다.
      */
-    public CreateLectureCommand toCommand(Long teacherId) {
+    public CreateLectureCommand toCommand(String teacherEmail) {
         return new CreateLectureCommand(
-                teacherId,
+                teacherEmail,
                 title,
                 description,
                 thumbnailUrl,
