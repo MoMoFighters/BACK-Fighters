@@ -43,10 +43,11 @@ public class GlobalFlowLoggingAspect {
     private static final String TRACE_ID_KEY = "momoTraceId";
 
     @Around("""
-            execution(* com.wanted.momocity..presentation..*(..)) ||
-            execution(* com.wanted.momocity..application..*(..)) ||
-            execution(* com.wanted.momocity..infrastructure..*(..))
-            """)
+        (execution(* com.wanted.momocity..presentation..*(..)) ||
+        execution(* com.wanted.momocity..application..*(..)) ||
+        execution(* com.wanted.momocity..infrastructure..*(..)))
+        && !within(com.wanted.momocity..config..*Properties)
+        """)
     public Object traceGlobalFlow(ProceedingJoinPoint joinPoint) throws Throwable {
         boolean rootTrace = ensureTraceId();
         String layer = resolveLayer(joinPoint);

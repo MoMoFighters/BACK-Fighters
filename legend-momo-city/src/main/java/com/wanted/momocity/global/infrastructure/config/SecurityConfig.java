@@ -1,16 +1,27 @@
 package com.wanted.momocity.global.infrastructure.config;
 
+import com.wanted.momocity.auth.application.service.RefreshService;
+import com.wanted.momocity.auth.infrastructure.handler.CustomAccessDeniedHandler;
+import com.wanted.momocity.auth.infrastructure.handler.CustomAuthenticationEntryPoint;
+import com.wanted.momocity.auth.infrastructure.jwt.JwtAuthenticationFilter;
+import com.wanted.momocity.auth.infrastructure.jwt.JwtTokenProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
-import org.springframework.security.config.Customizer;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
 
 /*
  * SecurityConfig의 역할 — 한 줄 요약
@@ -29,50 +40,107 @@ import org.springframework.web.cors.CorsConfigurationSource;
  */
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
-    private final CorsConfigurationSource corsConfigurationSource;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final RefreshService refreshService;
+    private final CustomAccessDeniedHandler customAccessDeniedHandler;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
-    public SecurityConfig(CorsConfigurationSource corsConfigurationSource) {
-        this.corsConfigurationSource = corsConfigurationSource;
+    @Autowired
+    public SecurityConfig( JwtTokenProvider jwtTokenProvider, RefreshService refreshService, CustomAccessDeniedHandler customAccessDeniedHandler, CustomAuthenticationEntryPoint customAuthenticationEntryPoint) {
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.refreshService = refreshService;
+        this.customAccessDeniedHandler = customAccessDeniedHandler;
+        this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
+    }
+
+
+    //====================CORS 설정
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+
+        configuration.setAllowedOriginPatterns(Arrays.asList(
+                "http://localhost:3000", // React, Vue 등의 개발서버
+                "http://localhost:8081", // 다른 로컬 개발 환경
+                "https://your-production-frontend.com" // 배포하게 될 경우
+        ));
+
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+
+        configuration.setAllowedHeaders(Arrays.asList(
+                "Authorization",
+                "Content-Type",
+                "X-Requested-With",
+                "Accept",
+                "Origin",
+                "Access-Control-Request-Method",
+                "Access-Control-Request-Headers",
+                "X-Refresh-Token" // 리프레시 토큰을 위한 커스텀 헤더
+        ));
+
+        configuration.setExposedHeaders(Arrays.asList(
+                "Authorization",
+                "New-Access-Token" // 새 액세스 토큰 전달용 커스텀 헤더
+        ));
+
+        configuration.setAllowCredentials(true);
+        //Authorization 헤더(JWT 토큰)를 요청에 포함해도 된다는 허가
+        // 이게 false면 브라우저가 인증 관련 헤더를 아예 안 보냄. JWT 인증이 통째로 안 됩니다.
+
+        configuration.setMaxAge(3600L); // 1시간
+
+        // 모든 경로("/**")에 대해 위에서 정의한 CORS 설정을 등록
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+
+
+    //==================== 필드 선언
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+        return configuration.getAuthenticationManager();
+        // AuthenticationManager는 "아이디/비밀번호 맞는지 확인하는 심사관"입니다.
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
+    public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+        // "비밀번호 암호화 기계 만들기"
     }
 
+
+
+    //==================== securityFilterChain
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.configurationSource(corsConfigurationSource))
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .formLogin(form -> form.disable())
-                .httpBasic(Customizer.withDefaults())
+        return http
+                .csrf(csrf -> csrf.disable()) // Stateless 환경에선 CSRF 불필요
+                .sessionManagement(sess -> sess
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 세션 생성 X
+//                =================================================================
+                // URL별 입장 규칙
                 .authorizeHttpRequests(auth -> auth
-                        // ===== 항상 공개 =====
-                        .requestMatchers(
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/v3/api-docs/**",
-                                "/actuator/health"
-                        ).permitAll()
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // 여기서 1차 인가 관련 방호벽
+                        // /api/user/ 하위에 endpoint 중에 admin / user 권한 별로 접근하기 위해서는
+                        // 메서드 레벨에서 2차 방호벽 구축
+                        .requestMatchers("/api/v1/auth/**").permitAll() // 인증 없이 허용
+                        .requestMatchers("/api/users/**").hasAnyAuthority( "ROLE_USER")
+                        .requestMatchers("/api/admin/**").hasAnyAuthority("ROLE_ADMIN")
+                        .anyRequest().authenticated()) // 나머지는 인증 필요
+//                ========================================================================
 
-                        // ===== 인증 담당이 채울 슬롯 =====
-                        // .requestMatchers("/api/v1/auth/**").permitAll()
-                        // .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                .addFilterBefore(
+                        new JwtAuthenticationFilter(jwtTokenProvider, refreshService),
+                        UsernamePasswordAuthenticationFilter.class
+                )
 
-                        // ===== 임시 정책: 컨텍스트 개발 시작을 위해 전부 허용 =====
-                        // TODO 인증 담당: JwtAuthenticationFilter 추가 후 .authenticated() 로 강화
-                        .anyRequest().permitAll()
-                );
-
-        // TODO 인증 담당:
-        // http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-
-        return http.build();
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(customAuthenticationEntryPoint) // 인증되지 않은 사용자가 보호된 리소스 접근시 처리 방식 정의
+                        .accessDeniedHandler(customAccessDeniedHandler)) // 인증은 되었지만 인가가 허용되지 않는 사용자 처리 방식 정의
+                .build();
     }
 }
