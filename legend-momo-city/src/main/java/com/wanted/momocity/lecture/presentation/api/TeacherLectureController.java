@@ -1,9 +1,8 @@
 package com.wanted.momocity.lecture.presentation.api;
 
+import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
-import com.wanted.momocity.lecture.application.command.LectureThumbnailFile;
-import com.wanted.momocity.lecture.application.port.ThumbnailStoragePort;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCase;
 import com.wanted.momocity.lecture.domain.model.Lecture;
 import com.wanted.momocity.lecture.presentation.api.request.CreateLectureRequest;
@@ -21,13 +20,13 @@ import org.springframework.web.bind.annotation.*;
 public class TeacherLectureController {
 
     private final LectureCommandUseCase lectureCommandUseCase;
-    private final ThumbnailStoragePort thumbnailStoragePort;
+    private final S3UploadPort s3UploadPort;
     public TeacherLectureController(
             LectureCommandUseCase lectureCommandUseCase,
-            ThumbnailStoragePort thumbnailStoragePort
+            S3UploadPort s3UploadPort
     ) {
         this.lectureCommandUseCase = lectureCommandUseCase;
-        this.thumbnailStoragePort = thumbnailStoragePort;
+        this.s3UploadPort = s3UploadPort;
     }
 
     // Content-Type: multipart/form-data 즉, Json이 아닌 Form-data로 요청 받는다
@@ -45,9 +44,9 @@ public class TeacherLectureController {
          */
         request.validateCategory();
 
-        LectureThumbnailFile thumbnailFile = request.toThumbnailFile();
+        request.validateCategory();
 
-        String thumbnailUrl = thumbnailStoragePort.upload(thumbnailFile);
+        String thumbnailUrl = s3UploadPort.upload(request.thumbnail());
 
         Lecture lecture = lectureCommandUseCase.createLecture(
                 request.toCommand(teacherEmail, thumbnailUrl)

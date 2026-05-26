@@ -2,13 +2,10 @@ package com.wanted.momocity.lecture.presentation.api.request;
 
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.lecture.application.command.CreateLectureCommand;
-import com.wanted.momocity.lecture.application.command.LectureThumbnailFile;
 import com.wanted.momocity.lecture.domain.model.LectureCategory;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
 
 // CreateLectureRequest는 multipart/form-data 요청을 받는 DTO
 public record CreateLectureRequest(
@@ -25,30 +22,24 @@ public record CreateLectureRequest(
         MultipartFile thumbnail
 ) {
 
+    // 중복 검증 추가
     public CreateLectureCommand toCommand(String teacherEmail, String thumbnailUrl) {
+        LectureCategory lectureCategory = parseCategory(category);
+
         return new CreateLectureCommand(
                 teacherEmail,
                 title,
                 description,
                 thumbnailUrl,
-                parseCategory(category)
+                lectureCategory
         );
     }
 
-
-    // form-data로 받은 MultipartFile을 application 계층에서 사용할 파일 객체로 변환한다.
-
-    public LectureThumbnailFile toThumbnailFile() {
-        try {
-            return new LectureThumbnailFile(
-                    thumbnail.getOriginalFilename(),
-                    thumbnail.getContentType(),
-                    thumbnail.getSize(),
-                    thumbnail.getBytes()
-            );
-        } catch (IOException exception) {
-            throw new DomainRuleViolationException("썸네일 파일을 읽을 수 없습니다.");
-        }
+    /*
+     * S3 업로드 전에 카테고리를 먼저 검증한다.
+     */
+    public void validateCategory() {
+        parseCategory(category);
     }
 
     private LectureCategory parseCategory(String category) {
@@ -59,11 +50,4 @@ public record CreateLectureRequest(
         }
     }
 
-    /*
-     * category 값을 먼저 검증
-     * S3 업로드 전에 호출해서 잘못된 카테고리 요청일 때 파일이 업로드 X
-     */
-    public void validateCategory() {
-        parseCategory(category);
-    }
 }

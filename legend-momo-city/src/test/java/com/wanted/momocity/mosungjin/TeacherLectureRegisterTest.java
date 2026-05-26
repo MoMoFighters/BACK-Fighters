@@ -1,5 +1,6 @@
 package com.wanted.momocity.mosungjin;
 
+import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCase;
 import com.wanted.momocity.lecture.domain.model.Lecture;
 import com.wanted.momocity.lecture.domain.model.LectureCategory;
@@ -10,7 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -20,19 +21,23 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /*
  * TeacherLectureRegisterTest는 강사용 강의 등록 API를 검증하는 Controller 테스트다.
  *
- * 실제 JWT 검증이나 DB 저장까지 확인하지 않고,
- * Controller가 인증된 강사 요청을 받아 명세에 맞는 응답을 반환하는지 확인한다.
+ * 실제 JWT 검증, 실제 S3 업로드, 실제 DB 저장은 수행하지 않고,
+ * multipart/form-data 요청이 Controller에서 정상 처리되는지 확인한다.
  */
 @WebMvcTest(TeacherLectureController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class TeacherLectureRegisterTest {
+
+    private static final String CREATE_LECTURE_URL = "/api/v1/teacher/lectures";
 
     /*
      * MockMvc는 실제 서버를 띄우지 않고 HTTP 요청처럼 Controller를 테스트하게 해준다.
@@ -42,34 +47,37 @@ class TeacherLectureRegisterTest {
 
     /*
      * Controller가 의존하는 UseCase를 Mock으로 대체한다.
-     *
-     * Controller 테스트에서는 Service와 Repository를 실제로 실행하지 않는다.
      */
     @MockitoBean
     private LectureCommandUseCase lectureCommandUseCase;
 
+    /*
+     * 실제 S3 업로드 대신 Mock으로 URL을 반환하게 한다.
+     */
+    @MockitoBean
+    private S3UploadPort s3UploadPort;
+
     @Test
-    @DisplayName("강사가 강의를 등록하면 201 응답을 반환한다")
+    @DisplayName("강사가 form-data로 강의를 등록하면 201 응답을 반환한다")
     void createLecture() throws Exception {
-        /*
-         * 응답에 들어갈 생성일/수정일을 고정한다.
-         *
-         * 테스트에서는 시간이 매번 바뀌면 검증하기 어려우므로 고정값을 사용한다.
-         */
         LocalDateTime now = LocalDateTime.of(2026, 5, 19, 10, 30);
+        String thumbnailUrl = "https://example.com/images/spring-boot.png";
+
+        /*
+         * S3 업로드가 성공하면 thumbnailUrl을 반환한다고 가정한다.
+         */
+        when(s3UploadPort.upload(any()))
+                .thenReturn(thumbnailUrl);
 
         /*
          * UseCase가 반환할 가짜 Lecture 객체를 준비한다.
-         *
-         * 실제 저장 로직은 실행하지 않고,
-         * 강의 등록이 성공했다고 가정한다.
          */
         Lecture lecture = Lecture.restore(
                 10L,
                 3L,
                 "Spring Boot 입문",
                 "Spring Boot 기초부터 REST API 개발까지 배우는 강의입니다.",
-                "https://example.com/images/spring-boot.png",
+                thumbnailUrl,
                 LectureCategory.STUDY,
                 LectureStatus.WAITING,
                 0,
@@ -77,35 +85,25 @@ class TeacherLectureRegisterTest {
                 now
         );
 
-        /*
-         * lectureCommandUseCase.createLecture(...)가 호출되면
-         * 위에서 만든 lecture를 반환하도록 설정한다.
-         */
         when(lectureCommandUseCase.createLecture(any()))
                 .thenReturn(lecture);
 
         /*
-         * API 명세에 맞춘 강의 등록 요청 JSON이다.
+         * form-data의 thumbnail 파일 파트다.
          */
-        String requestBody = """
-                {
-                  "title": "Spring Boot 입문",
-                  "description": "Spring Boot 기초부터 REST API 개발까지 배우는 강의입니다.",
-                  "thumbnailUrl": "https://example.com/images/spring-boot.png",
-                  "category": "STUDY"
-                }
-                """;
+        MockMultipartFile thumbnail = new MockMultipartFile(
+                "thumbnail",
+                "spring-boot.png",
+                "image/png",
+                "fake-image".getBytes()
+        );
 
-        /*
-         * 실제 요청에서는 Authorization: Bearer 토큰이 들어오고,
-         * JwtAuthenticationFilter가 인증 객체를 SecurityContext에 넣어준다.
-         *
-         * 이 Controller 테스트에서는 JWT 검증 대신 인증 완료 상태를 principal로 직접 넣는다.
-         */
-        mockMvc.perform(post("/api/teacher/lectures")
-                        .principal(teacherAuthentication())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
+        mockMvc.perform(multipart(CREATE_LECTURE_URL)
+                        .file(thumbnail)
+                        .param("title", "Spring Boot 입문")
+                        .param("description", "Spring Boot 기초부터 REST API 개발까지 배우는 강의입니다.")
+                        .param("category", "STUDY")
+                        .principal(teacherAuthentication()))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value(201))
                 .andExpect(jsonPath("$.code").value("COMMON-CREATED"))
@@ -114,7 +112,7 @@ class TeacherLectureRegisterTest {
                 .andExpect(jsonPath("$.data.teacherId").value(3))
                 .andExpect(jsonPath("$.data.title").value("Spring Boot 입문"))
                 .andExpect(jsonPath("$.data.description").value("Spring Boot 기초부터 REST API 개발까지 배우는 강의입니다."))
-                .andExpect(jsonPath("$.data.thumbnailUrl").value("https://example.com/images/spring-boot.png"))
+                .andExpect(jsonPath("$.data.thumbnailUrl").value(thumbnailUrl))
                 .andExpect(jsonPath("$.data.category").value("STUDY"))
                 .andExpect(jsonPath("$.data.lectureStatus").value("WAITING"))
                 .andExpect(jsonPath("$.data.completedUserCount").value(0))
@@ -125,28 +123,19 @@ class TeacherLectureRegisterTest {
     @Test
     @DisplayName("강의 등록 시 필수값이 누락되면 400 응답을 반환한다")
     void createLectureFailByInvalidRequest() throws Exception {
-        /*
-         * title은 빈 문자열이고 category는 null이다.
-         *
-         * CreateLectureRequest의 @NotBlank 검증에 걸려
-         * Controller 진입 전 400 Bad Request가 발생한다.
-         */
-        String requestBody = """
-                {
-                  "title": "",
-                  "description": "Spring Boot 기초부터 REST API 개발까지 배우는 강의입니다.",
-                  "thumbnailUrl": "https://example.com/images/spring-boot.png",
-                  "category": null
-                }
-                """;
+        MockMultipartFile thumbnail = new MockMultipartFile(
+                "thumbnail",
+                "spring-boot.png",
+                "image/png",
+                "fake-image".getBytes()
+        );
 
-        /*
-         * 잘못된 요청을 보내고 400 응답이 내려오는지 확인한다.
-         */
-        mockMvc.perform(post("/api/teacher/lectures")
-                        .principal(teacherAuthentication())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
+        mockMvc.perform(multipart(CREATE_LECTURE_URL)
+                        .file(thumbnail)
+                        .param("title", "")
+                        .param("description", "Spring Boot 기초부터 REST API 개발까지 배우는 강의입니다.")
+                        .param("category", "STUDY")
+                        .principal(teacherAuthentication()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.code").value("COMMON-VALIDATION-ERROR"))
@@ -154,35 +143,41 @@ class TeacherLectureRegisterTest {
     }
 
     @Test
-    @DisplayName("강의 등록 시 허용되지 않은 카테고리면 400 응답을 반환한다")
+    @DisplayName("강의 등록 시 허용되지 않은 카테고리면 400 응답을 반환하고 S3 업로드를 하지 않는다")
     void createLectureFailByInvalidCategory() throws Exception {
-        /*
-         * category에 허용되지 않은 값을 넣는다.
-         *
-         * CreateLectureRequest.toCommand()에서 LectureCategory 변환에 실패하면
-         * DomainRuleViolationException이 발생하고 400 응답으로 처리된다.
-         */
-        String requestBody = """
-                {
-                  "title": "Spring Boot 입문",
-                  "description": "Spring Boot 기초부터 REST API 개발까지 배우는 강의입니다.",
-                  "thumbnailUrl": "https://example.com/images/spring-boot.png",
-                  "category": "INVALID"
-                }
-                """;
+        MockMultipartFile thumbnail = new MockMultipartFile(
+                "thumbnail",
+                "spring-boot.png",
+                "image/png",
+                "fake-image".getBytes()
+        );
 
-        /*
-         * 잘못된 카테고리 요청을 보내고,
-         * 명세에 맞게 400 응답과 카테고리 오류 메시지가 내려오는지 확인한다.
-         */
-        mockMvc.perform(post("/api/teacher/lectures")
-                        .principal(teacherAuthentication())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
+        mockMvc.perform(multipart(CREATE_LECTURE_URL)
+                        .file(thumbnail)
+                        .param("title", "Spring Boot 입문")
+                        .param("description", "Spring Boot 기초부터 REST API 개발까지 배우는 강의입니다.")
+                        .param("category", "INVALID")
+                        .principal(teacherAuthentication()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.code").value("COMMON-DOMAIN-RULE-VIOLATION"))
                 .andExpect(jsonPath("$.message").value("허용되지 않은 강의 카테고리입니다."));
+
+        /*
+         * category 검증이 S3 업로드보다 먼저 실행되어야 한다.
+         */
+        verify(s3UploadPort, never()).upload(any());
+    }
+
+    @Test
+    @DisplayName("강의 등록 시 썸네일 파일이 없으면 400 응답을 반환한다")
+    void createLectureFailWithoutThumbnail() throws Exception {
+        mockMvc.perform(multipart(CREATE_LECTURE_URL)
+                        .param("title", "Spring Boot 입문")
+                        .param("description", "Spring Boot 기초부터 REST API 개발까지 배우는 강의입니다.")
+                        .param("category", "STUDY")
+                        .principal(teacherAuthentication()))
+                .andExpect(status().isBadRequest());
     }
 
     /*
