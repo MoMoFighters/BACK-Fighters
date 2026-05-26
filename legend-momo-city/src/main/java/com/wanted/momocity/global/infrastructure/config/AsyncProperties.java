@@ -4,8 +4,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /*
  * AsyncConfig 에서 사용하는 ThreadPool 설정값을 외부화한다.
- * application.yaml 에 async.* 로 오버라이드할 수 있다.
- * 미설정 시 아래 기본값이 적용된다.
+ * application.yaml 의 app.async.* 키로 주입된다.
+ * 디폴트값은 yaml 에 위치한다 (yaml-first).
  */
 
 @ConfigurationProperties(prefix = "app.async")
