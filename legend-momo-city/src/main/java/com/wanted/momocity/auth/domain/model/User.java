@@ -140,4 +140,28 @@ public class User {
     public String getNickname() {
         return nickname;
     }
+
+    // 소셜 로그인 할 때 user 등록
+    public static User oAuthRegister(String email, String name) {
+        return new User(
+                null,           // id
+                email,          // 카카오는 이메일 안 받아와서 null 가능
+                null,           // password (소셜 로그인은 없음)
+                name,
+                null,  // nickname
+                null,           // birth
+                null,           // profileImageUrl
+                Role.STUDENT,   // 기본값
+                Status.ACTIVE,  // 가입 시 기본값
+                null,           // category
+                null,           // proof
+                0L,             // point
+                false,          // isPaid
+                false,          // doNotDisturb
+                Instant.now(),  // createdAt
+                LocalDateTime.now(), // updatedAt
+                null,           // deletedAt
+                false           // isTempPwd
+        );
+    }
 }
