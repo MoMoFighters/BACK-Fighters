@@ -59,7 +59,8 @@ cloud:
   aws:
     s3:
       bucket: ${AWS_S3_BUCKET:momocity-bucket} # 설정 해주셔야합니다
-      region: ${AWS_S3_REGION:ap-northeast-2} # 설정 해주셔야합니다
+    region:
+      static: ${AWS_S3_REGION:ap-northeast-2} # 설정 해주셔야합니다
     credentials:
       access-key: ${AWS_ACCESS_KEY:} # 설정 해주셔야합니다
       secret-key: ${AWS_SECRET_KEY:} # 설정 해주셔야합니다
@@ -84,13 +85,3 @@ logging:
     root: INFO
     com.wanted.momocity: DEBUG
     org.hibernate.SQL: DEBUG
-
-# ===== Async =====
-app:
-  async:
-    core-pool-size: 4
-    max-pool-size: 8
-    queue-capacity: 100
-    thread-name-prefix: async-class-
-  retry:
-    fixed-delay-ms: 5000
