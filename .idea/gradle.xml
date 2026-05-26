@@ -5,6 +5,10 @@
     <option name="linkedExternalProjectsSettings">
       <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/legend-momo-city" />
+<<<<<<< HEAD
+=======
+        <option name="gradleJvm" value="17" />
+>>>>>>> af44a97 (misc.xml 추적 제거)
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$/legend-momo-city" />
