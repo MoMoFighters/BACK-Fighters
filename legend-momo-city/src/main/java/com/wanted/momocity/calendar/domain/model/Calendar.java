@@ -96,21 +96,4 @@ public class Calendar {
         return this.userId.equals(userId);
     }
 
-    // DB 에서 조회한 데이터로 도메인 객체 복원용
-    // create() 는 신규생성, reconstitute() 는 DB 복원
-    public static Calendar reconstitute(
-            Long id, Long userId, String title, Category category,
-            LocalDate start, LocalDate end, boolean isCompleted
-    ) {
-        Calendar calendar = new Calendar();
-        calendar.id = id;
-        calendar.userId = userId;
-        calendar.title = title;
-        calendar.category = category;
-        calendar.start = start;
-        calendar.end = end;
-        calendar.isCompleted = isCompleted;
-        return calendar;
-    }
-
 }
