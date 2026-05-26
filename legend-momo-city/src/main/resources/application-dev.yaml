@@ -1,18 +1,18 @@
-spring:
+﻿spring:
   application:
     name: legend-momo-city
 
   # ===== Database (MySQL) =====
   datasource:
     url: jdbc:mysql://localhost:3306/momo
-    username: momo # 설정 해주셔야합니다
-    password: momo # 설정 해주셔야합니다
+    username: momo # ?ㅼ젙 ?댁＜?붿빞?⑸땲??
+    password: momo # ?ㅼ젙 ?댁＜?붿빞?⑸땲??
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   # ===== JPA / Hibernate =====
   jpa:
     hibernate:
-      ddl-auto: update           # 초기 개발용. 운영 전엔 validate로 전환
+      ddl-auto: update           # 珥덇린 媛쒕컻?? ?댁쁺 ?꾩뿏 validate濡??꾪솚
     properties:
       hibernate:
         format_sql: true
@@ -20,25 +20,25 @@ spring:
     open-in-view: false
     show-sql: true
 
-  # ===== Multipart (영상/이미지 업로드) =====
+  # ===== Multipart (?곸긽/?대?吏 ?낅줈?? =====
   servlet:
     multipart:
       max-file-size: 1000MB
       max-request-size: 1000MB
 
-  # ===== Redis (채팅 / 캐시 / 인증코드) =====
+  # ===== Redis (梨꾪똿 / 罹먯떆 / ?몄쬆肄붾뱶) =====
   data:
     redis:
-      host: ${REDIS_HOST:localhost} # 설정 해주셔야합니다
-      port: ${REDIS_PORT:6379} # 설정 해주셔야합니다
-      password: ${REDIS_PASSWORD:} # 설정 해주셔야합니다
+      host: ${REDIS_HOST:localhost} # ?ㅼ젙 ?댁＜?붿빞?⑸땲??
+      port: ${REDIS_PORT:6379} # ?ㅼ젙 ?댁＜?붿빞?⑸땲??
+      password: ${REDIS_PASSWORD:} # ?ㅼ젙 ?댁＜?붿빞?⑸땲??
 
-  # ===== Mail (인증코드 발송) =====
+  # ===== Mail (?몄쬆肄붾뱶 諛쒖넚) =====
   mail:
-    host: ${MAIL_HOST:smtp.gmail.com} # 설정 해주셔야합니다
-    port: ${MAIL_PORT:587} # 설정 해주셔야합니다
-    username: ${MAIL_USERNAME:} # 설정 해주셔야합니다
-    password: ${MAIL_PASSWORD:} # 설정 해주셔야합니다
+    host: smtp.gmail.com
+    port: 587
+    username: sooyoung040927@gmail.com
+    password: niku thru uuhz lqds
     properties:
       mail:
         smtp:
@@ -54,21 +54,21 @@ server:
       charset: UTF-8
       force: true
 
-# ===== AWS S3 (영상 / 이미지) =====
+# ===== AWS S3 (video / image) =====
 cloud:
   aws:
     s3:
-      bucket: ${AWS_S3_BUCKET:momocity-bucket} # 설정 해주셔야합니다
-      region: ${AWS_S3_REGION:ap-northeast-2} # 설정 해주셔야합니다
+      bucket: ${AWS_S3_BUCKET:momocity-bucket} # required
+      region: ${AWS_S3_REGION:ap-northeast-2} # required
     credentials:
-      access-key: ${AWS_ACCESS_KEY:} # 설정 해주셔야합니다
-      secret-key: ${AWS_SECRET_KEY:} # 설정 해주셔야합니다
+      access-key: ${AWS_ACCESS_KEY} # required
+      secret-key: ${AWS_SECRET_KEY} # required
 
 # ===== JWT =====
 jwt:
   secret: 8Fwve2M7zpJmBKVPoX64PUkEguxKl2xzrZmNreW9NeTS5x4/P6mtm3IYALPBpiHbwurLfJdGTimP+5KDGTuj0Q==
-  access-token-expiration: 3600000       # 1시간
-  refresh-token-expiration: 1209600000   # 14일
+  access-token-expiration: 3600000       # 1?쒓컙
+  refresh-token-expiration: 1209600000   # 14??
 
 # ===== Swagger (SpringDoc) =====
 springdoc:
