@@ -136,4 +136,8 @@ public class User {
     public Boolean getIsTempPwd() {
         return isTempPwd;
     }
+
+    public String getNickname() {
+        return nickname;
+    }
 }

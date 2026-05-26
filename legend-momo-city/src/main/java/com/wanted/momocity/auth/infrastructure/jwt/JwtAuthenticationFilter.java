@@ -54,16 +54,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     response.setHeader("New-Access-Token", newAccessToken);
                 } else {
                     SecurityContextHolder.clearContext();
+                    sendUnauthorized(response, "다시 로그인해 주세요.");
+                    return;
                 }
             } catch (InvalidRefreshTokenException invalidRefreshTokenEx) {
                 SecurityContextHolder.clearContext();
+                sendUnauthorized(response, "다시 로그인해 주세요.");
+                return;
             } catch (Exception e) {
                 SecurityContextHolder.clearContext();
+                sendUnauthorized(response, "다시 로그인해 주세요.");
+                return;
             }
         } catch (InvalidJwtCustomException invalidAccessTokenException) {
             SecurityContextHolder.clearContext();
+            sendUnauthorized(response, "다시 로그인해 주세요.");
+            return;
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private void sendUnauthorized(HttpServletResponse response, String message) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401 에러
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write("{\"success\": false, \"message\": \"" + message + "\"}");
     }
 }

@@ -4,7 +4,6 @@ import com.wanted.momocity.auth.application.command.EmailSendCommand;
 import com.wanted.momocity.auth.application.port.EmailCodePort;
 import com.wanted.momocity.auth.application.port.EmailSendPort;
 import com.wanted.momocity.auth.application.port.LoadUserPort;
-import com.wanted.momocity.auth.application.result.EmailSendResult;
 import com.wanted.momocity.auth.application.usecase.EmailSendUsecase;
 import com.wanted.momocity.auth.domain.exception.DuplicateEmailException;
 import com.wanted.momocity.auth.presentation.api.response.EmailSendResponse;
