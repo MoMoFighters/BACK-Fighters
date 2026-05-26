@@ -58,7 +58,7 @@ public class EmailCodeAdapter implements EmailCodePort {
     }
 
     @Override
-    public boolean isTempPasswordValid(String email) {
+    public boolean isTempPasswordVerified(String email) {
         return redisTemplate.hasKey(email + "tempPwd");
     }
 

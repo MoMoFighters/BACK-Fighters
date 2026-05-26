@@ -52,7 +52,7 @@ public class LoginService implements LoginUsecase {
             throw new InactiveUserException("로그인이 제한된 계정입니다.");
         }
 
-        if (user.getIsTempPwd() && !emailCodePort.isTempPasswordValid(command.email())) {
+        if (user.getIsTempPwd() && !emailCodePort.isTempPasswordVerified(command.email())) {
             throw new TempPasswordExpiredException("임시 비밀번호가 만료되었습니다. 다시 발급해주세요.");
         }
 

@@ -32,16 +32,12 @@ public class TempPasswordService implements TempPasswordUsecase {
             throw new UserNotFoundException("가입된 이메일이 아닙니다.");
         }
 
-        if (!emailCodePort.isVerified(command.email())) {
-            throw new EmailNotVerifiedException("이메일 인증 후 임시 비밀번호를 발급받을 수 있습니다.");
-        }
-
         String tempPassword = generateTempPassword();
         String encodedPassword = passwordEncodePort.encode(tempPassword);
 
         updatePasswordPort.updatePassword(command.email(), encodedPassword);
-        emailCodePort.saveTempPassword(command.email(), EXPIRES_IN_SECONDS);
-        emailSendPort.send(command.email(), tempPassword);
+        emailCodePort.saveTempPassword(command.email(), EXPIRES_IN_SECONDS); // redis에 만료시간 저장
+        emailSendPort.sendTempPassword(command.email(), tempPassword); // 이메일 발송
     }
 
     private String generateTempPassword() {

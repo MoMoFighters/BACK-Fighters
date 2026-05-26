@@ -114,8 +114,8 @@ public class AuthController {
 
     @PostMapping("/email/send")
     @Operation(
-            summary = "이메일로 인증코드 발송",
-            description = "이메일 중복 확인 및 본인 인증을 위한 이메일 인증 코드 발송"
+            summary = "회원가입 할 때 이메일로 인증코드 발송",
+            description = "이메일 중복 확인 및 본인 인증을 위한 이메일 인증 코드 발송 - "
     )
     public ResponseEntity<ApiResponse<EmailSendResponse>> emailSend(
             @Valid @RequestBody EmailSendRequest request){
@@ -149,6 +149,7 @@ public class AuthController {
                 ));
 
     }
+
 
     @PostMapping("/password/temp")
     @Operation(
