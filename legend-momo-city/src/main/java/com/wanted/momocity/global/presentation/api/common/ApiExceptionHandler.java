@@ -40,7 +40,7 @@ public class ApiExceptionHandler {
         // 검증 오류 표현 방식은 프레젠테이션 규약이므로 여기서 조합한다.
         String message = exception.getBindingResult().getFieldErrors().stream()
                 .findFirst()
-                .map(error -> error.getField() + " " + error.getDefaultMessage())
+                .map(error -> "" + error.getDefaultMessage())
                 .orElse(ApiResponseMessage.VALIDATION_ERROR);
         return ResponseEntity.badRequest()
                 .body(ApiErrorResponse.of(
