@@ -47,7 +47,7 @@ public class LoginService implements LoginUsecase {
 
         User user = loadUserPort.findByEmail(command.email()).get();
         if (user.getStatus() != Status.ACTIVE) {
-            throw new InactiveUserException("로그인 불가능한 계정입니다. 상태: " + user.getStatus());
+            throw new InactiveUserException("로그인이 제한된 계정입니다. 상태: " + user.getStatus());
         }
 
         // 인증 성공 후 액세스 토큰 발급

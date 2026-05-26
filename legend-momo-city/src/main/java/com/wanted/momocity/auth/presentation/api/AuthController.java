@@ -12,6 +12,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -23,6 +25,7 @@ public class AuthController {
     private final StudentSignupUsecase studentSignupUsecase;
     private final TeacherSignupUseCase teacherSignupUseCase;
     private final LoginUsecase loginUsecase;
+    private final LoginCompletedUsecase loginCompletedUsecase;
     private final EmailSendUsecase emailSendUsecase;
     private final EmailVerifyUsecase emailVerifyUsecase;
     private final S3UploadPort s3UploadPort;
@@ -87,6 +90,26 @@ public class AuthController {
 
     }
 
+
+    @GetMapping("/login/completed")
+    @Operation(
+            summary = "로그인 성공 시 페이지 로딩을 위한 사용자 정보 전달",
+            description = "로그인 한 사용자의 role, is_tempPWD, nickname 을 보내 그에 맞는 페이지를 랜더링한다"
+    )
+    public ResponseEntity<ApiResponse<LoginCompletedResponse>> loginCompleted(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        LoginCompletedResponse result = loginCompletedUsecase.getInfo(userDetails.getUsername()); // email
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        AuthResponseCode.SUCCESS,
+                        AuthResponseMessage.LOGIN_COMPLETED,
+                        new LoginCompletedResponse(result.role(), result.is_tempPwd(), result.nickname())
+                ));
+    }
+
+
     @PostMapping("/email/send")
     @Operation(
             summary = "이메일로 인증코드 발송",
@@ -124,6 +147,7 @@ public class AuthController {
                 ));
 
     }
+
 
 
 
