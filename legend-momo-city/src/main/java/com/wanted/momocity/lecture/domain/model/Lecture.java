@@ -141,16 +141,15 @@ public class Lecture {
     }
 
     /*
-     * 요청한 teacherId가 이 강의의 소유자인지 확인한다.
-     *
-     * 수정/삭제 권한 검증에서 사용한다.
+     * 요청한 teacherId가 이 강의의 소유자인지 확인
+     * 수정/삭제 권한 검증에서 사용
      */
     public boolean isOwnedBy(Long teacherId) {
         return this.teacherId != null && this.teacherId.equals(teacherId);
     }
 
     /*
-     * 강사 정보가 없으면 강의를 생성할 수 없다.
+     * 강사 정보가 없으면 강의를 생성 X
      */
     private static void validateTeacherId(Long teacherId) {
         if (teacherId == null) {
@@ -159,7 +158,7 @@ public class Lecture {
     }
 
     /*
-     * 강의 제목은 필수 입력값이다.
+     * 강의 제목은 필수 입력값
      */
     private static void validateTitle(String title) {
         if (title == null || title.isBlank()) {
@@ -168,7 +167,7 @@ public class Lecture {
     }
 
     /*
-     * 강의 설명은 필수 입력값이다.
+     * 강의 설명은 필수 입력값
      */
     private static void validateDescription(String description) {
         if (description == null || description.isBlank()) {
@@ -177,7 +176,7 @@ public class Lecture {
     }
 
     /*
-     * 강의 카테고리는 필수 입력값이다.
+     * 강의 카테고리는 필수 입력값
      */
     private static void validateCategory(LectureCategory category) {
         if (category == null) {

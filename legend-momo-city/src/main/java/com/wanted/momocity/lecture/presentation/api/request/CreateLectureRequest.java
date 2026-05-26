@@ -4,12 +4,10 @@ import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationExc
 import com.wanted.momocity.lecture.application.command.CreateLectureCommand;
 import com.wanted.momocity.lecture.domain.model.LectureCategory;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import org.springframework.web.multipart.MultipartFile;
 
-/*
- * CreateLectureRequest는 프론트에서 전달하는 강의 등록 요청 DTO
- * category는 enum으로 바로 받지 않고 String으로 받은 뒤 직접 변환
- * 그래야 허용되지 않은 카테고리 값이 들어왔을 때 500이 아니라 400 응답으로 처리
- */
+// CreateLectureRequest는 multipart/form-data 요청을 받는 DTO
 public record CreateLectureRequest(
         @NotBlank(message = "강의 제목은 필수입니다.")
         String title,
@@ -17,32 +15,33 @@ public record CreateLectureRequest(
         @NotBlank(message = "강의 설명은 필수입니다.")
         String description,
 
-        String thumbnailUrl,
-
         @NotBlank(message = "강의 카테고리는 필수입니다.")
-        String category
+        String category,
+
+        @NotNull(message = "썸네일 이미지는 필수입니다.")
+        MultipartFile thumbnail
 ) {
 
-    /*
-     * presentation 요청 DTO를 application command로 변환한다.
-     *
-     * 이 과정에서 category 문자열을 LectureCategory enum으로 변환한다.
-     */
-    public CreateLectureCommand toCommand(String teacherEmail) {
+    // 중복 검증 추가
+    public CreateLectureCommand toCommand(String teacherEmail, String thumbnailUrl) {
+        LectureCategory lectureCategory = parseCategory(category);
+
         return new CreateLectureCommand(
                 teacherEmail,
                 title,
                 description,
                 thumbnailUrl,
-                parseCategory(category)
+                lectureCategory
         );
     }
 
     /*
-     * 요청으로 들어온 category 문자열을 LectureCategory enum으로 변환한다.
-     *
-     * 허용되지 않은 값이면 도메인 규칙 예외를 던져 400 응답으로 처리되게 한다.
+     * S3 업로드 전에 카테고리를 먼저 검증한다.
      */
+    public void validateCategory() {
+        parseCategory(category);
+    }
+
     private LectureCategory parseCategory(String category) {
         try {
             return LectureCategory.valueOf(category);
@@ -50,4 +49,5 @@ public record CreateLectureRequest(
             throw new DomainRuleViolationException("허용되지 않은 강의 카테고리입니다.");
         }
     }
+
 }
