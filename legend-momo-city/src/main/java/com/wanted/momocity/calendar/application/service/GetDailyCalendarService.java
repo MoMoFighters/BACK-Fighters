@@ -15,8 +15,8 @@ import java.util.List;
 
 /*
 * comment.
-*  날빠별 캘린더 조회 UseCase 구현체
-*  Todo 와 Memo 분리해서 반ㅎ
+*  날짜별 캘린더 조회 UseCase 구현체
+*  Todo 와 Memo 분리해서 반환
 * */
 
 @Service

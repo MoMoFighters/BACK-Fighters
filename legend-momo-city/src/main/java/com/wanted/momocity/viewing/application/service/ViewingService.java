@@ -13,6 +13,7 @@ package com.wanted.momocity.viewing.application.service;
 * */
 
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
+import com.wanted.momocity.viewing.application.policy.EnrollmentAccessPolicy;
 import com.wanted.momocity.viewing.application.port.ChapterPort;
 import com.wanted.momocity.viewing.application.port.LecturePort;
 import com.wanted.momocity.viewing.application.port.S3Port;
@@ -44,10 +45,14 @@ public class ViewingService implements
     private final ChapterPort chapterPort;
     private final LecturePort lecturePort;
     private final LearningHistoryRepository learningHistoryRepository;
+    private final EnrollmentAccessPolicy enrollmentAccessPolicy;
 
     // GetStreamingUrlUseCase
     @Override
     public StreamingUrlResponse getStreamingUrl (Long userId, Long lectureId, Long chapterId) {
+
+        // 수강 여부 확인 (Policy)
+        enrollmentAccessPolicy.ensureEnrolled(userId, lectureId);
 
         // 챕터 정보 조회
         Chapter chapter = chapterPort.findById(chapterId);
@@ -75,6 +80,10 @@ public class ViewingService implements
     // GetLectureMeteUseCase
     @Override
     public LectureMetaResponse getLectureMeta (Long userId, Long lectureId) {
+
+        // 수강 여부 확인 (Policy)
+        enrollmentAccessPolicy.ensureEnrolled(userId, lectureId);
+
         // 강의 정보 조회
         Lecture lecture = lecturePort.findById(lectureId);
 
@@ -107,6 +116,10 @@ public class ViewingService implements
     public ChapterResumeResponse getChapterResume (
             Long userId, Long lectureId, Long chapterId
     ) {
+
+        // 수강 여부 확인 (Policy)
+        enrollmentAccessPolicy.ensureEnrolled(userId, lectureId);
+
         // 챕터 정보 조회
         Chapter chapter = chapterPort.findById(chapterId);
 

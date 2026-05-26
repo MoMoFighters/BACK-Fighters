@@ -1,11 +1,11 @@
 package com.wanted.momocity.calendar.application.command;
 
+import java.time.LocalDate;
+
 /*
  * comment.
  *  userId(토큰) + calendarId(PathVariable) + title, start, end(RequestBody)
  * */
-
-import java.time.LocalDate;
 
 public record UpdateMemoCommand(
         Long userId,

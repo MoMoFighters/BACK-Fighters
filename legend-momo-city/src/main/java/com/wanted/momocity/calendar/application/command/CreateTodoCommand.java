@@ -1,11 +1,11 @@
 package com.wanted.momocity.calendar.application.command;
 
+import java.time.LocalDate;
+
 /*
  * comment.
  *  userId(토큰) + title(RequestBody) + start(RequestBody)
  * */
-
-import java.time.LocalDate;
 
 public record CreateTodoCommand(
         Long userId,
