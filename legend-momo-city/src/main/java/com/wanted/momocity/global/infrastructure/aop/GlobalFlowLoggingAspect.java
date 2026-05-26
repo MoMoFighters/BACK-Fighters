@@ -46,7 +46,7 @@ public class GlobalFlowLoggingAspect {
         (execution(* com.wanted.momocity..presentation..*(..)) ||
         execution(* com.wanted.momocity..application..*(..)) ||
         execution(* com.wanted.momocity..infrastructure..*(..)))
-        && !within(com.wanted.momocity..config..*Properties)
+        && !within(com.wanted.momocity..global..*)
         """)
     public Object traceGlobalFlow(ProceedingJoinPoint joinPoint) throws Throwable {
         boolean rootTrace = ensureTraceId();
