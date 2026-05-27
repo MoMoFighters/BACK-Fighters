@@ -1,5 +1,7 @@
-package com.wanted.momocity.admin.domain.audit;
+package com.wanted.momocity.admin;
 
+import com.wanted.momocity.admin.domain.audit.ErrorLevel;
+import com.wanted.momocity.admin.domain.audit.ErrorLog;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
