@@ -14,13 +14,23 @@ public interface AdminDashboardQueryUseCase {
 
     /* comment.
         DashboardSummary 정리
-        1. 이 record 의 역할 : 대시보드 요약 데이터 묶음 (회원/신고/강의 총 개수)
-        2. 필드 3개 의미 : memberCount(회원 총 수), reportCount(신고 총 수), lectureCount(강의 총 수)
-        3. 왜 long 타입인가 : 카운트는 음수가 될 수 없기 때문에 수십억 가능성 대비 int 대신 long
+        1. 이 record 의 역할 : 대시보드 요약 데이터 묶음 (카운트 + 증감률)
+        2. 필드 5개 의미 :
+            - memberCount         : 현재 회원 총 수
+            - memberGrowthRate    : 회원 증감률 % (전월 대비, +12.0 → "+12%")
+            - lectureCount        : 현재 강의 총 수
+            - lectureGrowthRate   : 강의 증감률 % (전월 대비)
+            - reportCount         : 현재 신고 총 수 (증감률 없음 - FE 표시 안 함)
+        3. 왜 카운트는 long, 증감률은 double :
+            카운트는 음수 불가 + 수십억 대비 long. 증감률은 % 소수점 가능 (+12.5% 등) → double
+        4. 왜 매출은 빠졌나 :
+            payment 도메인은 module04 로 미룸. 매출 데이터 소스 없어서 module03 에서는 표시 불가
      */
     record DashboardSummary(
             long memberCount,
-            long reportCount,
-            long lectureCount
+            double memberGrowthRate,
+            long lectureCount,
+            double lectureGrowthRate,
+            long reportCount
     ) { }
 }
