@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/BACK-Fighters.iml" filepath="$PROJECT_DIR$/.idea/BACK-Fighters.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/momo-city.main.iml" filepath="$PROJECT_DIR$/.idea/modules/momo-city.main.iml" />
     </modules>
   </component>
 </project>

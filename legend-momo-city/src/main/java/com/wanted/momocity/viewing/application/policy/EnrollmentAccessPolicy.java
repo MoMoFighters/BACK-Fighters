@@ -2,6 +2,7 @@ package com.wanted.momocity.viewing.application.policy;
 
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.viewing.application.port.EnrollmentPort;
+import com.wanted.momocity.viewing.domain.exception.ViewingAccessDeniedException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -23,7 +24,7 @@ public class EnrollmentAccessPolicy {
 
     public void ensureEnrolled(Long userId, Long lectureId) {
         enrollmentPort.findByUserIdAndLectureId(userId, lectureId)
-                .orElseThrow(() -> new DomainRuleViolationException(
+                .orElseThrow(() -> new ViewingAccessDeniedException(
                         "수강 신청된 강의만 시청할 수 있습니다."
                 ));
     }

@@ -34,7 +34,7 @@ public class UserRepositoryAdapter implements UserRepository, LoadUserPort, Upda
                 user.getName(),
                 null,                    // nickname
                 null,                    // birth
-                null,                    // profileImageUrl
+                user.getProfileImageUrl(),                    // profileImageUrl
                 user.getRole(),
                 user.getStatus(),
                 user.getCategory(),
@@ -84,6 +84,12 @@ public class UserRepositoryAdapter implements UserRepository, LoadUserPort, Upda
     @Override
     public Optional<User> findByEmail(String email) {
         return springDataUserRepository.findByEmail(email)
+                .map(this::toDomain);
+    }
+
+    @Override
+    public Optional<User> findById(Long id) {
+        return springDataUserRepository.findById(id)
                 .map(this::toDomain);
     }
 

@@ -30,6 +30,7 @@ public class AuthController {
     private final EmailVerifyUsecase emailVerifyUsecase;
     private final TempPasswordUsecase tempPasswordUsecase;
     private final KakaoLoginUsecase kakaoLoginUsecase;
+    private final GoogleLoginUsecase googleLoginUsecase;
 
     private final S3UploadPort s3UploadPort;
 
@@ -102,7 +103,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<LoginCompletedResponse>> loginCompleted(
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        LoginCompletedResponse result = loginCompletedUsecase.getInfo(userDetails.getUsername()); // email
+        LoginCompletedResponse result = loginCompletedUsecase.getInfo(userDetails.getUsername()); // id
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(
@@ -177,7 +178,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<LoginResponse>> kakaoLogin(
             @Valid @RequestBody SocialLoginRequest request){
 
-        LoginResponse result = kakaoLoginUsecase.socialLogin(new SocialLoginCommand(request.code()));
+        LoginResponse result = kakaoLoginUsecase.socialLogin(new SocialLoginCommand("KAKAO",request.code()));
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(
@@ -186,6 +187,25 @@ public class AuthController {
                         new LoginResponse(result.accessToken(), result.refreshToken(),result.status() ,result.expiresIn())
                 ));
     }
+
+
+    @PostMapping("/googlelogin")
+    @Operation(summary = "구글로그인을 위한 api")
+    public ResponseEntity<ApiResponse<LoginResponse>> googleLogin(
+            @Valid @RequestBody SocialLoginRequest request){
+
+        LoginResponse result = googleLoginUsecase.socialLogin(new SocialLoginCommand("GOOGLE",request.code()));
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        AuthResponseCode.SUCCESS,
+                        AuthResponseMessage.LOGIN_SUCCESS,
+                        new LoginResponse(result.accessToken(), result.refreshToken(),result.status() ,result.expiresIn())
+                ));
+    }
+
+
+
 
 
 

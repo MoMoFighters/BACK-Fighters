@@ -4,9 +4,11 @@ import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCase;
-import com.wanted.momocity.lecture.domain.model.Lecture;
+import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.presentation.api.request.CreateLectureRequest;
 import com.wanted.momocity.lecture.presentation.api.response.CreateLectureResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/teacher/lectures")
+@Tag(name = "Teacher Lecture", description = "강사용 강의 관리 API")
 public class TeacherLectureController {
 
     private final LectureCommandUseCase lectureCommandUseCase;
@@ -29,8 +32,13 @@ public class TeacherLectureController {
         this.s3UploadPort = s3UploadPort;
     }
 
+    @Operation(
+            summary = "강의 등록",
+            description = "강사가 새로운 강의를 등록합니다. 썸네일 이미지는 multipart/form-data로 업로드합니다."
+    )
     // Content-Type: multipart/form-data 즉, Json이 아닌 Form-data로 요청 받는다
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    // 실행 전 권한 검증
     @PreAuthorize("hasAuthority('ROLE_TEACHER')") // 강사일 때만 이 API 가 호출 된다.
     public ResponseEntity<ApiResponse<CreateLectureResponse>> createLecture(
             Authentication authentication,
@@ -44,11 +52,9 @@ public class TeacherLectureController {
          */
         request.validateCategory();
 
-        request.validateCategory();
-
         String thumbnailUrl = s3UploadPort.upload(request.thumbnail());
 
-        Lecture lecture = lectureCommandUseCase.createLecture(
+        LectureAggregate lecture = lectureCommandUseCase.createLecture(
                 request.toCommand(teacherEmail, thumbnailUrl)
         );
         return ResponseEntity.status(HttpStatus.CREATED)

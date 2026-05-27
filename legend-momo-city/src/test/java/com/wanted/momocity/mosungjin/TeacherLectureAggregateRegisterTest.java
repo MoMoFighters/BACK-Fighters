@@ -2,7 +2,7 @@ package com.wanted.momocity.mosungjin;
 
 import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCase;
-import com.wanted.momocity.lecture.domain.model.Lecture;
+import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.model.LectureCategory;
 import com.wanted.momocity.lecture.domain.model.LectureStatus;
 import com.wanted.momocity.lecture.presentation.api.TeacherLectureController;
@@ -35,7 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @WebMvcTest(TeacherLectureController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class TeacherLectureRegisterTest {
+class TeacherLectureAggregateRegisterTest {
 
     private static final String CREATE_LECTURE_URL = "/api/v1/teacher/lectures";
 
@@ -72,7 +72,7 @@ class TeacherLectureRegisterTest {
         /*
          * UseCase가 반환할 가짜 Lecture 객체를 준비한다.
          */
-        Lecture lecture = Lecture.restore(
+        LectureAggregate lecture = LectureAggregate.restore(
                 10L,
                 3L,
                 "Spring Boot 입문",

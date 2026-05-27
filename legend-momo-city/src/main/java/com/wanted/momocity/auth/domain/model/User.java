@@ -71,7 +71,7 @@ public class User {
                 email, password, name,
                 null,           // nickname
                 null,           // birth
-                null,           // profileImageUrl
+                "https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png", // profileImageUrl
                 Role.STUDENT,
                 Status.ACTIVE,      // 가입 시 기본값
                 null,           // category (학생은 null)
@@ -94,7 +94,7 @@ public class User {
                 email, password, name,
                 null,           // nickname
                 null,           // birth
-                null,           // profileImageUrl
+                "https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png", // profileImageUrl
                 Role.TEACHER,
                 Status.PENDING,      // 가입 시 기본값
                 category,           // category (학생은 null)
@@ -141,6 +141,12 @@ public class User {
         return nickname;
     }
 
+    public String getProfileImageUrl() {
+        return profileImageUrl;
+    }
+
+
+
     // 소셜 로그인 할 때 user 등록
     public static User oAuthRegister(String email, String name) {
         return new User(
@@ -150,7 +156,7 @@ public class User {
                 name,
                 null,  // nickname
                 null,           // birth
-                null,           // profileImageUrl
+                "https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png", // profileImageUrl
                 Role.STUDENT,   // 기본값
                 Status.ACTIVE,  // 가입 시 기본값
                 null,           // category
