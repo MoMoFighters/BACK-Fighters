@@ -6,12 +6,14 @@ import com.wanted.momocity.auth.application.port.OAuthClientPort;
 import com.wanted.momocity.auth.application.port.TokenProviderPort;
 import com.wanted.momocity.auth.application.usecase.GoogleLoginUsecase;
 import com.wanted.momocity.auth.application.usecase.KakaoLoginUsecase;
+import com.wanted.momocity.auth.domain.event.SignupCompletedEvent;
 import com.wanted.momocity.auth.domain.model.User;
 import com.wanted.momocity.auth.domain.model.UserOauth;
 import com.wanted.momocity.auth.domain.repository.UserOauthRepository;
 import com.wanted.momocity.auth.domain.repository.UserRepository;
 import com.wanted.momocity.auth.presentation.api.response.LoginResponse;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +34,7 @@ public class SocialLoginService implements KakaoLoginUsecase, GoogleLoginUsecase
     private final UserRepository userRepository;
     private final UserOauthRepository userOauthRepository;
     private final TokenProviderPort tokenProviderPort;
+    private final ApplicationEventPublisher eventPublisher;
 
     public SocialLoginService(
             @Qualifier("kakaoOAuthClient")
@@ -40,8 +43,9 @@ public class SocialLoginService implements KakaoLoginUsecase, GoogleLoginUsecase
             OAuthClientPort googleOAuthClientPort,
             UserRepository userRepository,
             UserOauthRepository userOauthRepository,
-            TokenProviderPort tokenProviderPort
+            TokenProviderPort tokenProviderPort, ApplicationEventPublisher eventPublisher
     ) {
+        this.eventPublisher = eventPublisher;
         this.oAuthClientPorts = Map.of(
                 "KAKAO", kakaoOAuthClientPort,
                 "GOOGLE", googleOAuthClientPort
@@ -88,6 +92,7 @@ public class SocialLoginService implements KakaoLoginUsecase, GoogleLoginUsecase
         userOauthRepository.save(
                 UserOauth.create(newUser, provider, oAuthUserInfoCommand.providerId())
         );
+        eventPublisher.publishEvent(new SignupCompletedEvent(newUser.getId()));
         return newUser;
     }
 }

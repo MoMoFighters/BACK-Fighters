@@ -68,4 +68,18 @@ public class AuthExceptionHandler {
                         "success", false, "message", e.getMessage()));
     }
 
+    // 소셜 로그인 인가코드 만료됐거나 유효하지 않을 때
+    @ExceptionHandler(OAuthInvalidCodeException.class)
+    public ResponseEntity<?> handleOAuthInvalidCode(OAuthInvalidCodeException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("success", false, "message", e.getMessage()));
+    }
+
+    // 소셜 로그인 토큰 발급 / 유저정보 조회 실패
+    @ExceptionHandler(OAuthTokenException.class)
+    public ResponseEntity<?> handleOAuthToken(OAuthTokenException e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("success", false, "message", e.getMessage()));
+    }
+
 }
