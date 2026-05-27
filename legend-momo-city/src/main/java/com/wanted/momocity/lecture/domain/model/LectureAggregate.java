@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
  * JPA Entity가 아니므로 DB 어노테이션을 알지 않고,
  * 강의의 핵심 상태와 비즈니스 규칙만 표현한다.
  */
-public class Lecture {
+public class LectureAggregate {
 
     private final Long id;
     private final Long teacherId;
@@ -23,7 +23,7 @@ public class Lecture {
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
 
-    private Lecture(
+    private LectureAggregate(
             Long id,
             Long teacherId,
             String title,
@@ -53,7 +53,7 @@ public class Lecture {
      * 생성 직후 id와 시간 값은 DB 저장 전이므로 null이다.
      * 수강 완료 인원 수는 처음 생성 시 0명으로 시작한다.
      */
-    public static Lecture create(
+    public static LectureAggregate create(
             Long teacherId,
             String title,
             String description,
@@ -65,7 +65,7 @@ public class Lecture {
         validateDescription(description);
         validateCategory(category);
 
-        return new Lecture(
+        return new LectureAggregate(
                 null,
                 teacherId,
                 title,
@@ -84,7 +84,7 @@ public class Lecture {
      *
      * JPA Entity에서 id, 생성일, 수정일을 포함해 Lecture로 변환할 때 호출한다.
      */
-    public static Lecture restore(
+    public static LectureAggregate restore(
             Long id,
             Long teacherId,
             String title,
@@ -96,7 +96,7 @@ public class Lecture {
             LocalDateTime createdAt,
             LocalDateTime updatedAt
     ) {
-        return new Lecture(
+        return new LectureAggregate(
                 id,
                 teacherId,
                 title,
@@ -116,7 +116,7 @@ public class Lecture {
      * 기존 강의의 id, teacherId, 상태, 생성일은 유지하고,
      * 제목/설명/썸네일/카테고리만 새 값으로 교체한다.
      */
-    public Lecture update(
+    public LectureAggregate update(
             String title,
             String description,
             String thumbnailUrl,
@@ -126,7 +126,7 @@ public class Lecture {
         validateDescription(description);
         validateCategory(category);
 
-        return new Lecture(
+        return new LectureAggregate(
                 id,
                 teacherId,
                 title,

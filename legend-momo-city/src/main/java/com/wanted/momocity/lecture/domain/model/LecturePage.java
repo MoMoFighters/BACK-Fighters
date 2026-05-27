@@ -9,7 +9,7 @@ import java.util.List;
 public record LecturePage(
 
         // 현재 페이지의 강의 목록
-        List<Lecture> content,
+        List<LectureAggregate> content,
 
         // 전체 강의 개수
         long totalElements,

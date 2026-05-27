@@ -1,7 +1,7 @@
 package com.wanted.momocity.lecture.application.usecase;
 
 import com.wanted.momocity.lecture.application.command.CreateLectureCommand;
-import com.wanted.momocity.lecture.domain.model.Lecture;
+import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 
 /*
  * LectureCommandUseCase는 강의 상태를 변경하는 인터페이스
@@ -9,5 +9,5 @@ import com.wanted.momocity.lecture.domain.model.Lecture;
  */
 public interface LectureCommandUseCase {
     // 강의를 등록
-    Lecture createLecture(CreateLectureCommand command);
+    LectureAggregate createLecture(CreateLectureCommand command);
 }

@@ -7,8 +7,10 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.web.multipart.MultipartFile;
 
+
 // CreateLectureRequest는 multipart/form-data 요청을 받는 DTO
 public record CreateLectureRequest(
+
         @NotBlank(message = "강의 제목은 필수입니다.")
         String title,
 

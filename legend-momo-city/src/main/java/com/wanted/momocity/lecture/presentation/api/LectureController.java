@@ -7,6 +7,8 @@ import com.wanted.momocity.lecture.application.query.GetLecturesQuery;
 import com.wanted.momocity.lecture.application.usecase.LectureQueryUseCase;
 import com.wanted.momocity.lecture.domain.model.LectureCategory;
 import com.wanted.momocity.lecture.presentation.api.response.LecturePageResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/lectures")
+@Tag(name = "Lecture", description = "학생용 강의 목록 조회 API")
 public class LectureController {
 
     // 강의 조회 UseCase입니다.
@@ -33,6 +36,10 @@ public class LectureController {
      * GET /api/v1/lectures?enrolled=true
      * GET /api/v1/lectures?category=STUDY&enrolled=false&page=0&size=10
      */
+    @Operation(
+            summary = "강의 목록 및 수강 내역 조회",
+            description = "학생용 강의 목록을 조회합니다. enrolled=true이면 내가 수강신청한 강의만 조회합니다."
+    )
     @GetMapping
     public ResponseEntity<ApiResponse<LecturePageResponse>> getLectures(
             Authentication authentication,
