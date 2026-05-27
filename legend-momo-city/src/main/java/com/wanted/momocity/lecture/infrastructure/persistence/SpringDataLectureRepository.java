@@ -1,6 +1,7 @@
 package com.wanted.momocity.lecture.infrastructure.persistence;
 
 import com.wanted.momocity.lecture.domain.model.LectureCategory;
+import com.wanted.momocity.lecture.domain.model.LectureStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,36 +13,47 @@ import java.util.Collection;
  */
 public interface SpringDataLectureRepository extends JpaRepository<LectureJpaEntity, Long> {
 
-    // 카테고리 조건 없이 전체 강의를 조회
-    Page<LectureJpaEntity> findAll(Pageable pageable);
+    // 강의 상태 조건으로 강의 목록을 조회합니다.
+    Page<LectureJpaEntity> findAllByStatus(
+            LectureStatus status,
+            Pageable pageable
+    );
 
-    // 특정 카테고리 강의만 조회
-    Page<LectureJpaEntity> findAllByCategory(LectureCategory category, Pageable pageable);
-
-    /*
-     * 특정 ID 목록에 포함된 강의만 조회
-     * enrolled=true 조건에서 사용
-     */
-    Page<LectureJpaEntity> findAllByIdIn(Collection<Long> lectureIds, Pageable pageable);
-
-    // 특정 카테고리이면서, ID 목록에 포함된 강의만 조회
-    Page<LectureJpaEntity> findAllByCategoryAndIdIn(
+    // 카테고리와 강의 상태 조건으로 강의 목록을 조회합니다.
+    Page<LectureJpaEntity> findAllByCategoryAndStatus(
             LectureCategory category,
+            LectureStatus status,
+            Pageable pageable
+    );
+
+    // 특정 ID 목록에 포함되고, 특정 상태인 강의만 조회합니다.
+// enrolled=true 조건에서 사용합니다.
+    Page<LectureJpaEntity> findAllByStatusAndIdIn(
+            LectureStatus status,
             Collection<Long> lectureIds,
             Pageable pageable
     );
 
-    /*
-     * 특정 ID 목록에 포함되지 않은 강의만 조회
-     * enrolled=false 조건에서 사용
-     */
-    Page<LectureJpaEntity> findAllByIdNotIn(Collection<Long> lectureIds, Pageable pageable);
-
-    /*
-     * 특정 카테고리이면서, ID 목록에 포함되지 않은 강의만 조회
-     */
-    Page<LectureJpaEntity> findAllByCategoryAndIdNotIn(
+    // 카테고리 조건까지 함께 적용해서, 특정 ID 목록에 포함된 강의만 조회합니다.
+    Page<LectureJpaEntity> findAllByCategoryAndStatusAndIdIn(
             LectureCategory category,
+            LectureStatus status,
+            Collection<Long> lectureIds,
+            Pageable pageable
+    );
+
+    // 특정 ID 목록에 포함되지 않고, 특정 상태인 강의만 조회합니다.
+// enrolled=false 조건에서 사용합니다.
+    Page<LectureJpaEntity> findAllByStatusAndIdNotIn(
+            LectureStatus status,
+            Collection<Long> lectureIds,
+            Pageable pageable
+    );
+
+    // 카테고리 조건까지 함께 적용해서, 특정 ID 목록에 포함되지 않은 강의만 조회합니다.
+    Page<LectureJpaEntity> findAllByCategoryAndStatusAndIdNotIn(
+            LectureCategory category,
+            LectureStatus status,
             Collection<Long> lectureIds,
             Pageable pageable
     );

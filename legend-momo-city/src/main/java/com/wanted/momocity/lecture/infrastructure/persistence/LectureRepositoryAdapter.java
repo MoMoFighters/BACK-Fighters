@@ -3,6 +3,7 @@ package com.wanted.momocity.lecture.infrastructure.persistence;
 import com.wanted.momocity.lecture.domain.model.Lecture;
 import com.wanted.momocity.lecture.domain.model.LectureCategory;
 import com.wanted.momocity.lecture.domain.model.LecturePage;
+import com.wanted.momocity.lecture.domain.model.LectureStatus;
 import com.wanted.momocity.lecture.domain.repository.LectureRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -23,6 +24,7 @@ public class LectureRepositoryAdapter implements LectureRepository {
         this.repository = repository;
     }
 
+    // 강의를 저장합니다.
     @Override
     public Lecture save(Lecture lecture) {
         LectureJpaEntity entity = new LectureJpaEntity(
@@ -39,6 +41,7 @@ public class LectureRepositoryAdapter implements LectureRepository {
         return toDomain(saved);
     }
 
+    // 강의 ID로 강의를 조회합니다.
     @Override
     @Transactional(readOnly = true)
     public Optional<Lecture> findById(Long lectureId) {
@@ -46,6 +49,8 @@ public class LectureRepositoryAdapter implements LectureRepository {
                 .map(this::toDomain);
     }
 
+    // 학생용 강의 목록을 조회합니다.
+    // 학생용 목록은 기본적으로 ACTIVE 상태의 강의만 내려줍니다.
     @Override
     @Transactional(readOnly = true)
     public LecturePage findLectures(
@@ -55,6 +60,7 @@ public class LectureRepositoryAdapter implements LectureRepository {
             int page,
             int size
     ) {
+        // 프론트는 page를 1부터 보내고, Spring Data JPA는 page를 0부터 시작합니다.
         Pageable pageable = PageRequest.of(page - 1, size);
 
         Page<LectureJpaEntity> lecturePage = findLecturePage(
@@ -75,60 +81,83 @@ public class LectureRepositoryAdapter implements LectureRepository {
         );
     }
 
+    // category, enrolled 조건에 맞춰 ACTIVE 강의만 조회합니다.
     private Page<LectureJpaEntity> findLecturePage(
             LectureCategory category,
             Boolean enrolled,
             List<Long> enrolledLectureIds,
             Pageable pageable
     ) {
-        // enrolled 조건이 없으면 category 조건만 적용합니다.
+        // 학생용 강의 목록은 항상 ACTIVE 강의만 조회합니다.
+        LectureStatus status = LectureStatus.ACTIVE;
+
+        // enrolled 조건이 없으면 수강 여부와 상관없이 ACTIVE 강의를 조회합니다.
         if (enrolled == null) {
             if (category == null) {
-                return repository.findAll(pageable);
+                return repository.findAllByStatus(status, pageable);
             }
 
-            return repository.findAllByCategory(category, pageable);
+            return repository.findAllByCategoryAndStatus(
+                    category,
+                    status,
+                    pageable
+            );
         }
 
-        // enrolled=true인데 신청한 강의가 없다면 결과는 빈 페이지
+        // enrolled=true인데 신청한 강의가 없다면 결과는 빈 페이지입니다.
         if (Boolean.TRUE.equals(enrolled) && enrolledLectureIds.isEmpty()) {
             return Page.empty(pageable);
         }
 
-        // enrolled=true이면 신청한 강의만 조회
+        // enrolled=true이면 신청한 ACTIVE 강의만 조회합니다.
         if (Boolean.TRUE.equals(enrolled)) {
             if (category == null) {
-                return repository.findAllByIdIn(enrolledLectureIds, pageable);
+                return repository.findAllByStatusAndIdIn(
+                        status,
+                        enrolledLectureIds,
+                        pageable
+                );
             }
 
-            return repository.findAllByCategoryAndIdIn(
+            return repository.findAllByCategoryAndStatusAndIdIn(
                     category,
+                    status,
                     enrolledLectureIds,
                     pageable
             );
         }
 
-        // enrolled=false인데 신청한 강의가 없다면 전체 강의를 조회
+        // enrolled=false인데 신청한 강의가 없다면 신청 제외할 강의가 없으므로 ACTIVE 강의 전체를 조회합니다.
         if (enrolledLectureIds.isEmpty()) {
             if (category == null) {
-                return repository.findAll(pageable);
+                return repository.findAllByStatus(status, pageable);
             }
 
-            return repository.findAllByCategory(category, pageable);
+            return repository.findAllByCategoryAndStatus(
+                    category,
+                    status,
+                    pageable
+            );
         }
 
-        // enrolled=false이면 신청하지 않은 강의만 조회
+        // enrolled=false이면 신청하지 않은 ACTIVE 강의만 조회합니다.
         if (category == null) {
-            return repository.findAllByIdNotIn(enrolledLectureIds, pageable);
+            return repository.findAllByStatusAndIdNotIn(
+                    status,
+                    enrolledLectureIds,
+                    pageable
+            );
         }
 
-        return repository.findAllByCategoryAndIdNotIn(
+        return repository.findAllByCategoryAndStatusAndIdNotIn(
                 category,
+                status,
                 enrolledLectureIds,
                 pageable
         );
     }
 
+    // JPA Entity를 도메인 모델로 변환합니다.
     private Lecture toDomain(LectureJpaEntity entity) {
         return Lecture.restore(
                 entity.getId(),
