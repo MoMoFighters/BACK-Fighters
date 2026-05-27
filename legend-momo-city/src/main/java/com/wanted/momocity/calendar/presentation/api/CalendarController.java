@@ -1,5 +1,6 @@
 package com.wanted.momocity.calendar.presentation.api;
 
+import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.calendar.application.command.*;
 import com.wanted.momocity.calendar.application.usecase.*;
 import com.wanted.momocity.calendar.presentation.api.common.CalendarResponseCode;
@@ -15,6 +16,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -54,10 +56,14 @@ public class CalendarController {
     public ResponseEntity<ApiResponse<DailyCalendarResponse>> getDailyCalendar (
             // ISO.DATE 형식 : YYYY-MM-DD, 2026-05-26 (String) -> LocalDate.of(2026, 5, 26) 자동 변환
             // @RequestParam : URL 쿼리 파라미터에서 가져옴
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)LocalDate date
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)LocalDate date,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+
     ) {
 
-        Long userId = 1L;
+//        Long userId = 1L;
+        Long userId = userDetails.getUserId();
+
 
         DailyCalendarResponse response = getDailyCalendarUseCase
                 .getDailyCalendar(userId, date);
@@ -84,10 +90,14 @@ public class CalendarController {
     @PostMapping("/todo")
     public ResponseEntity<ApiResponse<TodoResponse>> createTodo(
             // @RequestBody : HTTP Body 에서 JSON 으로 가져옴
-            @RequestBody @Valid CreateTodoRequest request
+            @RequestBody @Valid CreateTodoRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+
     ) {
 
-        Long userId = 1L;
+//        Long userId = 1L;
+        Long userId = userDetails.getUserId();
+
 
         CreateTodoCommand command = new CreateTodoCommand(
                 userId,
@@ -121,10 +131,14 @@ public class CalendarController {
     @PatchMapping("/todo/{calendarId}")
     public ResponseEntity<ApiResponse<TodoResponse>> updateTodo(
             @PathVariable Long calendarId,
-            @RequestBody @Valid UpdateTodoRequest request
+            @RequestBody @Valid UpdateTodoRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+
     ) {
 
-        Long userId = 1L;
+//        Long userId = 1L;
+        Long userId = userDetails.getUserId();
+
 
         UpdateTodoCommand command = new UpdateTodoCommand(
                 userId,
@@ -157,9 +171,13 @@ public class CalendarController {
     })
     @DeleteMapping("/todo/{calendarId}")
     public ResponseEntity<ApiResponse<Void>> deleteTodo(
-            @PathVariable Long calendarId
+            @PathVariable Long calendarId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+
     ) {
-        Long userId = 1L;
+//        Long userId = 1L;
+        Long userId = userDetails.getUserId();
+
 
         DeleteTodoCommand command = new DeleteTodoCommand(userId, calendarId);
         deleteTodoUseCase.deleteTodo(command);
@@ -186,10 +204,14 @@ public class CalendarController {
     @PatchMapping("/todo/{calendarId}/check")
     public ResponseEntity<ApiResponse<TodoResponse>> checkTodo(
             @PathVariable Long calendarId,
-            @RequestBody @Valid CheckTodoRequest request
+            @RequestBody @Valid CheckTodoRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+
     ) {
 
-        Long userId = 1L;
+//        Long userId = 1L;
+        Long userId = userDetails.getUserId();
+
 
         CheckTodoCommand command = new CheckTodoCommand(
                 userId,
@@ -220,10 +242,14 @@ public class CalendarController {
     })
     @PostMapping("/memo")
     public ResponseEntity<ApiResponse<MemoResponse>> createMemo(
-            @RequestBody @Valid CreateMemoRequest request
+            @RequestBody @Valid CreateMemoRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+
     ) {
 
-        Long userId = 1L;
+//        Long userId = 1L;
+        Long userId = userDetails.getUserId();
+
 
         CreateMemoCommand command = new CreateMemoCommand(
                 userId,
@@ -258,10 +284,14 @@ public class CalendarController {
     @PatchMapping("/memo/{calendarId}")
     public ResponseEntity<ApiResponse<MemoResponse>> updateMemo(
             @PathVariable Long calendarId,
-            @RequestBody @Valid UpdateMemoRequest request
+            @RequestBody @Valid UpdateMemoRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+
     ) {
 
-        Long userId = 1L;
+//        Long userId = 1L;
+        Long userId = userDetails.getUserId();
+
 
         UpdateMemoCommand command = new UpdateMemoCommand(
                 userId,
@@ -295,10 +325,14 @@ public class CalendarController {
     })
     @DeleteMapping("/memo/{calendarId}")
     public ResponseEntity<ApiResponse<Void>> deleteMemo(
-            @PathVariable Long calendarId
+            @PathVariable Long calendarId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+
     ) {
 
-        Long userId = 1L;
+//        Long userId = 1L;
+        Long userId = userDetails.getUserId();
+
 
         DeleteMemoCommand command = new DeleteMemoCommand(userId, calendarId);
         deleteMemoUseCase.deleteMemo(command);
