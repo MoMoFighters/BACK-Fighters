@@ -18,7 +18,7 @@ package com.wanted.momocity.member.domain.model;
      6. module03 미구현 항목 : BANNED/BLACK 값은 enum 에 있지만 자동 정지 로직은 module04 에서
      진행 예정. ERD 에 suspended_until, violation_count 같은 컬럼 존재 X
      module03 에서는 해당 enum 자리만 보존예정
-     7. 사용 위치 : Member.status, UserJpaEntity.status 변환, 강사 영역의 신청자 필터
+     7. 사용 위치 : Member.status, MemberJpaEntity.status 변환, 강사 영역의 신청자 필터
      status='PENDING' 회원 상태 변경 API
  */
 

@@ -18,7 +18,7 @@ import java.util.Optional;
         → MemberQueryService          ← *이 클래스*
         → MemberRepository (도메인 인터페이스)
         → MemberRepositoryAdapter (실제 구현)
-        → SpringDataUserRepository
+        → SpringDataMemberRepository
         → 데이터베이스
     4. 왜 공개 서비스가 필요할까?
         - 강사 영역이 MemberRepository 를 직접 호출하면, 회원 영역의 세부 약속까지 전부 알게 된다.
