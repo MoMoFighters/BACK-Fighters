@@ -6,6 +6,8 @@ import com.wanted.momocity.member.presentation.api.response.ChangeMemberStatusRe
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
 
 /* comment.
     MemberAdminController 정리
@@ -65,6 +68,13 @@ public class MemberAdminController {
             summary = "회원 상태 변경 (MS-6)",
             description = "관리자가 회원 상태를 ACTIVE / BANNED / BLACK / DELETED 등으로 변경한다."
     )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "회원 상태 변경 성공"),
+            @ApiResponse(responseCode = "400", description = "잘못된 status 값 또는 userId 형식 오류 (validation 실패)"),
+            @ApiResponse(responseCode = "401", description = "인증 토큰 누락 또는 만료"),
+            @ApiResponse(responseCode = "403", description = "ADMIN 권한 없음"),
+            @ApiResponse(responseCode = "404", description = "존재하지 않는 회원")
+    })
     public ResponseEntity<ChangeMemberStatusResponse> changeStatus(
             @Parameter(description = "회원 user PK", example = "7")
             @PathVariable Long userId,
