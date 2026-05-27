@@ -1,7 +1,7 @@
 package com.wanted.momocity.auth.application.service;
 
 import com.wanted.momocity.auth.application.port.LoadUserPort;
-import com.wanted.momocity.auth.application.port.RefreshTokenRepositoryPort;
+import com.wanted.momocity.auth.application.port.RedisRefreshTokenPort;
 import com.wanted.momocity.auth.application.port.TokenProviderPort;
 import com.wanted.momocity.auth.domain.model.Status;
 import com.wanted.momocity.auth.domain.model.User;
@@ -22,7 +22,7 @@ import java.util.List;
 public class RefreshService {
 
     private final TokenProviderPort tokenProviderPort;
-    private final RefreshTokenRepositoryPort refreshTokenRepositoryPort;
+    private final RedisRefreshTokenPort redisRefreshTokenPort;
     private final LoadUserPort loadUserPort;
 
     public String refreshAccessToken(String refreshToken) {
@@ -30,7 +30,7 @@ public class RefreshService {
         tokenProviderPort.validateToken(refreshToken);
 
         // DB에서 존재하는 토큰인지 확인
-        refreshTokenRepositoryPort.findByToken(refreshToken)
+        redisRefreshTokenPort.findByToken(refreshToken)
                 .orElseThrow(() -> new InvalidRefreshTokenException("토큰이 없습니다."));
 
         // 토큰에서 id 꺼내기

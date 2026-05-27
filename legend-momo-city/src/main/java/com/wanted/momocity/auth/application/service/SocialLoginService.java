@@ -3,6 +3,7 @@ package com.wanted.momocity.auth.application.service;
 import com.wanted.momocity.auth.application.command.OAuthUserInfoCommand;
 import com.wanted.momocity.auth.application.command.SocialLoginCommand;
 import com.wanted.momocity.auth.application.port.OAuthClientPort;
+import com.wanted.momocity.auth.application.port.RedisRefreshTokenPort;
 import com.wanted.momocity.auth.application.port.TokenProviderPort;
 import com.wanted.momocity.auth.application.usecase.GoogleLoginUsecase;
 import com.wanted.momocity.auth.application.usecase.KakaoLoginUsecase;
@@ -17,6 +18,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.Map;
 
 @Service
@@ -35,6 +37,7 @@ public class SocialLoginService implements KakaoLoginUsecase, GoogleLoginUsecase
     private final UserOauthRepository userOauthRepository;
     private final TokenProviderPort tokenProviderPort;
     private final ApplicationEventPublisher eventPublisher;
+    private final RedisRefreshTokenPort redisRefreshTokenPort;
 
     public SocialLoginService(
             @Qualifier("kakaoOAuthClient")
@@ -43,9 +46,10 @@ public class SocialLoginService implements KakaoLoginUsecase, GoogleLoginUsecase
             OAuthClientPort googleOAuthClientPort,
             UserRepository userRepository,
             UserOauthRepository userOauthRepository,
-            TokenProviderPort tokenProviderPort, ApplicationEventPublisher eventPublisher
+            TokenProviderPort tokenProviderPort, ApplicationEventPublisher eventPublisher, RedisRefreshTokenPort redisRefreshTokenPort
     ) {
         this.eventPublisher = eventPublisher;
+        this.redisRefreshTokenPort = redisRefreshTokenPort;
         this.oAuthClientPorts = Map.of(
                 "KAKAO", kakaoOAuthClientPort,
                 "GOOGLE", googleOAuthClientPort
@@ -76,6 +80,13 @@ public class SocialLoginService implements KakaoLoginUsecase, GoogleLoginUsecase
         );
         String refreshToken = tokenProviderPort.createRefreshToken(
                 String.valueOf(user.getId())
+        );
+
+        // RefreshToken을 Redis에 저장
+        redisRefreshTokenPort.save(
+                String.valueOf(user.getId()),
+                refreshToken,
+                Instant.now().plusMillis(tokenProviderPort.getRefreshTokenValidityMilliseconds())
         );
 
 
