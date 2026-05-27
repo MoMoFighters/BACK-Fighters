@@ -31,6 +31,7 @@ public class TeacherLectureController {
 
     // Content-Type: multipart/form-data 즉, Json이 아닌 Form-data로 요청 받는다
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    // 실행 전 권한 검증
     @PreAuthorize("hasAuthority('ROLE_TEACHER')") // 강사일 때만 이 API 가 호출 된다.
     public ResponseEntity<ApiResponse<CreateLectureResponse>> createLecture(
             Authentication authentication,
@@ -42,8 +43,6 @@ public class TeacherLectureController {
          * S3 업로드 전에 category를 먼저 검증
          * 잘못된 카테고리 요청이면 여기서 400 응답으로 끝나고, 썸네일 파일은 업로드 X
          */
-        request.validateCategory();
-
         request.validateCategory();
 
         String thumbnailUrl = s3UploadPort.upload(request.thumbnail());
