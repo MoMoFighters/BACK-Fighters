@@ -1,6 +1,7 @@
 package com.wanted.momocity.auth.presentation.api;
 
 import com.wanted.momocity.auth.application.command.*;
+import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.auth.application.usecase.*;
 import com.wanted.momocity.auth.presentation.api.request.*;
@@ -101,7 +102,7 @@ public class AuthController {
             description = "로그인 한 사용자의 role, is_tempPWD, nickname 을 보내 그에 맞는 페이지를 랜더링한다"
     )
     public ResponseEntity<ApiResponse<LoginCompletedResponse>> loginCompleted(
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
 
         LoginCompletedResponse result = loginCompletedUsecase.getInfo(userDetails.getUsername()); // id
 
