@@ -8,7 +8,7 @@ package com.wanted.momocity.member.domain.model;
     HEALTH(헬스/운동) / STUDY(공부/자기개발) / COOK(요리)
     BEAUTY(뷰티) / ART(예술/창작)
     4. 강제성 : 회원의 관심사 분류이기 때문에 NULL 허용 가능 ( ERD 기준 - nullable ).MemberRole/MemberStatus 처럼 필수 X
-    5. 사용 위치 : Member.category, UserJpaEntity.category 변환, 강사 신청자 목록/상세 응답 category 필드
+    5. 사용 위치 : Member.category, MemberJpaEntity.category 변환, 강사 신청자 목록/상세 응답 category 필드
     6. 영역 경계 처리 : 강사 영역의 TeacherApplication 은 이 ENUM 을 직접 챙기지 않고 STRING 타입으로 받는다.
  */
 

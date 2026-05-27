@@ -17,7 +17,7 @@ package com.wanted.momocity.member.domain.model;
     2. 왜 ENUM 을 사용했는가? : 문자열 대신 타입 안정성을 위해서
     3. 데이터베이스의 어떤 컬럼과 맵핑되는가? : user.role
     4. 3개 값의 의미 : student(학생)/teacher(강사)/admin(관리자)
-    5. 사용 위치 : Member.role, UserJpaEntity.role 변환, 강사 영역의 MemberUserAdapter 에서 필터링
+    5. 사용 위치 : Member.role, MemberJpaEntity.role 변환, 강사 영역의 MemberUserAdapter 에서 필터링
  */
 
 public enum MemberRole {

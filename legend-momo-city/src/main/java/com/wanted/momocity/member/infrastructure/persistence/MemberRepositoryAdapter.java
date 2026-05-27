@@ -23,11 +23,11 @@ import java.util.Optional;
     1. 해당 클래스가 하는 역할 : 도메인 MemberRepository 인터페이스를 JPA 로 구현하는 어댑터이다.
     2. 위치 : member/infrastructure/persistence (인프라 계층)
     3. 핵심 책임 :
-        - 도메인 Member 모델과 JPA UserJpaEntity 간 변환한다.
-        - SpringDataUserRepository 의 실제 DB 호출을 감싸서 도메인이 안 보이게 격리한다.
+        - 도메인 Member 모델과 JPA MemberJpaEntity 간 변환한다.
+        - SpringDataMemberRepository 의 실제 DB 호출을 감싸서 도메인이 안 보이게 격리한다.
     5. 의존 방향 (클린 아키텍처의 정점) :
         - implements MemberRepository (도메인 인터페이스) ← 인프라가 도메인 약속을 *지킴*
-        - SpringDataUserRepository 주입 (인프라 → 인프라) ← 같은 계층 호출
+        - SpringDataMemberRepository 주입 (인프라 → 인프라) ← 같은 계층 호출
         - Member 사용 (인프라 → 도메인) ← 인프라는 도메인을 알아도 OK
         - 도메인은 *이 클래스의 존재를 모름* (인터페이스만 봄)
  */
@@ -41,9 +41,9 @@ public class MemberRepositoryAdapter implements MemberRepository {
 
     // final : 한 번 주입되면 불변한 상태로 의존성 주입
     // autowired 필드 주입 -> 생성자가 없어도 되지만, final을 사용할 수 없음. 테스트가 어려움.
-    private final SpringDataUserRepository repository;
+    private final SpringDataMemberRepository repository;
 
-    public MemberRepositoryAdapter(SpringDataUserRepository repository) {
+    public MemberRepositoryAdapter(SpringDataMemberRepository repository) {
         this.repository = repository;
     }
 
