@@ -3,7 +3,7 @@ package com.wanted.momocity.auth.application.service;
 import com.wanted.momocity.auth.application.command.LoginCommand;
 import com.wanted.momocity.auth.application.port.EmailCodePort;
 import com.wanted.momocity.auth.application.port.LoadUserPort;
-import com.wanted.momocity.auth.application.port.RefreshTokenRepositoryPort;
+import com.wanted.momocity.auth.application.port.RedisRefreshTokenPort;
 import com.wanted.momocity.auth.application.port.TokenProviderPort;
 import com.wanted.momocity.auth.application.usecase.LoginUsecase;
 import com.wanted.momocity.auth.domain.exception.TempPasswordExpiredException;
@@ -30,7 +30,7 @@ public class LoginService implements LoginUsecase {
     private final AuthenticationManager authenticationManager;
     private final TokenProviderPort tokenProviderPort;
     private final LoadUserPort loadUserPort;
-    private final RefreshTokenRepositoryPort refreshTokenRepositoryPort;
+    private final RedisRefreshTokenPort redisRefreshTokenPort;
     private final EmailCodePort emailCodePort;
 
 
@@ -67,7 +67,7 @@ public class LoginService implements LoginUsecase {
         String refreshToken = tokenProviderPort.createRefreshToken(String.valueOf(user.getId()));
 
         // 기존 리프레시 토큰 삭제 후 새로 저장
-        refreshTokenRepositoryPort.save(
+        redisRefreshTokenPort.save(
                 String.valueOf(user.getId()),
                 refreshToken,
                 Instant.now().plusMillis(tokenProviderPort.getRefreshTokenValidityMilliseconds())
