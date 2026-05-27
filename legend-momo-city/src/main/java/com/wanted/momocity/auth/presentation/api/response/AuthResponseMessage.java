@@ -15,6 +15,8 @@ public final class AuthResponseMessage {
     public static final String EMAIL_SEND_SUCCESS = "인증 코드가 이메일로 전송되었습니다. 3분 안에 입력해주십시오.";
     public static final String EMAIL_VERIFY_SUCCESS = "인증이 완료되었습니다.";
 
+    public static final String LOGOUT_SUCCESS = "로그아웃 되었습니다.";
+
     public static final String EMAIL_VALIDATION_ERROR = "이메일 형식을 다시 확인해주십시오.";
     public static final String PASSWORD_VALIDATION_ERROR = "비밀번호는 특수기호 포함 8자리 이상이어야 합니다.";
 

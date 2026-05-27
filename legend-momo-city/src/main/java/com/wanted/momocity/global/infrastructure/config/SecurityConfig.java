@@ -1,10 +1,12 @@
 package com.wanted.momocity.global.infrastructure.config;
 
+import com.wanted.momocity.auth.application.port.BlacklistPort;
 import com.wanted.momocity.auth.application.service.RefreshService;
 import com.wanted.momocity.auth.infrastructure.handler.CustomAccessDeniedHandler;
 import com.wanted.momocity.auth.infrastructure.handler.CustomAuthenticationEntryPoint;
 import com.wanted.momocity.auth.infrastructure.jwt.JwtAuthenticationFilter;
 import com.wanted.momocity.auth.infrastructure.jwt.JwtTokenProvider;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -40,6 +42,7 @@ import java.util.Arrays;
  */
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
@@ -47,15 +50,7 @@ public class SecurityConfig {
     private final RefreshService refreshService;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
-
-    @Autowired
-    public SecurityConfig( JwtTokenProvider jwtTokenProvider, RefreshService refreshService, CustomAccessDeniedHandler customAccessDeniedHandler, CustomAuthenticationEntryPoint customAuthenticationEntryPoint) {
-        this.jwtTokenProvider = jwtTokenProvider;
-        this.refreshService = refreshService;
-        this.customAccessDeniedHandler = customAccessDeniedHandler;
-        this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
-    }
-
+    private final BlacklistPort blacklistPort;
 
     //====================CORS 설정
     @Bean
@@ -139,7 +134,7 @@ public class SecurityConfig {
 
                 //.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(
-                        new JwtAuthenticationFilter(jwtTokenProvider, refreshService),
+                        new JwtAuthenticationFilter(jwtTokenProvider, refreshService,blacklistPort),
                         UsernamePasswordAuthenticationFilter.class
                 )
 
