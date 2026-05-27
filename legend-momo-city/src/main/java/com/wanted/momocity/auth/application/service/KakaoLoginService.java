@@ -11,7 +11,6 @@ import com.wanted.momocity.auth.domain.repository.UserOauthRepository;
 import com.wanted.momocity.auth.domain.repository.UserRepository;
 import com.wanted.momocity.auth.presentation.api.response.LoginResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +23,8 @@ public class KakaoLoginService implements KakaoLoginUsecase {
     * 2. 액세스토큰 → 카카오에 유저정보 요청 → { id, email, name } 받음
     * 3. 받은 값으로 OAuthUserInfoCommand 생성해서 반환
     * */
+
+    // 카카오 로그인(소셜 로그인)은 새로운 유저를 db에 삽입(회원가입) + 토큰 생성(로그인)을 한 번에 진행
 
     private final OAuthClientPort kakaoOAuthClientPort;
     private final UserRepository userRepository;
@@ -41,7 +42,7 @@ public class KakaoLoginService implements KakaoLoginUsecase {
                 .map(UserOauth::getUser)
                 .orElseGet(() -> registerNewUser(oAuthUserInfo));
 
-        // JWT 발급
+        // 인증 성공하면 JWT 토큰 발급
         String accessToken = tokenProviderPort.createAccessToken(
                 String.valueOf(user.getId()),
                 user.getRole().name()
@@ -50,6 +51,7 @@ public class KakaoLoginService implements KakaoLoginUsecase {
                 String.valueOf(user.getId())
         );
 
+        // 응답
         return new LoginResponse(
                 accessToken,
                 refreshToken,
@@ -58,6 +60,7 @@ public class KakaoLoginService implements KakaoLoginUsecase {
         );
     }
 
+    // 새로운 유저 db에 등록
     private User registerNewUser(OAuthUserInfoCommand oAuthUserInfoCommand) {
         User newUser = userRepository.register(
                 User.oAuthRegister(oAuthUserInfoCommand.email(), oAuthUserInfoCommand.name())

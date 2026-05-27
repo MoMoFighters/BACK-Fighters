@@ -15,6 +15,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class KakaoOAuthClient implements OAuthClientPort {
 
+    // 엑세스 토큰 발급 및 유저 정보 가져오기
+
     private final WebClient webClient;
 
     @Value("${kakao.client-id}")

@@ -28,6 +28,7 @@ public class UserOauth {
         return new UserOauth(id, user, provider, providerId, createdAt);
     }
 
+    // getter
     public Long getId() { return id; }
     public User getUser() { return user; }
     public String getProvider() { return provider; }
