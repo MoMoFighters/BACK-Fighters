@@ -18,24 +18,51 @@ public class AdminDashboardQueryService implements AdminDashboardQueryUseCase {
 
     /* comment.
         m03 우선순위에서 추가될 의존성 :
-        - private final MemberQueryService memberQueryService;     (회원 영역 공개 서비스)
-        - private final ReportQueryService reportQueryService;     (신고 영역 공개 서비스 - 미구현)
-        - private final LectureQueryService lectureQueryService;   (강의 영역 공개 서비스 - 미구현)
-
-        현재는 다른 영역의 공개 서비스가 아직 stub 단계라 주입 보류.
-        모든 영역이 준비되면 생성자 주입으로 추가.
-     */
+        - private final MemberStatsPort memberStatsPort;       (외부 BC 회원 - PORT 패턴, 어댑터는 회원팀 제공)
+        - private final LectureStatsPort lectureStatsPort;     (외부 BC 강의 - PORT 패턴, 어댑터는 성진 제공)
+        - private final ReportQueryUseCase reportQueryUseCase; (자기 영역 report/ - 작업 ⑤ 완료 후 직접 호출)
+        *
+        의존성 두 종류 - PORT vs 직접 호출 :
+        - 외부 BC (회원/강의) : admin 이 PORT 정의 → 외부 팀이 어댑터 제공 (DIP, BC 경계 격리)
+        - 자기 영역 (report) : 직접 의존 가능 (BC 경계 안이라 자유)
+        *
+        현재는 PORT 어댑터 + report UseCase 미구현 상태라 주입 보류.
+        모두 준비되면 생성자 주입으로 추가.
+ */
     public AdminDashboardQueryService() {
         // m03 우선순위 - 위 3개 서비스 생성자 주입 예정
     }
 
     /* comment.
         실제 구현 시 흐름 (m03 우선순위) :
-        1. long memberCount = memberQueryService.countAll()
-        2. long reportCount = reportQueryService.countAll()
-        3. long lectureCount = lectureQueryService.countAll()
-        4. return new DashboardSummary(memberCount, reportCount, lectureCount)
-     */
+        *
+        // 전월 말 시점 계산 (예: 5월 27일 호출 시 → 4월 30일)
+        LocalDate previousMonthEnd = LocalDate.now().withDayOfMonth(1).minusDays(1);
+        *
+        // 회원 카운트 + 증감률
+        long memberCount        = memberStatsPort.countActive();
+        long memberPrevious     = memberStatsPort.countActiveBefore(previousMonthEnd);
+        double memberGrowthRate = calcGrowthRate(memberPrevious, memberCount);
+        *
+        // 강의 카운트 + 증감률
+        long lectureCount        = lectureStatsPort.countActive();
+        long lecturePrevious     = lectureStatsPort.countActiveBefore(previousMonthEnd);
+        double lectureGrowthRate = calcGrowthRate(lecturePrevious, lectureCount);
+        *
+        // 신고 카운트 (증감률 없음 - FE 표시 안 함)
+        long reportCount = reportQueryUseCase.countAll();
+        *
+        return new DashboardSummary(
+            memberCount, memberGrowthRate,
+            lectureCount, lectureGrowthRate,
+            reportCount
+        );
+    */
+    // 헬퍼 메서드 (private double)
+    // calcGrowthRate(long previous, long current):
+    //   if (previous == 0) return 0.0;
+    //   return ((current - previous) / (double) previous) * 100.0;
+
     @Override
     public DashboardSummary getDashboardSummary() {
         throw new UnsupportedOperationException("TODO: m03 우선순위 - admin 대시보드 요약 통계 구현");

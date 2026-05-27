@@ -39,11 +39,18 @@ public class AdminDashboardController {
 
     /* comment.
         실제 구현 시 흐름 (m03 우선순위) :
-        1. DashboardSummary summary = dashboardQueryUseCase.getDashboardSummary()
+        1. DashboardSummary summary = dashboardQueryUseCase.getDashboardSummary();
+        *
         2. DashboardSummaryResponse response = new DashboardSummaryResponse(
-               summary.memberCount(), summary.reportCount(), summary.lectureCount())
-        3. return ResponseEntity.ok(response)
-     */
+            summary.memberCount(),
+            summary.memberGrowthRate(),
+            summary.lectureCount(),
+            summary.lectureGrowthRate(),
+            summary.reportCount()
+        );
+        *
+        3. return ResponseEntity.ok(response);
+  */
     @GetMapping("/dashboard/summary")
     @Operation(
             summary = "관리자 대시보드 요약 통계",
