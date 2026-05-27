@@ -1,5 +1,6 @@
 package com.wanted.momocity.calendar.infrastructure.persistence;
 
+import com.wanted.momocity.calendar.domain.exception.CalendarNotFoundException;
 import com.wanted.momocity.calendar.domain.model.Calendar;
 import com.wanted.momocity.calendar.domain.repository.CalendarRepository;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
@@ -38,9 +39,9 @@ public class CalendarRepositoryAdapter implements CalendarRepository {
 
     @Override
     public void delete(Long id) {
-        if (!jpaRepository.existsById(id)) {
-            throw new DomainRuleViolationException(
-                    "삭제할 항목을 찾을 수 없습니다."
+        if (!jpaRepository.existsById(id)){
+            throw new CalendarNotFoundException(
+                    "삭제할 할목을 찾을 수 없습니다."
             );
         }
         jpaRepository.deleteById(id);

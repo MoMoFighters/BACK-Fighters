@@ -7,6 +7,7 @@ import com.wanted.momocity.calendar.presentation.api.response.DailyCalendarRespo
 import com.wanted.momocity.calendar.presentation.api.response.MemoResponse;
 import com.wanted.momocity.calendar.presentation.api.response.TodoResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +23,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@Slf4j
 public class GetDailyCalendarService implements GetDailyCalendarUseCase {
 
     private final CalendarRepository calendarRepository;
@@ -56,6 +58,9 @@ public class GetDailyCalendarService implements GetDailyCalendarUseCase {
                         c.getEnd()
                 ))
                 .toList();
+
+        log.info("[Calendar] 날짜별 조회 완료 | userId={}, date={}, todoCount={}, memoCount={}",
+                userId, date, todos.size(), memos.size());
 
         return new DailyCalendarResponse(date, todos, memos);
 
