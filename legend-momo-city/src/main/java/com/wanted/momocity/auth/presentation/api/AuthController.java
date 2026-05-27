@@ -15,13 +15,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/auth")
-@Tag(name="signup", description = "자체 회원가입을 위한 Auth api")
+@Tag(name="signup", description = "인증·인가를 위한 Auth api 관련 컨트롤러")
 public class AuthController {
 
     private final StudentSignupUsecase studentSignupUsecase;
@@ -238,8 +237,6 @@ public class AuthController {
                         null
                 ));
     }
-
-
 
 
 
