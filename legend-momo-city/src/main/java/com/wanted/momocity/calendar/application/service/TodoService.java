@@ -8,11 +8,14 @@ import com.wanted.momocity.calendar.application.usecase.CheckTodoUseCase;
 import com.wanted.momocity.calendar.application.usecase.CreateTodoUseCase;
 import com.wanted.momocity.calendar.application.usecase.DeleteTodoUseCase;
 import com.wanted.momocity.calendar.application.usecase.UpdateTodoUseCase;
+import com.wanted.momocity.calendar.domain.exception.CalendarAccessDeniedException;
+import com.wanted.momocity.calendar.domain.exception.CalendarNotFoundException;
 import com.wanted.momocity.calendar.domain.model.Calendar;
 import com.wanted.momocity.calendar.domain.repository.CalendarRepository;
 import com.wanted.momocity.calendar.presentation.api.response.TodoResponse;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TodoService implements
         CreateTodoUseCase,
         UpdateTodoUseCase,
@@ -53,6 +57,8 @@ public class TodoService implements
         // 저장
         Calendar saved = calendarRepository.save(calendar);
 
+        log.info("[Calendar] Todo 생성 완료 | userId = {}, calendarId = {}", command.userId(), saved.getId());
+
         return new TodoResponse(
                 saved.getId(),
                 saved.getTitle(),
@@ -70,13 +76,13 @@ public class TodoService implements
 
         // 조회
         Calendar calendar = calendarRepository.findById(command.calendarId())
-                .orElseThrow(() -> new DomainRuleViolationException(
+                .orElseThrow(() -> new CalendarNotFoundException(
                         "Todo 를 찾을 수 없습니다."
                 ));
 
         // 본인 소유 여부 확인 (도메인 메서드)
         if (!calendar.isOwnedBy(command.userId())) {
-            throw new DomainRuleViolationException(
+            throw new CalendarAccessDeniedException(
                     "본인의 Todo 만 수정할 수 있습니다."
             );
         }
@@ -86,6 +92,8 @@ public class TodoService implements
 
         // 저장
         Calendar saved = calendarRepository.save(calendar);
+
+        log.info("[Calendar] Todo 수정 완료 | userId={}, calendarId={}", command.userId(), saved.getId());
 
         return new TodoResponse(
                 saved.getId(),
@@ -104,19 +112,21 @@ public class TodoService implements
 
         // 조회
         Calendar calendar = calendarRepository.findById(command.calendarId())
-                .orElseThrow(() -> new DomainRuleViolationException(
+                .orElseThrow(() -> new CalendarNotFoundException(
                         "Todo 를 찾을 수 없습니다."
                 ));
 
         // 본인 소유 여부 확인 (도메인 메서드)
         if (!calendar.isOwnedBy(command.userId())) {
-            throw new DomainRuleViolationException(
+            throw new CalendarAccessDeniedException(
                     "본인의 Todo 만 삭제할 수 있습니다."
             );
         }
 
         // 삭제
         calendarRepository.delete(command.calendarId());
+
+        log.info("[Calendar] Todo 삭제 완료 | userId={}, calendarId={}", command.userId(), command.calendarId());
 
     }
 
@@ -127,13 +137,13 @@ public class TodoService implements
 
         // 조회
         Calendar calendar = calendarRepository.findById(command.calendarId())
-                .orElseThrow(() -> new DomainRuleViolationException(
+                .orElseThrow(() -> new CalendarNotFoundException(
                         "Todo 를 찾을 수 없습니다."
                 ));
 
         // 본인 소유 여부 확인 (도메인 메서드)
         if (!calendar.isOwnedBy(command.userId())) {
-            throw new DomainRuleViolationException(
+            throw new CalendarAccessDeniedException(
                     "본인의 Todo 만 변경할 수 있습니다."
             );
         }
@@ -144,6 +154,9 @@ public class TodoService implements
 
         // 저장
         Calendar saved = calendarRepository.save(calendar);
+
+        log.info("[Calendar] Todo 체크 변경 완료 | userId={}, calendarId={}, isCompleted={}",
+                command.userId(), saved.getId(), saved.isCompleted());
 
         return new TodoResponse(
                 saved.getId(),

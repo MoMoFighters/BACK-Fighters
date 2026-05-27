@@ -8,6 +8,9 @@ import com.wanted.momocity.calendar.presentation.api.response.DailyCalendarRespo
 import com.wanted.momocity.calendar.presentation.api.response.MemoResponse;
 import com.wanted.momocity.calendar.presentation.api.response.TodoResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -22,6 +25,7 @@ import java.time.LocalDate;
  *  비지니스 로직 없음, HTTP 반환만 담당
  * */
 
+@Tag(name = "Calendar", description = "Calendar 도메인 - Todo/Memo CRUD 및 날짜별 조회 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/calendar")
@@ -37,6 +41,13 @@ public class CalendarController {
 
     // 날짜별 캘린더 조회
     // GET /api/v1/calendar/daily?date=2026-05-26
+    @Operation(summary = "날짜별 캘린더 조회",
+            description = "날짜를 기준으로 Todo 와 Memo 를 분리하여 반환합니다.")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "날짜 파라미터 누락"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 토큰 만료")
+    })
     @GetMapping("/daily")
     // HTTP 응답 객체<공통 응답 형식<실제 데이터 타입>>
     // (status code, header, body)<(success, statusCode, message, data, error)<(date, todos[], errors[])>>
@@ -63,6 +74,13 @@ public class CalendarController {
 
     // Todo 등록
     // POST /api/v1/calendar/todo
+    @Operation(summary = "Todo 등록",
+            description = "새로운 Todo 를 등록합니다.")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "등록 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "필수값 누락"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 토큰 만료")
+    })
     @PostMapping("/todo")
     public ResponseEntity<ApiResponse<TodoResponse>> createTodo(
             // @RequestBody : HTTP Body 에서 JSON 으로 가져옴
@@ -91,6 +109,15 @@ public class CalendarController {
 
     // Todo 수정
     // PATCH /api/v1/calendar/todo/{calendarId}
+    @Operation(summary = "Todo 수정",
+            description = "기존 Todo 를 수정합니다.")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "수정 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "필수값 누락"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 토큰 만료"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "권한 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Todo 없음")
+    })
     @PatchMapping("/todo/{calendarId}")
     public ResponseEntity<ApiResponse<TodoResponse>> updateTodo(
             @PathVariable Long calendarId,
@@ -120,6 +147,14 @@ public class CalendarController {
 
     // Todo 삭제
     // DELETE /api/v1/calendar/todo/{calendarId}
+    @Operation(summary = "Todo 삭제",
+            description = "기존 Todo 를 삭제합니다.")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "삭제 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 토큰 만료"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "권한 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Todo 없음")
+    })
     @DeleteMapping("/todo/{calendarId}")
     public ResponseEntity<ApiResponse<Void>> deleteTodo(
             @PathVariable Long calendarId
@@ -139,6 +174,15 @@ public class CalendarController {
 
     // Todo 체크 상태 변경
     // PATCH /api/v1/calendar/todo/{calendarId}/check
+    @Operation(summary = "Todo 체크 상태 변경",
+            description = "Todo 의 완료 상태를 변경합니다. Memo 에는 호출 불가.")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "변경 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Memo 체크 불가"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 토큰 만료"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "권한 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Todo 없음")
+    })
     @PatchMapping("/todo/{calendarId}/check")
     public ResponseEntity<ApiResponse<TodoResponse>> checkTodo(
             @PathVariable Long calendarId,
@@ -167,6 +211,13 @@ public class CalendarController {
 
     // Memo 등록
     // POST /api/v1/calendar/memo
+    @Operation(summary = "Memo 등록",
+            description = "새로운 Memo 를 등록합니다. end 는 nullable.")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "등록 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "필수값 누락 또는 end < start"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 토큰 만료")
+    })
     @PostMapping("/memo")
     public ResponseEntity<ApiResponse<MemoResponse>> createMemo(
             @RequestBody @Valid CreateMemoRequest request
@@ -195,6 +246,15 @@ public class CalendarController {
 
     // Memo 수정
     // PATCH /api/v1/calendar/memo/{calendarId}
+    @Operation(summary = "Memo 수정",
+            description = "기존 Memo 를 수정합니다. end 는 nullable.")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "수정 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "필수값 누락 또는 end < start"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 토큰 만료"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "권한 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Memo 없음")
+    })
     @PatchMapping("/memo/{calendarId}")
     public ResponseEntity<ApiResponse<MemoResponse>> updateMemo(
             @PathVariable Long calendarId,
@@ -225,6 +285,14 @@ public class CalendarController {
 
     // Memo 삭제
     // DELETE /api/v1/calendar/memo/{calendarId}
+    @Operation(summary = "Memo 삭제",
+            description = "기존 Memo 를 삭제합니다.")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "삭제 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 토큰 만료"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "권한 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Memo 없음")
+    })
     @DeleteMapping("/memo/{calendarId}")
     public ResponseEntity<ApiResponse<Void>> deleteMemo(
             @PathVariable Long calendarId
