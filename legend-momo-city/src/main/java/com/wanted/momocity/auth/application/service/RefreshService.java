@@ -31,14 +31,14 @@ public class RefreshService {
 
         // DB에서 존재하는 토큰인지 확인
         refreshTokenRepositoryPort.findByToken(refreshToken)
-                .orElseThrow(() -> new InvalidRefreshTokenException("토큰 없음"));
+                .orElseThrow(() -> new InvalidRefreshTokenException("토큰이 없습니다."));
 
-        // 토큰에서 email 꺼내기
-        String email = tokenProviderPort.getEmailFromToken(refreshToken);
+        // 토큰에서 id 꺼내기
+        String userId = tokenProviderPort.getIdFromToken(refreshToken);
 
         // 유저 조회
-        User user = loadUserPort.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("유저 없음"));
+        User user = loadUserPort.findById(Long.parseLong(userId))
+                .orElseThrow(() -> new UsernameNotFoundException("조회된 유저가 없습니다."));
 
         // 상태 체크 추가
         if (user.getStatus() == Status.PENDING) {
@@ -46,7 +46,7 @@ public class RefreshService {
         }
 
         Authentication authentication = new UsernamePasswordAuthenticationToken(
-                user.getEmail(),
+                String.valueOf(user.getId()),
                 null,
                 List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
         );

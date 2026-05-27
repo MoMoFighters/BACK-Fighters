@@ -103,7 +103,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<LoginCompletedResponse>> loginCompleted(
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        LoginCompletedResponse result = loginCompletedUsecase.getInfo(userDetails.getUsername()); // email
+        LoginCompletedResponse result = loginCompletedUsecase.getInfo(userDetails.getUsername()); // id
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(
