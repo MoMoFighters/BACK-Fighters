@@ -12,6 +12,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -23,8 +25,12 @@ public class AuthController {
     private final StudentSignupUsecase studentSignupUsecase;
     private final TeacherSignupUseCase teacherSignupUseCase;
     private final LoginUsecase loginUsecase;
+    private final LoginCompletedUsecase loginCompletedUsecase;
     private final EmailSendUsecase emailSendUsecase;
     private final EmailVerifyUsecase emailVerifyUsecase;
+    private final TempPasswordUsecase tempPasswordUsecase;
+    private final KakaoLoginUsecase kakaoLoginUsecase;
+
     private final S3UploadPort s3UploadPort;
 
 
@@ -82,15 +88,35 @@ public class AuthController {
                 .body(ApiResponse.success(
                         AuthResponseCode.SUCCESS,
                         AuthResponseMessage.LOGIN_SUCCESS,
-                        new LoginResponse(result.accessToken(), result.refreshToken(), result.expiresIn())
+                        new LoginResponse(result.accessToken(), result.refreshToken(),result.status() ,result.expiresIn())
                 ));
 
     }
 
+
+    @GetMapping("/login/completed")
+    @Operation(
+            summary = "로그인 성공 시 페이지 로딩을 위한 사용자 정보 전달",
+            description = "로그인 한 사용자의 role, is_tempPWD, nickname 을 보내 그에 맞는 페이지를 랜더링한다"
+    )
+    public ResponseEntity<ApiResponse<LoginCompletedResponse>> loginCompleted(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        LoginCompletedResponse result = loginCompletedUsecase.getInfo(userDetails.getUsername()); // email
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        AuthResponseCode.SUCCESS,
+                        AuthResponseMessage.LOGIN_COMPLETED,
+                        new LoginCompletedResponse(result.role(), result.is_tempPwd(), result.nickname())
+                ));
+    }
+
+
     @PostMapping("/email/send")
     @Operation(
-            summary = "이메일로 인증코드 발송",
-            description = "이메일 중복 확인 및 본인 인증을 위한 이메일 인증 코드 발송"
+            summary = "회원가입 할 때 이메일로 인증코드 발송",
+            description = "이메일 중복 확인 및 본인 인증을 위한 이메일 인증 코드 발송 - "
     )
     public ResponseEntity<ApiResponse<EmailSendResponse>> emailSend(
             @Valid @RequestBody EmailSendRequest request){
@@ -123,6 +149,42 @@ public class AuthController {
                         null
                 ));
 
+    }
+
+
+    @PostMapping("/password/temp")
+    @Operation(
+            summary = "임시 비밀번호 발급하여 이메일로 전송",
+            description = "랜덤 숫자 8자리를 만들어 이메일로 전송해주고 db의 비밀번호를 해당 랜덤 값으로 변경하여 임시로그인 가능하게 함." +
+                    "임시비밀번호의 유효 시간은 3분으로 3분 안에 마이페이지에서 비밀번호를 변경하여야 한다."
+    )
+    public ResponseEntity<ApiResponse<Void>> tempPasswordSend(
+        @Valid @RequestBody EmailSendRequest request){
+
+        tempPasswordUsecase.sendTempPassword(new EmailSendCommand(request.email()));
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        AuthResponseCode.SUCCESS,
+                        AuthResponseMessage.TEMP_PASSWORD_CREATED,
+                        null
+                ));
+    }
+
+
+    @PostMapping("/kakaologin")
+    @Operation(summary = "카카오로그인을 위한 api")
+    public ResponseEntity<ApiResponse<LoginResponse>> kakaoLogin(
+            @Valid @RequestBody SocialLoginRequest request){
+
+        LoginResponse result = kakaoLoginUsecase.socialLogin(new SocialLoginCommand(request.code()));
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        AuthResponseCode.SUCCESS,
+                        AuthResponseMessage.LOGIN_SUCCESS,
+                        new LoginResponse(result.accessToken(), result.refreshToken(),result.status() ,result.expiresIn())
+                ));
     }
 
 

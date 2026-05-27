@@ -50,4 +50,20 @@ public class EmailCodeAdapter implements EmailCodePort {
     public void deleteVerified(String email) {
         redisTemplate.delete(email+"verified");
     }
+
+    @Override
+    public void saveTempPassword(String email, long ttlSeconds) {
+        redisTemplate.opsForValue()
+                .set(email + "tempPwd", "true", ttlSeconds, TimeUnit.SECONDS);
+    }
+
+    @Override
+    public boolean isTempPasswordVerified(String email) {
+        return redisTemplate.hasKey(email + "tempPwd");
+    }
+
+    @Override
+    public void deleteTempPassword(String email) {
+        redisTemplate.delete(email + "tempPwd");
+    }
 }

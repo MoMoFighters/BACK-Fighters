@@ -19,7 +19,12 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
 
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
         response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write("{ \"error\": \"인증에 실패하였습니다. 토큰이 유효하지 않거나 없습니다.\" }");
+        response.getWriter().write("""
+                {
+                    "success": false,
+                    "message": "인증 정보가 유효하지 않습니다."
+                }
+                """);
     }
 
 

@@ -52,4 +52,20 @@ public class AuthExceptionHandler {
                 .body(Map.of("success", false, "message", e.getMessage()));
     }
 
+    // 사용자를 찾지 못했을 때
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<?> handleUserNotFoundException(UserNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of(
+                        "success", false, "message", e.getMessage()));
+    }
+
+    // 임시 비밀번호 만료 시
+    @ExceptionHandler(TempPasswordExpiredException.class)
+    public ResponseEntity<?> handleTempPasswordExpired(TempPasswordExpiredException e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of(
+                        "success", false, "message", e.getMessage()));
+    }
+
 }

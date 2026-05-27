@@ -166,6 +166,18 @@ public class JwtTokenProvider implements TokenProviderPort {
         return ACCESS_TOKEN_EXPIRE_TIME;
     }
 
+    // 소셜 로그인에서는 authentication이 없으니까 서비스에서 소셜로그인 하고 얻은
+    @Override
+    public String createAccessToken(String userId, String role) {
+        return Jwts.builder()
+                .setSubject(userId)
+                .claim("roles", role)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_EXPIRE_TIME))
+                .signWith(SignatureAlgorithm.HS512, key)
+                .compact();
+    }
+
 }
 
 
