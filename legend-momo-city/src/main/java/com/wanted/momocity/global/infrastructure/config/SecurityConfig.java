@@ -133,10 +133,6 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/teacher/**").hasAnyAuthority("ROLE_TEACHER")
                         .requestMatchers("/api/v1/auth/login/completed").authenticated()
                         .requestMatchers("/api/v1/auth/logout").authenticated()
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/v1/calendar/**").permitAll()
-                        .requestMatchers("/api/v1/lectures/**").permitAll()
-                        .requestMatchers("/api/v1/users/**").permitAll()
                         // 임시 비밀번호 발급도 인증 토큰 필요
                         .anyRequest().authenticated()) // 나머지는 인증 필요
 //                ========================================================================
