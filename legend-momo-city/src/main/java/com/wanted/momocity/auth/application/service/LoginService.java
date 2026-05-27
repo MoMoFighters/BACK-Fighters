@@ -36,18 +36,22 @@ public class LoginService implements LoginUsecase {
 
     @Override
     public LoginResponse login(LoginCommand command) {
+
+        // email로 유저 먼저 조회해서 id 꺼내기
+        User user = loadUserPort.findByEmail(command.email())
+                .orElseThrow(() -> new InvalidCredentialsException("이메일 또는 비밀번호가 올바르지 않습니다."));
+
         // 이메일/비밀번호로 사용자 인증
         Authentication authentication;
         try{
             authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(command.email(), command.password())
+                new UsernamePasswordAuthenticationToken(String.valueOf(user.getId()), command.password())
         );
 
         }catch (BadCredentialsException e){
             throw new InvalidCredentialsException("이메일 또는 비밀번호가 올바르지 않습니다.");
         }
 
-        User user = loadUserPort.findByEmail(command.email()).get();
         if (user.getStatus() != Status.ACTIVE) {
             throw new InactiveUserException("로그인이 제한된 계정입니다.");
         }
@@ -60,12 +64,11 @@ public class LoginService implements LoginUsecase {
         String accessToken = tokenProviderPort.createAccessToken(authentication);
 
         // 리프레시 토큰 발급
-        String refreshToken = tokenProviderPort.createRefreshToken(command.email());
+        String refreshToken = tokenProviderPort.createRefreshToken(String.valueOf(user.getId()));
 
         // 기존 리프레시 토큰 삭제 후 새로 저장
-        refreshTokenRepositoryPort.deleteByEmail(command.email());
         refreshTokenRepositoryPort.save(
-                command.email(),
+                String.valueOf(user.getId()),
                 refreshToken,
                 Instant.now().plusMillis(tokenProviderPort.getRefreshTokenValidityMilliseconds())
         );

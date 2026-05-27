@@ -18,9 +18,9 @@ public class LoginCompletedService implements LoginCompletedUsecase {
 
 
     @Override
-    public LoginCompletedResponse getInfo(String email) {
-        User loginUser = loadUserPort.findByEmail(email)
-                .orElseThrow(()->new UserNotFoundException("사용자를 찾을 수 없습니다."));
+    public LoginCompletedResponse getInfo(String userId) {
+        User loginUser = loadUserPort.findById(Long.parseLong(userId))
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
         return new LoginCompletedResponse(loginUser.getRole(),loginUser.getIsTempPwd(),loginUser.getNickname());
     }
 }

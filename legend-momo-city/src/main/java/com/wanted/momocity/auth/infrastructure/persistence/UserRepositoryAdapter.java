@@ -88,6 +88,12 @@ public class UserRepositoryAdapter implements UserRepository, LoadUserPort, Upda
     }
 
     @Override
+    public Optional<User> findById(Long id) {
+        return springDataUserRepository.findById(id)
+                .map(this::toDomain);
+    }
+
+    @Override
     public void updatePassword(String email, String encodedPassword) {
         springDataUserRepository.updatePassword(email, encodedPassword);
     }

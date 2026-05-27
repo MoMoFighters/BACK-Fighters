@@ -3,6 +3,7 @@ package com.wanted.momocity.auth.infrastructure.jwt;
 import com.wanted.momocity.auth.application.port.TokenProviderPort;
 import com.wanted.momocity.auth.infrastructure.exception.ExpiredJwtCustomException;
 import com.wanted.momocity.auth.infrastructure.exception.InvalidJwtCustomException;
+import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -13,8 +14,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
+
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -66,9 +66,9 @@ public class JwtTokenProvider implements TokenProviderPort {
 
 
     // 🎯 RefreshToken 생성
-    public String createRefreshToken(String email) {
+    public String createRefreshToken(String userId) {
         return Jwts.builder()
-                .setSubject(email)
+                .setSubject(userId)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + REFRESH_TOKEN_EXPIRE_TIME))
                 .signWith(SignatureAlgorithm.HS512, key)
@@ -111,7 +111,7 @@ public class JwtTokenProvider implements TokenProviderPort {
     // 토큰에서 사용자 정보 추출 (Authentication 객체 생성)
     public Authentication getAuthentication(String token) throws InvalidJwtCustomException {
         Claims claims = extractClaims(token, false); // 만료된 토큰은 여기서 걸러짐 (validateToken 이후 호출되므로)
-        String email = claims.getSubject();
+        String userId = claims.getSubject();
         String rolesString = claims.get("roles", String.class);
 
         Collection<? extends GrantedAuthority> authorities = Collections.emptyList();
@@ -123,19 +123,18 @@ public class JwtTokenProvider implements TokenProviderPort {
                     .collect(Collectors.toList());
         }
 
-        UserDetails userDetails = User.builder()
-                .username(email)
-                .password("") // 인증된 토큰이므로 비밀번호 불필요
-                .authorities(authorities)
-                .build();
+        CustomUserDetails customUserDetails = new CustomUserDetails(
+                Long.parseLong(userId),  // ← CustomUserDetails로 교체
+                "",
+                authorities
+        );
 
-        return new UsernamePasswordAuthenticationToken(userDetails, token, userDetails.getAuthorities());
+        return new UsernamePasswordAuthenticationToken(customUserDetails, token, authorities);
     }
 
 
-
-    // 만료된 토큰 포함, 토큰에서 사용자 이메일 추출
-    public String getEmailFromToken(String token) throws InvalidJwtCustomException {
+    // 만료된 토큰 포함, 토큰에서 사용자 id 추출
+    public String getIdFromToken(String token) throws InvalidJwtCustomException {
         try {
             return extractClaims(token, true).getSubject(); // allowExpired = true
         } catch (JwtException e) { // extractClaims가 InvalidJwtCustomException을 던지지만, 더 넓게 잡을 수 있음
