@@ -26,8 +26,8 @@ public class RefreshTokenRepositoryAdapter implements RefreshTokenRepositoryPort
     }
 
     @Override
-    public Optional<String> findByEmail(String email) {
-        return springDataRefreshTokenRepository.findByEmail(email)
+    public Optional<String> findByUserId(String userId) {
+        return springDataRefreshTokenRepository.findByEmail(userId)
                 .map(RefreshTokenJpaEntity::getToken);
     }
 
