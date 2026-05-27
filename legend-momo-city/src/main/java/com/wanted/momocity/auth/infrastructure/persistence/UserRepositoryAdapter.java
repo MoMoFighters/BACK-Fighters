@@ -34,7 +34,7 @@ public class UserRepositoryAdapter implements UserRepository, LoadUserPort, Upda
                 user.getName(),
                 null,                    // nickname
                 null,                    // birth
-                null,                    // profileImageUrl
+                user.getProfileImageUrl(),                    // profileImageUrl
                 user.getRole(),
                 user.getStatus(),
                 user.getCategory(),
