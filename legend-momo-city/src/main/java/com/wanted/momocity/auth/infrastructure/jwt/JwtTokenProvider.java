@@ -1,6 +1,7 @@
 package com.wanted.momocity.auth.infrastructure.jwt;
 
 import com.wanted.momocity.auth.application.port.TokenProviderPort;
+import com.wanted.momocity.auth.domain.exception.InvalidTokenException;
 import com.wanted.momocity.auth.infrastructure.exception.ExpiredJwtCustomException;
 import com.wanted.momocity.auth.infrastructure.exception.InvalidJwtCustomException;
 import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
@@ -153,7 +154,7 @@ public class JwtTokenProvider implements TokenProviderPort {
 
     // 요청 헤더에서 Refresh Token 추출 (예: "X-Refresh-Token" 헤더 사용)
     public String resolveRefreshToken(HttpServletRequest request) {
-        return request.getHeader("X-Refresh-Token");
+        return request.getHeader("Refresh-Token");
     }
 
     public long getRefreshTokenValidityMilliseconds() {
@@ -175,6 +176,26 @@ public class JwtTokenProvider implements TokenProviderPort {
                 .setExpiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_EXPIRE_TIME))
                 .signWith(SignatureAlgorithm.HS512, key)
                 .compact();
+    }
+
+
+    // 액세스 토큰 블랙리스트 처리용 액세스 토큰 로그아웃 후 잔여시간 계산
+    // 지금으로부터 만료까지 얼마나 남았는지를 밀리초로 계산
+    @Override
+    public long getRemainingMillis(String accessToken) {
+        try {
+            Date expiration = Jwts.parser()
+                    .setSigningKey(key)
+                    .parseClaimsJws(accessToken)
+                    .getBody()
+                    .getExpiration();
+            return expiration.getTime() - System.currentTimeMillis();
+            // expiration.getTime() : 만료되는 시각
+        }catch (ExpiredJwtException e){
+            return 0; // 이미 만료됐으면 0반환
+        }catch (JwtException e){
+            throw new InvalidTokenException("유효하지 않은 토큰입니다.");
+        }
     }
 
 }

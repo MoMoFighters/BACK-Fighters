@@ -1,6 +1,8 @@
 package com.wanted.momocity.auth.presentation.api;
 
 import com.wanted.momocity.auth.application.command.*;
+import com.wanted.momocity.auth.domain.exception.MissingTokenException;
+import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.auth.application.usecase.*;
 import com.wanted.momocity.auth.presentation.api.request.*;
@@ -31,6 +33,7 @@ public class AuthController {
     private final TempPasswordUsecase tempPasswordUsecase;
     private final KakaoLoginUsecase kakaoLoginUsecase;
     private final GoogleLoginUsecase googleLoginUsecase;
+    private final LogoutUsecase logoutUsecase;
 
     private final S3UploadPort s3UploadPort;
 
@@ -101,7 +104,7 @@ public class AuthController {
             description = "로그인 한 사용자의 role, is_tempPWD, nickname 을 보내 그에 맞는 페이지를 랜더링한다"
     )
     public ResponseEntity<ApiResponse<LoginCompletedResponse>> loginCompleted(
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
 
         LoginCompletedResponse result = loginCompletedUsecase.getInfo(userDetails.getUsername()); // id
 
@@ -204,6 +207,37 @@ public class AuthController {
                 ));
     }
 
+
+    @PostMapping("/logout")
+    @Operation(summary = "로그아웃을 위한 api" ,
+                description = "redis 에서 refresh 토큰 값 제거를 통해 로그아웃 진행")
+    public ResponseEntity<ApiResponse<Void>> logout(
+            @RequestHeader(value = "Authorization", required = false) String bearerToken,
+            @RequestHeader(value = "Refresh-Token", required = false) String refreshToken)
+            // required = true 면 헤더 없으면 Spring이 기본 400을 던지지만
+            // 커스텀 메시지 보여주고 싶어서
+            // 헤더 없으면 null로 들어옴 → 우리 if문 실행 → 커스텀 메시지 출력되도록
+    {
+
+        if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
+            throw new MissingTokenException("AccessToken이 없습니다.");
+        }
+        if (refreshToken == null) {
+            throw new MissingTokenException("RefreshToken이 없습니다.");
+        }
+
+        // Authorization: Bearer {accessToken} 에서 앞부분 떼고 액세스 토큰만 가져옴
+        String accessToken = bearerToken.replace("Bearer ", "");
+
+        logoutUsecase.logout(new LogoutCommand(accessToken,refreshToken));
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        AuthResponseCode.SUCCESS,
+                        AuthResponseMessage.LOGOUT_SUCCESS,
+                        null
+                ));
+    }
 
 
 

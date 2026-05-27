@@ -11,7 +11,7 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
 
     boolean existsByEmail(String email);
 
-    Optional<UserJpaEntity> findByEmail(String email);  // 추가
+    Optional<UserJpaEntity> findByEmail(String email);
 
     @Modifying
     @Query("UPDATE UserJpaEntity u SET u.password = :password, u.isTempPwd = true WHERE u.email = :email")
