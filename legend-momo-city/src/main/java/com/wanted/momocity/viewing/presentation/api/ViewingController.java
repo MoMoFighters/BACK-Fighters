@@ -1,5 +1,6 @@
 package com.wanted.momocity.viewing.presentation.api;
 
+import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.viewing.application.command.SaveProgressCommand;
 import com.wanted.momocity.viewing.application.usecase.*;
@@ -9,6 +10,7 @@ import com.wanted.momocity.viewing.presentation.api.response.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -37,11 +39,14 @@ public class ViewingController {
     @GetMapping("/lectures/{lectureId}/chapters/{chapterId}/stream")
     public ResponseEntity<ApiResponse<StreamingUrlResponse>> getStreamingUrl (
             @PathVariable Long lectureId,
-            @PathVariable Long chapterId
+            @PathVariable Long chapterId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+
     ) {
 
-        // JWT 완성 후 @AuthenticationPrincipal 교체 예정
-        Long userId = 1L;
+
+//        Long userId = 1L;
+        Long userId = userDetails.getUserId();
 
         StreamingUrlResponse response = getStreamingUrlUseCase
                 .getStreamingUrl(userId, lectureId, chapterId);
@@ -60,10 +65,14 @@ public class ViewingController {
     // GET /api/v1/lectures/{lectureId}
     @GetMapping("/lectures/{lectureId}")
     public ResponseEntity<ApiResponse<LectureMetaResponse>> getLectureMeta(
-            @PathVariable Long lectureId
+            @PathVariable Long lectureId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+
     ) {
 
-        Long userId = 1L;
+//        Long userId = 1L;
+        Long userId = userDetails.getUserId();
+
 
         LectureMetaResponse response = getLectureMetaUseCase
                 .getLectureMeta(userId, lectureId);
@@ -84,10 +93,14 @@ public class ViewingController {
     public ResponseEntity<ApiResponse<SaveProgressResponse>> saveProgress(
             @PathVariable Long lectureId,
             @PathVariable Long chapterId,
-            @RequestBody @Valid SaveProgressRequest request
-            ) {
+            @RequestBody @Valid SaveProgressRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails
 
-        Long userId = 1L;
+    ) {
+
+//        Long userId = 1L;
+        Long userId = userDetails.getUserId();
+
 
         SaveProgressCommand command = new SaveProgressCommand(
                 userId,
@@ -114,10 +127,14 @@ public class ViewingController {
     @GetMapping("/lectures/{lectureId}/chapters/{chapterId}/resume")
     public ResponseEntity<ApiResponse<ChapterResumeResponse>> getChapterResume(
             @PathVariable Long lectureId,
-            @PathVariable Long chapterId
+            @PathVariable Long chapterId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+
     ) {
 
-        Long userId = 1L;
+//        Long userId = 1L;
+        Long userId = userDetails.getUserId();
+
 
         ChapterResumeResponse response = getChapterResumeUseCase
                 .getChapterResume(userId, lectureId, chapterId);
@@ -136,10 +153,14 @@ public class ViewingController {
     // GET /api/v1/lectures/{lectureId}/progress
     @GetMapping("/lectures/{lectureId}/progress")
     public ResponseEntity<ApiResponse<TotalProgressResponse>> getTotalProgress(
-            @PathVariable Long lectureId
+            @PathVariable Long lectureId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+
     ) {
 
-        Long userId = 1L;
+//        Long userId = 1L;
+        Long userId = userDetails.getUserId();
+
 
         TotalProgressResponse response = getTotalProgressUseCase
                 .getTotalProgress(userId, lectureId);
@@ -157,10 +178,14 @@ public class ViewingController {
     // GET /api/v1/lectures/{lectureId}/chapters/progress
     @GetMapping("/lectures/{lectureId}/chapters/progress")
     public ResponseEntity<ApiResponse<ChapterProgressResponse>> getChapterProgress(
-            @PathVariable Long lectureId
+            @PathVariable Long lectureId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+
     ) {
 
-        Long userId = 1L;
+//        Long userId = 1L;
+        Long userId = userDetails.getUserId();
+
 
         ChapterProgressResponse response = getChapterProgressUseCase
                 .getChapterProgress(userId, lectureId);
@@ -178,9 +203,14 @@ public class ViewingController {
     // 내 수강 강의 목록 조회
     // GET /api/v1/users/me/lectures
     @GetMapping("/users/me/lectures")
-    public ResponseEntity<ApiResponse<List<MyLectureResponse>>> getMyLectures () {
+    public ResponseEntity<ApiResponse<List<MyLectureResponse>>> getMyLectures (
+            @AuthenticationPrincipal CustomUserDetails userDetails
 
-        Long userId = 1L;
+    ) {
+
+//        Long userId = 1L;
+        Long userId = userDetails.getUserId();
+
 
         List<MyLectureResponse> responses = getMyLectureUseCase
                 .getMyLectures(userId);
