@@ -1,6 +1,6 @@
 package com.wanted.momocity.lecture.domain.repository;
 
-import com.wanted.momocity.lecture.domain.model.Lecture;
+import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.model.LectureCategory;
 import com.wanted.momocity.lecture.domain.model.LecturePage;
 
@@ -17,10 +17,10 @@ import java.util.Optional;
 public interface LectureRepository {
 
     // 강의를 저장
-    Lecture save(Lecture lecture);
+    LectureAggregate save(LectureAggregate lecture);
 
     // 강의 ID로 강의를 조회
-    Optional<Lecture> findById(Long lectureId);
+    Optional<LectureAggregate> findById(Long lectureId);
 
     /*
      * 학생용 강의 목록을 조회

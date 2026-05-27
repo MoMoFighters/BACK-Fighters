@@ -1,6 +1,6 @@
 package com.wanted.momocity.lecture.presentation.api.response;
 
-import com.wanted.momocity.lecture.domain.model.Lecture;
+import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 
 import java.time.LocalDateTime;
 
@@ -25,7 +25,7 @@ public record CreateLectureResponse(
      * 도메인 모델 Lecture를 응답 DTO로 변환
      * Controller에서 응답 객체를 직접 조립하지 않도록 변환 책임을 이곳에 둔다.
      */
-    public static CreateLectureResponse from(Lecture lecture) {
+    public static CreateLectureResponse from(LectureAggregate lecture) {
         return new CreateLectureResponse(
                 lecture.getId(),
                 lecture.getTeacherId(),

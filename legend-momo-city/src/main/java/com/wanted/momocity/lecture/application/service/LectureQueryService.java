@@ -4,7 +4,7 @@ import com.wanted.momocity.enrollment.application.port.StudentAccountPort;
 import com.wanted.momocity.lecture.application.port.LectureEnrollmentQueryPort;
 import com.wanted.momocity.lecture.application.query.GetLecturesQuery;
 import com.wanted.momocity.lecture.application.usecase.LectureQueryUseCase;
-import com.wanted.momocity.lecture.domain.model.Lecture;
+import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.repository.LectureRepository;
 import com.wanted.momocity.lecture.presentation.api.response.LectureListItemResponse;
 import com.wanted.momocity.lecture.presentation.api.response.LecturePageResponse;
@@ -75,7 +75,7 @@ public class LectureQueryService implements LectureQueryUseCase {
      * Lecture 도메인 객체를 목록 응답 DTO로 변환
      */
     private LectureListItemResponse toResponse(
-            Lecture lecture,
+            LectureAggregate lecture,
             boolean enrolled,
             Long userId
     ) {

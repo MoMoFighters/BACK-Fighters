@@ -3,7 +3,7 @@ package com.wanted.momocity.lecture.application.service;
 import com.wanted.momocity.lecture.application.command.CreateLectureCommand;
 import com.wanted.momocity.lecture.application.port.TeacherAccountPort;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCase;
-import com.wanted.momocity.lecture.domain.model.Lecture;
+import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.repository.LectureRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,14 +27,14 @@ public class LectureCommandService implements LectureCommandUseCase {
     }
 
     @Override
-    public Lecture createLecture(CreateLectureCommand command) {
+    public LectureAggregate createLecture(CreateLectureCommand command) {
         /*
          * Authorization 토큰에서 얻은 email로 강사 id를 조회한다.
          */
         Long teacherId = teacherAccountPort.getTeacherId(command.teacherEmail());
 
         // command.thumbnailUrl()은 S3 업로드 후 생성된 이미지 URL이다.
-        Lecture lecture = Lecture.create(
+        LectureAggregate lecture = LectureAggregate.create(
                 teacherId,
                 command.title(),
                 command.description(),

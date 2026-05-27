@@ -1,6 +1,6 @@
 package com.wanted.momocity.lecture.infrastructure.persistence;
 
-import com.wanted.momocity.lecture.domain.model.Lecture;
+import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.model.LectureCategory;
 import com.wanted.momocity.lecture.domain.model.LecturePage;
 import com.wanted.momocity.lecture.domain.model.LectureStatus;
@@ -26,7 +26,7 @@ public class LectureRepositoryAdapter implements LectureRepository {
 
     // 강의를 저장합니다.
     @Override
-    public Lecture save(Lecture lecture) {
+    public LectureAggregate save(LectureAggregate lecture) {
         LectureJpaEntity entity = new LectureJpaEntity(
                 lecture.getTeacherId(),
                 lecture.getTitle(),
@@ -44,7 +44,7 @@ public class LectureRepositoryAdapter implements LectureRepository {
     // 강의 ID로 강의를 조회합니다.
     @Override
     @Transactional(readOnly = true)
-    public Optional<Lecture> findById(Long lectureId) {
+    public Optional<LectureAggregate> findById(Long lectureId) {
         return repository.findById(lectureId)
                 .map(this::toDomain);
     }
@@ -70,7 +70,7 @@ public class LectureRepositoryAdapter implements LectureRepository {
                 pageable
         );
 
-        List<Lecture> content = lecturePage.getContent().stream()
+        List<LectureAggregate> content = lecturePage.getContent().stream()
                 .map(this::toDomain)
                 .toList();
 
@@ -158,8 +158,8 @@ public class LectureRepositoryAdapter implements LectureRepository {
     }
 
     // JPA Entity를 도메인 모델로 변환합니다.
-    private Lecture toDomain(LectureJpaEntity entity) {
-        return Lecture.restore(
+    private LectureAggregate toDomain(LectureJpaEntity entity) {
+        return LectureAggregate.restore(
                 entity.getId(),
                 entity.getTeacherId(),
                 entity.getTitle(),
