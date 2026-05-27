@@ -29,6 +29,7 @@ public class AuthController {
     private final EmailSendUsecase emailSendUsecase;
     private final EmailVerifyUsecase emailVerifyUsecase;
     private final TempPasswordUsecase tempPasswordUsecase;
+    private final KakaoLoginUsecase kakaoLoginUsecase;
 
     private final S3UploadPort s3UploadPort;
 
@@ -169,6 +170,23 @@ public class AuthController {
                         null
                 ));
     }
+
+
+    @PostMapping("/kakaologin")
+    @Operation(summary = "카카오로그인을 위한 api")
+    public ResponseEntity<ApiResponse<LoginResponse>> kakaoLogin(
+            @Valid @RequestBody SocialLoginRequest request){
+
+        LoginResponse result = kakaoLoginUsecase.socialLogin(new SocialLoginCommand(request.code()));
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        AuthResponseCode.SUCCESS,
+                        AuthResponseMessage.LOGIN_SUCCESS,
+                        new LoginResponse(result.accessToken(), result.refreshToken(),result.status() ,result.expiresIn())
+                ));
+    }
+
 
 
 }
