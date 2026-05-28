@@ -1,5 +1,7 @@
 package com.wanted.momocity.lecture.application.service;
 
+import com.wanted.momocity.auth.application.port.LoadUserPort;
+import com.wanted.momocity.auth.domain.model.User;
 import com.wanted.momocity.enrollment.application.port.StudentAccountPort;
 import com.wanted.momocity.lecture.application.port.LectureEnrollmentQueryPort;
 import com.wanted.momocity.lecture.application.port.TeacherAccountPort;
@@ -48,6 +50,9 @@ public class LectureQueryService implements LectureQueryUseCase {
 
     // 챕터 목록 조회
     private final ChapterRepository chapterRepository;
+
+    // 강사 이름과 프로필 이미지를 조회하기 위한 auth 포트
+    private final LoadUserPort loadUserPort;
 
     // 강의 목록을 조회
     @Override
@@ -113,13 +118,17 @@ public class LectureQueryService implements LectureQueryUseCase {
                 .findByUserIdAndLectureId(userId, query.lectureId())
                 .isPresent();
 
-        /*
-         * TODO:
-         * 강사명, 강사 프로필, 리뷰 집계는 아직 연결하지 않았으므로 기본값으로 둡니다.
-         * 이후 user 조회 포트와 review 집계 포트를 연결하면 됩니다.
-         */
-        String teacherName = null;
-        String teacherProfileImageUrl = null;
+        // lecture.teacherId로 강사 정보를 조회합니다.
+        User teacher = loadUserPort.findById(lecture.getTeacherId())
+                .orElseThrow(() -> new LectureNotFoundException("강사 정보를 찾을 수 없습니다."));
+
+        // 강사 이름입니다.
+        String teacherName = teacher.getName();
+
+        // 강사 프로필 이미지 URL입니다.
+        String teacherProfileImageUrl = teacher.getProfileImageUrl();
+
+        // 리뷰 집계는 다음 단계에서 review 테이블 조회로 연결합니다.
         double averageRating = 0.0;
         int reviewCount = 0;
 
