@@ -4,12 +4,14 @@ import com.wanted.momocity.enrollment.application.port.StudentAccountPort;
 import com.wanted.momocity.lecture.application.port.LectureEnrollmentQueryPort;
 import com.wanted.momocity.lecture.application.port.TeacherAccountPort;
 import com.wanted.momocity.lecture.application.query.GetLecturesQuery;
+import com.wanted.momocity.lecture.application.query.GetStudentLectureDetailQuery;
 import com.wanted.momocity.lecture.application.query.GetTeacherLectureDetailQuery;
 import com.wanted.momocity.lecture.application.query.GetTeacherLecturesQuery;
 import com.wanted.momocity.lecture.application.usecase.LectureQueryUseCase;
 import com.wanted.momocity.lecture.domain.exception.LectureNotFoundException;
 import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.model.LectureChapter;
+import com.wanted.momocity.lecture.domain.model.LectureStatus;
 import com.wanted.momocity.lecture.domain.repository.ChapterRepository;
 import com.wanted.momocity.lecture.domain.repository.LectureRepository;
 import com.wanted.momocity.lecture.presentation.api.response.*;
@@ -83,6 +85,53 @@ public class LectureQueryService implements LectureQueryUseCase {
                 query.size(),
                 lecturePage.totalElements(),
                 lecturePage.totalPages()
+        );
+    }
+
+    // 학생 강의 상세 조회
+    @Override
+    public StudentLectureDetailResponse getStudentLectureDetail(GetStudentLectureDetailQuery query) {
+
+        // Authorization 토큰에서 가져온 userId가 실제 학생 계정인지 확인합니다.
+        Long userId = studentAccountPort.getStudentId(query.userId());
+
+        // lectureId로 강의를 조회합니다.
+        LectureAggregate lecture = lectureRepository.findById(query.lectureId())
+                .orElseThrow(() -> new LectureNotFoundException("강의를 찾을 수 없습니다."));
+
+        // 학생은 ACTIVE 상태의 강의만 상세 조회할 수 있습니다.
+        if (lecture.getStatus() != LectureStatus.ACTIVE) {
+            throw new AccessDeniedException("진행 중인 강의만 조회할 수 있습니다.");
+        }
+
+        // 해당 강의의 챕터 목록을 orderNo 오름차순으로 조회합니다.
+        List<LectureChapter> chapters =
+                chapterRepository.findAllByLectureIdOrderByOrderNoAsc(query.lectureId());
+
+        // 로그인한 학생이 이 강의를 수강신청했는지 확인합니다.
+        boolean isEnrolled = lectureEnrollmentQueryPort
+                .findByUserIdAndLectureId(userId, query.lectureId())
+                .isPresent();
+
+        /*
+         * TODO:
+         * 강사명, 강사 프로필, 리뷰 집계는 아직 연결하지 않았으므로 기본값으로 둡니다.
+         * 이후 user 조회 포트와 review 집계 포트를 연결하면 됩니다.
+         */
+        String teacherName = null;
+        String teacherProfileImageUrl = null;
+        double averageRating = 0.0;
+        int reviewCount = 0;
+
+        // 조회한 강의/챕터/부가정보를 학생 상세 응답 DTO로 변환합니다.
+        return StudentLectureDetailResponse.from(
+                lecture,
+                chapters,
+                teacherName,
+                teacherProfileImageUrl,
+                averageRating,
+                reviewCount,
+                isEnrolled
         );
     }
 
