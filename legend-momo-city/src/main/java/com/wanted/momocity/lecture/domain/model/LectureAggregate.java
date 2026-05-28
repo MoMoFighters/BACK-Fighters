@@ -141,6 +141,27 @@ public class LectureAggregate {
     }
 
     /*
+     * 강의 상태를 변경
+     * 강의의 기본 정보는 유지하고 status 값만 새로운 상태로 교체합니다.
+     */
+    public LectureAggregate changeStatus(LectureStatus newStatus) {
+        validateStatus(newStatus);
+
+        return new LectureAggregate(
+                id,
+                teacherId,
+                title,
+                description,
+                thumbnailUrl,
+                category,
+                newStatus,
+                completedUserCount,
+                createdAt,
+                updatedAt
+        );
+    }
+
+    /*
      * 요청한 teacherId가 이 강의의 소유자인지 확인
      * 수정/삭제 권한 검증에서 사용
      */
@@ -157,30 +178,31 @@ public class LectureAggregate {
         }
     }
 
-    /*
-     * 강의 제목은 필수 입력값
-     */
+    // 강의 제목은 필수 입력값
     private static void validateTitle(String title) {
         if (title == null || title.isBlank()) {
             throw new DomainRuleViolationException("강의 제목은 필수입니다.");
         }
     }
 
-    /*
-     * 강의 설명은 필수 입력값
-     */
+    // 강의 설명은 필수 입력값
     private static void validateDescription(String description) {
         if (description == null || description.isBlank()) {
             throw new DomainRuleViolationException("강의 설명은 필수입니다.");
         }
     }
 
-    /*
-     * 강의 카테고리는 필수 입력값
-     */
+    // 강의 카테고리는 필수 입력값
     private static void validateCategory(LectureCategory category) {
         if (category == null) {
             throw new DomainRuleViolationException("강의 카테고리는 필수입니다.");
+        }
+    }
+
+    // 강의 상태값은 필수
+    private static void validateStatus(LectureStatus status) {
+        if (status == null) {
+            throw new DomainRuleViolationException("강의 상태는 필수입니다.");
         }
     }
 
