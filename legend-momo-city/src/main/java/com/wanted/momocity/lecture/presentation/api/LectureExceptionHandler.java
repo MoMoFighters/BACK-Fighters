@@ -2,9 +2,7 @@ package com.wanted.momocity.lecture.presentation.api;
 
 import com.wanted.momocity.global.presentation.api.common.ApiErrorResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
-import com.wanted.momocity.lecture.domain.exception.ChapterLimitExceededException;
-import com.wanted.momocity.lecture.domain.exception.DuplicateChapterOrderException;
-import com.wanted.momocity.lecture.domain.exception.LectureNotFoundException;
+import com.wanted.momocity.lecture.domain.exception.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -45,6 +43,32 @@ public class LectureExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleChapterLimitExceeded(
             ChapterLimitExceededException exception
     ) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiErrorResponse.of(
+                        HttpStatus.CONFLICT.value(),
+                        ApiResponseCode.DOMAIN_RULE_VIOLATION,
+                        exception.getMessage()
+                ));
+    }
+
+    /*
+     * 챕터를 찾을 수 없을 때 404 응답을 반환합니다.
+     */
+    @ExceptionHandler(ChapterNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleChapterNotFound(ChapterNotFoundException exception) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiErrorResponse.of(
+                        HttpStatus.NOT_FOUND.value(),
+                        ApiResponseCode.NOT_FOUND,
+                        exception.getMessage()
+                ));
+    }
+
+    /*
+     * 이미 동영상이 등록된 챕터에 다시 등록 요청이 들어오면 409 응답을 반환합니다.
+     */
+    @ExceptionHandler(ChapterVideoAlreadyExistsException.class)
+    public ResponseEntity<ApiErrorResponse> handleChapterVideoAlreadyExists(ChapterVideoAlreadyExistsException exception) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ApiErrorResponse.of(
                         HttpStatus.CONFLICT.value(),
