@@ -1,0 +1,38 @@
+### 내 친구 목록
+GET localhost:8080/api/v1/friends
+
+### 사용자 검색
+GET localhost:8080/api/v1/friends/find?nickname=영
+
+### 친구 요청: 6번 유저에게 친구 요청 -> notification 행 추가
+POST localhost:8080/api/v1/friends/request/6
+
+### 수강신청 후 친구 자동 추가
+POST localhost:8080/api/fake-enroll?studentId=7&lectureId=4
+
+### 친구 요청 철회 -> notifcation 행 삭제
+DELETE localhost:8080/api/v1/friends/request/6
+
+### 보낸 친구 요청 목록
+GET localhost:8080/api/v1/friends/sent
+
+### 친구 요청 수락(2번이 1번의 요청 수락)
+PATCH localhost:8080/api/v1/friends/received/6/accept
+
+### 친구 요청 거절(1번이 6번의 요청 거절)
+DELETE localhost:8080/api/v1/friends/received/6/reject
+
+### 받은 친구 요청 목록
+GET localhost:8080/api/v1/friends/received
+
+### 친구 차단
+PATCH localhost:8080/api/v1/friends/block/6
+
+### 차단한 목록
+GET localhost:8080/api/v1/friends/blocked
+
+### 친구 차단 해제
+PATCH localhost:8080/api/v1/friends/unblock/6
+
+### 친구 삭제
+DELETE localhost:8080/api/v1/friends/delete/6
