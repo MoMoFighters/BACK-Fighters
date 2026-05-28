@@ -41,7 +41,7 @@ public class FindChatRoomQueryService implements FindChatRoomQueryUseCase {
     //채팅 목록
     @Override
     public List<ChatRoomView> handle(Long userId) {
-        log.info("[FriendChatRoomQueryService] 채팅방 목록 조회 비즈니스 가공 시작 - 조회 요청 유저ID: {}", userId);
+        log.info("[FindChatRoomQueryService] 채팅방 목록 조회 비즈니스 가공 시작 - 조회 요청 유저ID: {}", userId);
 
         //현재 로그인한 유저 정보 확인(학생/강사 판별)
         UserWithFMJpaEntity loginUser = messageSideUserRepository.findById(userId)
