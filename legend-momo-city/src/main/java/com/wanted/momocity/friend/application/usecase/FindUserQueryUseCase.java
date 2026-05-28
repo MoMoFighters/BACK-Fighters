@@ -13,6 +13,7 @@ public interface FindUserQueryUseCase {
             String status,
             String role,
             Boolean isNotActive, //user 테이블의 활성 상태가 아닌 것
-            List<String> lectureTitle
+            List<String> lectureTitle,
+            String profileImageUrl
     ) {}
 }

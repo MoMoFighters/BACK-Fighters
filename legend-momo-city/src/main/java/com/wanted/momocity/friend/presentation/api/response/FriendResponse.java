@@ -14,7 +14,8 @@ public record FriendResponse(
         String nickname,
         String role,
         String status, //친구 여부
-        String lectureTitle //백엔드가 가공해서 보낼 강의명
+        String lectureTitle, //백엔드가 가공해서 보낼 강의명,
+        String profileImageUrl
 ) {
 
     //데이터 가공
@@ -39,7 +40,8 @@ public record FriendResponse(
                 displayNickname,
                 view.role(),
                 view.status(),
-                finalLectureTitle
+                finalLectureTitle,
+                view.profileImageUrl()
         );
     }
 }

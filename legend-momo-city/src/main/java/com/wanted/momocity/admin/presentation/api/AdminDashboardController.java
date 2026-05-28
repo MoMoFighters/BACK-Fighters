@@ -2,6 +2,7 @@ package com.wanted.momocity.admin.presentation.api;
 
 import com.wanted.momocity.admin.application.usecase.AdminDashboardQueryUseCase;
 import com.wanted.momocity.admin.presentation.api.response.DashboardSummaryResponse;
+import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
@@ -56,7 +57,7 @@ public class AdminDashboardController {
             summary = "관리자 대시보드 요약 통계",
             description = "회원 / 신고 / 강의 총 개수를 한 번에 조회한다. FE 대시보드 페이지 진입 시 호출."
     )
-    public ResponseEntity<DashboardSummaryResponse> getDashboardSummary() {
+    public ResponseEntity<ApiResponse<DashboardSummaryResponse>> getDashboardSummary() {
         throw new UnsupportedOperationException("TODO: m03 우선순위 - admin 대시보드 요약 통계 컨트롤러 구현");
     }
 }

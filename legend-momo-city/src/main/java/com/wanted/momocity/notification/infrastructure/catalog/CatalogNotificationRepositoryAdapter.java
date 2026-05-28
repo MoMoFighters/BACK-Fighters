@@ -1,6 +1,9 @@
 package com.wanted.momocity.notification.infrastructure.catalog;
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 0da5d65baace2227ac19b6c89ad2afd776bc028b
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.notification.domain.model.Notification;

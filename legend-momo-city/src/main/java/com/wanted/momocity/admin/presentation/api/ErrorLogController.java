@@ -1,10 +1,12 @@
 package com.wanted.momocity.admin.presentation.api;
 
 import com.wanted.momocity.admin.application.usecase.ErrorLogQueryUseCase;
+import com.wanted.momocity.admin.domain.audit.ErrorLog;
 import com.wanted.momocity.admin.presentation.api.response.ErrorLogResponse;
+import com.wanted.momocity.global.presentation.api.common.ApiResponse;
+import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +15,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 /* comment.
     ErrorLogController 정리
@@ -31,10 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
         b) UseCase 호출
         c) Result → Item DTO 변환 (stream map)
         d) ErrorLogResponse 로 묶기
-        e) ResponseEntity 로 반환
-    6. MS-6 / 대시보드 Controller 와 차이 :
-        - HTTP 메서드 : GET (조회)
-        - 입력 : @RequestParam (쿼리 파라미터), path variable / body 없음
+        e) ApiResponse wrapper 로 감싸 ResponseEntity 반환 (전 컨트롤러 일관성)
  */
 @RestController
 @RequestMapping("/api/v1/admin")
@@ -48,38 +49,49 @@ public class ErrorLogController {
         this.errorLogQueryUseCase = errorLogQueryUseCase;
     }
 
-    /* comment.
-        실제 구현 시 흐름 (m03 우선순위) :
-        1. ErrorLogList result = errorLogQueryUseCase.getRecent(limit);
-        2. List<Item> items = result.errorLogs().stream()
-                                    .map(this::toItem)
-                                    .toList();
-        3. ErrorLogResponse response = new ErrorLogResponse(items);
-        4. return ResponseEntity.ok(response);
-
-        // 헬퍼 (private Item toItem(ErrorLog log))
-        // return new Item(
-        //     log.getId(),
-        //     log.getLevel().name(),   // enum → String
-        //     log.getSource(),
-        //     log.getMessage(),
-        //     log.getOccurredAt()
-        // );
-     */
     @GetMapping("/error-logs")
     @Operation(
             summary = "관리자 에러 로그 조회",
             description = "최근 N개의 에러 로그를 조회한다. FE 대시보드 에러 로그 위젯이 호출."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "에러 로그 조회 성공"),
-            @ApiResponse(responseCode = "401", description = "인증 토큰 누락 또는 만료"),
-            @ApiResponse(responseCode = "403", description = "ADMIN 권한 없음")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200", description = "에러 로그 조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "401", description = "인증 토큰 누락 또는 만료"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "403", description = "ADMIN 권한 없음")
     })
-    public ResponseEntity<ErrorLogResponse> getRecentErrorLogs(
+    public ResponseEntity<ApiResponse<ErrorLogResponse>> getRecentErrorLogs(
             @Parameter(description = "조회할 최대 개수", example = "10")
             @RequestParam(defaultValue = "10") int limit
     ) {
-        throw new UnsupportedOperationException("TODO: m03 우선순위 - 에러 로그 조회 컨트롤러 구현");
+        // 1. UseCase 호출 → 도메인 리스트 받기
+        ErrorLogQueryUseCase.ErrorLogList result = errorLogQueryUseCase.getRecent(limit);
+
+        // 2. 도메인 → 응답 Item 변환 (stream map)
+        List<ErrorLogResponse.Item> items = result.errorLogs().stream()
+                .map(this::toItem)
+                .toList();
+
+        // 3. ApiResponse wrapper 로 감싸 200 OK 반환
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        ApiResponseCode.SUCCESS,
+                        "에러 로그 조회 성공",
+                        new ErrorLogResponse(items)
+                )
+        );
+    }
+
+    // 도메인 ErrorLog → 응답 Item 변환 헬퍼 (enum → String)
+    private ErrorLogResponse.Item toItem(ErrorLog log) {
+        return new ErrorLogResponse.Item(
+                log.getId(),
+                log.getLevel().name(),
+                log.getSource(),
+                log.getMessage(),
+                log.getOccurredAt()
+        );
     }
 }

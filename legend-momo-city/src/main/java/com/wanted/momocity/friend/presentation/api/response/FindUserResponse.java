@@ -14,7 +14,8 @@ public record FindUserResponse(
         String name,
         String status,
         String role,
-        String lectureTitle
+        String lectureTitle,
+        String profileImageUrl
 ) {
     //서비스에서 받은 날 것의 FindView 주머니를 여기서 가공
     public static FindUserResponse from(FindView view) {
@@ -37,7 +38,8 @@ public record FindUserResponse(
                 displayNickname,
                 view.status(),
                 view.role(),
-                finalLectureTitle
+                finalLectureTitle,
+                view.profileImageUrl()
         );
     }
 }
