@@ -37,5 +37,11 @@ public class ChapterRepositoryAdapter implements ChapterRepository {
     public boolean existsByLectureIdAndOrderNo(Long lectureId, int orderNo) {
         return repository.existsByLectureIdAndOrderNo(lectureId, orderNo);
     }
+
+    @Override
+    public Optional<LectureChapter> findById(Long chapterId) {
+        return repository.findById(chapterId)
+                .map(ChapterJpaEntity::toDomain);
+    }
     
 }
