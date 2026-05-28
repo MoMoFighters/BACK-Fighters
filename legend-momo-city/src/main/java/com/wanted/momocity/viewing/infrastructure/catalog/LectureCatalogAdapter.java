@@ -1,8 +1,12 @@
 package com.wanted.momocity.viewing.infrastructure.catalog;
 
+import com.wanted.momocity.auth.application.port.LoadUserPort;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
+import com.wanted.momocity.lecture.infrastructure.persistence.LectureJpaEntity;
+import com.wanted.momocity.lecture.infrastructure.persistence.SpringDataLectureRepository;
 import com.wanted.momocity.viewing.application.port.LecturePort;
 import com.wanted.momocity.viewing.domain.model.Lecture;
+import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
@@ -25,13 +29,18 @@ import org.springframework.stereotype.Component;
 * */
 
 @Component
+@RequiredArgsConstructor
 public class LectureCatalogAdapter implements LecturePort {
 
-    // TODO : LectureJpaRepository 완성 후 주입
-    // private final LectureJpaRepository lectureJpaRepository;
+    // SpringDataLectureRepository 주입
+    private final SpringDataLectureRepository springDataLectureRepository;
+    // LoadUserPort 주입
+    // → teacherId 로 강사 이름 조회할 때 사용
+    private final LoadUserPort loadUserPort;
 
     /*
      * comment.
+     *  강의 단건 조회
      *  @Cacheable("lecture")
      *  -> 처음 호출 시 DB 조회 후 Redis 에 저장
      *  -> 이후 호출 시 Redis 에서 반환 (DB 조회 없음)
@@ -42,28 +51,26 @@ public class LectureCatalogAdapter implements LecturePort {
     @Cacheable(value = "lecture", key = "#lectureId")
     public Lecture findById(Long lectureId) {
 
-        // TODO: 팀원 머지 후 실제 DB 조회로 교체
-        // return lectureJpaRepository.findById(lectureId)
-        //         .map(entity -> {
-        //             String instructorName = userJpaRepository
-        //                     .findById(entity.getTeacherId())
-        //                     .map(UserJpaEntity::getName)
-        //                     .orElseThrow(() -> new DomainRuleViolationException("강사를 찾을 수 없습니다."));
-        //             return Lecture.reconstitute(
-        //                     entity.getId(), entity.getTeacherId(),
-        //                     entity.getTitle(), entity.getThumbnailUrl(),
-        //                     entity.getCategory(), instructorName
-        //             );
-        //         })
-        //         .orElseThrow(() -> new DomainRuleViolationException("강의를 찾을 수 없습니다."));
+        // SpringDataLectureRepository 의 findById() 로 강의 DB 조회
+        LectureJpaEntity entity = springDataLectureRepository.findById(lectureId)
+                .orElseThrow(() -> new DomainRuleViolationException("강의를 찾을 수 없습니다."));
 
+        // LoadUserPort 로 강사 이름 조회
+        // → LectureJpaEntity 에 instructorName 없어서 LoadUserPort 통해 teacherId 로 user 이름 조회
+        // → 없으면 "강사" 로 기본값 처리
+        String instructorName = loadUserPort.findById(entity.getTeacherId())
+                .map(user -> user.getName())
+                .orElse("강사");
+
+        // LectureJpaEntity → Lecture 도메인으로 변환
+        // category 는 Enum → String 변환
         return Lecture.reconstitute(
-                lectureId,
-                1L,
-                "임시 강의 " + lectureId,
-                "https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png",
-                "HEALTH",
-                "임시 강사"
+                entity.getId(),
+                entity.getTeacherId(),
+                entity.getTitle(),
+                entity.getThumbnailUrl(),
+                entity.getCategory().name(),
+                instructorName
         );
     }
 }

@@ -201,7 +201,7 @@ public class ViewingQueryService implements ViewingQueryUseCase {
                     return new MyLecturesResponse.LectureItem(
                             lecture.getId(), lecture.getTitle(),
                             lecture.getThumbnailUrl(), lecture.getCategory(),
-                            totalProgress
+                            totalProgress, enrollment.enrolledAt()
                     );
                 })
                 .toList();
