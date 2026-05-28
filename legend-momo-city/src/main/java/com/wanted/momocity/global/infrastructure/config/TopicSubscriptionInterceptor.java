@@ -1,5 +1,6 @@
 package com.wanted.momocity.global.infrastructure.config;
 
+import com.wanted.momocity.auth.application.port.LoadUserPort;
 import com.wanted.momocity.message.application.manager.ChatRoomSessionManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
