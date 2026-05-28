@@ -3,9 +3,11 @@ package com.wanted.momocity.user.presentation.api;
 import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.user.application.command.NicknameRegisterCommand;
+import com.wanted.momocity.user.application.command.UpdateUserInfoCommand;
 import com.wanted.momocity.user.application.usecase.UserCommandUsecase;
 import com.wanted.momocity.user.application.usecase.UserQueryUsecase;
 import com.wanted.momocity.user.presentation.api.request.NicknameRegisterRequest;
+import com.wanted.momocity.user.presentation.api.request.UpdateUserInfoRequest;
 import com.wanted.momocity.user.presentation.api.response.NicknameRegisterResponse;
 import com.wanted.momocity.user.presentation.api.response.UserResponseCode;
 import com.wanted.momocity.user.presentation.api.response.UserResponseMessage;
@@ -17,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
 
 @RestController
 @RequiredArgsConstructor
@@ -57,6 +60,26 @@ public class UserController {
                         UserResponseCode.SUCCESS,
                         nickname+UserResponseMessage.NICKNAME_REGISTERED,
                         new NicknameRegisterResponse(nickname)
+                ));
+    }
+
+
+    @PatchMapping("/user/update")
+    @Operation(summary = "사용자 정보 수정",
+                description = "프로필 이미지(모듈4부터), 닉네임, 비밀번호 변경 가능")
+    public ResponseEntity<ApiResponse<Void>> updateUserInfo(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody @Valid UpdateUserInfoRequest request){
+
+        userCommandUsecase.updateUserInfo(new UpdateUserInfoCommand(
+                userDetails.getUserId(),request.profileImageUrl(),request.nickname(),request.currentPassword(),request.password()
+        ));
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        UserResponseCode.SUCCESS,
+                        UserResponseMessage.USER_INFO_UPDATE_SUCCESS,
+                    null
                 ));
     }
 

@@ -20,4 +20,26 @@ public class UserExceptionHandler {
                         e.getMessage()
                 ));
     }
+
+
+    @ExceptionHandler(InvalidPasswordException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidPassword(InvalidPasswordException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiErrorResponse.of(
+                        HttpStatus.BAD_REQUEST.value(),
+                        "INVALID_PASSWORD",
+                        e.getMessage()
+                ));
+    }
+
+    @ExceptionHandler(SamePasswordException.class)
+    public ResponseEntity<ApiErrorResponse> handleSamePassword(SamePasswordException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiErrorResponse.of(
+                        HttpStatus.BAD_REQUEST.value(),
+                        "SAME_PASSWORD",
+                        e.getMessage()
+                ));
+    }
+
 }

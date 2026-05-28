@@ -113,4 +113,8 @@ public class UserJpaEntity {
     public String getProfileImageUrl() {
         return profileImageUrl;
     }
+
+    public String getPassword() {
+        return password;
+    }
 }
