@@ -18,7 +18,8 @@ public record GetMessageHistoryResponse(
         String content,
         LocalDateTime createdAt,
         boolean isRead,
-        boolean isMine
+        boolean isMine,
+        String profileImageUrl
 ) {
     public static GetMessageHistoryResponse from(MessageHistoryView view) {
 
@@ -26,18 +27,17 @@ public record GetMessageHistoryResponse(
         String displayNickname = view.nickname();
         String finalLectureTitle = null;
 
-        if (view.isMine()) {
+        // 상대방이 보낸 말풍선 가공 규칙 적용
+        if ("me".equals(view.status())) {
+            displayNickname = "나와의 채팅" + "(" + displayNickname + ")";
+        } else if (view.isMine()) {
             // 내가 보낸 메시지인 경우 마스킹 정책에서 제외하고 내 닉네임 그대로 유지
             displayNickname = view.nickname();
-        } else {
-            // 상대방이 보낸 말풍선 가공 규칙 적용
-            if ("me".equals(view.status())) {
-                displayNickname = "나와의 채팅" + "(" + displayNickname + ")";
-            } else if (view.isNotActive()) {
+        } else if (view.isNotActive()) {
                 // ACTIVE가 아니거나 차단, 친구 삭제(none) 상태일 때 "(알 수 없음)" 결합
                 displayNickname += "(알 수 없음)";
-            }
         }
+
 
         // 강의명 가공 소스 이식
         List<String> lectureTitle = view.lectureTitle();
@@ -56,7 +56,8 @@ public record GetMessageHistoryResponse(
                 view.content(),
                 view.createdAt(), // T 문자열 그대로 노출
                 view.isRead(),    // true
-                view.isMine()
+                view.isMine(),
+                view.profileImageUrl()
         );
     }
 }

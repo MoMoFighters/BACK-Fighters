@@ -186,7 +186,8 @@ public class FindChatRoomQueryService implements FindChatRoomQueryUseCase {
                     lastContent,
                     lastChattedAt,
                     unreadCount,
-                    lectureTitleList
+                    lectureTitleList,
+                    targetUser.getProfileImageUrl()
             ));
         }
 

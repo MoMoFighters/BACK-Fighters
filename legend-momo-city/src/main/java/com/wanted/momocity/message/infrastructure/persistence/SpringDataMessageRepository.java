@@ -4,6 +4,7 @@ import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.awt.print.Pageable;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,9 +27,9 @@ public interface SpringDataMessageRepository extends JpaRepository<MessageJpaEnt
 
     //메시지 내역 조회
     //lastMessageId 없을 때(최조 진입)
-    List<MessageJpaEntity> findTop20ByRoomId_IdOrderByIdDesc(Long roomId);
+    List<MessageJpaEntity> findTop20ByRoomId_IdAndCreatedAtGreaterThanEqualOrderByIdDesc(Long roomId, LocalDateTime timeline);
     //스크롤 시 lastMessageId보다 작은 과거 데이터(최신) 20개
-    List<MessageJpaEntity> findTop20ByRoomId_IdAndIdLessThanOrderByIdDesc(Long roomId, Long lastMessageId);
+    List<MessageJpaEntity> findTop20ByRoomId_IdAndIdLessThanAndCreatedAtGreaterThanEqualOrderByIdDesc(Long roomId, Long lastMessageId, LocalDateTime timeline);
 
 //    //방 멤버 맞는지 검증
 //    boolean existsByRoomId_IdAndSenderId_Id(Long roomId, Long userId);

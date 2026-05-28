@@ -66,12 +66,16 @@ public class SendMessageCommandService implements SendMessageCommandUseCase {
         //상대방과의 친구 관게 조회
         //두 사람 사이의 관계 양방향 조회
         String friendStatus = "none";
-        Optional<FriendJpaEntity> relationOpt = messageSideFriendRepository.findByFromUserId_IdAndToUserId_Id(senderId, targetUser.getId());
-        if (relationOpt.isEmpty()) {
-            relationOpt = messageSideFriendRepository.findByFromUserId_IdAndToUserId_Id(targetUser.getId(), senderId);
-        }
-        if (relationOpt.isPresent()) {
-            friendStatus = relationOpt.get().getStatus();
+        if (targetUser == null) {
+            friendStatus = "me";
+        } else {
+            Optional<FriendJpaEntity> relationOpt = messageSideFriendRepository.findByFromUserId_IdAndToUserId_Id(senderId, targetUser.getId());
+            if (relationOpt.isEmpty()) {
+                relationOpt = messageSideFriendRepository.findByFromUserId_IdAndToUserId_Id(targetUser.getId(), senderId);
+            }
+            if (relationOpt.isPresent()) {
+                friendStatus = relationOpt.get().getStatus();
+            }
         }
 
         messageEligibilityPolicy.sendable(roomId, senderId, friendStatus, roomMemberCount);
@@ -115,9 +119,9 @@ public class SendMessageCommandService implements SendMessageCommandUseCase {
 
         return new SendView(
                 roomId,
-                targetUser.getId(),
-                targetUser.getNickname(),
-                targetUser.getRole(),
+                targetUser != null ? targetUser.getId() : sender.getId(),
+                targetUser != null ? targetUser.getNickname() : sender.getNickname(),
+                targetUser != null ? targetUser.getRole() : sender.getRole(),
                 friendStatus,
                 content,
                 newMessage.getCreatedAt()

@@ -52,7 +52,7 @@ Authorization: Bearer {{auth_token}}
 Content-Type: application/json
 
 {
-    "content" : "안녕하세요! 첫 번째 테스트입니다!"
+    "content" : "메시지 볼 수 있나 테스트2"
 }
 
 ### 메시지 읽음 처리

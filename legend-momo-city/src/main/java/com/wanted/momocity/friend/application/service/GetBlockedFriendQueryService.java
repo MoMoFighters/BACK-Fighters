@@ -51,7 +51,8 @@ public class GetBlockedFriendQueryService implements GetBlockedFriendQueryUseCas
                     targetUser.getNickname(),
                     targetUser.getRole(),
                     relation.getStatus(),
-                    !"ACTIVE".equals(targetUser.getStatus())
+                    !"ACTIVE".equals(targetUser.getStatus()),
+                    targetUser.getProfileImageUrl()
             ));
         }
 
