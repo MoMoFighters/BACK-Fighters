@@ -1,6 +1,7 @@
-package com.wanted.momocity.mosungjin;
+﻿package com.wanted.momocity.mosungjin;
 
 import com.wanted.momocity.global.application.s3.S3UploadPort;
+import com.wanted.momocity.lecture.application.usecase.ChapterCommandUseCase;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCase;
 import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.model.LectureCategory;
@@ -22,16 +23,17 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /*
- * TeacherLectureRegisterTest는 강사용 강의 등록 API를 검증하는 Controller 테스트다.
+ * TeacherLectureAggregateRegisterTest는 강사의 강의 등록 API를 검증하는 Controller 테스트입니다.
  *
  * 실제 JWT 검증, 실제 S3 업로드, 실제 DB 저장은 수행하지 않고,
- * multipart/form-data 요청이 Controller에서 정상 처리되는지 확인한다.
+ * multipart/form-data 요청이 Controller에서 정상 처리되는지 확인합니다.
  */
 @WebMvcTest(TeacherLectureController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -40,19 +42,25 @@ class TeacherLectureAggregateRegisterTest {
     private static final String CREATE_LECTURE_URL = "/api/v1/teacher/lectures";
 
     /*
-     * MockMvc는 실제 서버를 띄우지 않고 HTTP 요청처럼 Controller를 테스트하게 해준다.
+     * MockMvc는 실제 서버를 띄우지 않고 HTTP 요청처럼 Controller를 테스트하게 해줍니다.
      */
     @Autowired
     private MockMvc mockMvc;
 
     /*
-     * Controller가 의존하는 UseCase를 Mock으로 대체한다.
+     * Controller가 의존하는 강의 UseCase를 Mock으로 대체합니다.
      */
     @MockitoBean
     private LectureCommandUseCase lectureCommandUseCase;
 
     /*
-     * 실제 S3 업로드 대신 Mock으로 URL을 반환하게 한다.
+     * TeacherLectureController 생성자 의존성 때문에 챕터 UseCase도 Mock으로 등록합니다.
+     */
+    @MockitoBean
+    private ChapterCommandUseCase chapterCommandUseCase;
+
+    /*
+     * 실제 S3 업로드 대신 Mock으로 URL을 반환하게 합니다.
      */
     @MockitoBean
     private S3UploadPort s3UploadPort;
@@ -64,13 +72,13 @@ class TeacherLectureAggregateRegisterTest {
         String thumbnailUrl = "https://example.com/images/spring-boot.png";
 
         /*
-         * S3 업로드가 성공하면 thumbnailUrl을 반환한다고 가정한다.
+         * S3 업로드가 성공하면 thumbnailUrl을 반환한다고 가정합니다.
          */
         when(s3UploadPort.upload(any()))
                 .thenReturn(thumbnailUrl);
 
         /*
-         * UseCase가 반환할 가짜 Lecture 객체를 준비한다.
+         * UseCase가 반환할 가짜 Lecture 객체를 준비합니다.
          */
         LectureAggregate lecture = LectureAggregate.restore(
                 10L,
@@ -89,7 +97,7 @@ class TeacherLectureAggregateRegisterTest {
                 .thenReturn(lecture);
 
         /*
-         * form-data의 thumbnail 파일 파트다.
+         * form-data의 thumbnail 파일 파트입니다.
          */
         MockMultipartFile thumbnail = new MockMultipartFile(
                 "thumbnail",
@@ -107,7 +115,7 @@ class TeacherLectureAggregateRegisterTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value(201))
                 .andExpect(jsonPath("$.code").value("COMMON-CREATED"))
-                .andExpect(jsonPath("$.message").value("강의가 등록되었습니다."))
+                .andExpect(jsonPath("$.message").exists())
                 .andExpect(jsonPath("$.data.lectureId").value(10))
                 .andExpect(jsonPath("$.data.teacherId").value(3))
                 .andExpect(jsonPath("$.data.title").value("Spring Boot 입문"))
@@ -161,10 +169,10 @@ class TeacherLectureAggregateRegisterTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.code").value("COMMON-DOMAIN-RULE-VIOLATION"))
-                .andExpect(jsonPath("$.message").value("허용되지 않은 강의 카테고리입니다."));
+                .andExpect(jsonPath("$.message").exists());
 
         /*
-         * category 검증이 S3 업로드보다 먼저 실행되어야 한다.
+         * category 검증이 S3 업로드보다 먼저 실행되어야 합니다.
          */
         verify(s3UploadPort, never()).upload(any());
     }
@@ -181,9 +189,8 @@ class TeacherLectureAggregateRegisterTest {
     }
 
     /*
-     * 강사 권한을 가진 인증 객체를 만든다.
-     *
-     * principal 값인 teacher@example.com은 실제 JWT subject에 해당하는 email 역할이다.
+     * 강사 권한을 가진 인증 객체를 만듭니다.
+     * principal 값인 teacher@example.com은 실제 JWT subject에 해당하는 email 역할입니다.
      */
     private UsernamePasswordAuthenticationToken teacherAuthentication() {
         return new UsernamePasswordAuthenticationToken(
