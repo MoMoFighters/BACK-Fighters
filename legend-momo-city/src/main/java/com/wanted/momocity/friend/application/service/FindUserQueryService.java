@@ -95,7 +95,8 @@ public class FindUserQueryService implements FindUserQueryUseCase {
                     status,
                     targetUser.getRole(),
                     !"ACTIVE".equals(targetUser.getStatus()), //비활성 여부
-                    lectureTitleList
+                    lectureTitleList,
+                    targetUser.getProfileImageUrl()
             ));
         }
 
