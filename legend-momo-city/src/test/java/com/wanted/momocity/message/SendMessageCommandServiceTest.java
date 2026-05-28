@@ -1,11 +1,11 @@
-package com.wanted.momocity.message; // 🎯 만약 테스트 폴더 구조가 다르면 패키지 경로를 맞춰주세요.
+package com.wanted.momocity.message;
 
 import com.wanted.momocity.friend.fmexception.FMResourceNotFoundException;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import com.wanted.momocity.message.application.manager.ChatRoomSessionManager;
 import com.wanted.momocity.message.application.policy.MessageEligibilityPolicy;
-import com.wanted.momocity.message.application.service.SendMessageCommandService; // 🎯 실제 서비스 임포트 추가
-import com.wanted.momocity.message.application.usecase.SendMessageCommandUseCase; // 🎯 유스케이스 임포트 추가
+import com.wanted.momocity.message.application.service.SendMessageCommandService;
+import com.wanted.momocity.message.application.usecase.SendMessageCommandUseCase; 
 import com.wanted.momocity.message.domain.event.SendMessagePublishedEvent;
 import com.wanted.momocity.message.domain.repository.MessageRepository;
 import com.wanted.momocity.message.infrastructure.persistence.*;
@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedConstruction; // 🎯 구조 분석용 임포트 추가
+import org.mockito.MockedConstruction; 
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
