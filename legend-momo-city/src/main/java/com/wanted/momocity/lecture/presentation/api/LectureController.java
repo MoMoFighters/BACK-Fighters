@@ -8,6 +8,7 @@ import com.wanted.momocity.lecture.application.query.GetTeacherLectureDetailQuer
 import com.wanted.momocity.lecture.application.usecase.LectureQueryUseCase;
 import com.wanted.momocity.lecture.domain.model.LectureCategory;
 import com.wanted.momocity.lecture.presentation.api.response.LecturePageResponse;
+import com.wanted.momocity.lecture.presentation.api.response.StudentLecturePageResponse;
 import com.wanted.momocity.lecture.presentation.api.response.TeacherLectureDetailResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -44,7 +45,7 @@ public class LectureController {
             description = "학생용 강의 목록을 조회합니다. enrolled=true이면 내가 수강신청한 강의만 조회합니다."
     )
     @GetMapping
-    public ResponseEntity<ApiResponse<LecturePageResponse>> getLectures(
+    public ResponseEntity<ApiResponse<StudentLecturePageResponse>> getLectures(
             Authentication authentication,
 
             // 강의 카테고리 필터
@@ -56,6 +57,8 @@ public class LectureController {
             // false: 신청하지 않은 강의만
             // null: 수강 여부 상관없이 전체 조회
             @RequestParam(required = false) Boolean enrolled,
+
+            @RequestParam(required = false) String keyword,
 
             // 페이지 번호입니다. 기본값은 0
             @RequestParam(defaultValue = "1") int page,
@@ -69,48 +72,16 @@ public class LectureController {
                 userId,
                 parseCategory(category),
                 enrolled,
+                keyword,
                 page,
                 size
         );
 
-        LecturePageResponse response = lectureQueryUseCase.getLectures(query);
+        StudentLecturePageResponse response = lectureQueryUseCase.getLectures(query);
 
         return ResponseEntity.ok(ApiResponse.success(
                 ApiResponseCode.SUCCESS,
                 "강의 목록 조회에 성공했습니다.",
-                response
-        ));
-    }
-
-    // 강사 강의 상세 조회 API입니다.
-// 로그인한 강사가 본인이 등록한 강의의 상세 정보와 챕터 목록을 조회합니다.
-    @Operation(
-            summary = "강사 강의 상세 조회",
-            description = "로그인한 강사가 본인이 등록한 강의의 상세 정보와 챕터 목록을 조회합니다."
-    )
-    @GetMapping("/{lectureId}")
-    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
-    public ResponseEntity<ApiResponse<TeacherLectureDetailResponse>> getTeacherLectureDetail(
-            Authentication authentication,
-            @PathVariable Long lectureId
-    ) {
-        // Authorization 토큰에서 로그인한 강사 ID를 꺼냅니다.
-        Long teacherId = Long.parseLong(authentication.getName());
-
-        // Controller에서 받은 값을 Application 계층에서 사용할 Query 객체로 묶습니다.
-        GetTeacherLectureDetailQuery query = new GetTeacherLectureDetailQuery(
-                teacherId,
-                lectureId
-        );
-
-        // 강사 강의 상세 조회 UseCase를 실행합니다.
-        TeacherLectureDetailResponse response =
-                lectureQueryUseCase.getTeacherLectureDetail(query);
-
-        // 조회 성공 응답을 반환합니다.
-        return ResponseEntity.ok(ApiResponse.success(
-                ApiResponseCode.SUCCESS,
-                "강사 강의 상세 조회에 성공했습니다.",
                 response
         ));
     }

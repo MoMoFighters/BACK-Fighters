@@ -81,4 +81,75 @@ public interface SpringDataLectureRepository extends JpaRepository<LectureJpaEnt
             @Param("keyword") String keyword,
             Pageable pageable
     );
+
+    /*
+     * 학생용 강의 목록을 조회합니다.
+     *
+     * 조건:
+     * - ACTIVE 상태 강의만 조회합니다.
+     * - category가 있으면 해당 카테고리만 조회합니다.
+     * - keyword가 있으면 강의 제목으로 검색합니다.
+     *
+     * teacherName 검색은 user 테이블 조인이 필요하므로 다음 단계에서 확장합니다.
+     */
+    @Query("""
+    select l
+    from LectureJpaEntity l
+    where l.status = :status
+      and (:category is null or l.category = :category)
+      and (:keyword is null or l.title like concat('%', :keyword, '%'))
+    order by l.createdAt desc
+    """)
+    Page<LectureJpaEntity> findStudentLectures(
+            @Param("status") LectureStatus status,
+            @Param("category") LectureCategory category,
+            @Param("keyword") String keyword,
+            Pageable pageable
+    );
+
+    /*
+     * 학생용 강의 목록 중,
+     * 로그인한 사용자가 이미 수강신청한 강의만 조회합니다.
+     *
+     * enrolled=true 조건에서 사용합니다.
+     */
+    @Query("""
+    select l
+    from LectureJpaEntity l
+    where l.status = :status
+      and l.id in :lectureIds
+      and (:category is null or l.category = :category)
+      and (:keyword is null or l.title like concat('%', :keyword, '%'))
+    order by l.createdAt desc
+    """)
+    Page<LectureJpaEntity> findStudentLecturesByEnrolled(
+            @Param("status") LectureStatus status,
+            @Param("lectureIds") Collection<Long> lectureIds,
+            @Param("category") LectureCategory category,
+            @Param("keyword") String keyword,
+            Pageable pageable
+    );
+
+    /*
+     * 학생용 강의 목록 중,
+     * 로그인한 사용자가 아직 수강신청하지 않은 강의만 조회합니다.
+     *
+     * enrolled=false 조건에서 사용합니다.
+     */
+    @Query("""
+    select l
+    from LectureJpaEntity l
+    where l.status = :status
+      and l.id not in :lectureIds
+      and (:category is null or l.category = :category)
+      and (:keyword is null or l.title like concat('%', :keyword, '%'))
+    order by l.createdAt desc
+    """)
+    Page<LectureJpaEntity> findStudentLecturesByNotEnrolled(
+            @Param("status") LectureStatus status,
+            @Param("lectureIds") Collection<Long> lectureIds,
+            @Param("category") LectureCategory category,
+            @Param("keyword") String keyword,
+            Pageable pageable
+    );
 }
