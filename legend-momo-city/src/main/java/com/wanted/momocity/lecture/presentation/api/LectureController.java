@@ -4,10 +4,12 @@ import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationExc
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
 import com.wanted.momocity.lecture.application.query.GetLecturesQuery;
+import com.wanted.momocity.lecture.application.query.GetStudentLectureDetailQuery;
 import com.wanted.momocity.lecture.application.query.GetTeacherLectureDetailQuery;
 import com.wanted.momocity.lecture.application.usecase.LectureQueryUseCase;
 import com.wanted.momocity.lecture.domain.model.LectureCategory;
 import com.wanted.momocity.lecture.presentation.api.response.LecturePageResponse;
+import com.wanted.momocity.lecture.presentation.api.response.StudentLectureDetailResponse;
 import com.wanted.momocity.lecture.presentation.api.response.StudentLecturePageResponse;
 import com.wanted.momocity.lecture.presentation.api.response.TeacherLectureDetailResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -82,6 +84,40 @@ public class LectureController {
         return ResponseEntity.ok(ApiResponse.success(
                 ApiResponseCode.SUCCESS,
                 "강의 목록 조회에 성공했습니다.",
+                response
+        ));
+    }
+
+    // 학생 강의 상세 조회 API입니다.
+// 학생은 ACTIVE 상태의 강의만 상세 조회할 수 있습니다.
+    @Operation(
+            summary = "강의 상세 조회",
+            description = "학생 또는 회원이 ACTIVE 상태의 강의 상세 정보를 조회합니다."
+    )
+    @GetMapping("/{lectureId}")
+    public ResponseEntity<ApiResponse<StudentLectureDetailResponse>> getLectureDetail(
+            Authentication authentication,
+
+            // 상세 조회할 강의 ID입니다.
+            @PathVariable Long lectureId
+    ) {
+        // Authorization 토큰에서 로그인한 사용자 ID를 꺼냅니다.
+        Long userId = Long.parseLong(authentication.getName());
+
+        // Controller에서 받은 값을 Application 계층에서 사용할 Query 객체로 묶습니다.
+        GetStudentLectureDetailQuery query = new GetStudentLectureDetailQuery(
+                userId,
+                lectureId
+        );
+
+        // 학생 강의 상세 조회 UseCase를 실행합니다.
+        StudentLectureDetailResponse response =
+                lectureQueryUseCase.getStudentLectureDetail(query);
+
+        // 조회 성공 응답을 반환합니다.
+        return ResponseEntity.ok(ApiResponse.success(
+                ApiResponseCode.SUCCESS,
+                "강의 상세 조회에 성공했습니다.",
                 response
         ));
     }
