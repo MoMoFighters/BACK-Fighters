@@ -6,7 +6,7 @@ import com.wanted.momocity.user.application.command.NicknameRegisterCommand;
 import com.wanted.momocity.user.application.command.UpdateUserInfoCommand;
 import com.wanted.momocity.user.application.usecase.UserCommandUsecase;
 import com.wanted.momocity.user.application.usecase.UserQueryUsecase;
-import com.wanted.momocity.user.presentation.api.request.NicknameRegisterRequest;
+import com.wanted.momocity.user.presentation.api.request.NicknameRequest;
 import com.wanted.momocity.user.presentation.api.request.UpdateUserInfoRequest;
 import com.wanted.momocity.user.presentation.api.response.NicknameRegisterResponse;
 import com.wanted.momocity.user.presentation.api.response.UserResponseCode;
@@ -51,7 +51,7 @@ public class UserController {
     @Operation(summary = "사용자의 닉네임 등록을 위한 api")
     public ResponseEntity<ApiResponse<NicknameRegisterResponse>> registerNickname(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody @Valid NicknameRegisterRequest request){
+            @RequestBody @Valid NicknameRequest request){
 
         String nickname = userCommandUsecase.registerNickname(new NicknameRegisterCommand(userDetails.getUserId(),request.nickname()));
 
@@ -80,6 +80,21 @@ public class UserController {
                         UserResponseCode.SUCCESS,
                         UserResponseMessage.USER_INFO_UPDATE_SUCCESS,
                     null
+                ));
+    }
+
+    @PostMapping("/user/nickname/check")
+    @Operation(summary = "닉네임 중복 확인")
+    public ResponseEntity<ApiResponse<Void>> checkNickname(
+            @RequestBody @Valid NicknameRequest request) {
+
+        userQueryUsecase.checkNickname(request.nickname());
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        UserResponseCode.SUCCESS,
+                        UserResponseMessage.NICKNAME_AVAILABLE,
+                        null
                 ));
     }
 
