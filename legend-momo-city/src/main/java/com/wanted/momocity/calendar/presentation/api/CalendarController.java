@@ -7,6 +7,7 @@ import com.wanted.momocity.calendar.presentation.api.common.CalendarResponseCode
 import com.wanted.momocity.calendar.presentation.api.request.*;
 import com.wanted.momocity.calendar.presentation.api.response.DailyCalendarResponse;
 import com.wanted.momocity.calendar.presentation.api.response.MemoResponse;
+import com.wanted.momocity.calendar.presentation.api.response.MonthlyCalendarResponse;
 import com.wanted.momocity.calendar.presentation.api.response.TodoResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,6 +33,7 @@ import java.time.LocalDate;
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/calendar")
 public class CalendarController {
+    private final GetMonthlyCalendarUseCase getMonthlyCalendarUseCase;
     private final GetDailyCalendarUseCase getDailyCalendarUseCase;
     private final CreateTodoUseCase createTodoUseCase;
     private final UpdateTodoUseCase updateTodoUseCase;
@@ -40,6 +42,39 @@ public class CalendarController {
     private final CreateMemoUseCase createMemoUseCase;
     private final UpdateMemoUseCase updateMemoUseCase;
     private final DeleteMemoUseCase deleteMemoUseCase;
+
+    // 월별 캘린더 조회
+// GET /api/v1/calendar/monthly?month=2026-05-01
+    @Operation(summary = "월별 캘린더 조회",
+            description = "해당 월 전체 Todo/Memo 를 반환합니다.")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "날짜 파라미터 누락"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 토큰 만료")
+    })
+    @GetMapping("/monthly")
+    public ResponseEntity<ApiResponse<MonthlyCalendarResponse>> getMonthlyCalendar(
+            // 2026-05-01 형식으로 받아서 해당 월 1일 ~ 말일 계산
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate month,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long userId = userDetails.getUserId();
+
+        // 2026-05-01 → startDate = 2026-05-01, endDate = 2026-05-31
+        LocalDate startDate = month.withDayOfMonth(1);
+        LocalDate endDate = month.withDayOfMonth(month.lengthOfMonth());
+
+        MonthlyCalendarResponse response = getMonthlyCalendarUseCase
+                .getMonthlyCalendar(userId, startDate, endDate);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        CalendarResponseCode.MONTHLY_CALENDAR_FOUND,
+                        "월별 캘린더 데이터를 조회했습니다.",
+                        response
+                )
+        );
+    }
 
     // 날짜별 캘린더 조회
     // GET /api/v1/calendar/daily?date=2026-05-26
