@@ -6,6 +6,7 @@ import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
 import com.wanted.momocity.lecture.application.command.ChangeLectureStatusCommand;
 import com.wanted.momocity.lecture.application.command.RegisterChapterVideoCommand;
+import com.wanted.momocity.lecture.application.query.GetTeacherLectureDetailQuery;
 import com.wanted.momocity.lecture.application.query.GetTeacherLecturesQuery;
 import com.wanted.momocity.lecture.application.usecase.ChapterCommandUseCase;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCase;
@@ -61,8 +62,7 @@ public class TeacherLectureController {
             Authentication authentication,
             @Valid @ModelAttribute CreateLectureRequest request
     ) {
-        String teacherEmail = authentication.getName();
-
+        Long teacherId = Long.parseLong(authentication.getName());
         /*
          * S3 업로드 전에 category를 먼저 검증
          * 잘못된 카테고리 요청이면 여기서 400 응답으로 끝나고, 썸네일 파일은 업로드 X
@@ -72,7 +72,7 @@ public class TeacherLectureController {
         String thumbnailUrl = s3UploadPort.upload(request.thumbnail());
 
         LectureAggregate lecture = lectureCommandUseCase.createLecture(
-                request.toCommand(teacherEmail, thumbnailUrl)
+                request.toCommand(teacherId, thumbnailUrl)
         );
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created(
@@ -96,10 +96,10 @@ public class TeacherLectureController {
             @Valid @RequestBody CreateChapterRequest request
     ) {
         // Authorization 토큰에서 로그인한 강사의 email을 가져옴
-        String teacherEmail = authentication.getName();
+        Long teacherId = Long.parseLong(authentication.getName());
 
         // Request DTO를 application 계층의 Command로 변환
-        var command = request.toCommand(teacherEmail, lectureId);
+        var command = request.toCommand(teacherId, lectureId);
 
         // 챕터 등록 유스케이스를 실행
         LectureChapter chapter = chapterCommandUseCase.createChapter(command);
@@ -134,11 +134,11 @@ public class TeacherLectureController {
             @Valid @ModelAttribute RegisterChapterVideoRequest request
     ) {
         // Authorization 토큰에서 로그인한 강사의 email을 가져옵니다.
-        String teacherEmail = authentication.getName();
+        Long teacherId = Long.parseLong(authentication.getName());
 
         // 요청 DTO를 Application 계층에서 사용할 Command로 변환합니다.
         RegisterChapterVideoCommand command = request.toCommand(
-                teacherEmail,
+                teacherId,
                 lectureId,
                 chapterId
         );
@@ -172,11 +172,11 @@ public class TeacherLectureController {
             @Valid @RequestBody ChangeLectureStatusRequest request
     ) {
         // Authorization 토큰에서 로그인한 강사의 email을 가져옴
-        String teacherEmail = authentication.getName();
+        Long teacherId = Long.parseLong(authentication.getName());
 
         // Request DTO를 Application 계층에서 사용할 Command로 변환
         ChangeLectureStatusCommand command = request.toCommand(
-                teacherEmail,
+                teacherId,
                 lectureId
         );
 
@@ -214,11 +214,11 @@ public class TeacherLectureController {
             @RequestParam(required = false) String keyword
     ) {
         // Authorization 토큰에서 로그인한 강사의 email을 가져옵니다.
-        String teacherEmail = authentication.getName();
+        Long teacherId = Long.parseLong(authentication.getName());
 
         // 요청 파라미터를 Application 계층의 Query 객체로 변환합니다.
         GetTeacherLecturesQuery query = new GetTeacherLecturesQuery(
-                teacherEmail,
+                teacherId,
                 page,
                 size,
                 parseCategory(category),
@@ -251,6 +251,39 @@ public class TeacherLectureController {
         } catch (IllegalArgumentException exception) {
             throw new DomainRuleViolationException("허용되지 않은 강의 카테고리입니다.");
         }
+    }
+
+    // 강사 강의 상세 조회 API입니다.
+    // 로그인한 강사가 본인이 등록한 강의의 상세 정보와 챕터 목록을 조회합니다.
+    @Operation(
+            summary = "강사 강의 상세 조회",
+            description = "로그인한 강사가 본인이 등록한 강의의 상세 정보와 챕터 목록을 조회합니다."
+    )
+    @GetMapping("/{lectureId}")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
+    public ResponseEntity<ApiResponse<TeacherLectureDetailResponse>> getTeacherLectureDetail(
+            Authentication authentication,
+            @PathVariable Long lectureId
+    ) {
+        // Authorization 토큰에서 로그인한 강사 ID를 꺼냅니다.
+        Long teacherId = Long.parseLong(authentication.getName());
+
+        // Controller에서 받은 값을 Application 계층에서 사용할 Query 객체로 묶습니다.
+        GetTeacherLectureDetailQuery query = new GetTeacherLectureDetailQuery(
+                teacherId,
+                lectureId
+        );
+
+        // 강사 강의 상세 조회 UseCase를 실행합니다.
+        TeacherLectureDetailResponse response =
+                lectureQueryUseCase.getTeacherLectureDetail(query);
+
+        // 조회 성공 응답을 반환합니다.
+        return ResponseEntity.ok(ApiResponse.success(
+                ApiResponseCode.SUCCESS,
+                "강사 강의 상세 조회에 성공했습니다.",
+                response
+        ));
     }
 
 }

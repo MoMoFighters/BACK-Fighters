@@ -4,13 +4,17 @@ import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationExc
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
 import com.wanted.momocity.lecture.application.query.GetLecturesQuery;
+import com.wanted.momocity.lecture.application.query.GetTeacherLectureDetailQuery;
 import com.wanted.momocity.lecture.application.usecase.LectureQueryUseCase;
 import com.wanted.momocity.lecture.domain.model.LectureCategory;
 import com.wanted.momocity.lecture.presentation.api.response.LecturePageResponse;
+import com.wanted.momocity.lecture.presentation.api.response.StudentLecturePageResponse;
+import com.wanted.momocity.lecture.presentation.api.response.TeacherLectureDetailResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,7 +45,7 @@ public class LectureController {
             description = "학생용 강의 목록을 조회합니다. enrolled=true이면 내가 수강신청한 강의만 조회합니다."
     )
     @GetMapping
-    public ResponseEntity<ApiResponse<LecturePageResponse>> getLectures(
+    public ResponseEntity<ApiResponse<StudentLecturePageResponse>> getLectures(
             Authentication authentication,
 
             // 강의 카테고리 필터
@@ -53,6 +57,8 @@ public class LectureController {
             // false: 신청하지 않은 강의만
             // null: 수강 여부 상관없이 전체 조회
             @RequestParam(required = false) Boolean enrolled,
+
+            @RequestParam(required = false) String keyword,
 
             // 페이지 번호입니다. 기본값은 0
             @RequestParam(defaultValue = "1") int page,
@@ -66,11 +72,12 @@ public class LectureController {
                 userId,
                 parseCategory(category),
                 enrolled,
+                keyword,
                 page,
                 size
         );
 
-        LecturePageResponse response = lectureQueryUseCase.getLectures(query);
+        StudentLecturePageResponse response = lectureQueryUseCase.getLectures(query);
 
         return ResponseEntity.ok(ApiResponse.success(
                 ApiResponseCode.SUCCESS,
@@ -94,4 +101,6 @@ public class LectureController {
             throw new DomainRuleViolationException("허용되지 않는 강의 카테고리입니다.");
         }
     }
+
+
 }

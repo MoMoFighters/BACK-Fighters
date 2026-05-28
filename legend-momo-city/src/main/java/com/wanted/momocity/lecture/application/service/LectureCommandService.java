@@ -47,7 +47,7 @@ public class LectureCommandService implements LectureCommandUseCase {
         /*
          * Authorization 토큰에서 얻은 email로 강사 id를 조회한다.
          */
-        Long teacherId = teacherAccountPort.getTeacherId(command.teacherEmail());
+        Long teacherId = teacherAccountPort.getTeacherId(command.teacherId());
 
         // command.thumbnailUrl()은 S3 업로드 후 생성된 이미지 URL이다.
         LectureAggregate lecture = LectureAggregate.create(
@@ -75,7 +75,7 @@ public class LectureCommandService implements LectureCommandUseCase {
         /*
          * Authorization 토큰에서 얻은 email로 강사 id를 조회합니다.
          */
-        Long teacherId = teacherAccountPort.getTeacherId(command.teacherEmail());
+        Long teacherId = teacherAccountPort.getTeacherId(command.teacherId());
 
         // 상태를 변경할 강의를 조회합니다.
         LectureAggregate lecture = lectureRepository.findById(command.lectureId())
