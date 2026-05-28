@@ -6,6 +6,8 @@ import com.wanted.momocity.report.application.usecase.ReportCommandUseCase;
 import com.wanted.momocity.report.domain.model.Report;
 import com.wanted.momocity.report.domain.repository.ReportRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +35,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class ReportCommandService implements ReportCommandUseCase {
 
+    private static final Logger log = LoggerFactory.getLogger(ReportCommandService.class);
+
     private final ReporterAccountPort reporterAccountPort;
     private final ReportRepository reportRepository;
 
@@ -51,6 +55,18 @@ public class ReportCommandService implements ReportCommandUseCase {
         );
 
         // 3. 저장
-        return reportRepository.save(report);
+        Report saved = reportRepository.save(report);
+
+        // 4. 비즈니스 이벤트 로그 (audit) - AOP 흐름 로그와 별개로 "신고 접수됨" 자체를 마킹
+        // 운영/감사 시 grep "[Report]" 로 신고 이벤트만 한 번에 추출 가능
+        log.info("[Report] 신고 접수 완료 | reportId={} | reporterId={} | target={}({}) | reason={}",
+                saved.getId(),
+                reporterUserId,
+                command.targetType(),
+                command.targetId(),
+                command.reason()
+        );
+
+        return saved;
     }
 }
