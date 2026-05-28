@@ -43,5 +43,10 @@ public class ChapterRepositoryAdapter implements ChapterRepository {
         return repository.findById(chapterId)
                 .map(ChapterJpaEntity::toDomain);
     }
+
+    @Override
+    public boolean existsByLectureIdAndVideoUrlIsNull(Long lectureId) {
+        return repository.existsByLectureIdAndVideoUrlIsNull(lectureId);
+    }
     
 }

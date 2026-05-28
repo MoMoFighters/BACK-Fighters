@@ -139,4 +139,6 @@ public class ChapterCommandService implements ChapterCommandUseCase {
         // 변경된 챕터 정보를 저장합니다.
         return chapterRepository.save(updatedChapter);
     }
+
+
 }

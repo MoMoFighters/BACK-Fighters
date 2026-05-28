@@ -87,4 +87,12 @@ public class LectureJpaEntity extends BaseTimeEntity {
     public int getCompletedUserCount() {
         return completedUserCount;
     }
+
+    /*
+     * JPA Entity의 상태값을 변경
+     * 트랜잭션 안에서 호출하면 dirty checking으로 DB에 반영
+     */
+    public void changeStatus(LectureStatus status) {
+        this.status = status;
+    }
 }
