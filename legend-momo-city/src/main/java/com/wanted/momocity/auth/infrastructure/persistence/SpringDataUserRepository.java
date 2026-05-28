@@ -13,6 +13,7 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
 
     Optional<UserJpaEntity> findByEmail(String email);
 
+    // 임시비밀번호 발급할 때 db에 비밀번호 칼럼을 임시 비밀번호 값으로 업데이트
     @Modifying
     @Query("UPDATE UserJpaEntity u SET u.password = :password, u.isTempPwd = true WHERE u.email = :email")
     void updatePassword(@Param("email") String email, @Param("password") String password);}
