@@ -75,7 +75,8 @@ public class FriendQueryService implements FriendQueryUseCase {
                     friendUser.getRole(),
                     friend.getStatus(), //친구 상태
                     !"ACTIVE".equals(friendUser.getStatus()), //비활성 여부(user 테이블)
-                    lectureTitleList
+                    lectureTitleList,
+                    friendUser.getProfileImageUrl()
             ));
         }
 

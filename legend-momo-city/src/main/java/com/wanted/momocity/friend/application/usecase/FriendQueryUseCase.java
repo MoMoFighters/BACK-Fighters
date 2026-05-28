@@ -16,7 +16,8 @@ public interface FriendQueryUseCase {
         String role,
         String status, //친구 여부
         Boolean isNotActive, //user테이블의 활성이 아닌 것
-        List<String> lectureTitle //백엔드가 가공해서 보낼 강의명(순수 리스트 상태)
+        List<String> lectureTitle, //백엔드가 가공해서 보낼 강의명(순수 리스트 상태),
+        String profileImageUrl
     ) {
     }
 

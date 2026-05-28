@@ -48,7 +48,8 @@ public class GetReceivedRequestFriendQueryService implements GetReceivedRequestF
                     fromUser.getNickname(),
                     fromUser.getRole(),
                     request.getStatus(),
-                    !"ACTIVE".equals(fromUser.getStatus()) //활성 유저 아니면 true
+                    !"ACTIVE".equals(fromUser.getStatus()), //활성 유저 아니면 true
+                    fromUser.getProfileImageUrl()
             ));
         }
 

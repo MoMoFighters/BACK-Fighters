@@ -6,7 +6,8 @@ public record ReceivedRequestResponse(
         Long userId,
         String nickname,
         String role,
-        String status
+        String status,
+        String profileImageUrl
 ) {
     public static ReceivedRequestResponse from(ReceivedRequestView view) {
         //비활성 유저 닉네임 가공
@@ -19,7 +20,8 @@ public record ReceivedRequestResponse(
                 view.userId(),
                 displayNickname,
                 view.role(),
-                view.status()
+                view.status(),
+                view.profileImageUrl()
         );
     }
 }
