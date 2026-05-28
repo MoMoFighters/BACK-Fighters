@@ -8,7 +8,9 @@ import com.wanted.momocity.viewing.presentation.api.common.ViewingResponseCode;
 import com.wanted.momocity.viewing.presentation.api.request.SaveProgressRequest;
 import com.wanted.momocity.viewing.presentation.api.response.*;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,18 +23,14 @@ import org.springframework.web.bind.annotation.*;
 *  비지니스 로직 없음, HTTP 반환만 담당
 * */
 
+@Tag(name = "Viewing", description = "Viewing 도메인 - 강의 시청 및 진척도 관리 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1")
 public class ViewingController {
 
-    private final GetStreamingUrlUseCase getStreamingUrlUseCase;
-    private final GetLectureMetaUseCase getLectureMetaUseCase;
-    private final SaveProgressUseCase saveProgressUseCase;
-    private final GetChapterResumeUseCase getChapterResumeUseCase;
-    private final GetTotalProgressUseCase getTotalProgressUseCase;
-    private final GetChapterProgressUseCase getChapterProgressUseCase;
-    private final GetMyLectureUseCase getMyLectureUseCase;
+    private final ViewingCommandUseCase viewingCommandUseCase;
+    private final ViewingQueryUseCase viewingQueryUseCase;
 
     // S3 Presigned URL 발급
     // GET /api/v1/lectures/{lectureId}/chapters/{chapterId}/stream
@@ -46,26 +44,20 @@ public class ViewingController {
     })
     @GetMapping("/lectures/{lectureId}/chapters/{chapterId}/stream")
     public ResponseEntity<ApiResponse<StreamingUrlResponse>> getStreamingUrl (
-            @PathVariable Long lectureId,
-            @PathVariable Long chapterId,
+            @Parameter(description = "강의 ID", required = true) @PathVariable Long lectureId,
+            @Parameter(description = "챕터 ID", required = true) @PathVariable Long chapterId,
             @AuthenticationPrincipal CustomUserDetails userDetails
 
     ) {
 
-
 //        Long userId = 1L;
         Long userId = userDetails.getUserId();
 
-        StreamingUrlResponse response = getStreamingUrlUseCase
-                .getStreamingUrl(userId, lectureId, chapterId);
-
-        return ResponseEntity.ok(
-                ApiResponse.success(
-                        ViewingResponseCode.STREAMING_URL_ISSUED,
-                        "영상 스트리밍 URL 이 발급되었습니다.",
-                        response
-                )
-        );
+        return ResponseEntity.ok(ApiResponse.success(
+                ViewingResponseCode.STREAMING_URL_ISSUED,
+                "영상 스트리밍 URL 이 발급되었습니다.",
+                viewingQueryUseCase.getStreamingUrl(userId, lectureId, chapterId)
+        ));
 
     }
 
@@ -80,7 +72,7 @@ public class ViewingController {
     })
     @GetMapping("/lectures/{lectureId}")
     public ResponseEntity<ApiResponse<LectureMetaResponse>> getLectureMeta(
-            @PathVariable Long lectureId,
+            @Parameter(description = "강의 ID", required = true) @PathVariable Long lectureId,
             @AuthenticationPrincipal CustomUserDetails userDetails
 
     ) {
@@ -88,17 +80,11 @@ public class ViewingController {
 //        Long userId = 1L;
         Long userId = userDetails.getUserId();
 
-
-        LectureMetaResponse response = getLectureMetaUseCase
-                .getLectureMeta(userId, lectureId);
-
-        return ResponseEntity.ok(
-                ApiResponse.success(
-                        ViewingResponseCode.LECTURE_META_FOUND,
-                        "강의 메타데이터 조회에 성공했습니다.",
-                        response
-                )
-        );
+        return ResponseEntity.ok(ApiResponse.success(
+                ViewingResponseCode.LECTURE_META_FOUND,
+                "강의 메타데이터 조회에 성공했습니다.",
+                viewingQueryUseCase.getLectureMeta(userId, lectureId)
+        ));
 
     }
 
@@ -114,8 +100,8 @@ public class ViewingController {
     })
     @PatchMapping("/lectures/{lectureId}/chapters/{chapterId}/progress")
     public ResponseEntity<ApiResponse<SaveProgressResponse>> saveProgress(
-            @PathVariable Long lectureId,
-            @PathVariable Long chapterId,
+            @Parameter(description = "강의 ID", required = true) @PathVariable Long lectureId,
+            @Parameter(description = "챕터 ID", required = true) @PathVariable Long chapterId,
             @RequestBody @Valid SaveProgressRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails
 
@@ -124,24 +110,13 @@ public class ViewingController {
 //        Long userId = 1L;
         Long userId = userDetails.getUserId();
 
-
-        SaveProgressCommand command = new SaveProgressCommand(
-                userId,
-                lectureId,
-                chapterId,
-                request.playbackSeconds()
-        );
-
-        SaveProgressResponse response = saveProgressUseCase
-                .saveProgress(command);
-
-        return  ResponseEntity.ok(
-                ApiResponse.success(
-                        ViewingResponseCode.PROGRESS_SAVED,
-                        "진척도가 업데이트되었습니다.",
-                        response
-                )
-        );
+        return ResponseEntity.ok(ApiResponse.success(
+                ViewingResponseCode.PROGRESS_SAVED,
+                "진척도가 업데이트되었습니다.",
+                viewingCommandUseCase.handle(new SaveProgressCommand(
+                        userId, lectureId, chapterId, request.playbackSeconds()
+                ))
+        ));
 
     }
 
@@ -156,8 +131,8 @@ public class ViewingController {
     })
     @GetMapping("/lectures/{lectureId}/chapters/{chapterId}/resume")
     public ResponseEntity<ApiResponse<ChapterResumeResponse>> getChapterResume(
-            @PathVariable Long lectureId,
-            @PathVariable Long chapterId,
+            @Parameter(description = "강의 ID", required = true) @PathVariable Long lectureId,
+            @Parameter(description = "챕터 ID", required = true) @PathVariable Long chapterId,
             @AuthenticationPrincipal CustomUserDetails userDetails
 
     ) {
@@ -165,17 +140,11 @@ public class ViewingController {
 //        Long userId = 1L;
         Long userId = userDetails.getUserId();
 
-
-        ChapterResumeResponse response = getChapterResumeUseCase
-                .getChapterResume(userId, lectureId, chapterId);
-
-        return ResponseEntity.ok(
-                ApiResponse.success(
-                        ViewingResponseCode.CHAPTER_RESUME_FOUND,
-                        "챕터 이어보기 정보를 조회했습니다.",
-                        response
-                )
-        );
+        return ResponseEntity.ok(ApiResponse.success(
+                ViewingResponseCode.CHAPTER_RESUME_FOUND,
+                "챕터 이어보기 정보를 조회했습니다.",
+                viewingQueryUseCase.getChapterResume(userId, lectureId, chapterId)
+        ));
 
     }
 
@@ -190,7 +159,7 @@ public class ViewingController {
     })
     @GetMapping("/lectures/{lectureId}/progress")
     public ResponseEntity<ApiResponse<TotalProgressResponse>> getTotalProgress(
-            @PathVariable Long lectureId,
+            @Parameter(description = "강의 ID", required = true) @PathVariable Long lectureId,
             @AuthenticationPrincipal CustomUserDetails userDetails
 
     ) {
@@ -198,17 +167,11 @@ public class ViewingController {
 //        Long userId = 1L;
         Long userId = userDetails.getUserId();
 
-
-        TotalProgressResponse response = getTotalProgressUseCase
-                .getTotalProgress(userId, lectureId);
-
-        return ResponseEntity.ok(
-                ApiResponse.success(
-                        ViewingResponseCode.TOTAL_PROGRESS_FOUND,
-                        "전체 진척도를 조회했습니다.",
-                        response
-                )
-        );
+        return ResponseEntity.ok(ApiResponse.success(
+                ViewingResponseCode.TOTAL_PROGRESS_FOUND,
+                "전체 진척도를 조회했습니다.",
+                viewingQueryUseCase.getTotalProgress(userId, lectureId)
+        ));
     }
 
     // 챕터별 진척도 조회
@@ -222,7 +185,7 @@ public class ViewingController {
     })
     @GetMapping("/lectures/{lectureId}/chapters/progress")
     public ResponseEntity<ApiResponse<ChapterProgressResponse>> getChapterProgress(
-            @PathVariable Long lectureId,
+            @Parameter(description = "강의 ID", required = true) @PathVariable Long lectureId,
             @AuthenticationPrincipal CustomUserDetails userDetails
 
     ) {
@@ -230,17 +193,11 @@ public class ViewingController {
 //        Long userId = 1L;
         Long userId = userDetails.getUserId();
 
-
-        ChapterProgressResponse response = getChapterProgressUseCase
-                .getChapterProgress(userId, lectureId);
-
-        return ResponseEntity.ok(
-                ApiResponse.success(
-                        ViewingResponseCode.CHAPTER_PROGRESS_FOUND,
-                        "챕터별 진척도를 조회했습니다.",
-                        response
-                )
-        );
+        return ResponseEntity.ok(ApiResponse.success(
+                ViewingResponseCode.CHAPTER_PROGRESS_FOUND,
+                "챕터별 진척도를 조회했습니다.",
+                viewingQueryUseCase.getChapterProgress(userId, lectureId)
+        ));
 
     }
 
@@ -260,17 +217,11 @@ public class ViewingController {
 //        Long userId = 1L;
         Long userId = userDetails.getUserId();
 
-        // MyLecturesResponse 래핑 구조로 반환
-        MyLecturesResponse responses = getMyLectureUseCase
-                .getMyLectures(userId);
-
-        return ResponseEntity.ok(
-                ApiResponse.success(
-                        ViewingResponseCode.MY_LECTURES_FOUND,
-                        "수강 강의 목록을 조회했습니다.",
-                        responses
-                )
-        );
+        return ResponseEntity.ok(ApiResponse.success(
+                ViewingResponseCode.MY_LECTURES_FOUND,
+                "수강 강의 목록을 조회했습니다.",
+                viewingQueryUseCase.getMyLectures(userId)
+        ));
 
     }
 

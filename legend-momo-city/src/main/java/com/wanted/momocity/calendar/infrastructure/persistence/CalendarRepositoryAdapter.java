@@ -41,14 +41,6 @@ public class CalendarRepositoryAdapter implements CalendarRepository {
     }
 
     @Override
-    public List<Calendar> findByUserIdAndDate(Long userId, LocalDate date) {
-        return jpaRepository.findByUserIdAndDate(userId, date)
-                .stream()
-                .map(CalendarJpaEntity::toDomain)
-                .toList();
-    }
-
-    @Override
     public void delete(Long id) {
         if (!jpaRepository.existsById(id)){
             throw new CalendarNotFoundException(

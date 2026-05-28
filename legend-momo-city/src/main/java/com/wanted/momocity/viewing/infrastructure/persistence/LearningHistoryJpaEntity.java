@@ -60,9 +60,9 @@ public class LearningHistoryJpaEntity extends BaseTimeEntity {
     *  -> 실제 DB Lock 없이 충돌 감지 가능 (성능 유리)
     * */
 
-    @Version
-    @Column(name = "version", nullable = false)
-    private Long version;
+//    @Version
+//    @Column(name = "version", nullable = false)
+//    private Long version;
 
     // Domain Model -> JpaEntity 변환 (저장용)
     public static LearningHistoryJpaEntity from(LearningHistory domain) {
