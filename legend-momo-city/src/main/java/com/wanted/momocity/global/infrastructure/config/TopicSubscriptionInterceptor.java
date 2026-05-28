@@ -1,5 +1,7 @@
 package com.wanted.momocity.global.infrastructure.config;
 
+import com.wanted.momocity.auth.application.port.LoadUserPort;
+import com.wanted.momocity.auth.domain.model.User;
 import com.wanted.momocity.message.application.manager.ChatRoomSessionManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -80,6 +82,5 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
            log.error("[웹소켓 인터셉터] 이메일로 유저 ID를 조회하는 중 실패했습니다. 이메일: {}, 에러: {}", email, e.getMessage());
            throw new IllegalArgumentException("유저 정보 조회 실패");
        }
-        return Long.parseLong(principal.getName());
     }
 }
