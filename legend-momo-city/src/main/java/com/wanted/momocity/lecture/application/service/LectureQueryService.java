@@ -2,15 +2,22 @@ package com.wanted.momocity.lecture.application.service;
 
 import com.wanted.momocity.enrollment.application.port.StudentAccountPort;
 import com.wanted.momocity.lecture.application.port.LectureEnrollmentQueryPort;
+import com.wanted.momocity.lecture.application.port.TeacherAccountPort;
 import com.wanted.momocity.lecture.application.query.GetLecturesQuery;
+import com.wanted.momocity.lecture.application.query.GetTeacherLecturesQuery;
 import com.wanted.momocity.lecture.application.usecase.LectureQueryUseCase;
 import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.repository.LectureRepository;
 import com.wanted.momocity.lecture.presentation.api.response.LectureListItemResponse;
 import com.wanted.momocity.lecture.presentation.api.response.LecturePageResponse;
+
+import com.wanted.momocity.lecture.presentation.api.response.TeacherLectureListItemResponse;
+import com.wanted.momocity.lecture.presentation.api.response.TeacherLecturePageResponse;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 
 import java.util.List;
 
@@ -32,6 +39,8 @@ public class LectureQueryService implements LectureQueryUseCase {
 
     // 사용자의 수강 신청 정보를 조회하기 위한 포트
     private final LectureEnrollmentQueryPort lectureEnrollmentQueryPort;
+
+    private final TeacherAccountPort teacherAccountPort;
 
     // 강의 목록을 조회
     @Override
@@ -63,6 +72,48 @@ public class LectureQueryService implements LectureQueryUseCase {
                 .toList();
 
         return new LecturePageResponse(
+                content,
+                query.page(),
+                query.size(),
+                lecturePage.totalElements(),
+                lecturePage.totalPages()
+        );
+    }
+
+    /*
+     * 강사가 본인이 등록한 강의 목록을 조회합니다.
+     */
+    @Override
+    public TeacherLecturePageResponse getTeacherLectures(GetTeacherLecturesQuery query) {
+        /*
+         * Authorization 토큰에서 가져온 email로 강사 ID를 조회합니다.
+         * 강사 권한이 아니거나 사용자를 찾을 수 없으면 TeacherAccountPort 쪽에서 예외가 발생합니다.
+         */
+        Long teacherId = teacherAccountPort.getTeacherId(query.teacherEmail());
+
+        /*
+         * teacherId 기준으로 본인이 등록한 강의만 조회합니다.
+         * category, keyword 조건은 repository에서 처리합니다.
+         */
+        var lecturePage = lectureRepository.findTeacherLectures(
+                teacherId,
+                query.category(),
+                query.keyword(),
+                query.page(),
+                query.size()
+        );
+
+        /*
+         * 도메인 모델을 강사용 목록 응답 DTO로 변환합니다.
+         */
+        List<TeacherLectureListItemResponse> content = lecturePage.content().stream()
+                .map(TeacherLectureListItemResponse::from)
+                .toList();
+
+        /*
+         * 페이지 정보와 목록 응답을 함께 반환합니다.
+         */
+        return new TeacherLecturePageResponse(
                 content,
                 query.page(),
                 query.size(),
@@ -112,4 +163,6 @@ public class LectureQueryService implements LectureQueryUseCase {
                 completedCount
         );
     }
+
+
 }
