@@ -27,7 +27,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class LectureCatalogAdapter implements LecturePort {
 
-    // LectureJpaRepository 완성 후 주입
+    // TODO : LectureJpaRepository 완성 후 주입
     // private final LectureJpaRepository lectureJpaRepository;
 
     /*

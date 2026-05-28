@@ -26,14 +26,14 @@ import java.util.List;
  * -> 챕터 정보 변경 시 캐시 무효화 (팀원 머지 후 적용)
  * -> 현재는 Mock 데이터라 미사용
  * -
-*  현재 : ChapterJpaRepository, ChapterJpaEntity 완성 후 주입 예정
+*  TODO : ChapterJpaRepository, ChapterJpaEntity 완성 후 주입 예정
 * */
 
 @Component
 @RequiredArgsConstructor
 public class ChapterCatalogAdapter implements ChapterPort {
 
-    // ChapterJpaRepository 완성 후 주입 예정
+    // TODO : ChapterJpaRepository 완성 후 주입 예정
     // private final ChapterJpaRepository chapterJpaRepository;
 
     /*

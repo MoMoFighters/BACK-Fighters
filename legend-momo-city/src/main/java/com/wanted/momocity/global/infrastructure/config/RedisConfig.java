@@ -16,8 +16,6 @@ import java.util.Map;
 
 /*
  * comment
- *  RedisConfig
- *  -
  *  [역할]
  *  Spring Cache 와 Redis 를 연결하는 설정
  *  -> @Cacheable, @CacheEvict 등 캐시 어노테이션 활성화
@@ -39,6 +37,7 @@ import java.util.Map;
  *  Value : GenericJackson2JsonRedisSerializer → JSON 형태로 저장
  */
 
+// Spring 에서 캐싱 기능 활성화시키는 어노테이션
 @EnableCaching
 @Configuration
 public class RedisConfig {
@@ -49,17 +48,22 @@ public class RedisConfig {
         // 기본 캐시 설정
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration
                 .defaultCacheConfig()
-                // 기본 TTL 1시간
+                // 기본 TTL 1시간 -> 1시간 후 자동 삭제
+                // 챕터 정보 바뀌어도 최대 1시간 후 갱신
                 .entryTtl(Duration.ofHours(1))
+                // key 를 문자열로 저장
+                // "chapter::1" 형태로 Redis 에 저장
                 .serializeKeysWith(
                         RedisSerializationContext.SerializationPair
                                 .fromSerializer(new StringRedisSerializer())
                 )
+                // value 를 JSON 으로 변환해서 저장
                 .serializeValuesWith(
                 RedisSerializationContext.SerializationPair
                         .fromSerializer(new GenericJackson2JsonRedisSerializer())
                 )
                 // null 캐싱 방지
+                // 없는 챕터를 조회해도 Redis 에 저장 안 됨
                 .disableCachingNullValues();
 
         // 캐시별 개별 TTL 설정
