@@ -3,6 +3,7 @@ package com.wanted.momocity.auth.application.service;
 import com.wanted.momocity.auth.application.port.LoadUserPort;
 import com.wanted.momocity.auth.application.port.RedisRefreshTokenPort;
 import com.wanted.momocity.auth.application.port.TokenProviderPort;
+import com.wanted.momocity.auth.application.usecase.NewTokenUsecase;
 import com.wanted.momocity.auth.domain.model.Status;
 import com.wanted.momocity.auth.domain.model.User;
 import com.wanted.momocity.auth.infrastructure.exception.InvalidRefreshTokenException;
@@ -19,7 +20,8 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class RefreshService {
+public class RefreshService implements NewTokenUsecase {
+    // 리프레시 토큰으로 새로운 액세스 토큰 만들기
 
     private final TokenProviderPort tokenProviderPort;
     private final RedisRefreshTokenPort redisRefreshTokenPort;
@@ -29,9 +31,9 @@ public class RefreshService {
         // 토큰 유효성 검사
         tokenProviderPort.validateToken(refreshToken);
 
-        // DB에서 존재하는 토큰인지 확인
+        // redis에서 존재하는 토큰인지 확인
         redisRefreshTokenPort.findByToken(refreshToken)
-                .orElseThrow(() -> new InvalidRefreshTokenException("토큰이 없습니다."));
+                .orElseThrow(() -> new InvalidRefreshTokenException("로그인이 만료되었습니다. 다시 로그인해주세요."));
 
         // 토큰에서 id 꺼내기
         String userId = tokenProviderPort.getIdFromToken(refreshToken);

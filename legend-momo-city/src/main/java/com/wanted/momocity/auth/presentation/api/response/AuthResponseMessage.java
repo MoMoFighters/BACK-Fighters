@@ -17,6 +17,8 @@ public final class AuthResponseMessage {
 
     public static final String LOGOUT_SUCCESS = "로그아웃 되었습니다.";
 
+    public static final String NEW_TOKEN_CREATED = "토큰이 재발급되었습니다.";
+
     public static final String EMAIL_VALIDATION_ERROR = "이메일 형식을 다시 확인해주십시오.";
     public static final String PASSWORD_VALIDATION_ERROR = "비밀번호는 특수기호 포함 8자리 이상이어야 합니다.";
 
