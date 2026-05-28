@@ -27,8 +27,6 @@ import java.util.Optional;
 @Slf4j
 public class CatalogMessageAdapter implements MessageRepository {
 
-    //🚨 기능 구현을 위해 다른 테이블의 JpaEntity를 만들어 진행함에 따라 머지 후 import 필요합니다.
-
     private final SpringDataFriendRepository springDataFriendRepository;
     private final SpringDataChatRoomMemberRepository springDataChatRoomMemberRepository;
     //충돌 회피로 만든 수강신청 인터페이스 저장소

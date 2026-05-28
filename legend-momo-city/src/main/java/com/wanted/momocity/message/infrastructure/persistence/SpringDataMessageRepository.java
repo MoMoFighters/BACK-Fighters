@@ -31,6 +31,7 @@ public interface SpringDataMessageRepository extends JpaRepository<MessageJpaEnt
     //스크롤 시 lastMessageId보다 작은 과거 데이터(최신) 20개
     List<MessageJpaEntity> findTop20ByRoomId_IdAndIdLessThanAndCreatedAtGreaterThanEqualOrderByIdDesc(Long roomId, Long lastMessageId, LocalDateTime timeline);
 
-//    //방 멤버 맞는지 검증
-//    boolean existsByRoomId_IdAndSenderId_Id(Long roomId, Long userId);
+    //채팅방 폭파 시 메시지 삭제
+    void deleteByRoomId_Id(Long aLong);
+
 }
