@@ -18,7 +18,7 @@ import java.security.Principal;
 public class TopicSubscriptionInterceptor implements ChannelInterceptor {
 
     private final ChatRoomSessionManager sessionManager;
-//    private final LoadUserPort loadUserPort;
+    private final LoadUserPort loadUserPort;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
