@@ -25,6 +25,7 @@ public interface LectureRepository {
     // 학생용 강의 목록을 조회
     LecturePage findLectures(
             LectureCategory category,
+            String keyword,
             Boolean enrolled,
             List<Long> enrolledLectureIds,
             int page,

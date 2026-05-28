@@ -6,6 +6,7 @@ import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
 import com.wanted.momocity.lecture.application.command.ChangeLectureStatusCommand;
 import com.wanted.momocity.lecture.application.command.RegisterChapterVideoCommand;
+import com.wanted.momocity.lecture.application.query.GetTeacherLectureDetailQuery;
 import com.wanted.momocity.lecture.application.query.GetTeacherLecturesQuery;
 import com.wanted.momocity.lecture.application.usecase.ChapterCommandUseCase;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCase;
@@ -250,6 +251,39 @@ public class TeacherLectureController {
         } catch (IllegalArgumentException exception) {
             throw new DomainRuleViolationException("허용되지 않은 강의 카테고리입니다.");
         }
+    }
+
+    // 강사 강의 상세 조회 API입니다.
+    // 로그인한 강사가 본인이 등록한 강의의 상세 정보와 챕터 목록을 조회합니다.
+    @Operation(
+            summary = "강사 강의 상세 조회",
+            description = "로그인한 강사가 본인이 등록한 강의의 상세 정보와 챕터 목록을 조회합니다."
+    )
+    @GetMapping("/{lectureId}")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
+    public ResponseEntity<ApiResponse<TeacherLectureDetailResponse>> getTeacherLectureDetail(
+            Authentication authentication,
+            @PathVariable Long lectureId
+    ) {
+        // Authorization 토큰에서 로그인한 강사 ID를 꺼냅니다.
+        Long teacherId = Long.parseLong(authentication.getName());
+
+        // Controller에서 받은 값을 Application 계층에서 사용할 Query 객체로 묶습니다.
+        GetTeacherLectureDetailQuery query = new GetTeacherLectureDetailQuery(
+                teacherId,
+                lectureId
+        );
+
+        // 강사 강의 상세 조회 UseCase를 실행합니다.
+        TeacherLectureDetailResponse response =
+                lectureQueryUseCase.getTeacherLectureDetail(query);
+
+        // 조회 성공 응답을 반환합니다.
+        return ResponseEntity.ok(ApiResponse.success(
+                ApiResponseCode.SUCCESS,
+                "강사 강의 상세 조회에 성공했습니다.",
+                response
+        ));
     }
 
 }
