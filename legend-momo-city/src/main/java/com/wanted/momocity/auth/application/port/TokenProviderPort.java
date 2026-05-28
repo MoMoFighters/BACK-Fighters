@@ -3,6 +3,7 @@ package com.wanted.momocity.auth.application.port;
 import org.springframework.security.core.Authentication;
 
 public interface TokenProviderPort {
+    // 완전 새로운 액세스 토큰이랑 리프레시 토큰 만들기
     String createAccessToken(Authentication authentication);
     String createRefreshToken(String userId);
 

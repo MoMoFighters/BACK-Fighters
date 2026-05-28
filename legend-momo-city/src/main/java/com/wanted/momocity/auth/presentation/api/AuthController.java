@@ -1,6 +1,7 @@
 package com.wanted.momocity.auth.presentation.api;
 
 import com.wanted.momocity.auth.application.command.*;
+import com.wanted.momocity.auth.application.port.TokenProviderPort;
 import com.wanted.momocity.auth.domain.exception.MissingTokenException;
 import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.global.application.s3.S3UploadPort;
@@ -33,6 +34,9 @@ public class AuthController {
     private final KakaoLoginUsecase kakaoLoginUsecase;
     private final GoogleLoginUsecase googleLoginUsecase;
     private final LogoutUsecase logoutUsecase;
+    private final NewTokenUsecase newTokenUsecase;
+
+    private final TokenProviderPort tokenProviderPort;
 
     private final S3UploadPort s3UploadPort;
 
@@ -215,7 +219,7 @@ public class AuthController {
             @RequestHeader(value = "Refresh-Token", required = false) String refreshToken)
             // required = true 면 헤더 없으면 Spring이 기본 400을 던지지만
             // 커스텀 메시지 보여주고 싶어서
-            // 헤더 없으면 null로 들어옴 → 우리 if문 실행 → 커스텀 메시지 출력되도록
+            // 헤더 없으면 null로 들어옴 → 내 if문 실행 → 커스텀 메시지 출력되도록
     {
 
         if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
@@ -238,6 +242,22 @@ public class AuthController {
                 ));
     }
 
+
+    @PostMapping("/newtoken")
+    @Operation(summary = "새로운 액세스 토큰 발급해주는 api",
+                description = "사용자가 연장 버튼 누르면 새로운 api를 발급해줌")
+    public ResponseEntity<ApiResponse<NewTokenResponse>> newToken(
+            @RequestHeader("Refresh-Token") String refreshToken){
+
+        String newAccessToken = newTokenUsecase.refreshAccessToken(refreshToken);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        AuthResponseCode.SUCCESS,
+                        AuthResponseMessage.NEW_TOKEN_CREATED,
+                        new NewTokenResponse(newAccessToken ,tokenProviderPort.getAccessTokenValidityMilliseconds() / 1000 )
+                ));
+    }
 
 
 }
