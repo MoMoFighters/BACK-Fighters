@@ -68,18 +68,18 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
             return null;
         }
 
-//        try {
-//            // 2. 가로챈 이메일을 가지고 LoadUserPort를 찔러서 우리 도메인의 User 객체를 꺼냅니다.
-//            User user = loadUserPort.findByEmail(email)
-//                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저 이메일입니다: " + email));
-//
-//            // 3. 드디어 찾은 진짜 유저의 식별 PK ID(Long)를 리턴! 🎯
-//            return user.getId();
-//
-//        } catch (Exception e) {
-//            log.error("[웹소켓 인터셉터] 이메일로 유저 ID를 조회하는 중 실패했습니다. 이메일: {}, 에러: {}", email, e.getMessage());
-//            throw new IllegalArgumentException("유저 정보 조회 실패");
-//        }
+       try {
+           // 2. 가로챈 이메일을 가지고 LoadUserPort를 찔러서 우리 도메인의 User 객체를 꺼냅니다.
+           User user = loadUserPort.findByEmail(email)
+                   .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저 이메일입니다: " + email));
+
+           // 3. 드디어 찾은 진짜 유저의 식별 PK ID(Long)를 리턴! 🎯
+           return user.getId();
+
+       } catch (Exception e) {
+           log.error("[웹소켓 인터셉터] 이메일로 유저 ID를 조회하는 중 실패했습니다. 이메일: {}, 에러: {}", email, e.getMessage());
+           throw new IllegalArgumentException("유저 정보 조회 실패");
+       }
         return Long.parseLong(principal.getName());
     }
 }
