@@ -1,5 +1,6 @@
 package com.wanted.momocity.message.application.service;
 
+import com.wanted.momocity.friend.fmexception.FMResourceNotFoundException;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
@@ -46,11 +47,11 @@ public class SendMessageCommandService implements SendMessageCommandUseCase {
 
         UserWithFMJpaEntity sender = messageSideUserRepository.findUserById(senderId)
                 .map(obj -> (UserWithFMJpaEntity) obj)
-                .orElseThrow(() -> new DomainRuleViolationException("존재하지 않는 발신자입니다."));
+                .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 발신자입니다."));
 
         //채팅방 조회
         ChatRoomJpaEntity chatRoom = messageRepository.findChatRoomById(roomId)
-                .orElseThrow(() -> new DomainRuleViolationException("존재하지 않는 채팅방입니다."));
+                .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 채팅방입니다."));
 
         //어댑터에서 멤버 테이블 찔러서 현재 방에 소속된 멤버 긁어오기
         List<ChatRoomMemberJpaEntity> members = messageRepository.findMembersByRoomId(roomId);

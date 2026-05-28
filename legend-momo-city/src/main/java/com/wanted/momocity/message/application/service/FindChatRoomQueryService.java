@@ -2,6 +2,7 @@ package com.wanted.momocity.message.application.service;
 
 
 import com.wanted.momocity.friend.enrollment.EnrollmentWithFMJpaEntity;
+import com.wanted.momocity.friend.fmexception.FMResourceNotFoundException;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 import com.wanted.momocity.friend.lecture.LectureWithFMJpaEntity;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
@@ -45,7 +46,7 @@ public class FindChatRoomQueryService implements FindChatRoomQueryUseCase {
 
         //현재 로그인한 유저 정보 확인(학생/강사 판별)
         UserWithFMJpaEntity loginUser = messageSideUserRepository.findById(userId)
-                .orElseThrow(() -> new DomainRuleViolationException("존재하지 않는 유저입니다."));
+                .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 유저입니다."));
         String loginUserRole = loginUser.getRole(); //학생 또는 강사
 
         //채팅방 리스트 및 수강신청 전체 내역 로드

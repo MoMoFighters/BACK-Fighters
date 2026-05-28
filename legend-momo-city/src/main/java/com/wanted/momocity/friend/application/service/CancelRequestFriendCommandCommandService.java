@@ -4,6 +4,7 @@ import com.wanted.momocity.friend.application.command.CancelRequestFriendCommand
 import com.wanted.momocity.friend.application.usecase.CancelRequestFriendCommandUseCase;
 import com.wanted.momocity.friend.domain.event.CancelRequestFriendPublishedEvent;
 import com.wanted.momocity.friend.domain.repository.FriendRepository;
+import com.wanted.momocity.friend.fmexception.FMResourceAccessDeniedException;
 import com.wanted.momocity.friend.fmexception.FMResourceConflictException;
 import com.wanted.momocity.friend.fmexception.FMResourceNotFoundException;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
@@ -33,9 +34,9 @@ public class CancelRequestFriendCommandCommandService implements CancelRequestFr
     public CancelRequestFriendView handle(CancelRequestFriendCommand command) {
         log.info("[CancelRequestFriendService] 친구 요청 철회 로직 시작 - 요청자: {}, 대상자: {}", command.userId(), command.targetUserId());
 
-        //철회 대상자 유저가 실제로 존재하는지 확인
+        //철회 대상자 유저가 실제로 존재하는지 확인(404)
         UserWithFMJpaEntity targetUser = friendRepository.findUserById(command.targetUserId())
-                .orElseThrow(() -> new DomainRuleViolationException("존재하지 않는 사용자 입니다."));
+                .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 사용자입니다."));
 
         //두 사람 사이의 친구 관계 행 조회
         Optional<FriendJpaEntity> relationOpt = friendRepository.findRelationBetween(command.userId(), command.targetUserId());
@@ -53,7 +54,7 @@ public class CancelRequestFriendCommandCommandService implements CancelRequestFr
         //기존 행의 fromUserId가 로그인한 유저가 아닐 때
         if (!relation.getFromUserId().getId().equals(command.userId())) {
             log.warn("[CancelRequestFriendService] 철회 실패 - 본인의 요청이 아님");
-            throw new AccessDeniedException("본인의 요청만 철회할 수 있습니다.");
+            throw new FMResourceAccessDeniedException("본인의 요청만 철회할 수 있습니다.");
         }
 
         //409 상태 모순(이미 수락 or 거절)

@@ -5,6 +5,8 @@ import com.wanted.momocity.friend.application.policy.FriendEligibilityPolicy;
 import com.wanted.momocity.friend.application.usecase.AcceptRequestFriendCommandUseCase;
 import com.wanted.momocity.friend.domain.event.AcceptRequestFriendPublishedEvent;
 import com.wanted.momocity.friend.domain.repository.FriendRepository;
+import com.wanted.momocity.friend.fmexception.FMResourceAccessDeniedException;
+import com.wanted.momocity.friend.fmexception.FMResourceNotFoundException;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
@@ -38,7 +40,7 @@ public class AcceptRequestFriendCommandService implements AcceptRequestFriendCom
 
         //요청자가 존재하는지 검증(404)
         UserWithFMJpaEntity fromUser = friendRepository.findUserById(command.fromUserId())
-                .orElseThrow(() -> new DomainRuleViolationException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 사용자입니다."));
 
         //두 사람 사이의 친구 관계 조회(from/to 방향 확인)
         Optional<FriendJpaEntity> relationOpt = friendRepository.findRelationBetween(command.fromUserId(), command.userId());
@@ -52,16 +54,16 @@ public class AcceptRequestFriendCommandService implements AcceptRequestFriendCom
         //행이 toUserId가 현재 로그인한 사용자가 아니라면 수락 권한 없음
         if (!relation.getToUserId().getId().equals(command.userId())) {
             log.warn("[AcceptRequestFriendCommandService] 수락 실패 - 본인에게 온 요청이 아님");
-            throw new AccessDeniedException("본인에게 온 요청만 수락할 수 있습니다.");
+            throw new FMResourceAccessDeniedException("본인에게 온 요청만 수락할 수 있습니다.");
         }
 
         //상태 전이: SENT -> FRIEND 상태 업데이트
         relation.changeStatus("FRIEND");
         log.info("[AcceptRequestFriendCommandService] 행 상태 변경 완료 (SENT -> FRIEND)");
 
-        //로그인 유저 정보 로드
+        //로그인 유저 정보 로드(404)
         UserWithFMJpaEntity loginUser = friendRepository.findUserById(command.userId())
-                .orElseThrow(() -> new DomainRuleViolationException("로그인 유저 정보를 찾을 수 없습니다."));
+                .orElseThrow(() -> new FMResourceNotFoundException("로그인 유저 정보를 찾을 수 없습니다."));
 
         //이벤트 발행
         eventPublisher.publishEvent(new AcceptRequestFriendPublishedEvent(

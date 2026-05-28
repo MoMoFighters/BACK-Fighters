@@ -3,6 +3,7 @@ package com.wanted.momocity.message.application.service;
 
 import com.wanted.momocity.friend.enrollment.EnrollmentWithFMJpaEntity;
 import com.wanted.momocity.friend.fmexception.FMResourceAccessDeniedException;
+import com.wanted.momocity.friend.fmexception.FMResourceNotFoundException;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 
 import com.wanted.momocity.friend.lecture.LectureWithFMJpaEntity;
@@ -46,7 +47,7 @@ public class GetMessageHistoryQueryService implements GetMessageHistoryQueryUseC
         // 1. 유저 정보 및 권한 확인
         UserWithFMJpaEntity loginUser = messageSideUserRepository.findUserById(userId)
                 .map(obj -> (UserWithFMJpaEntity) obj)
-                .orElseThrow(() -> new FMResourceAccessDeniedException("존재하지 않는 유저입니다."));
+                .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 유저입니다."));
 
         //방 멤버가 맞는지 검증
         boolean isCurrentMember = springDataChatRoomMemberRepository.existsByRoomId_IdAndUserId_Id(roomId, userId);

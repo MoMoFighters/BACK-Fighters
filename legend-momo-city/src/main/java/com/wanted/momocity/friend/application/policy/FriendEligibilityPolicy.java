@@ -1,5 +1,6 @@
 package com.wanted.momocity.friend.application.policy;
 
+import com.wanted.momocity.friend.fmexception.FMBusinessRuleViolationException;
 import com.wanted.momocity.friend.fmexception.FMResourceConflictException;
 import com.wanted.momocity.friend.fmexception.FMResourceNotFoundException;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
@@ -16,16 +17,16 @@ public class FriendEligibilityPolicy {
     //친구 요청이 가능한 상태인지 검증하는 규칙
     public void ensureEligible(Long fromUserId, Long toUserId, Optional<FriendJpaEntity> existingRelation, String targetRole) {
 
-        //자신에게 친구 요청 불가(409)
+        //자신에게 친구 요청 불가(400)
         if (fromUserId.equals(toUserId)) {
             log.warn("[FriendEligibilityPolicy] 검증 실패 - 자신에게 친구 요청 시도함 (유저ID: {}", fromUserId);
-            throw new FMResourceConflictException("자기 자신과는 친구 관계를 형성할 수 없습니다.");
+            throw new FMBusinessRuleViolationException("자기 자신과는 친구 관계를 형성할 수 없습니다.");
         }
 
-        //강사에게는 친구 요청 불가
+        //강사에게는 친구 요청 불가(400)
         if ("TEACHER".equals(targetRole)) {
             log.warn("[FriendEligibilityPolicy] 검증 실패 - 대상이 강사(TEACHER)임");
-            throw new DomainRuleViolationException("강사에게는 직접 친구 요청을 보낼 수 없습니다.");
+            throw new FMBusinessRuleViolationException("강사에게는 직접 친구 요청을 보낼 수 없습니다.");
         }
 
         //기존에 아무런 관계 데이터가 없다면(Optional.isEmpty) -> 첫 요청이므로 무조건 통과

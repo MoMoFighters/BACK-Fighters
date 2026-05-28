@@ -1,5 +1,6 @@
 package com.wanted.momocity.message.application.policy;
 
+import com.wanted.momocity.friend.fmexception.FMBusinessRuleViolationException;
 import com.wanted.momocity.friend.fmexception.FMResourceAccessDeniedException;
 import com.wanted.momocity.friend.fmexception.FMResourceConflictException;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
@@ -126,7 +127,7 @@ public class MessageEligibilityPolicy {
 
         if (hasTeacherInRoom) {
             log.warn("[MessageEligibilityPolicy] 강사가 포함된 대화창은 퇴장할 수 없습니다. 요청 유저: {}, 방ID: {}", userId, roomId);
-            throw new FMResourceAccessDeniedException("해당 채팅방을 나갈 권한이 없습니다. (강사와의 채팅방은 퇴장 불가)");
+            throw new FMBusinessRuleViolationException("해당 채팅방을 나갈 권한이 없습니다. (강사와의 채팅방은 퇴장 불가)");
         }
     }
 }

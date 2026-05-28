@@ -6,6 +6,8 @@ import com.wanted.momocity.friend.application.usecase.RequestFriendCommandUseCas
 import com.wanted.momocity.friend.domain.event.RequestFriendPublishedEvent;
 import com.wanted.momocity.friend.domain.model.Friend;
 import com.wanted.momocity.friend.domain.repository.FriendRepository;
+import com.wanted.momocity.friend.fmexception.FMBusinessRuleViolationException;
+import com.wanted.momocity.friend.fmexception.FMResourceNotFoundException;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
@@ -33,13 +35,13 @@ public class RequestFriendCommandService implements RequestFriendCommandUseCase 
     public RequestFriendView handle(RequestFriendCommand command) {
         log.info("[RequestFriendCommandService] 친구 요청 명령 수행 시작 - 요청자: {}, 대상자: {}", command.userId(), command.targetUserId());
 
-        //순수 엔티티 조회 및 검증 로직(404, 409)
+        //순수 엔티티 조회 및 검증 로직(400, 404)
         UserWithFMJpaEntity targetUser = friendRepository.findUserById(command.targetUserId())
-                .orElseThrow(() -> new DomainRuleViolationException("존재하지 않는 사용자에게 요청을 보낼 수 없습니다."));
+                .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 사용자에게 요청을 보낼 수 없습니다."));
         log.info("[RequestFriendCommandService] 대상자 검증 완료 - 닉네임: '{}', 역할: '{}'",targetUser.getNickname(), targetUser.getRole());
 
         UserWithFMJpaEntity loginUser = friendRepository.findUserById(command.userId())
-                .orElseThrow(() -> new DomainRuleViolationException("로그인 유저 정보를 찾을 수 없습니다."));
+                .orElseThrow(() -> new FMResourceNotFoundException("로그인 유저 정보를 찾을 수 없습니다."));
         log.info("[RequestFriendCommandService] 요청자 검증 완료 - 닉네임: '{}'", loginUser.getNickname());
 
         //기존 관계 추출
