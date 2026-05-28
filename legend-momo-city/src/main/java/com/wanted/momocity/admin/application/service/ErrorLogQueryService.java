@@ -1,7 +1,6 @@
 package com.wanted.momocity.admin.application.service;
 
 import com.wanted.momocity.admin.application.usecase.ErrorLogQueryUseCase;
-import com.wanted.momocity.admin.domain.audit.ErrorLogRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,10 +18,16 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class ErrorLogQueryService implements ErrorLogQueryUseCase {
 
-    private final ErrorLogRepository errorLogRepository;
+    /* comment.
+        m03 우선순위에서 추가될 의존성 :
+        - private final ErrorLogRepository errorLogRepository;
 
-    public ErrorLogQueryService(ErrorLogRepository errorLogRepository) {
-        this.errorLogRepository = errorLogRepository;
+        현재는 ErrorLogRepository 의 구현체(JPA Adapter)가 아직 없어서 주입 보류.
+        ErrorLogRepositoryAdapter 추가되면 생성자 주입으로 전환.
+        (AdminDashboardQueryService 와 동일 패턴 - stub 단계)
+     */
+    public ErrorLogQueryService() {
+        // m03 우선순위 - ErrorLogRepository 주입 예정
     }
 
     /* comment.
