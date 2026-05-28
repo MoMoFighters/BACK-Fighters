@@ -19,26 +19,13 @@ public class LectureCatalogAdapter implements LecturePort {
 
     @Override
     public Lecture findById(Long lectureId) {
-
-//        LectureJpaEntity lectureJpaEntity =
-//                lectureJpaRepository.findById(lectureId)
-//                .orElseThrow(() ->
-//                        new DomainRuleViolationException("강의를 찾을 수 없습니다."));
-//
-//        String instructorName =
-//                userJpaRepository.findById(lectureEntity.getTeacherId())
-//                        .map(UserJpaEntity::getName)
-//                        .orElseThrow(() -> new DomainRuleViolationException("강사를 찾을 수 없습니다."));
-//
-//        return Lecture.reconstitute(
-//                lectureEntity.getId(),
-//                lectureEntity.getTeacherId(),
-//                lectureEntity.getTitle(),
-//                lectureEntity.getThumbnailUrl(),
-//                lectureEntity.getCategory(),
-//                instructorName
-//        );
-
-        throw new UnsupportedOperationException("구현 예정");
+        return Lecture.reconstitute(
+                lectureId,
+                1L,
+                "임시 강의 " + lectureId,
+                "https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png",
+                "HEALTH",
+                "임시 강사"
+        );
     }
 }

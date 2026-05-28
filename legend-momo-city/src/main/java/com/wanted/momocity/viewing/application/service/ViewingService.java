@@ -28,6 +28,7 @@ import com.wanted.momocity.viewing.presentation.api.response.ChapterResumeRespon
 import com.wanted.momocity.viewing.presentation.api.response.LectureMetaResponse;
 import com.wanted.momocity.viewing.presentation.api.response.StreamingUrlResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +37,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@Slf4j
 public class ViewingService implements
         GetStreamingUrlUseCase,
         GetLectureMetaUseCase,
@@ -66,6 +68,9 @@ public class ViewingService implements
         String presignedUrl = s3Port.generatePresignedUrl(
                 chapter.getVideoUrl()
         );
+
+        log.info("[Viewing] S3 Presigned URL 발급 완료 | userId={}, lectureId={}, chapterId={}",
+                userId, lectureId, chapterId);
 
         return new StreamingUrlResponse(
                 chapter.getId(),
@@ -99,6 +104,9 @@ public class ViewingService implements
         Chapter currentChapter = currentHistory != null
                 ? chapterPort.findById(currentHistory.getChapterId())
                 : chapters.get(0);
+
+        log.info("[Viewing] 강의 메타데이터 조회 완료 | userId={}, lectureId={}",
+                userId, lectureId);
 
         return new LectureMetaResponse(
                 lecture.getId(),
@@ -135,6 +143,8 @@ public class ViewingService implements
                 .mapToInt(LearningHistory::getProgressRate)
                 .sum();
 
+        log.info("[Viewing] 챕터 이어보기 조회 완료 | userId={}, lectureId={}, chapterId={}, lastPositionSec={}",
+                userId, lectureId, chapterId, history.getLastPositionSec());
 
         return new ChapterResumeResponse(
                 lectureId,

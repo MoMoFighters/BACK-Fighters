@@ -21,12 +21,15 @@ public class EnrollmentCatalogAdapter implements EnrollmentPort{
     public Optional<EnrollmentInfo> findByUserIdAndLectureId(
             Long userId, Long lectureId
     ) {
-        throw new UnsupportedOperationException("구현 예정");
+        return Optional.of(new EnrollmentInfo(1L, userId, lectureId));
     }
 
     @Override
     public List<EnrollmentInfo> findAllByUserId(Long userId) {
-        throw new UnsupportedOperationException("구현 예정");
+        return List.of(
+                new EnrollmentInfo(1L, userId, 1L),
+                new EnrollmentInfo(2L, userId, 2L)
+        );
     }
 
 }
