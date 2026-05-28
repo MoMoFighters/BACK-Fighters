@@ -98,4 +98,20 @@ public class UserController {
                 ));
     }
 
+
+    @GetMapping("/user/buildings")
+    @Operation(
+            summary = "로그인 후 학생의 메인페이지 렌더링을 위한 정보 전달",
+            description = "액세스 토큰을 받아 카테고리, 포지션, 레벨 세 값을 응답에 전달한다")
+    public ResponseEntity<ApiResponse<UserQueryUsecase.RenderingBuildingsView>>renderingBuildings(
+            @AuthenticationPrincipal CustomUserDetails userDetails ){
+
+        return ResponseEntity.ok(ApiResponse.success(
+                UserResponseCode.SUCCESS,
+                UserResponseMessage.VIEW_BUILDING_INFO,
+                userQueryUsecase.userBuildingInfo(userDetails.getUserId())
+        ));
+    }
+
+
 }
