@@ -1,6 +1,7 @@
 package com.wanted.momocity.user.application.service;
 
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
+import com.wanted.momocity.user.application.policy.UserPolicy;
 import com.wanted.momocity.user.application.usecase.UserQueryUsecase;
 import com.wanted.momocity.user.domain.model.User;
 import com.wanted.momocity.user.domain.repository.UserRepository;
@@ -14,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserQueryService implements UserQueryUsecase {
 
     private final UserRepository userRepository;
+    private final UserPolicy userPolicy;
+
 
     @Override
     public UserDetailView userDetail(Long userId) {
@@ -27,5 +30,10 @@ public class UserQueryService implements UserQueryUsecase {
                 user.getNickname(),
                 user.getBirth()
         );
+    }
+
+    @Override
+    public void checkNickname(String nickname) {
+        userPolicy.nicknamePolicy(nickname);
     }
 }
