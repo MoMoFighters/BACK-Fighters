@@ -5,7 +5,7 @@ import com.wanted.momocity.lecture.domain.model.LectureCategory;
 
 // 강사 강의 목록 조회의 조건을 담은 record
 public record GetTeacherLecturesQuery(
-        String teacherEmail,
+        Long teacherId,
         int page,
         int size,
         LectureCategory category,
@@ -13,13 +13,13 @@ public record GetTeacherLecturesQuery(
 ) {
     // Query 객체가 만들어질 때 기본 조회 조건을 검증
     public GetTeacherLecturesQuery {
-        validateTeacherEmail(teacherEmail);
+        validateTeacherId(teacherId);
         validatePage(page);
         validateSize(size);
     }
     // 로그인한 강사 email
-    private static void validateTeacherEmail(String teacherEmail) {
-        if (teacherEmail == null || teacherEmail.isBlank()) {
+    private static void validateTeacherId(Long teacherId) {
+        if (teacherId == null) {
             throw new DomainRuleViolationException("강사 정보는 필수입니다.");
         }
     }

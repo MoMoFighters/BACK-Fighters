@@ -4,13 +4,16 @@ import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationExc
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
 import com.wanted.momocity.lecture.application.query.GetLecturesQuery;
+import com.wanted.momocity.lecture.application.query.GetTeacherLectureDetailQuery;
 import com.wanted.momocity.lecture.application.usecase.LectureQueryUseCase;
 import com.wanted.momocity.lecture.domain.model.LectureCategory;
 import com.wanted.momocity.lecture.presentation.api.response.LecturePageResponse;
+import com.wanted.momocity.lecture.presentation.api.response.TeacherLectureDetailResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -79,6 +82,39 @@ public class LectureController {
         ));
     }
 
+    // 강사 강의 상세 조회 API입니다.
+// 로그인한 강사가 본인이 등록한 강의의 상세 정보와 챕터 목록을 조회합니다.
+    @Operation(
+            summary = "강사 강의 상세 조회",
+            description = "로그인한 강사가 본인이 등록한 강의의 상세 정보와 챕터 목록을 조회합니다."
+    )
+    @GetMapping("/{lectureId}")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
+    public ResponseEntity<ApiResponse<TeacherLectureDetailResponse>> getTeacherLectureDetail(
+            Authentication authentication,
+            @PathVariable Long lectureId
+    ) {
+        // Authorization 토큰에서 로그인한 강사 ID를 꺼냅니다.
+        Long teacherId = Long.parseLong(authentication.getName());
+
+        // Controller에서 받은 값을 Application 계층에서 사용할 Query 객체로 묶습니다.
+        GetTeacherLectureDetailQuery query = new GetTeacherLectureDetailQuery(
+                teacherId,
+                lectureId
+        );
+
+        // 강사 강의 상세 조회 UseCase를 실행합니다.
+        TeacherLectureDetailResponse response =
+                lectureQueryUseCase.getTeacherLectureDetail(query);
+
+        // 조회 성공 응답을 반환합니다.
+        return ResponseEntity.ok(ApiResponse.success(
+                ApiResponseCode.SUCCESS,
+                "강사 강의 상세 조회에 성공했습니다.",
+                response
+        ));
+    }
+
     /*
      * 문자열 category를 LectureCategory enum으로 변환
      * category가 없으면 null을 반환해서 전체 카테고리를 조회
@@ -94,4 +130,6 @@ public class LectureController {
             throw new DomainRuleViolationException("허용되지 않는 강의 카테고리입니다.");
         }
     }
+
+
 }

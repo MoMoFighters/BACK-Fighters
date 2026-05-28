@@ -16,9 +16,9 @@ public record CreateChapterRequest(
 ) {
 
     // Controller에서 받은 요청값을 application 계층의 Command로 변환
-    public CreateChapterCommand toCommand(String teacherEmail, Long lectureId) {
+    public CreateChapterCommand toCommand(Long teacherId, Long lectureId) {
         return new CreateChapterCommand(
-                teacherEmail,
+                teacherId,
                 lectureId,
                 title,
                 orderNo

@@ -61,8 +61,7 @@ public class TeacherLectureController {
             Authentication authentication,
             @Valid @ModelAttribute CreateLectureRequest request
     ) {
-        String teacherEmail = authentication.getName();
-
+        Long teacherId = Long.parseLong(authentication.getName());
         /*
          * S3 업로드 전에 category를 먼저 검증
          * 잘못된 카테고리 요청이면 여기서 400 응답으로 끝나고, 썸네일 파일은 업로드 X
@@ -72,7 +71,7 @@ public class TeacherLectureController {
         String thumbnailUrl = s3UploadPort.upload(request.thumbnail());
 
         LectureAggregate lecture = lectureCommandUseCase.createLecture(
-                request.toCommand(teacherEmail, thumbnailUrl)
+                request.toCommand(teacherId, thumbnailUrl)
         );
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created(
@@ -96,10 +95,10 @@ public class TeacherLectureController {
             @Valid @RequestBody CreateChapterRequest request
     ) {
         // Authorization 토큰에서 로그인한 강사의 email을 가져옴
-        String teacherEmail = authentication.getName();
+        Long teacherId = Long.parseLong(authentication.getName());
 
         // Request DTO를 application 계층의 Command로 변환
-        var command = request.toCommand(teacherEmail, lectureId);
+        var command = request.toCommand(teacherId, lectureId);
 
         // 챕터 등록 유스케이스를 실행
         LectureChapter chapter = chapterCommandUseCase.createChapter(command);
@@ -134,11 +133,11 @@ public class TeacherLectureController {
             @Valid @ModelAttribute RegisterChapterVideoRequest request
     ) {
         // Authorization 토큰에서 로그인한 강사의 email을 가져옵니다.
-        String teacherEmail = authentication.getName();
+        Long teacherId = Long.parseLong(authentication.getName());
 
         // 요청 DTO를 Application 계층에서 사용할 Command로 변환합니다.
         RegisterChapterVideoCommand command = request.toCommand(
-                teacherEmail,
+                teacherId,
                 lectureId,
                 chapterId
         );
@@ -172,11 +171,11 @@ public class TeacherLectureController {
             @Valid @RequestBody ChangeLectureStatusRequest request
     ) {
         // Authorization 토큰에서 로그인한 강사의 email을 가져옴
-        String teacherEmail = authentication.getName();
+        Long teacherId = Long.parseLong(authentication.getName());
 
         // Request DTO를 Application 계층에서 사용할 Command로 변환
         ChangeLectureStatusCommand command = request.toCommand(
-                teacherEmail,
+                teacherId,
                 lectureId
         );
 
@@ -214,11 +213,11 @@ public class TeacherLectureController {
             @RequestParam(required = false) String keyword
     ) {
         // Authorization 토큰에서 로그인한 강사의 email을 가져옵니다.
-        String teacherEmail = authentication.getName();
+        Long teacherId = Long.parseLong(authentication.getName());
 
         // 요청 파라미터를 Application 계층의 Query 객체로 변환합니다.
         GetTeacherLecturesQuery query = new GetTeacherLecturesQuery(
-                teacherEmail,
+                teacherId,
                 page,
                 size,
                 parseCategory(category),

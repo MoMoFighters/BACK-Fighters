@@ -29,12 +29,12 @@ public record RegisterChapterVideoRequest(
      * Controller는 HTTP 요청만 알고, Service는 Command만 보고 처리하게 분리합니다.
      */
     public RegisterChapterVideoCommand toCommand(
-            String teacherEmail,
+            Long teacherId,
             Long lectureId,
             Long chapterId
     ) {
         return new RegisterChapterVideoCommand(
-                teacherEmail,
+                teacherId,
                 lectureId,
                 chapterId,
                 video,

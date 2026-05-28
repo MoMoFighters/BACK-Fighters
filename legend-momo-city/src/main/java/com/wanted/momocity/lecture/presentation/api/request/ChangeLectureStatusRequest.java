@@ -15,11 +15,11 @@ public record ChangeLectureStatusRequest(
 
     // 문자열로 받은 상태값을 LectureStatus enum으로 변환한 뒤 Command로 만든다.
     public ChangeLectureStatusCommand toCommand(
-            String teacherEmail,
+            Long teacherId,
             Long lectureId
     ) {
         return new ChangeLectureStatusCommand(
-                teacherEmail,
+                teacherId,
                 lectureId,
                 parseLectureStatus()
         );

@@ -2,6 +2,8 @@ package com.wanted.momocity.lecture.infrastructure.persistence;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
+
 // SpringDataChapterRepository는 Spring Data JPA 전용 Repository
 public interface SpringDataChapterRepository extends JpaRepository<ChapterJpaEntity, Long> {
 
@@ -13,4 +15,7 @@ public interface SpringDataChapterRepository extends JpaRepository<ChapterJpaEnt
 
     // 강의에 videoUrl이 비어있는 챕터가  있는지 확인
     boolean existsByLectureIdAndVideoUrlIsNull(Long lectureId);
+
+    // 특정 강의에 속한 챕터 목록을 orderNo 오름차순으로 조회
+    List<ChapterJpaEntity> findAllByLectureIdOrderByOrderNoAsc(Long lectureId);
 }

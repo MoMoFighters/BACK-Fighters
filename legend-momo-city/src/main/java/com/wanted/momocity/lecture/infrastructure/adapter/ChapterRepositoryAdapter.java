@@ -7,6 +7,7 @@ import com.wanted.momocity.lecture.infrastructure.persistence.ChapterJpaEntity;
 import com.wanted.momocity.lecture.infrastructure.persistence.SpringDataChapterRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 // ChapterRepositoryAdapter는 도메인 Repository를 JPA Repository와 연결합니다.
@@ -47,6 +48,15 @@ public class ChapterRepositoryAdapter implements ChapterRepository {
     @Override
     public boolean existsByLectureIdAndVideoUrlIsNull(Long lectureId) {
         return repository.existsByLectureIdAndVideoUrlIsNull(lectureId);
+    }
+
+    // 특정 강의에 속한 챕터 목록을 orderNo 오름차순으로 조회
+    @Override
+    public List<LectureChapter> findAllByLectureIdOrderByOrderNoAsc(Long lectureId) {
+        return repository.findAllByLectureIdOrderByOrderNoAsc(lectureId)
+                .stream()
+                .map(ChapterJpaEntity::toDomain)
+                .toList();
     }
     
 }
