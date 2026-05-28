@@ -1,0 +1,39 @@
+### Learning Context API
+### 실행 전 Catalog에서 강의 공개, Enrollment에서 수강 신청을 먼저 실행하세요.
+### moduleId는 강의 조회 응답 또는 DB에서 확인한 모듈 ID로 변경하세요.
+
+@host = http://localhost:8080
+@courseId = 1
+@userId = 200
+@moduleId = 1
+@progressId = 1
+
+### 1. 모듈 완료 처리
+PUT {{host}}/api/learning/module-completions/{{moduleId}}
+Content-Type: application/json
+
+{
+  "userId": {{userId}},
+  "courseId": {{courseId}}
+}
+
+### 2. 학습 진행 조회
+GET {{host}}/api/learning/progresses/{{progressId}}
+
+### 3. 실패 예시 - 같은 모듈을 다시 완료 처리
+PUT {{host}}/api/learning/module-completions/{{moduleId}}
+Content-Type: application/json
+
+{
+  "userId": {{userId}},
+  "courseId": {{courseId}}
+}
+
+### 4. 실패 예시 - 활성 수강이 없는 사용자의 모듈 완료 처리
+PUT {{host}}/api/learning/module-completions/{{moduleId}}
+Content-Type: application/json
+
+{
+  "userId": 999,
+  "courseId": {{courseId}}
+}

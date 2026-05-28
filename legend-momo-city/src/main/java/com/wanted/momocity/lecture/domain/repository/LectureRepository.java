@@ -22,18 +22,20 @@ public interface LectureRepository {
     // 강의 ID로 강의를 조회
     Optional<LectureAggregate> findById(Long lectureId);
 
-    /*
-     * 학생용 강의 목록을 조회
-     * 이 조회는 기본적으로 ACTIVE 상태의 강의만 대상으로 한다.
-     * category가 있으면 해당 카테고리의 강의만 조회
-     * enrolled가 true이면 enrolledLectureIds에 포함된 강의만 조회
-     * enrolled가 false이면 enrolledLectureIds에 포함되지 않은 강의만 조회
-     * enrolled가 null이면 수강 여부와 상관없이 조회
-     */
+    // 학생용 강의 목록을 조회
     LecturePage findLectures(
             LectureCategory category,
             Boolean enrolled,
             List<Long> enrolledLectureIds,
+            int page,
+            int size
+    );
+
+    // 강사가 등록한 강의 목록을 조회한다.
+    LecturePage findTeacherLectures(
+            Long teacherId,
+            LectureCategory category,
+            String keyword,
             int page,
             int size
     );

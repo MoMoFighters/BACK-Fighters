@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="300" viewBox="0 0 980 300" role="img" aria-labelledby="title desc">
+  <title id="title">Repository Adapter Mapping</title>
+  <desc id="desc">Application service depends on repository port; adapter maps domain model and JPA entity.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+    </marker>
+    <style>
+      .title { font: 700 24px Arial, sans-serif; fill: #0f172a; }
+      .boxText { font: 700 15px Arial, sans-serif; fill: #111827; }
+      .hint { font: 13px Arial, sans-serif; fill: #64748b; }
+      .box { fill: #ffffff; stroke: #475569; stroke-width: 1.5; rx: 12; }
+      .domain { fill: #fff7ed; stroke: #ea580c; }
+      .infra { fill: #eff6ff; stroke: #2563eb; }
+      .arrow { stroke: #334155; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect width="980" height="300" fill="#ffffff"/>
+  <text x="490" y="42" text-anchor="middle" class="title">Domain Model and JPA Entity Separation</text>
+
+  <rect x="55" y="110" width="170" height="70" class="box"/>
+  <text x="140" y="140" text-anchor="middle" class="boxText">Application</text>
+  <text x="140" y="162" text-anchor="middle" class="hint">CourseCommandService</text>
+
+  <rect x="285" y="110" width="165" height="70" class="box domain"/>
+  <text x="367" y="140" text-anchor="middle" class="boxText">Repository Port</text>
+  <text x="367" y="162" text-anchor="middle" class="hint">CourseRepository</text>
+
+  <rect x="510" y="110" width="175" height="70" class="box infra"/>
+  <text x="597" y="140" text-anchor="middle" class="boxText">Adapter</text>
+  <text x="597" y="162" text-anchor="middle" class="hint">CourseRepositoryAdapter</text>
+
+  <rect x="745" y="75" width="175" height="62" class="box infra"/>
+  <text x="832" y="105" text-anchor="middle" class="boxText">Spring Data JPA</text>
+  <text x="832" y="125" text-anchor="middle" class="hint">SpringDataRepository</text>
+
+  <rect x="745" y="165" width="175" height="62" class="box infra"/>
+  <text x="832" y="195" text-anchor="middle" class="boxText">JPA Entity</text>
+  <text x="832" y="215" text-anchor="middle" class="hint">CourseJpaEntity</text>
+
+  <rect x="510" y="215" width="175" height="50" class="box domain"/>
+  <text x="597" y="246" text-anchor="middle" class="boxText">Course Domain Model</text>
+
+  <path d="M 225 145 L 285 145" class="arrow"/>
+  <path d="M 450 145 L 510 145" class="arrow"/>
+  <path d="M 685 140 L 745 110" class="arrow"/>
+  <path d="M 745 196 L 685 160" class="arrow"/>
+  <path d="M 598 180 L 598 215" class="arrow"/>
+</svg>

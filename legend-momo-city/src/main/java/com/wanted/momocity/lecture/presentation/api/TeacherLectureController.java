@@ -1,22 +1,23 @@
 package com.wanted.momocity.lecture.presentation.api;
 
 import com.wanted.momocity.global.application.s3.S3UploadPort;
+import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
 import com.wanted.momocity.lecture.application.command.ChangeLectureStatusCommand;
 import com.wanted.momocity.lecture.application.command.RegisterChapterVideoCommand;
+import com.wanted.momocity.lecture.application.query.GetTeacherLecturesQuery;
 import com.wanted.momocity.lecture.application.usecase.ChapterCommandUseCase;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCase;
+import com.wanted.momocity.lecture.application.usecase.LectureQueryUseCase;
 import com.wanted.momocity.lecture.domain.model.LectureAggregate;
+import com.wanted.momocity.lecture.domain.model.LectureCategory;
 import com.wanted.momocity.lecture.domain.model.LectureChapter;
 import com.wanted.momocity.lecture.presentation.api.request.ChangeLectureStatusRequest;
 import com.wanted.momocity.lecture.presentation.api.request.CreateChapterRequest;
 import com.wanted.momocity.lecture.presentation.api.request.CreateLectureRequest;
 import com.wanted.momocity.lecture.presentation.api.request.RegisterChapterVideoRequest;
-import com.wanted.momocity.lecture.presentation.api.response.ChangeLectureStatusResponse;
-import com.wanted.momocity.lecture.presentation.api.response.CreateChapterResponse;
-import com.wanted.momocity.lecture.presentation.api.response.CreateLectureResponse;
-import com.wanted.momocity.lecture.presentation.api.response.RegisterChapterVideoResponse;
+import com.wanted.momocity.lecture.presentation.api.response.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -35,14 +36,17 @@ public class TeacherLectureController {
     private final LectureCommandUseCase lectureCommandUseCase;
     private final ChapterCommandUseCase chapterCommandUseCase;
     private final S3UploadPort s3UploadPort;
+    private final LectureQueryUseCase lectureQueryUseCase;
     public TeacherLectureController(
             LectureCommandUseCase lectureCommandUseCase,
             ChapterCommandUseCase chapterCommandUseCase,
-            S3UploadPort s3UploadPort
+            S3UploadPort s3UploadPort,
+            LectureQueryUseCase lectureQueryUseCase
     ) {
         this.lectureCommandUseCase = lectureCommandUseCase;
         this.chapterCommandUseCase = chapterCommandUseCase;
         this.s3UploadPort = s3UploadPort;
+        this.lectureQueryUseCase = lectureQueryUseCase;
     }
 
     @Operation(
@@ -186,6 +190,67 @@ public class TeacherLectureController {
                         "강의 상태가 변경되었습니다.",
                         ChangeLectureStatusResponse.from(lecture)
                 ));
+    }
+
+    /*
+     * 강사 강의 목록 조회 API
+     * 로그인한 강사가 본인이 등록한 강의 목록을 조회합니다.
+     */
+    @Operation(
+            summary = "강사 강의 목록 조회",
+            description = """
+                로그인한 강사가 본인이 등록한 강의 목록을 조회합니다.
+                category와 keyword는 선택 조건입니다.
+                page는 1부터 시작합니다.
+                """
+    )
+    @GetMapping
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
+    public ResponseEntity<ApiResponse<TeacherLecturePageResponse>> getTeacherLectures(
+            Authentication authentication,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String keyword
+    ) {
+        // Authorization 토큰에서 로그인한 강사의 email을 가져옵니다.
+        String teacherEmail = authentication.getName();
+
+        // 요청 파라미터를 Application 계층의 Query 객체로 변환합니다.
+        GetTeacherLecturesQuery query = new GetTeacherLecturesQuery(
+                teacherEmail,
+                page,
+                size,
+                parseCategory(category),
+                keyword
+        );
+
+        // 강사 강의 목록 조회 유스케이스를 실행합니다.
+        TeacherLecturePageResponse response = lectureQueryUseCase.getTeacherLectures(query);
+
+        // 200 OK 응답을 반환합니다.
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        ApiResponseCode.SUCCESS,
+                        "강사 강의 목록 조회에 성공했습니다.",
+                        response
+                ));
+    }
+
+    /*
+     * category 요청 파라미터를 LectureCategory enum으로 변환합니다.
+     * category가 없으면 필터를 적용하지 않기 위해 null을 반환합니다.
+     */
+    private LectureCategory parseCategory(String category) {
+        if (category == null || category.isBlank()) {
+            return null;
+        }
+
+        try {
+            return LectureCategory.valueOf(category.toUpperCase());
+        } catch (IllegalArgumentException exception) {
+            throw new DomainRuleViolationException("허용되지 않은 강의 카테고리입니다.");
+        }
     }
 
 }

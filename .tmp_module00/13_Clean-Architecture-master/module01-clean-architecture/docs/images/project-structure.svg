@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="660" viewBox="0 0 1040 660" role="img" aria-labelledby="title desc">
+  <title id="title">Project Structure Overview</title>
+  <desc id="desc">Catalog, Enrollment, and Learning contexts with presentation, application, domain, and infrastructure elements.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+    </marker>
+    <style>
+      .title { font: 700 26px Arial, sans-serif; fill: #0f172a; }
+      .ctx { font: 700 18px Arial, sans-serif; fill: #0f172a; }
+      .boxText { font: 600 14px Arial, sans-serif; fill: #111827; }
+      .box { fill: #ffffff; stroke: #64748b; stroke-width: 1.4; rx: 9; }
+      .group { fill: #f8fafc; stroke: #94a3b8; stroke-width: 1.8; rx: 18; }
+      .arrow { stroke: #334155; stroke-width: 1.8; fill: none; marker-end: url(#arrow); }
+      .todo { stroke-dasharray: 6 5; }
+    </style>
+  </defs>
+
+  <rect width="1040" height="660" fill="#ffffff"/>
+  <text x="520" y="42" text-anchor="middle" class="title">Project Structure Overview</text>
+
+  <rect x="55" y="90" width="280" height="470" class="group"/>
+  <text x="195" y="122" text-anchor="middle" class="ctx">Catalog</text>
+  <rect x="90" y="155" width="210" height="48" class="box"/><text x="195" y="185" text-anchor="middle" class="boxText">CourseController</text>
+  <rect x="90" y="235" width="210" height="48" class="box"/><text x="195" y="265" text-anchor="middle" class="boxText">CourseCommandService</text>
+  <rect x="90" y="315" width="210" height="48" class="box"/><text x="195" y="345" text-anchor="middle" class="boxText">Course</text>
+  <rect x="90" y="395" width="210" height="48" class="box"/><text x="195" y="425" text-anchor="middle" class="boxText">CourseRepositoryAdapter</text>
+
+  <rect x="380" y="90" width="280" height="470" class="group"/>
+  <text x="520" y="122" text-anchor="middle" class="ctx">Enrollment</text>
+  <rect x="415" y="155" width="210" height="48" class="box"/><text x="520" y="185" text-anchor="middle" class="boxText">EnrollmentController</text>
+  <rect x="415" y="225" width="210" height="48" class="box"/><text x="520" y="255" text-anchor="middle" class="boxText">EnrollmentCommandService</text>
+  <rect x="415" y="295" width="210" height="48" class="box"/><text x="520" y="325" text-anchor="middle" class="boxText">EnrollmentEligibilityPolicy</text>
+  <rect x="415" y="365" width="210" height="48" class="box"/><text x="520" y="395" text-anchor="middle" class="boxText">CourseCatalogPort</text>
+  <rect x="415" y="435" width="210" height="48" class="box"/><text x="520" y="465" text-anchor="middle" class="boxText">CatalogCourseAdapter</text>
+
+  <rect x="705" y="90" width="280" height="470" class="group"/>
+  <text x="845" y="122" text-anchor="middle" class="ctx">Learning</text>
+  <rect x="740" y="155" width="210" height="48" class="box"/><text x="845" y="185" text-anchor="middle" class="boxText">LearningController</text>
+  <rect x="740" y="235" width="210" height="48" class="box"/><text x="845" y="265" text-anchor="middle" class="boxText">LearningCommandService</text>
+  <rect x="740" y="315" width="210" height="48" class="box"/><text x="845" y="345" text-anchor="middle" class="boxText">LearningAccessPolicy</text>
+  <rect x="740" y="395" width="210" height="48" class="box"/><text x="845" y="425" text-anchor="middle" class="boxText">EnrollmentAccessPort TODO</text>
+
+  <path d="M 195 203 L 195 235" class="arrow"/>
+  <path d="M 195 283 L 195 315" class="arrow"/>
+  <path d="M 195 363 L 195 395" class="arrow"/>
+
+  <path d="M 520 203 L 520 225" class="arrow"/>
+  <path d="M 520 273 L 520 295" class="arrow"/>
+  <path d="M 520 343 L 520 365" class="arrow"/>
+  <path d="M 520 413 L 520 435" class="arrow"/>
+  <path d="M 415 459 C 330 475, 300 450, 300 425" class="arrow"/>
+
+  <path d="M 845 203 L 845 235" class="arrow"/>
+  <path d="M 845 283 L 845 315" class="arrow"/>
+  <path d="M 845 363 L 845 395" class="arrow todo"/>
+
+  <text x="520" y="610" text-anchor="middle" class="boxText">Completed example: Enrollment to Catalog through CourseCatalogPort. Student TODO: Learning to Enrollment through EnrollmentAccessPort.</text>
+</svg>

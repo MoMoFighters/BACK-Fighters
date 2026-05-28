@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="340" viewBox="0 0 920 340" role="img" aria-labelledby="title desc">
+  <title id="title">Bounded Context Connections</title>
+  <desc id="desc">Catalog, Enrollment, and Learning contexts connected through ports.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+    </marker>
+    <style>
+      .title { font: 700 26px Arial, sans-serif; fill: #0f172a; }
+      .ctx { font: 700 20px Arial, sans-serif; fill: #111827; }
+      .sub { font: 14px Arial, sans-serif; fill: #475569; }
+      .box { fill: #f8fafc; stroke: #475569; stroke-width: 1.8; rx: 16; }
+      .port { font: 700 14px Arial, sans-serif; fill: #2563eb; }
+      .arrow { stroke: #334155; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect width="920" height="340" fill="#ffffff"/>
+  <text x="460" y="44" text-anchor="middle" class="title">Bounded Context Boundaries</text>
+
+  <rect x="60" y="115" width="220" height="120" class="box"/>
+  <text x="170" y="160" text-anchor="middle" class="ctx">Learning</text>
+  <text x="170" y="188" text-anchor="middle" class="sub">learning progress</text>
+
+  <rect x="350" y="115" width="220" height="120" class="box"/>
+  <text x="460" y="160" text-anchor="middle" class="ctx">Enrollment</text>
+  <text x="460" y="188" text-anchor="middle" class="sub">course enrollment</text>
+
+  <rect x="640" y="115" width="220" height="120" class="box"/>
+  <text x="750" y="160" text-anchor="middle" class="ctx">Catalog</text>
+  <text x="750" y="188" text-anchor="middle" class="sub">course definition</text>
+
+  <path d="M 280 175 L 350 175" class="arrow"/>
+  <text x="315" y="155" text-anchor="middle" class="port">EnrollmentAccessPort</text>
+
+  <path d="M 570 175 L 640 175" class="arrow"/>
+  <text x="605" y="155" text-anchor="middle" class="port">CourseCatalogPort</text>
+
+  <text x="460" y="285" text-anchor="middle" class="sub">Each context asks for the smallest contract it needs.</text>
+</svg>

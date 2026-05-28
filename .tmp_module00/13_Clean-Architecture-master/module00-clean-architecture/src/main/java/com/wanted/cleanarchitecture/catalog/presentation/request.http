@@ -1,0 +1,54 @@
+### Catalog Context API
+### 이 파일은 IntelliJ HTTP Client 기준으로 작성된 API 검증용 요청 모음입니다.
+### 실행 순서: 강의 생성 -> 섹션 추가 -> 모듈 추가 -> 강의 공개 -> 강의 조회
+
+@host = http://localhost:8080
+@courseId = 1
+@sectionOrder = 1
+
+### 1. 강의 생성
+POST {{host}}/api/courses
+Content-Type: application/json
+
+{
+  "authorId": 100,
+  "title": "Clean Architecture 101",
+  "description": "DDD와 Clean Architecture를 함께 배우는 강의"
+}
+
+### 2. 강의 조회
+GET {{host}}/api/courses/{{courseId}}
+
+### 3. 섹션 추가
+POST {{host}}/api/courses/{{courseId}}/sections
+Content-Type: application/json
+
+{
+  "title": "Introduction",
+  "sectionOrder": 1
+}
+
+### 4. 모듈 추가
+POST {{host}}/api/courses/{{courseId}}/sections/{{sectionOrder}}/modules
+Content-Type: application/json
+
+{
+  "title": "Why Boundaries Matter",
+  "contentType": "TEXT",
+  "moduleOrder": 1
+}
+
+### 5. 강의 공개
+POST {{host}}/api/courses/{{courseId}}/publication
+
+### 6. 공개 후 강의 조회
+GET {{host}}/api/courses/{{courseId}}
+
+### 7. 실패 예시 - 공개된 강의에는 섹션을 추가할 수 없음
+POST {{host}}/api/courses/{{courseId}}/sections
+Content-Type: application/json
+
+{
+  "title": "After Publish Section",
+  "sectionOrder": 2
+}

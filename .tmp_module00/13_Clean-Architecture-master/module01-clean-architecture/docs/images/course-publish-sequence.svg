@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1060" height="560" viewBox="0 0 1060 560" role="img" aria-labelledby="title desc">
+  <title id="title">Course Publish Sequence</title>
+  <desc id="desc">Sequence from controller to application service, aggregate, repository, and event handler.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+    </marker>
+    <style>
+      .title { font: 700 26px Arial, sans-serif; fill: #0f172a; }
+      .head { font: 700 15px Arial, sans-serif; fill: #111827; }
+      .msg { font: 14px Arial, sans-serif; fill: #334155; }
+      .hint { font: 13px Arial, sans-serif; fill: #64748b; }
+      .box { fill: #f8fafc; stroke: #475569; stroke-width: 1.5; rx: 10; }
+      .line { stroke: #94a3b8; stroke-width: 1.2; stroke-dasharray: 6 6; }
+      .arrow { stroke: #334155; stroke-width: 1.8; fill: none; marker-end: url(#arrow); }
+      .self { stroke: #ea580c; stroke-width: 1.8; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect width="1060" height="560" fill="#ffffff"/>
+  <text x="530" y="42" text-anchor="middle" class="title">Course Publish Flow</text>
+  <text x="530" y="68" text-anchor="middle" class="hint">Command enters Application Service. Aggregate validates rules and records Domain Event.</text>
+
+  <g id="heads">
+    <rect x="35" y="95" width="140" height="54" class="box"/><text x="105" y="127" text-anchor="middle" class="head">Client</text>
+    <rect x="220" y="95" width="150" height="54" class="box"/><text x="295" y="119" text-anchor="middle" class="head">Course</text><text x="295" y="137" text-anchor="middle" class="head">Controller</text>
+    <rect x="415" y="95" width="170" height="54" class="box"/><text x="500" y="119" text-anchor="middle" class="head">CourseCommand</text><text x="500" y="137" text-anchor="middle" class="head">Service</text>
+    <rect x="635" y="95" width="130" height="54" class="box"/><text x="700" y="127" text-anchor="middle" class="head">Course</text>
+    <rect x="815" y="95" width="150" height="54" class="box"/><text x="890" y="119" text-anchor="middle" class="head">Course</text><text x="890" y="137" text-anchor="middle" class="head">Repository</text>
+  </g>
+
+  <line x1="105" y1="149" x2="105" y2="505" class="line"/>
+  <line x1="295" y1="149" x2="295" y2="505" class="line"/>
+  <line x1="500" y1="149" x2="500" y2="505" class="line"/>
+  <line x1="700" y1="149" x2="700" y2="505" class="line"/>
+  <line x1="890" y1="149" x2="890" y2="505" class="line"/>
+
+  <path d="M 105 185 L 295 185" class="arrow"/><text x="200" y="177" text-anchor="middle" class="msg">POST publish course</text>
+  <path d="M 295 225 L 500 225" class="arrow"/><text x="398" y="217" text-anchor="middle" class="msg">PublishCourseCommand</text>
+  <path d="M 500 265 L 890 265" class="arrow"/><text x="695" y="257" text-anchor="middle" class="msg">find course</text>
+  <path d="M 890 305 L 500 305" class="arrow"/><text x="695" y="297" text-anchor="middle" class="msg">Course</text>
+  <path d="M 500 345 L 700 345" class="arrow"/><text x="600" y="337" text-anchor="middle" class="msg">publish(now)</text>
+  <path d="M 700 370 C 770 370, 770 415, 700 415" class="self"/><text x="790" y="390" class="msg">validate rules</text><text x="790" y="410" class="msg">record event</text>
+  <path d="M 500 450 L 890 450" class="arrow"/><text x="695" y="442" text-anchor="middle" class="msg">save course</text>
+  <path d="M 500 490 L 700 490" class="arrow"/><text x="600" y="482" text-anchor="middle" class="msg">pull events</text>
+  <text x="530" y="532" text-anchor="middle" class="hint">After save, Application Service publishes CoursePublishedEvent.</text>
+</svg>

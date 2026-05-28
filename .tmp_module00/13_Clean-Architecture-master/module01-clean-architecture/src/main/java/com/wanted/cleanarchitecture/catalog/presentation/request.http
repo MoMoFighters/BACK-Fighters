@@ -1,0 +1,12 @@
+### 1. 강의 생성
+POST localhost:8080/api/courses
+Content-Type: application/json
+
+{
+  "authorId" : 100,
+  "title" : "클린 아키텍처의 정석",
+  "description": "DDD/이벤트스토밍/클린아키텍처 종합본"
+}
+
+### 2. CourseId 로 강의 상세 조회
+GET localhost:8080/api/courses/1

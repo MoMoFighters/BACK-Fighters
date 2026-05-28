@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="620" viewBox="0 0 920 620" role="img" aria-labelledby="title desc">
+  <title id="title">Clean Architecture Layers</title>
+  <desc id="desc">Outer, Application, and Domain layers with dependencies pointing inward.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+    </marker>
+    <style>
+      .title { font: 700 26px Arial, sans-serif; fill: #0f172a; }
+      .layer { font: 700 18px Arial, sans-serif; fill: #0f172a; }
+      .boxText { font: 600 16px Arial, sans-serif; fill: #111827; }
+      .hint { font: 14px Arial, sans-serif; fill: #475569; }
+      .outer { fill: #eff6ff; stroke: #2563eb; stroke-width: 2; }
+      .app { fill: #f0fdf4; stroke: #16a34a; stroke-width: 2; }
+      .domain { fill: #fff7ed; stroke: #ea580c; stroke-width: 2; }
+      .box { fill: #ffffff; stroke: #64748b; stroke-width: 1.5; rx: 10; }
+      .arrow { stroke: #334155; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="920" height="620" fill="#ffffff"/>
+  <text x="460" y="44" text-anchor="middle" class="title">Clean Architecture Dependency Rule</text>
+  <text x="460" y="72" text-anchor="middle" class="hint">Dependencies point inward. Domain does not depend on frameworks.</text>
+
+  <rect x="70" y="105" width="780" height="430" rx="24" class="outer"/>
+  <text x="460" y="138" text-anchor="middle" class="layer">Outer Layer</text>
+
+  <rect x="170" y="185" width="580" height="270" rx="22" class="app"/>
+  <text x="460" y="218" text-anchor="middle" class="layer">Application Layer</text>
+
+  <rect x="285" y="270" width="350" height="135" rx="20" class="domain"/>
+  <text x="460" y="302" text-anchor="middle" class="layer">Domain Layer</text>
+
+  <rect x="110" y="245" width="150" height="58" class="box"/>
+  <text x="185" y="280" text-anchor="middle" class="boxText">Presentation</text>
+
+  <rect x="660" y="245" width="150" height="58" class="box"/>
+  <text x="735" y="280" text-anchor="middle" class="boxText">Infrastructure</text>
+
+  <rect x="220" y="340" width="160" height="58" class="box"/>
+  <text x="300" y="364" text-anchor="middle" class="boxText">UseCase</text>
+  <text x="300" y="384" text-anchor="middle" class="hint">Service</text>
+
+  <rect x="530" y="340" width="130" height="58" class="box"/>
+  <text x="595" y="375" text-anchor="middle" class="boxText">Port</text>
+
+  <rect x="390" y="340" width="120" height="58" class="box"/>
+  <text x="450" y="375" text-anchor="middle" class="boxText">Policy</text>
+
+  <rect x="325" y="320" width="110" height="50" class="box"/>
+  <text x="380" y="351" text-anchor="middle" class="boxText">Aggregate</text>
+
+  <rect x="455" y="320" width="95" height="50" class="box"/>
+  <text x="502" y="351" text-anchor="middle" class="boxText">Entity</text>
+
+  <rect x="375" y="375" width="170" height="50" class="box"/>
+  <text x="460" y="406" text-anchor="middle" class="boxText">Domain Event</text>
+
+  <path d="M 260 274 C 310 290, 315 325, 300 340" class="arrow"/>
+  <path d="M 380 368 L 390 350" class="arrow"/>
+  <path d="M 510 368 L 530 368" class="arrow"/>
+  <path d="M 660 274 C 635 300, 615 320, 600 340" class="arrow"/>
+  <path d="M 660 290 C 610 310, 555 320, 520 335" class="arrow"/>
+
+  <text x="460" y="565" text-anchor="middle" class="hint">Presentation and Infrastructure are replaceable details. Domain stays at the center.</text>
+</svg>

@@ -1,0 +1,37 @@
+### Enrollment Context API
+### 실행 전 Catalog request.http에서 강의 생성, 섹션 추가, 모듈 추가, 강의 공개를 먼저 실행하세요.
+
+@host = http://localhost:8080
+@courseId = 1
+@userId = 200
+@enrollmentId = 1
+
+### 1. 수강 신청
+POST {{host}}/api/enrollments
+Content-Type: application/json
+
+{
+  "userId": {{userId}},
+  "courseId": {{courseId}}
+}
+
+### 2. 수강 신청 조회
+GET {{host}}/api/enrollments/{{enrollmentId}}
+
+### 3. 실패 예시 - 같은 사용자/강의에 대해 활성 수강 중복 신청
+POST {{host}}/api/enrollments
+Content-Type: application/json
+
+{
+  "userId": {{userId}},
+  "courseId": {{courseId}}
+}
+
+### 4. 실패 예시 - 존재하지 않는 강의 수강 신청
+POST {{host}}/api/enrollments
+Content-Type: application/json
+
+{
+  "userId": 201,
+  "courseId": 9999
+}
