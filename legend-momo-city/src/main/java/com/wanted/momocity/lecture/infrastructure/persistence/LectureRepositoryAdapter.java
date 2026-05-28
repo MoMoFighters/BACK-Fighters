@@ -25,8 +25,24 @@ public class LectureRepositoryAdapter implements LectureRepository {
     }
 
     // 강의를 저장합니다.
+    /* 강의 등록
+    *    → id null
+    *   → 새 row 저장
+    * 강의 상태 변경
+    *   → id 있음
+    *   → 기존 row 조회 후 status만 변경
+    */
     @Override
     public LectureAggregate save(LectureAggregate lecture) {
+        if (lecture.getId() != null) {
+            LectureJpaEntity entity = repository.findById(lecture.getId())
+                    .orElseThrow(() -> new IllegalArgumentException("강의를 찾을 수 없습니다."));
+
+            entity.changeStatus(lecture.getStatus());
+
+            return toDomain(entity);
+        }
+
         LectureJpaEntity entity = new LectureJpaEntity(
                 lecture.getTeacherId(),
                 lecture.getTitle(),

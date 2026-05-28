@@ -45,7 +45,7 @@ public class ChapterRepositoryAdapter implements ChapterRepository {
     }
 
     @Override
-    public boolean existsByLecutreIdAndVideoUrlIsNull(Long lectureId) {
+    public boolean existsByLectureIdAndVideoUrlIsNull(Long lectureId) {
         return repository.existsByLectureIdAndVideoUrlIsNull(lectureId);
     }
     
