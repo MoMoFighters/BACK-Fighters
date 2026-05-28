@@ -1,10 +1,8 @@
 package com.wanted.momocity.global.infrastructure.config;
 
 import com.wanted.momocity.auth.application.port.LoadUserPort;
-<<<<<<< HEAD
-=======
+
 import com.wanted.momocity.auth.domain.model.User;
->>>>>>> 6daf221ef049d1367b22918d696f3442427d07c7
 import com.wanted.momocity.message.application.manager.ChatRoomSessionManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
