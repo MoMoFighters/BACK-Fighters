@@ -209,7 +209,7 @@ public class ViewingController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 토큰 만료")
     })
-    @GetMapping("/users/me/lectures")
+    @GetMapping("/user/me/lectures")
     public ResponseEntity<ApiResponse<MyLecturesResponse>> getMyLectures (
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
