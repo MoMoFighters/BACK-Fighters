@@ -47,7 +47,7 @@ public class SendMessageCommandService implements SendMessageCommandUseCase {
 
         UserWithFMJpaEntity sender = messageSideUserRepository.findUserById(senderId)
                 .map(obj -> (UserWithFMJpaEntity) obj)
-                .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 발신자입니다."));
+                .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 사용자입니다."));
 
         //채팅방 조회
         ChatRoomJpaEntity chatRoom = messageRepository.findChatRoomById(roomId)
