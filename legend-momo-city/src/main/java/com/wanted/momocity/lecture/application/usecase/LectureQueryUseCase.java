@@ -1,8 +1,10 @@
 package com.wanted.momocity.lecture.application.usecase;
 
 import com.wanted.momocity.lecture.application.query.GetLecturesQuery;
+import com.wanted.momocity.lecture.application.query.GetTeacherLectureDetailQuery;
 import com.wanted.momocity.lecture.application.query.GetTeacherLecturesQuery;
 import com.wanted.momocity.lecture.presentation.api.response.LecturePageResponse;
+import com.wanted.momocity.lecture.presentation.api.response.TeacherLectureDetailResponse;
 import com.wanted.momocity.lecture.presentation.api.response.TeacherLecturePageResponse;
 
 /**
@@ -23,4 +25,7 @@ public interface LectureQueryUseCase {
     // 강사용 강의 목록 조회
     // 로그인한 강사가 본인이 등록한 강의만 조회
     TeacherLecturePageResponse getTeacherLectures(GetTeacherLecturesQuery query);
+
+    // 강사가 본인이 등록한 강의의 상세 정보와 챕터 목록을 조회
+    TeacherLectureDetailResponse getTeacherLectureDetail(GetTeacherLectureDetailQuery query);
 }

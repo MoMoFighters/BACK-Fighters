@@ -8,7 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 * */
 public record RegisterChapterVideoCommand(
         // Authorization 토큰에서 꺼낸 로그인 강사 Email
-        String teacherEmail,
+        Long teacherId,
         // 강의 Id
         Long lectureId,
         // 챕터 Id

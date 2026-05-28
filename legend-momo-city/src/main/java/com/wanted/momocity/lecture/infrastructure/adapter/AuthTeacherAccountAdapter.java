@@ -26,8 +26,8 @@ public class AuthTeacherAccountAdapter implements TeacherAccountPort {
      * 해당 사용자가 강사인지 확인한 뒤 user id를 teacherId로 반환
      */
     @Override
-    public Long getTeacherId(String email) {
-        User user = loadUserPort.findByEmail(email)
+    public Long getTeacherId(Long userId) {
+        User user = loadUserPort.findById(userId)
                 .orElseThrow(() -> new AuthenticationCredentialsNotFoundException("인증된 사용자 정보를 찾을 수 없습니다."));
 
         if (user.getRole() != Role.TEACHER) {

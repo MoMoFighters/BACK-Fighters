@@ -25,11 +25,11 @@ public record CreateLectureRequest(
 ) {
 
     // 중복 검증 추가
-    public CreateLectureCommand toCommand(String teacherEmail, String thumbnailUrl) {
+    public CreateLectureCommand toCommand(Long teacherId, String thumbnailUrl) {
         LectureCategory lectureCategory = parseCategory(category);
 
         return new CreateLectureCommand(
-                teacherEmail,
+                teacherId,
                 title,
                 description,
                 thumbnailUrl,
