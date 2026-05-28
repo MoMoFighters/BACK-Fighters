@@ -5,14 +5,18 @@ import com.wanted.momocity.lecture.application.command.ChangeLectureStatusComman
 import com.wanted.momocity.lecture.application.command.CreateLectureCommand;
 import com.wanted.momocity.lecture.application.port.TeacherAccountPort;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCase;
+import com.wanted.momocity.lecture.domain.event.LectureCreatedEvent;
 import com.wanted.momocity.lecture.domain.exception.LectureNotFoundException;
 import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.model.LectureStatus;
 import com.wanted.momocity.lecture.domain.repository.ChapterRepository;
 import com.wanted.momocity.lecture.domain.repository.LectureRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
 
 /*
  * LectureCommandService는 강의 등록 유스케이스의 실제 흐름을 담당한다.
@@ -24,15 +28,18 @@ public class LectureCommandService implements LectureCommandUseCase {
     private final LectureRepository lectureRepository;
     private final TeacherAccountPort teacherAccountPort;
     private final ChapterRepository chapterRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     public LectureCommandService(
             LectureRepository lectureRepository,
             TeacherAccountPort teacherAccountPort,
-            ChapterRepository chapterRepository
+            ChapterRepository chapterRepository,
+            ApplicationEventPublisher eventPublisher
     ) {
         this.lectureRepository = lectureRepository;
         this.teacherAccountPort = teacherAccountPort;
         this.chapterRepository = chapterRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -40,7 +47,7 @@ public class LectureCommandService implements LectureCommandUseCase {
         /*
          * Authorization 토큰에서 얻은 email로 강사 id를 조회한다.
          */
-        Long teacherId = teacherAccountPort.getTeacherId(command.teacherEmail());
+        Long teacherId = teacherAccountPort.getTeacherId(command.teacherId());
 
         // command.thumbnailUrl()은 S3 업로드 후 생성된 이미지 URL이다.
         LectureAggregate lecture = LectureAggregate.create(
@@ -51,7 +58,16 @@ public class LectureCommandService implements LectureCommandUseCase {
                 command.category()
         );
 
-        return lectureRepository.save(lecture);
+        LectureAggregate savedLecture = lectureRepository.save(lecture);
+
+        eventPublisher.publishEvent(new LectureCreatedEvent(
+                savedLecture.getId(),
+                savedLecture.getTeacherId(),
+                savedLecture.getTitle(),
+                Instant.now()
+        ));
+
+        return savedLecture;
     }
 
     @Override
@@ -59,7 +75,7 @@ public class LectureCommandService implements LectureCommandUseCase {
         /*
          * Authorization 토큰에서 얻은 email로 강사 id를 조회합니다.
          */
-        Long teacherId = teacherAccountPort.getTeacherId(command.teacherEmail());
+        Long teacherId = teacherAccountPort.getTeacherId(command.teacherId());
 
         // 상태를 변경할 강의를 조회합니다.
         LectureAggregate lecture = lectureRepository.findById(command.lectureId())

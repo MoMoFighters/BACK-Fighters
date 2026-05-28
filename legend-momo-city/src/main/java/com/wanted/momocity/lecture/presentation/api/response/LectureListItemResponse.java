@@ -11,7 +11,7 @@ public record LectureListItemResponse(
         // 강의 ID
         Long lectureId,
 
-        // 강의 제목입
+        // 강의 제목
         String title,
 
         // 강의 썸네일 이미지 URL

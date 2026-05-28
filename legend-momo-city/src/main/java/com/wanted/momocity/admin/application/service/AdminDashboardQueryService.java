@@ -18,19 +18,20 @@ public class AdminDashboardQueryService implements AdminDashboardQueryUseCase {
 
     /* comment.
         m03 우선순위에서 추가될 의존성 :
-        - private final MemberStatsPort memberStatsPort;       (외부 BC 회원 - PORT 패턴, 어댑터는 회원팀 제공)
-        - private final LectureStatsPort lectureStatsPort;     (외부 BC 강의 - PORT 패턴, 어댑터는 성진 제공)
-        - private final ReportQueryUseCase reportQueryUseCase; (자기 영역 report/ - 작업 ⑤ 완료 후 직접 호출)
+        - private final MemberStatsPort memberStatsPort;   (외부 BC 회원 - PORT 패턴, 어댑터는 회원팀 제공)
+        - private final LectureStatsPort lectureStatsPort; (외부 BC 강의 - PORT 패턴, 어댑터는 성진 제공)
+        - private final ReportStatsPort reportStatsPort;   (외부 BC 신고 - PORT 패턴, 어댑터는 report BC 가 제공)
         *
-        의존성 두 종류 - PORT vs 직접 호출 :
-        - 외부 BC (회원/강의) : admin 이 PORT 정의 → 외부 팀이 어댑터 제공 (DIP, BC 경계 격리)
-        - 자기 영역 (report) : 직접 의존 가능 (BC 경계 안이라 자유)
+        BC 정합 - 3개 모두 외부 BC 라 PORT 패턴 일관 적용 :
+        - admin BC 는 다른 BC 의 내부 구현을 모름 (BC 격리)
+        - 각 Port 의 어댑터는 데이터 소유자 BC 가 제공 (member / lecture / report 모두 동일)
         *
-        현재는 PORT 어댑터 + report UseCase 미구현 상태라 주입 보류.
-        모두 준비되면 생성자 주입으로 추가.
+        현재는 회원/강의 어댑터 미구현 상태라 주입 보류.
+        ReportStatsPort 는 어댑터(ReportStatsAdapter) 완성됨 → 즉시 주입 가능.
+        모두 준비되면 생성자 주입 + 메서드 본문 실구현 예정.
  */
     public AdminDashboardQueryService() {
-        // m03 우선순위 - 위 3개 서비스 생성자 주입 예정
+        // m03 우선순위 - 위 3개 Port 생성자 주입 예정
     }
 
     /* comment.

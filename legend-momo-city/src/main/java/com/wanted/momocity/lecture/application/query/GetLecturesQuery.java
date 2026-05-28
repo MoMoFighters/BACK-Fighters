@@ -20,6 +20,10 @@ public record GetLecturesQuery(
         // null이면 수강 신청 여부와 상관없이 조회
         Boolean enrolled,
 
+        // 강의명 또는 강사명 검색어입니다.
+        // 값이 없으면 검색 조건 없이 조회합니다.
+        String keyword,
+
         // 조회할 페이지 번호
         // page는 1부터 시작
         int page,

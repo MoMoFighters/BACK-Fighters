@@ -53,7 +53,8 @@ public class GetSentRequestFriendQueryService implements GetSentRequestFriendQue
                     targetUser.getNickname(),
                     targetUser.getRole(),
                     friend.getStatus(),
-                    !"ACTIVE".equals(targetUser.getStatus())
+                    !"ACTIVE".equals(targetUser.getStatus()),
+                    targetUser.getProfileImageUrl()
             ));
         }
 

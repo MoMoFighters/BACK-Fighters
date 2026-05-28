@@ -46,7 +46,7 @@ public class ChapterCommandService implements ChapterCommandUseCase {
     @Override
     public LectureChapter createChapter(CreateChapterCommand command) {
         // Authorization 토큰에서 가져온 email로 강사 ID를 조회합니다.
-        Long teacherId = teacherAccountPort.getTeacherId(command.teacherEmail());
+        Long teacherId = teacherAccountPort.getTeacherId(command.teacherId());
 
         // 챕터를 등록할 강의를 조회
         LectureAggregate lecture = lectureRepository.findById(command.lectureId())
@@ -90,7 +90,7 @@ public class ChapterCommandService implements ChapterCommandUseCase {
     @Override
     public LectureChapter registerChapterVideo(RegisterChapterVideoCommand command) {
         // Authrization 토큰에서 가져온 email로 강사 Id 조회
-        Long teacherId = teacherAccountPort.getTeacherId(command.teacherEmail());
+        Long teacherId = teacherAccountPort.getTeacherId(command.teacherId());
 
         // 동영상을 등록할 강의를 조회
         LectureAggregate lecture = lectureRepository.findById(command.lectureId())

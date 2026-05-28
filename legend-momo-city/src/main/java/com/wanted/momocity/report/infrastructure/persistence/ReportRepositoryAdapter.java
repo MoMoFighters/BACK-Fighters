@@ -61,6 +61,12 @@ public class ReportRepositoryAdapter implements ReportRepository {
                 .toList();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public long countAll() {
+        return repository.count();
+    }
+
     // === 변환 메서드 (도메인 ↔ 엔티티) ===
 
     // 도메인 → 엔티티 (신규 저장 시 id=null, JPA 가 auto-increment 부여)

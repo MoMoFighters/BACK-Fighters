@@ -6,7 +6,8 @@ public record SentRequestResponse(
         Long userId,
         String nickname,
         String role,
-        String status
+        String status,
+        String profileImageUrl
 ) {
     public static SentRequestResponse from(SentRequestView view) {
         //ACTIVE 아니면 (알 수 없음) 가공
@@ -20,7 +21,8 @@ public record SentRequestResponse(
                 view.userId(),
                 displayNickname,
                 view.role(),
-                view.status()
+                view.status(),
+                view.profileImageUrl()
         );
     }
 }
