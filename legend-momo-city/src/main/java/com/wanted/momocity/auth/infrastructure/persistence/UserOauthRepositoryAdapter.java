@@ -14,12 +14,12 @@ import java.util.Optional;
 @Transactional
 public class UserOauthRepositoryAdapter implements UserOauthRepository {
 
-    private final SpringDataUserRepository springDataUserRepository;
+    private final SpringDataAuthUserRepository springDataAuthUserRepository;
     private final SpringDataUserOauthRepository springDataUserOauthRepository;
 
     @Override
     public UserOauth save(UserOauth userOauth) {
-        UserJpaEntity newSocialUserId = springDataUserRepository.findById(userOauth.getUser().getId())
+        UserJpaEntity newSocialUserId = springDataAuthUserRepository.findById(userOauth.getUser().getId())
                 .orElseThrow(() -> new IllegalArgumentException("유저를 찾을 수 없습니다."));
 
         UserOauthJpaEntity entity = new UserOauthJpaEntity(

@@ -1,4 +1,4 @@
-package com.wanted.momocity.auth.infrastructure.persistence;
+package com.wanted.momocity.user.infrastructure.persistence;
 
 import com.wanted.momocity.auth.domain.model.Category;
 import com.wanted.momocity.auth.domain.model.Role;
@@ -9,7 +9,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Entity(name = "AuthUser")
+@Entity(name = "UserUser")
 @Table(name="`user`")
 public class UserJpaEntity {
 
@@ -94,76 +94,4 @@ public class UserJpaEntity {
         this.isTempPwd = isTempPwd;
     }
 
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getNickname() {
-        return nickname;
-    }
-
-    public LocalDate getBirth() {
-        return birth;
-    }
-
-    public String getProfileImageUrl() {
-        return profileImageUrl;
-    }
-
-    public Role getRole() {
-        return role;
-    }
-
-    public Status getStatus() {
-        return status;
-    }
-
-    public Category getCategory() {
-        return category;
-    }
-
-    public String getProof() {
-        return proof;
-    }
-
-    public long getPoint() {
-        return point;
-    }
-
-    public boolean isPaid() {
-        return isPaid;
-    }
-
-    public boolean isDoNotDisturb() {
-        return doNotDisturb;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public LocalDateTime getDeletedAt() {
-        return deletedAt;
-    }
-
-    public boolean isTempPwd() {
-        return isTempPwd;
-    }
 }
