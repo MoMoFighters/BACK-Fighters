@@ -38,7 +38,7 @@ public class LectureQueryService implements LectureQueryUseCase {
     public LecturePageResponse getLectures(GetLecturesQuery query) {
 
         // Authorization 토큰에서 꺼낸 email로 userId를 조회
-        Long userId = studentAccountPort.getStudentId(query.userEmail());
+        Long userId = studentAccountPort.getStudentId(query.userId());
 
         // userId 기준으로 수강 신청한 강의 ID 목록을 조회
         List<Long> enrolledLectureIds = lectureEnrollmentQueryPort.findLectureIdsByUserId(userId);

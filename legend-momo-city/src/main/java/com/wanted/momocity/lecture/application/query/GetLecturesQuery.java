@@ -8,7 +8,7 @@ import com.wanted.momocity.lecture.domain.model.LectureCategory;
 public record GetLecturesQuery(
 
         // Authorization 토큰에서 꺼낸 로그인 사용자 email
-        String userEmail,
+        Long userId,
 
         // 강의 카테고리 필터
         // 값이 없으면 전체 카테고리를 조회
@@ -29,10 +29,9 @@ public record GetLecturesQuery(
 
 ) {
 
-    /**
+    /*
      * compact constructor -> 생성자를 풀지 않음 즉, 필드를 다시 적지 않고 짧게 쓸 수 있음
-     *
-     * record가 생성될 때 page, size 값이 정상인지 검사합니다.
+     * record가 생성될 때 page, size 값이 정상인지 검사
      */
     public GetLecturesQuery {
         if (page < 1) {

@@ -36,11 +36,11 @@ public class EnrollmentController {
             @PathVariable Long lectureId
     ) {
         // Authorization 토큰에서 꺼낸 로그인 사용자 email
-        String userEmail = authentication.getName();
+        Long studentId = Long.parseLong(authentication.getName());
 
         // 수강신청에 필요한 값을 Command로 묶는다.
         CreateEnrollmentCommand command = new CreateEnrollmentCommand(
-                userEmail,
+                studentId,
                 lectureId
         );
 
