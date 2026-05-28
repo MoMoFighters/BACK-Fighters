@@ -34,54 +34,59 @@ Content-Type: application/json
   "password": "password123!"
 }
 
+> {%
+    // 🔴 로그인 성공 시 나오는 accessToken을 인텔리제이 메모리에 'auth_token'이라는 이름으로 자동 저장!
+    client.global.set("auth_token", response.body.data.accessToken);
+%}
+
 ### 내 친구 목록
 GET localhost:8080/api/v1/friends
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI3Iiwicm9sZXMiOiJST0xFX1NUVURFTlQiLCJpYXQiOjE3Nzk5MzgyNzIsImV4cCI6MTc3OTk0MTg3Mn0.s4l8HdGxudZeVTSNCbOuBuGLBV0sJXeSXjEpQtR5LiEqnqERONHFyB61FetN6LtXB6MW3QD9vpAOZxg5zIV9Tw
+Authorization: Bearer {{auth_token}}
 
 ### 사용자 검색
 GET localhost:8080/api/v1/friends/find?nickname=영
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI3Iiwicm9sZXMiOiJST0xFX1NUVURFTlQiLCJpYXQiOjE3Nzk5MzgyNzIsImV4cCI6MTc3OTk0MTg3Mn0.s4l8HdGxudZeVTSNCbOuBuGLBV0sJXeSXjEpQtR5LiEqnqERONHFyB61FetN6LtXB6MW3QD9vpAOZxg5zIV9Tw
+Authorization: Bearer {{auth_token}}
 
 ### 친구 요청: 1번 유저에게 친구 요청 -> notification 행 추가
 POST localhost:8080/api/v1/friends/request/1
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI3Iiwicm9sZXMiOiJST0xFX1NUVURFTlQiLCJpYXQiOjE3Nzk5MzgyNzIsImV4cCI6MTc3OTk0MTg3Mn0.s4l8HdGxudZeVTSNCbOuBuGLBV0sJXeSXjEpQtR5LiEqnqERONHFyB61FetN6LtXB6MW3QD9vpAOZxg5zIV9Tw
+Authorization: Bearer {{auth_token}}
 
 ### 수강신청 후 친구 자동 추가
 POST http://localhost:8080/api/v1/lectures/2/enrollments
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI3Iiwicm9sZXMiOiJST0xFX1NUVURFTlQiLCJpYXQiOjE3Nzk5MzgyNzIsImV4cCI6MTc3OTk0MTg3Mn0.s4l8HdGxudZeVTSNCbOuBuGLBV0sJXeSXjEpQtR5LiEqnqERONHFyB61FetN6LtXB6MW3QD9vpAOZxg5zIV9Tw
+Authorization: Bearer {{auth_token}}
 
 ### 친구 요청 철회 -> notifcation 행 삭제
 DELETE localhost:8080/api/v1/friends/request/1
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI3Iiwicm9sZXMiOiJST0xFX1NUVURFTlQiLCJpYXQiOjE3Nzk5MzgyNzIsImV4cCI6MTc3OTk0MTg3Mn0.s4l8HdGxudZeVTSNCbOuBuGLBV0sJXeSXjEpQtR5LiEqnqERONHFyB61FetN6LtXB6MW3QD9vpAOZxg5zIV9Tw
+Authorization: Bearer {{auth_token}}
 
 ### 보낸 친구 요청 목록
 GET localhost:8080/api/v1/friends/sent
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI3Iiwicm9sZXMiOiJST0xFX1NUVURFTlQiLCJpYXQiOjE3Nzk5MzgyNzIsImV4cCI6MTc3OTk0MTg3Mn0.s4l8HdGxudZeVTSNCbOuBuGLBV0sJXeSXjEpQtR5LiEqnqERONHFyB61FetN6LtXB6MW3QD9vpAOZxg5zIV9Tw
+Authorization: Bearer {{auth_token}}
 
 ### 친구 요청 수락(7번이 1번의 요청 수락)
 PATCH localhost:8080/api/v1/friends/received/1/accept
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI3Iiwicm9sZXMiOiJST0xFX1NUVURFTlQiLCJpYXQiOjE3Nzk5MzgyNzIsImV4cCI6MTc3OTk0MTg3Mn0.s4l8HdGxudZeVTSNCbOuBuGLBV0sJXeSXjEpQtR5LiEqnqERONHFyB61FetN6LtXB6MW3QD9vpAOZxg5zIV9Tw
+Authorization: Bearer {{auth_token}}
 
 ### 친구 요청 거절(7번이 1번의 요청 거절)
 DELETE localhost:8080/api/v1/friends/received/1/reject
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI3Iiwicm9sZXMiOiJST0xFX1NUVURFTlQiLCJpYXQiOjE3Nzk5MzgyNzIsImV4cCI6MTc3OTk0MTg3Mn0.s4l8HdGxudZeVTSNCbOuBuGLBV0sJXeSXjEpQtR5LiEqnqERONHFyB61FetN6LtXB6MW3QD9vpAOZxg5zIV9Tw
+Authorization: Bearer {{auth_token}}
 
 ### 받은 친구 요청 목록
 GET localhost:8080/api/v1/friends/received
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI3Iiwicm9sZXMiOiJST0xFX1NUVURFTlQiLCJpYXQiOjE3Nzk5MzgyNzIsImV4cCI6MTc3OTk0MTg3Mn0.s4l8HdGxudZeVTSNCbOuBuGLBV0sJXeSXjEpQtR5LiEqnqERONHFyB61FetN6LtXB6MW3QD9vpAOZxg5zIV9Tw
+Authorization: Bearer {{auth_token}}
 
 ### 친구 차단
 PATCH localhost:8080/api/v1/friends/block/1
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI3Iiwicm9sZXMiOiJST0xFX1NUVURFTlQiLCJpYXQiOjE3Nzk5MzgyNzIsImV4cCI6MTc3OTk0MTg3Mn0.s4l8HdGxudZeVTSNCbOuBuGLBV0sJXeSXjEpQtR5LiEqnqERONHFyB61FetN6LtXB6MW3QD9vpAOZxg5zIV9Tw
+Authorization: Bearer {{auth_token}}
 
 ### 차단한 목록
 GET localhost:8080/api/v1/friends/blocked
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI3Iiwicm9sZXMiOiJST0xFX1NUVURFTlQiLCJpYXQiOjE3Nzk5MzgyNzIsImV4cCI6MTc3OTk0MTg3Mn0.s4l8HdGxudZeVTSNCbOuBuGLBV0sJXeSXjEpQtR5LiEqnqERONHFyB61FetN6LtXB6MW3QD9vpAOZxg5zIV9Tw
+Authorization: Bearer {{auth_token}}
 
 ### 친구 차단 해제
 PATCH localhost:8080/api/v1/friends/unblock/1
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI3Iiwicm9sZXMiOiJST0xFX1NUVURFTlQiLCJpYXQiOjE3Nzk5MzgyNzIsImV4cCI6MTc3OTk0MTg3Mn0.s4l8HdGxudZeVTSNCbOuBuGLBV0sJXeSXjEpQtR5LiEqnqERONHFyB61FetN6LtXB6MW3QD9vpAOZxg5zIV9Tw
+Authorization: Bearer {{auth_token}}
 
 ### 친구 삭제
 DELETE localhost:8080/api/v1/friends/delete/1
-Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI3Iiwicm9sZXMiOiJST0xFX1NUVURFTlQiLCJpYXQiOjE3Nzk5MzgyNzIsImV4cCI6MTc3OTk0MTg3Mn0.s4l8HdGxudZeVTSNCbOuBuGLBV0sJXeSXjEpQtR5LiEqnqERONHFyB61FetN6LtXB6MW3QD9vpAOZxg5zIV9Tw
+Authorization: Bearer {{auth_token}}
