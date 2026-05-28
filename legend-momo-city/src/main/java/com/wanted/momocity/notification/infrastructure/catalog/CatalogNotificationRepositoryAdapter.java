@@ -1,6 +1,6 @@
 package com.wanted.momocity.notification.infrastructure.catalog;
 
-import com.wanted.momocity.auth.infrastructure.persistence.SpringDataUserRepository;
+
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.notification.domain.model.Notification;
@@ -8,6 +8,7 @@ import com.wanted.momocity.notification.infrastructure.persistence.NotificationJ
 import com.wanted.momocity.notification.domain.repository.NotificationRepository;
 import com.wanted.momocity.notification.infrastructure.persistence.NotificationSideUserRepository;
 import com.wanted.momocity.notification.infrastructure.persistence.SpringDataNotificationRepository;
+import com.wanted.momocity.user.infrastructure.persistence.SpringDataUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
