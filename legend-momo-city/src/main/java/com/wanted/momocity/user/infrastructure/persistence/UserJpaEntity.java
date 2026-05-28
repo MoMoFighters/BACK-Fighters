@@ -94,4 +94,23 @@ public class UserJpaEntity {
         this.isTempPwd = isTempPwd;
     }
 
+    public String getEmail() {
+        return email;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getNickname() {
+        return nickname;
+    }
+
+    public LocalDate getBirth() {
+        return birth;
+    }
+
+    public String getProfileImageUrl() {
+        return profileImageUrl;
+    }
 }
