@@ -60,10 +60,10 @@ public class LectureController {
             // 페이지 크기입니다. 기본값은 10
             @RequestParam(defaultValue = "10") int size
     ) {
-        String userEmail = authentication.getName();
+        Long userId = Long.parseLong(authentication.getName());
 
         GetLecturesQuery query = new GetLecturesQuery(
-                userEmail,
+                userId,
                 parseCategory(category),
                 enrolled,
                 page,

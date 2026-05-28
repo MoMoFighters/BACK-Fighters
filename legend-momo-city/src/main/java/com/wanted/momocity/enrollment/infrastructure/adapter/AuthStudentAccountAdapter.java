@@ -18,9 +18,9 @@ public class AuthStudentAccountAdapter implements StudentAccountPort {
     }
 
     @Override
-    public Long getStudentId(String email) {
+    public Long getStudentId(Long userId) {
         // 인증 과정에서 전달받은 email로 사용자 정보를 조회한다.
-        User user = loadUserPort.findByEmail(email)
+        User user = loadUserPort.findById(userId)
                 .orElseThrow(() -> new AuthenticationCredentialsNotFoundException("인증된 사용자 정보를 찾을 수 없습니다."));
 
         // 조회된 사용자가 학생(STUDENT) 권한이 아니면 수강신청을 허용하지 않는다.

@@ -36,7 +36,7 @@ public class EnrollmentCommandService implements EnrollmentCommandUseCase {
     @Override
     public Enrollment createEnrollment(CreateEnrollmentCommand command) {
         // Authorization 토큰에서 꺼낸 email로 학생 ID를 조회
-        Long userId = studentAccountPort.getStudentId(command.studentEmail());
+        Long userId = studentAccountPort.getStudentId(command.studentId());
 
         // 수강신청 대상 강의의 현재 상태를 조회
         LectureStatus lectureStatus = enrollmentLecturePort.getLectureStatus(command.lectureId());
