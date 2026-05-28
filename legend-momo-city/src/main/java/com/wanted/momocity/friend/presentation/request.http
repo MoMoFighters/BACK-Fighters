@@ -1,38 +1,87 @@
+### 회원 가입
+POST localhost:8080/api/v1/auth/signup/student
+Content-Type: application/json
+
+{
+  "email": "seolim8203@naver.com",
+  "password": "password123!",
+  "name": "테스트학생"
+}
+
+### 이메일 인증코드 발송
+POST localhost:8080/api/v1/auth/email/send
+Content-Type: application/json
+
+{
+  "email": "seolim8203@naver.com"
+}
+
+### 이메일 인증코드 값 인증
+POST localhost:8080/api/v1/auth/email/verify
+Content-Type: application/json
+
+{
+  "email": "seolim8203@naver.com",
+  "code": ""
+}
+
+### 로그인
+POST localhost:8080/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email" : "seolim8203@naver.com",
+  "password": "password123!"
+}
+
 ### 내 친구 목록
 GET localhost:8080/api/v1/friends
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI3Iiwicm9sZXMiOiJST0xFX1NUVURFTlQiLCJpYXQiOjE3Nzk5MzgyNzIsImV4cCI6MTc3OTk0MTg3Mn0.s4l8HdGxudZeVTSNCbOuBuGLBV0sJXeSXjEpQtR5LiEqnqERONHFyB61FetN6LtXB6MW3QD9vpAOZxg5zIV9Tw
 
 ### 사용자 검색
 GET localhost:8080/api/v1/friends/find?nickname=영
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI3Iiwicm9sZXMiOiJST0xFX1NUVURFTlQiLCJpYXQiOjE3Nzk5MzgyNzIsImV4cCI6MTc3OTk0MTg3Mn0.s4l8HdGxudZeVTSNCbOuBuGLBV0sJXeSXjEpQtR5LiEqnqERONHFyB61FetN6LtXB6MW3QD9vpAOZxg5zIV9Tw
 
-### 친구 요청: 6번 유저에게 친구 요청 -> notification 행 추가
-POST localhost:8080/api/v1/friends/request/6
+### 친구 요청: 1번 유저에게 친구 요청 -> notification 행 추가
+POST localhost:8080/api/v1/friends/request/1
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI3Iiwicm9sZXMiOiJST0xFX1NUVURFTlQiLCJpYXQiOjE3Nzk5MzgyNzIsImV4cCI6MTc3OTk0MTg3Mn0.s4l8HdGxudZeVTSNCbOuBuGLBV0sJXeSXjEpQtR5LiEqnqERONHFyB61FetN6LtXB6MW3QD9vpAOZxg5zIV9Tw
 
 ### 수강신청 후 친구 자동 추가
-POST localhost:8080/api/fake-enroll?studentId=7&lectureId=4
+POST http://localhost:8080/api/v1/lectures/2/enrollments
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI3Iiwicm9sZXMiOiJST0xFX1NUVURFTlQiLCJpYXQiOjE3Nzk5MzgyNzIsImV4cCI6MTc3OTk0MTg3Mn0.s4l8HdGxudZeVTSNCbOuBuGLBV0sJXeSXjEpQtR5LiEqnqERONHFyB61FetN6LtXB6MW3QD9vpAOZxg5zIV9Tw
 
 ### 친구 요청 철회 -> notifcation 행 삭제
-DELETE localhost:8080/api/v1/friends/request/6
+DELETE localhost:8080/api/v1/friends/request/1
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI3Iiwicm9sZXMiOiJST0xFX1NUVURFTlQiLCJpYXQiOjE3Nzk5MzgyNzIsImV4cCI6MTc3OTk0MTg3Mn0.s4l8HdGxudZeVTSNCbOuBuGLBV0sJXeSXjEpQtR5LiEqnqERONHFyB61FetN6LtXB6MW3QD9vpAOZxg5zIV9Tw
 
 ### 보낸 친구 요청 목록
 GET localhost:8080/api/v1/friends/sent
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI3Iiwicm9sZXMiOiJST0xFX1NUVURFTlQiLCJpYXQiOjE3Nzk5MzgyNzIsImV4cCI6MTc3OTk0MTg3Mn0.s4l8HdGxudZeVTSNCbOuBuGLBV0sJXeSXjEpQtR5LiEqnqERONHFyB61FetN6LtXB6MW3QD9vpAOZxg5zIV9Tw
 
-### 친구 요청 수락(2번이 1번의 요청 수락)
-PATCH localhost:8080/api/v1/friends/received/6/accept
+### 친구 요청 수락(7번이 1번의 요청 수락)
+PATCH localhost:8080/api/v1/friends/received/1/accept
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI3Iiwicm9sZXMiOiJST0xFX1NUVURFTlQiLCJpYXQiOjE3Nzk5MzgyNzIsImV4cCI6MTc3OTk0MTg3Mn0.s4l8HdGxudZeVTSNCbOuBuGLBV0sJXeSXjEpQtR5LiEqnqERONHFyB61FetN6LtXB6MW3QD9vpAOZxg5zIV9Tw
 
-### 친구 요청 거절(1번이 6번의 요청 거절)
-DELETE localhost:8080/api/v1/friends/received/6/reject
+### 친구 요청 거절(7번이 1번의 요청 거절)
+DELETE localhost:8080/api/v1/friends/received/1/reject
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI3Iiwicm9sZXMiOiJST0xFX1NUVURFTlQiLCJpYXQiOjE3Nzk5MzgyNzIsImV4cCI6MTc3OTk0MTg3Mn0.s4l8HdGxudZeVTSNCbOuBuGLBV0sJXeSXjEpQtR5LiEqnqERONHFyB61FetN6LtXB6MW3QD9vpAOZxg5zIV9Tw
 
 ### 받은 친구 요청 목록
 GET localhost:8080/api/v1/friends/received
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI3Iiwicm9sZXMiOiJST0xFX1NUVURFTlQiLCJpYXQiOjE3Nzk5MzgyNzIsImV4cCI6MTc3OTk0MTg3Mn0.s4l8HdGxudZeVTSNCbOuBuGLBV0sJXeSXjEpQtR5LiEqnqERONHFyB61FetN6LtXB6MW3QD9vpAOZxg5zIV9Tw
 
 ### 친구 차단
-PATCH localhost:8080/api/v1/friends/block/6
+PATCH localhost:8080/api/v1/friends/block/1
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI3Iiwicm9sZXMiOiJST0xFX1NUVURFTlQiLCJpYXQiOjE3Nzk5MzgyNzIsImV4cCI6MTc3OTk0MTg3Mn0.s4l8HdGxudZeVTSNCbOuBuGLBV0sJXeSXjEpQtR5LiEqnqERONHFyB61FetN6LtXB6MW3QD9vpAOZxg5zIV9Tw
 
 ### 차단한 목록
 GET localhost:8080/api/v1/friends/blocked
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI3Iiwicm9sZXMiOiJST0xFX1NUVURFTlQiLCJpYXQiOjE3Nzk5MzgyNzIsImV4cCI6MTc3OTk0MTg3Mn0.s4l8HdGxudZeVTSNCbOuBuGLBV0sJXeSXjEpQtR5LiEqnqERONHFyB61FetN6LtXB6MW3QD9vpAOZxg5zIV9Tw
 
 ### 친구 차단 해제
-PATCH localhost:8080/api/v1/friends/unblock/6
+PATCH localhost:8080/api/v1/friends/unblock/1
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI3Iiwicm9sZXMiOiJST0xFX1NUVURFTlQiLCJpYXQiOjE3Nzk5MzgyNzIsImV4cCI6MTc3OTk0MTg3Mn0.s4l8HdGxudZeVTSNCbOuBuGLBV0sJXeSXjEpQtR5LiEqnqERONHFyB61FetN6LtXB6MW3QD9vpAOZxg5zIV9Tw
 
 ### 친구 삭제
-DELETE localhost:8080/api/v1/friends/delete/6
+DELETE localhost:8080/api/v1/friends/delete/1
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI3Iiwicm9sZXMiOiJST0xFX1NUVURFTlQiLCJpYXQiOjE3Nzk5MzgyNzIsImV4cCI6MTc3OTk0MTg3Mn0.s4l8HdGxudZeVTSNCbOuBuGLBV0sJXeSXjEpQtR5LiEqnqERONHFyB61FetN6LtXB6MW3QD9vpAOZxg5zIV9Tw
