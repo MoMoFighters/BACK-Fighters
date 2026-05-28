@@ -65,8 +65,8 @@ public class LectureRepositoryAdapter implements LectureRepository {
                 .map(this::toDomain);
     }
 
-    // 학생용 강의 목록을 조회합니다.
-    // 학생용 목록은 기본적으로 ACTIVE 상태의 강의만 내려줍니다.
+    // 학생용 강의 목록을 조회
+    // 학생용 목록은 기본적으로 ACTIVE 상태의 강의만 내려준다.
     @Override
     @Transactional(readOnly = true)
     public LecturePage findLectures(
@@ -76,7 +76,6 @@ public class LectureRepositoryAdapter implements LectureRepository {
             int page,
             int size
     ) {
-        // 프론트는 page를 1부터 보내고, Spring Data JPA는 page를 0부터 시작합니다.
         Pageable pageable = PageRequest.of(page - 1, size);
 
         Page<LectureJpaEntity> lecturePage = findLecturePage(
@@ -95,6 +94,50 @@ public class LectureRepositoryAdapter implements LectureRepository {
                 lecturePage.getTotalElements(),
                 lecturePage.getTotalPages()
         );
+    }
+
+    // 강사용
+    @Override
+    @Transactional(readOnly = true)
+    public LecturePage findTeacherLectures(
+            Long teacherId,
+            LectureCategory category,
+            String keyword,
+            int page,
+            int size
+    ) {
+        // 프론트는 page를 1부터 보내고, Spring Data JPA는 page를 0부터 시작합니다.
+        Pageable pageable = PageRequest.of(page - 1, size);
+
+        // keyword가 null이거나 공백이면 검색 조건을 적용하지 않도록 null로 정리
+        String normalizedKeyword = normalizeKeyword(keyword);
+
+        Page<LectureJpaEntity> lecturePage = repository.findTeacherLectures(
+                teacherId,
+                category,
+                normalizedKeyword,
+                pageable
+        );
+
+        // jpa entity를 도메인 모델로 변환
+        List<LectureAggregate> content = lecturePage.getContent().stream()
+                .map(this::toDomain)
+                .toList();
+
+        return new LecturePage(
+                content,
+                lecturePage.getTotalElements(),
+                lecturePage.getTotalPages()
+        );
+    }
+
+    // keyword가 비어 있으면 검색 조건을 적용하지 않기 위해 null로 변환
+    private String normalizeKeyword(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return null;
+        }
+
+        return keyword.trim();
     }
 
     // category, enrolled 조건에 맞춰 ACTIVE 강의만 조회합니다.
