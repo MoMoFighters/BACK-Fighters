@@ -30,6 +30,17 @@ public class CalendarRepositoryAdapter implements CalendarRepository {
     }
 
     @Override
+    public List<Calendar> findByUserIdAndDateBetween(
+            Long userId, LocalDate startDate, LocalDate endDate
+    ) {
+        return jpaRepository
+                .findByUserIdAndDateBetween(userId, startDate, endDate)
+                .stream()
+                .map(CalendarJpaEntity::toDomain)
+                .toList();
+    }
+
+    @Override
     public List<Calendar> findByUserIdAndDate(Long userId, LocalDate date) {
         return jpaRepository.findByUserIdAndDate(userId, date)
                 .stream()

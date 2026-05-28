@@ -10,4 +10,7 @@ public interface SpringDataChapterRepository extends JpaRepository<ChapterJpaEnt
 
     // 같은 강의 안에서 동일한 orderNo가 이미 있는지 확인
     boolean existsByLectureIdAndOrderNo(Long lectureId, int orderNo);
+
+    // 강의에 videoUrl이 비어있는 챕터가  있는지 확인
+    boolean existsByLectureIdAndVideoUrlIsNull(Long lectureId);
 }

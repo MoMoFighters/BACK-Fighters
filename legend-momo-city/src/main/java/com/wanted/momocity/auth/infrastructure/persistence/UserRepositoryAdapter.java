@@ -7,11 +7,10 @@ import com.wanted.momocity.auth.domain.repository.UserRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-@Repository
+@Repository("authUserRepositoryAdapter")
 @Transactional
 public class UserRepositoryAdapter implements UserRepository, LoadUserPort, UpdatePasswordPort {
     // UserRepository → 회원가입 관련 (저장, 중복확인)
@@ -20,10 +19,10 @@ public class UserRepositoryAdapter implements UserRepository, LoadUserPort, Upda
 
     // 순수한 자바 객체를 엔티티 객체로 만듦
 
-    private final SpringDataUserRepository springDataUserRepository;
+    private final SpringDataAuthUserRepository springDataAuthUserRepository;
 
-    public UserRepositoryAdapter(SpringDataUserRepository springDataUserRepository) {
-        this.springDataUserRepository = springDataUserRepository;
+    public UserRepositoryAdapter(SpringDataAuthUserRepository springDataAuthUserRepository) {
+        this.springDataAuthUserRepository = springDataAuthUserRepository;
     }
 
     @Override
@@ -48,13 +47,13 @@ public class UserRepositoryAdapter implements UserRepository, LoadUserPort, Upda
                 user.getIsTempPwd()                    // isTempPwd
         );
 
-        UserJpaEntity saved = springDataUserRepository.save(entity);
+        UserJpaEntity saved = springDataAuthUserRepository.save(entity);
         return toDomain(saved);
     }
 
     @Override
     public boolean existsByEmail(String email) {
-        return springDataUserRepository.existsByEmail(email);
+        return springDataAuthUserRepository.existsByEmail(email);
     }
 
 
@@ -83,18 +82,18 @@ public class UserRepositoryAdapter implements UserRepository, LoadUserPort, Upda
 
     @Override
     public Optional<User> findByEmail(String email) {
-        return springDataUserRepository.findByEmail(email)
+        return springDataAuthUserRepository.findByEmail(email)
                 .map(this::toDomain);
     }
 
     @Override
     public Optional<User> findById(Long id) {
-        return springDataUserRepository.findById(id)
+        return springDataAuthUserRepository.findById(id)
                 .map(this::toDomain);
     }
 
     @Override
     public void updatePassword(String email, String encodedPassword) {
-        springDataUserRepository.updatePassword(email, encodedPassword);
+        springDataAuthUserRepository.updatePassword(email, encodedPassword);
     }
 }

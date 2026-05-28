@@ -1,24 +1,18 @@
 package com.wanted.momocity.viewing.application.service;
 
-import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.viewing.application.command.SaveProgressCommand;
 import com.wanted.momocity.viewing.application.policy.EnrollmentAccessPolicy;
 import com.wanted.momocity.viewing.application.port.ChapterPort;
 import com.wanted.momocity.viewing.application.port.EnrollmentPort;
 import com.wanted.momocity.viewing.application.port.LecturePort;
-import com.wanted.momocity.viewing.application.usecase.GetChapterProgressUseCase;
-import com.wanted.momocity.viewing.application.usecase.GetMyLectureUseCase;
-import com.wanted.momocity.viewing.application.usecase.GetTotalProgressUseCase;
-import com.wanted.momocity.viewing.application.usecase.SaveProgressUseCase;
+import com.wanted.momocity.viewing.application.usecase.*;
 import com.wanted.momocity.viewing.domain.model.Chapter;
 import com.wanted.momocity.viewing.domain.model.LearningHistory;
 import com.wanted.momocity.viewing.domain.model.Lecture;
 import com.wanted.momocity.viewing.domain.repository.LearningHistoryRepository;
-import com.wanted.momocity.viewing.presentation.api.response.ChapterProgressResponse;
-import com.wanted.momocity.viewing.presentation.api.response.MyLectureResponse;
-import com.wanted.momocity.viewing.presentation.api.response.SaveProgressResponse;
-import com.wanted.momocity.viewing.presentation.api.response.TotalProgressResponse;
+import com.wanted.momocity.viewing.presentation.api.response.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +33,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ProgressService implements
         SaveProgressUseCase,
         GetTotalProgressUseCase,
@@ -84,6 +79,10 @@ public class ProgressService implements
         int totalProgress = calculateTotalProgress (command.userId(), command.lectureId());
         int completedCount = calculateCompletedCount (command.userId(), command.lectureId());
 
+        log.info("[Viewing] 진척도 저장 완료 | userId={}, lectureId={}, chapterId={}, isCompleted={}, totalProgress={}",
+                command.userId(), command.lectureId(), command.chapterId(),
+                savedHistory.isCompleted(), totalProgress);
+
         return new SaveProgressResponse(
                 savedHistory.getChapterId(),
                 savedHistory.getWatchedSeconds(),
@@ -108,6 +107,9 @@ public class ProgressService implements
         // 진척도 계산 (learning_history 집계)
         int totalProgress = calculateTotalProgress(userId, lectureId);
         int completedCount = calculateCompletedCount(userId, lectureId);
+
+        log.info("[Viewing] 전체 진척도 조회 완료 | userId={}, lectureId={}, totalProgress={}, completedCount={}",
+                userId, lectureId, totalProgress, completedCount);
 
         return new TotalProgressResponse(
                 lectureId,
@@ -154,6 +156,9 @@ public class ProgressService implements
                 })
                 .toList();
 
+        log.info("[Viewing] 챕터별 진척도 조회 완료 | userId={}, lectureId={}, chapterCount={}",
+                userId, lectureId, chapters.size());
+
         return new ChapterProgressResponse(lectureId, items);
 
     }
@@ -161,15 +166,18 @@ public class ProgressService implements
     @Override
     @Transactional(readOnly = true)
     // GetMyLectureUseCase
-    public List<MyLectureResponse> getMyLectures(Long userId) {
+    public MyLecturesResponse getMyLectures(Long userId) {
 
-        // 수강 목록 전체 조회 (EnrollmentPort 직접 사용 - 목록 조회라서 Policy 뷸필요)
-        return enrollmentPort.findAllByUserId(userId)
+        // EnrollmentProt 로 수강목록 조회
+        List<MyLecturesResponse.LectureItem> lectures = enrollmentPort.findAllByUserId(userId)
                 .stream()
                 .map(enrollment -> {
+                    // LecturePort 로 강의 정보 조회
                     Lecture lecture = lecturePort.findById(enrollment.lectureId());
+                    // learning_history 집계로 전체 진척도 계산
+                    // -> enrollment 테이블에 캐싱 없이 직접 계산
                     int totalProgress = calculateTotalProgress(userId, enrollment.lectureId());
-                    return new MyLectureResponse(
+                    return new MyLecturesResponse.LectureItem(
                             lecture.getId(),
                             lecture.getTitle(),
                             lecture.getThumbnailUrl(),
@@ -179,7 +187,12 @@ public class ProgressService implements
                 })
                 .toList();
 
-    }
+        log.info("[Viewing] 내 수강 강의 목록 조회 완료 | userId={}, lectureCount={}",
+                userId, lectures.size());
+
+        // MyLecturesResponse 로 래핑하여 반환
+        return new MyLecturesResponse(lectures);
+        }
 
     // private 메서드 (내부 로직)
     // enrollment 진척도 재계산 및 저장
@@ -209,21 +222,34 @@ public class ProgressService implements
                 .sum();
 
         if (totalDurationSum == 0) return 0;
-        return (int) Math.round(
+
+        int result =  (int) Math.round(
                 (double)(completedDurationSum + inProgressWatchedSum)
                 / totalDurationSum * 100
         );
+
+        log.debug("[Viewing] 전체 진척도 계산 | userId={}, lectureId={}, " +
+                        "completedDurationSum={}, inProgressWatchedSum={}, totalDurationSum={}, result={}",
+                userId, lectureId, completedDurationSum, inProgressWatchedSum, totalDurationSum, result);
+
+        return result;
 
     }
 
     // 완료 된 챕터 수 계산 (learning_history 집계)
     private int calculateCompletedCount (Long userId, Long lectureId) {
-        return (int) learningHistoryRepository
+        int count = (int) learningHistoryRepository
                 .findByUserIdAndLectureId(userId, lectureId)
                 .stream()
                 .filter(LearningHistory::isCompleted)
                 .count();
-    }
 
+
+        log.debug("[Viewing] 완료 챕터 수 계산 | userId={}, lectureId={}, completedCount={}",
+                userId, lectureId, count);
+
+        return count;
+
+    }
 
 }

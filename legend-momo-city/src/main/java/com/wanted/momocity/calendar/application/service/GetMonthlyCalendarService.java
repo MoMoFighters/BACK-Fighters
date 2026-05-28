@@ -1,0 +1,64 @@
+package com.wanted.momocity.calendar.application.service;
+
+import com.wanted.momocity.calendar.application.usecase.GetMonthlyCalendarUseCase;
+import com.wanted.momocity.calendar.domain.model.Calendar;
+import com.wanted.momocity.calendar.domain.repository.CalendarRepository;
+import com.wanted.momocity.calendar.presentation.api.response.MonthlyCalendarResponse;
+import com.wanted.momocity.calendar.presentation.api.response.MemoResponse;
+import com.wanted.momocity.calendar.presentation.api.response.TodoResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+
+import java.time.LocalDate;
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+@Slf4j
+public class GetMonthlyCalendarService implements GetMonthlyCalendarUseCase {
+
+    private final CalendarRepository calendarRepository;
+
+    @Override
+    public MonthlyCalendarResponse getMonthlyCalendar(
+            Long userId, LocalDate startDate, LocalDate endDate
+    ) {
+        // 해당 월 전체 조회 (Todo + Memo)
+        List<Calendar> calendars = calendarRepository
+                .findByUserIdAndDateBetween(userId, startDate, endDate);
+
+        // Todo 분리
+        List<TodoResponse> todos = calendars.stream()
+                .filter(c -> c.getCategory() == Calendar.Category.TODO)
+                .map(c -> new TodoResponse(
+                        c.getId(),
+                        c.getTitle(),
+                        c.getCategory(),
+                        c.getStart(),
+                        c.isCompleted()
+                ))
+                .toList();
+
+        // Memo 분리
+        List<MemoResponse> memos = calendars.stream()
+                .filter(c -> c.getCategory() == Calendar.Category.MEMO)
+                .map(c -> new MemoResponse(
+                        c.getId(),
+                        c.getTitle(),
+                        c.getCategory(),
+                        c.getStart(),
+                        c.getEnd()
+                ))
+                .toList();
+
+        log.info("[Calendar] 월별 조회 완료 | userId={}, startDate={}, endDate={}, " +
+                        "todoCount={}, memoCount={}",
+                userId, startDate, endDate, todos.size(), memos.size());
+
+        return new MonthlyCalendarResponse(startDate, endDate, todos, memos);
+    }
+}

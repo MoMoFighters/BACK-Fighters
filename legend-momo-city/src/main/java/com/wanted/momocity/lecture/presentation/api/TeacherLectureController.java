@@ -3,14 +3,17 @@ package com.wanted.momocity.lecture.presentation.api;
 import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
+import com.wanted.momocity.lecture.application.command.ChangeLectureStatusCommand;
 import com.wanted.momocity.lecture.application.command.RegisterChapterVideoCommand;
 import com.wanted.momocity.lecture.application.usecase.ChapterCommandUseCase;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCase;
 import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.model.LectureChapter;
+import com.wanted.momocity.lecture.presentation.api.request.ChangeLectureStatusRequest;
 import com.wanted.momocity.lecture.presentation.api.request.CreateChapterRequest;
 import com.wanted.momocity.lecture.presentation.api.request.CreateLectureRequest;
 import com.wanted.momocity.lecture.presentation.api.request.RegisterChapterVideoRequest;
+import com.wanted.momocity.lecture.presentation.api.response.ChangeLectureStatusResponse;
 import com.wanted.momocity.lecture.presentation.api.response.CreateChapterResponse;
 import com.wanted.momocity.lecture.presentation.api.response.CreateLectureResponse;
 import com.wanted.momocity.lecture.presentation.api.response.RegisterChapterVideoResponse;
@@ -145,6 +148,43 @@ public class TeacherLectureController {
                         ApiResponseCode.SUCCESS,
                         "챕터 동영상이 등록되었습니다.",
                         RegisterChapterVideoResponse.from(chapter)
+                ));
+    }
+
+    // 강의 상태 변경 API
+    @Operation(
+            summary = "강의 상태 변경",
+            description = """
+                강사가 본인이 등록한 강의의 상태를 변경합니다.
+                ACTIVE 상태로 변경하려면 챕터가 최소 1개 이상 있어야 하고,
+                모든 챕터에 동영상이 등록되어 있어야 합니다.
+                """
+    )
+    @PatchMapping("/{lectureId}/status")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
+    public ResponseEntity<ApiResponse<ChangeLectureStatusResponse>> changeLectureStatus(
+            Authentication authentication,
+            @PathVariable Long lectureId,
+            @Valid @RequestBody ChangeLectureStatusRequest request
+    ) {
+        // Authorization 토큰에서 로그인한 강사의 email을 가져옴
+        String teacherEmail = authentication.getName();
+
+        // Request DTO를 Application 계층에서 사용할 Command로 변환
+        ChangeLectureStatusCommand command = request.toCommand(
+                teacherEmail,
+                lectureId
+        );
+
+        // 강의 상태 변경 유스케이스를 실행
+        LectureAggregate lecture = lectureCommandUseCase.changeLectureStatus(command);
+
+        // 200 OK 응답을 반환
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        ApiResponseCode.SUCCESS,
+                        "강의 상태가 변경되었습니다.",
+                        ChangeLectureStatusResponse.from(lecture)
                 ));
     }
 

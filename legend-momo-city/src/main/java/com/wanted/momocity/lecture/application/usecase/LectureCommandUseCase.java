@@ -1,5 +1,6 @@
 package com.wanted.momocity.lecture.application.usecase;
 
+import com.wanted.momocity.lecture.application.command.ChangeLectureStatusCommand;
 import com.wanted.momocity.lecture.application.command.CreateLectureCommand;
 import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 
@@ -10,4 +11,6 @@ import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 public interface LectureCommandUseCase {
     // 강의를 등록
     LectureAggregate createLecture(CreateLectureCommand command);
+
+    LectureAggregate changeLectureStatus(ChangeLectureStatusCommand command);
 }

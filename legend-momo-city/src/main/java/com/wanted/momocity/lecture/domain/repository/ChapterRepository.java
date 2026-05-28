@@ -22,4 +22,7 @@ public interface ChapterRepository {
     // chapterId로 기존 챕터를 조회
     // 동영상 등록은 기존 챕터에 영상 정보를 채우는 작업이라 단건 조회가 필요
     Optional<LectureChapter> findById(Long chapterId);
+
+    // 특정 강의에 동영상이 등록되지 않은 챕터가 있는지 확인
+    boolean existsByLectureIdAndVideoUrlIsNull(Long lectureId);
 }

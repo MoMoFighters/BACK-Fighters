@@ -9,8 +9,10 @@ public class LearningHistory {
     private Long userId;
     private Long lectureId;
     private Long chapterId;
+    // 최대 누적 시청 시간 (감소 안 함)
     private int watchedSeconds;
     private boolean isCompleted;
+    // 마지막 재생 위치 (이어보기용)
     private int lastPositionSec;
     private int progressRate;
     // createdAt, updateAt 은 JPA 에서 관리
@@ -32,6 +34,7 @@ public class LearningHistory {
 
     // 진척도 업데이트
     public void updateProgress (
+            // 현재 재생 위치
             int playbackSeconds, int durationSec
     ) {
         if (playbackSeconds > this.watchedSeconds) {

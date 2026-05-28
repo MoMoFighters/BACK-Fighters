@@ -24,11 +24,26 @@ public class ChapterCatalogAdapter implements ChapterPort {
 
     @Override
     public Chapter findById(Long chapterId) {
-       throw new UnsupportedOperationException("구현 예정");
+        return Chapter.reconstitute(
+                chapterId,
+                1L,
+                "임시 챕터 " + chapterId,
+                1,
+                "video/lecture1/chapter" + chapterId + ".mp4",
+                600,
+                Chapter.VideoStatus.READY
+        );
     }
 
     @Override
     public List<Chapter> findAllByLectureId(Long lectureId) {
-        throw new UnsupportedOperationException("구현 예정");
+        return List.of(
+                Chapter.reconstitute(1L, lectureId, "1강 임시 챕터", 1,
+                        "video/lecture1/chapter1.mp4", 600, Chapter.VideoStatus.READY),
+                Chapter.reconstitute(2L, lectureId, "2강 임시 챕터", 2,
+                        "video/lecture1/chapter2.mp4", 600, Chapter.VideoStatus.READY),
+                Chapter.reconstitute(3L, lectureId, "3강 임시 챕터", 3,
+                        "video/lecture1/chapter3.mp4", 600, Chapter.VideoStatus.READY)
+        );
     }
 }

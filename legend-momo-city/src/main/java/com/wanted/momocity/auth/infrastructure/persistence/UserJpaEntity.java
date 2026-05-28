@@ -9,7 +9,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Entity
+@Entity(name = "AuthUser")
 @Table(name="`user`")
 public class UserJpaEntity {
 
