@@ -26,10 +26,6 @@ public interface CalendarRepository {
             Long userId, LocalDate start, LocalDate endDate
     );
 
-    // 날짜별 조회 (Todo + Memo)
-    // start <= date AND (end >= date OR end is NULL)
-    List<Calendar> findByUserIdAndDate (Long userId, LocalDate date);
-
     // 삭제
     void delete(Long id);
 

@@ -1,11 +1,12 @@
 package com.wanted.momocity.viewing.application.service;
 
-import com.wanted.momocity.viewing.application.command.SaveProgressCommand;
+import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.viewing.application.policy.EnrollmentAccessPolicy;
 import com.wanted.momocity.viewing.application.port.ChapterPort;
 import com.wanted.momocity.viewing.application.port.EnrollmentPort;
 import com.wanted.momocity.viewing.application.port.LecturePort;
-import com.wanted.momocity.viewing.application.usecase.*;
+import com.wanted.momocity.viewing.application.port.S3Port;
+import com.wanted.momocity.viewing.application.usecase.ViewingQueryUseCase;
 import com.wanted.momocity.viewing.domain.model.Chapter;
 import com.wanted.momocity.viewing.domain.model.LearningHistory;
 import com.wanted.momocity.viewing.domain.model.Lecture;
@@ -13,89 +14,123 @@ import com.wanted.momocity.viewing.domain.repository.LearningHistoryRepository;
 import com.wanted.momocity.viewing.presentation.api.response.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 /*
-* comment.
-*  진척도 관련 UseCase 구현체
-*  HTTP 모름, JPA 모름, 순수 비지니스 흐름만 담당
-*  -
-*  [담당 UseCase]
-*  - SaveProgressUseCase : 진척도 저장
-*  - GetTotalProgressUseCase : 전체 진척도 조회
-*  - GetChapterProgressUseCase : 챕터별 진척도 조회
-*  - GetMyLectureUseCase : 내 수강 강의 목록
-* */
+ * comment.
+ *  - 읽기 전용 UseCase 구현체
+ *  - @Transactional(readOnly = true) 로 DB 부하 최소화
+ *  - 상태 변경 없음, 조회만 담당
+ *  -
+ *  [담당 UseCase]
+ *  - ViewingQueryUseCase : 스트리밍 URL, 강의 메타, 이어보기, 진척도, 수강 목록 조회
+ */
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class ProgressService implements
-        SaveProgressUseCase,
-        GetTotalProgressUseCase,
-        GetChapterProgressUseCase,
-        GetMyLectureUseCase {
+@Transactional(readOnly = true)
+public class ViewingQueryService implements ViewingQueryUseCase {
 
+    private final S3Port s3Port;
     private final ChapterPort chapterPort;
     private final LecturePort lecturePort;
     private final EnrollmentPort enrollmentPort;
     private final LearningHistoryRepository learningHistoryRepository;
-    private final ApplicationEventPublisher eventPublisher;
     private final EnrollmentAccessPolicy enrollmentAccessPolicy;
-//    private final SaveProgressUseCase saveProgressUseCase;
 
     @Override
-    @Transactional
-    // SaveProgressUseCase
-    public SaveProgressResponse saveProgress(SaveProgressCommand command) {
+    public StreamingUrlResponse getStreamingUrl(Long userId, Long lectureId, Long chapterId) {
 
         // 수강 여부 확인 (Policy)
-        enrollmentAccessPolicy.ensureEnrolled(command.userId(), command.lectureId());
+        enrollmentAccessPolicy.ensureEnrolled(userId, lectureId);
 
-        // 챕터 정보 조회 (durationSec 필요)
-        Chapter chapter = chapterPort.findById(command.chapterId());
+        // 챕터 정보 조회
+        Chapter chapter = chapterPort.findById(chapterId);
 
-        // 시청 기록 조회 or 신규 생성
-        LearningHistory history = learningHistoryRepository
-                .findByUserIdAndChapterId(command.userId(), command.chapterId())
-                .orElse(LearningHistory.create(
-                        command.userId(), command.lectureId(), command.chapterId()
-                ));
+        // 재생 가능 여부 확인 (도메인 메서드)
+        if (!chapter.isPlayable()) {
+            throw new DomainRuleViolationException("현재 재생할 수 없는 영상입니다.");
+        }
 
-        // 진척도 업데이트 (도메인 메서드)
-        history.updateProgress(command.playbackSeconds(), chapter.getDurationSec());
+        // S3 Presigned URL 발급
+        String presignedUrl = s3Port.generatePresignedUrl(chapter.getVideoUrl());
 
-        // 쳅터 완료 처리 (도메인 메서드)
-        history.complete(command.playbackSeconds(), chapter.getDurationSec());
+        log.info("[Viewing] S3 Presigned URL 발급 완료 | userId={}, lectureId={}, chapterId={}",
+                userId, lectureId, chapterId);
 
-        // 시청 기록 저장
-        LearningHistory savedHistory = learningHistoryRepository.save(history);
-
-        // 전체 진척도 계산 (learning_history 집계)
-        int totalProgress = calculateTotalProgress (command.userId(), command.lectureId());
-        int completedCount = calculateCompletedCount (command.userId(), command.lectureId());
-
-        log.info("[Viewing] 진척도 저장 완료 | userId={}, lectureId={}, chapterId={}, isCompleted={}, totalProgress={}",
-                command.userId(), command.lectureId(), command.chapterId(),
-                savedHistory.isCompleted(), totalProgress);
-
-        return new SaveProgressResponse(
-                savedHistory.getChapterId(),
-                savedHistory.getWatchedSeconds(),
-                savedHistory.getProgressRate(),
-                savedHistory.isCompleted(),
-                totalProgress,
-                completedCount
+        return new StreamingUrlResponse(
+                chapter.getId(), presignedUrl, 3600,
+                chapter.getTitle(), chapter.getDurationSec()
         );
     }
 
     @Override
-    @Transactional(readOnly = true)
-    // GetTotalProgressUseCase
+    public LectureMetaResponse getLectureMeta(Long userId, Long lectureId) {
+
+        // 수강 여부 확인 (Policy)
+        enrollmentAccessPolicy.ensureEnrolled(userId, lectureId);
+
+        // 강의 정보 조회
+        Lecture lecture = lecturePort.findById(lectureId);
+
+        // 전체 챕터 수 조회
+        List<Chapter> chapters = chapterPort.findAllByLectureId(lectureId);
+
+        // 현재 챕터 조회
+        LearningHistory currentHistory = learningHistoryRepository
+                .findLatestByUserIdAndLectureId(userId, lectureId)
+                .orElse(null);
+
+        // 현재 챕터 정보 (시청 기록 없으면 첫 번째 챕터)
+        Chapter currentChapter = currentHistory != null
+                ? chapterPort.findById(currentHistory.getChapterId())
+                : chapters.get(0);
+
+        log.info("[Viewing] 강의 메타데이터 조회 완료 | userId={}, lectureId={}",
+                userId, lectureId);
+
+        return new LectureMetaResponse(
+                lecture.getId(), lecture.getTitle(), lecture.getInstructorName(),
+                chapters.size(), currentChapter.getOrderNo(),
+                currentChapter.getId(), currentChapter.getTitle()
+        );
+    }
+
+    @Override
+    public ChapterResumeResponse getChapterResume(Long userId, Long lectureId, Long chapterId) {
+
+        // 수강 여부 확인 (Policy)
+        enrollmentAccessPolicy.ensureEnrolled(userId, lectureId);
+
+        // 챕터 정보 조회
+        Chapter chapter = chapterPort.findById(chapterId);
+
+        // 시청 기록 조회
+        LearningHistory history = learningHistoryRepository
+                .findByUserIdAndChapterId(userId, chapterId)
+                .orElse(LearningHistory.create(userId, lectureId, chapterId));
+
+        // 전체 진척도 조회
+        int totalProgress = learningHistoryRepository
+                .findByUserIdAndLectureId(userId, lectureId)
+                .stream()
+                .mapToInt(LearningHistory::getProgressRate)
+                .sum();
+
+        log.info("[Viewing] 챕터 이어보기 조회 완료 | userId={}, lectureId={}, chapterId={}, lastPositionSec={}",
+                userId, lectureId, chapterId, history.getLastPositionSec());
+
+        return new ChapterResumeResponse(
+                lectureId, chapter.getId(), chapter.getTitle(),
+                history.getLastPositionSec(), chapter.getDurationSec(), totalProgress
+        );
+    }
+
+    @Override
     public TotalProgressResponse getTotalProgress(Long userId, Long lectureId) {
 
         // 수강 여부 확인 (Policy)
@@ -112,17 +147,11 @@ public class ProgressService implements
                 userId, lectureId, totalProgress, completedCount);
 
         return new TotalProgressResponse(
-                lectureId,
-                totalProgress,
-                completedCount,
-                chapters.size()
+                lectureId, totalProgress, completedCount, chapters.size()
         );
-
     }
 
     @Override
-    @Transactional(readOnly = true)
-    // GetChapterProgressUseCase
     public ChapterProgressResponse getChapterProgress(Long userId, Long lectureId) {
 
         // 수강 여부 확인 (Policy)
@@ -130,7 +159,6 @@ public class ProgressService implements
 
         // 전체 챕터 목록 조회
         List<Chapter> chapters = chapterPort.findAllByLectureId(lectureId);
-
         // 시청 기록 전체 조회
         List<LearningHistory> histories = learningHistoryRepository
                 .findByUserIdAndLectureId(userId, lectureId);
@@ -145,13 +173,9 @@ public class ProgressService implements
                             .orElse(LearningHistory.create(userId, lectureId, chapter.getId()));
 
                     return new ChapterProgressResponse.ChapterProgressItem(
-                            chapter.getId(),
-                            chapter.getTitle(),
-                            chapter.getOrderNo(),
-                            history.getWatchedSeconds(),
-                            chapter.getDurationSec(),
-                            history.getProgressRate(),
-                            history.isCompleted()
+                            chapter.getId(), chapter.getTitle(), chapter.getOrderNo(),
+                            history.getWatchedSeconds(), chapter.getDurationSec(),
+                            history.getProgressRate(), history.isCompleted()
                     );
                 })
                 .toList();
@@ -160,12 +184,9 @@ public class ProgressService implements
                 userId, lectureId, chapters.size());
 
         return new ChapterProgressResponse(lectureId, items);
-
     }
 
     @Override
-    @Transactional(readOnly = true)
-    // GetMyLectureUseCase
     public MyLecturesResponse getMyLectures(Long userId) {
 
         // EnrollmentProt 로 수강목록 조회
@@ -178,10 +199,8 @@ public class ProgressService implements
                     // -> enrollment 테이블에 캐싱 없이 직접 계산
                     int totalProgress = calculateTotalProgress(userId, enrollment.lectureId());
                     return new MyLecturesResponse.LectureItem(
-                            lecture.getId(),
-                            lecture.getTitle(),
-                            lecture.getThumbnailUrl(),
-                            lecture.getCategory(),
+                            lecture.getId(), lecture.getTitle(),
+                            lecture.getThumbnailUrl(), lecture.getCategory(),
                             totalProgress
                     );
                 })
@@ -192,7 +211,7 @@ public class ProgressService implements
 
         // MyLecturesResponse 로 래핑하여 반환
         return new MyLecturesResponse(lectures);
-        }
+    }
 
     // private 메서드 (내부 로직)
     // enrollment 진척도 재계산 및 저장
@@ -206,7 +225,7 @@ public class ProgressService implements
         int completedDurationSum = chapters.stream()
                 .filter(chapter -> histories.stream()
                         .anyMatch(h -> h.getChapterId().equals(chapter.getId())
-                        && h.isCompleted()))
+                                && h.isCompleted()))
                 .mapToInt(Chapter::getDurationSec)
                 .sum();
 
@@ -217,39 +236,25 @@ public class ProgressService implements
                 .sum();
 
         // 전체 durationSec 합산
-        int totalDurationSum =chapters.stream()
+        int totalDurationSum = chapters.stream()
                 .mapToInt(Chapter::getDurationSec)
                 .sum();
 
         if (totalDurationSum == 0) return 0;
 
-        int result =  (int) Math.round(
+        return (int) Math.round(
                 (double)(completedDurationSum + inProgressWatchedSum)
-                / totalDurationSum * 100
+                        / totalDurationSum * 100
         );
-
-        log.debug("[Viewing] 전체 진척도 계산 | userId={}, lectureId={}, " +
-                        "completedDurationSum={}, inProgressWatchedSum={}, totalDurationSum={}, result={}",
-                userId, lectureId, completedDurationSum, inProgressWatchedSum, totalDurationSum, result);
-
-        return result;
-
     }
 
     // 완료 된 챕터 수 계산 (learning_history 집계)
-    private int calculateCompletedCount (Long userId, Long lectureId) {
-        int count = (int) learningHistoryRepository
+    private int calculateCompletedCount(Long userId, Long lectureId) {
+        return (int) learningHistoryRepository
                 .findByUserIdAndLectureId(userId, lectureId)
                 .stream()
                 .filter(LearningHistory::isCompleted)
                 .count();
-
-
-        log.debug("[Viewing] 완료 챕터 수 계산 | userId={}, lectureId={}, completedCount={}",
-                userId, lectureId, count);
-
-        return count;
-
     }
 
 }

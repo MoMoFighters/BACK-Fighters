@@ -37,22 +37,4 @@ public interface CalendarJpaRepository extends JpaRepository<CalendarJpaEntity, 
             @Param("endDate") LocalDate endDate
     );
 
-    // 날짜별 조회
-    // Todo / Memo 날짜 필터링 조건이 달라서 네이밍 규칙으로 표현 불가
-    // Todo : start = date
-    // Memo : start <= date AND (end >= date OR end IS NULL)
-    @Query("""
-            SELECT c FROM CalendarJpaEntity c
-            WHERE c.userId = :userId
-            AND (
-                (c.category = 'TODO' AND c.start = :date)
-                OR
-                (c.category = 'MEMO' AND c.start <= :date
-                AND (c.end >= :date OR c.end IS NULL))
-            )
-            """)
-    List<CalendarJpaEntity> findByUserIdAndDate(
-            @Param("userId") Long userId,
-            @Param("date") LocalDate date
-    );
 }
