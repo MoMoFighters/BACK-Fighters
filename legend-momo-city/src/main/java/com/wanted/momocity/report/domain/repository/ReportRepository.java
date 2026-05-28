@@ -25,4 +25,7 @@ public interface ReportRepository {
 
     // 특정 상태의 최근 신고 N개
     List<Report> findByStatus(ReportStatus status, int limit);
+
+    // 전체 신고 수 (대시보드 통계용 - ReportStatsAdapter 가 호출)
+    long countAll();
 }
