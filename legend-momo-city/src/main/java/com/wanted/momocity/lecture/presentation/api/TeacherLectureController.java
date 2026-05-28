@@ -3,9 +3,13 @@ package com.wanted.momocity.lecture.presentation.api;
 import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
+import com.wanted.momocity.lecture.application.usecase.ChapterCommandUseCase;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCase;
 import com.wanted.momocity.lecture.domain.model.LectureAggregate;
+import com.wanted.momocity.lecture.domain.model.LectureChapter;
+import com.wanted.momocity.lecture.presentation.api.request.CreateChapterRequest;
 import com.wanted.momocity.lecture.presentation.api.request.CreateLectureRequest;
+import com.wanted.momocity.lecture.presentation.api.response.CreateChapterResponse;
 import com.wanted.momocity.lecture.presentation.api.response.CreateLectureResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,12 +27,15 @@ import org.springframework.web.bind.annotation.*;
 public class TeacherLectureController {
 
     private final LectureCommandUseCase lectureCommandUseCase;
+    private final ChapterCommandUseCase chapterCommandUseCase;
     private final S3UploadPort s3UploadPort;
     public TeacherLectureController(
             LectureCommandUseCase lectureCommandUseCase,
+            ChapterCommandUseCase chapterCommandUseCase,
             S3UploadPort s3UploadPort
     ) {
         this.lectureCommandUseCase = lectureCommandUseCase;
+        this.chapterCommandUseCase = chapterCommandUseCase;
         this.s3UploadPort = s3UploadPort;
     }
 
@@ -64,4 +71,33 @@ public class TeacherLectureController {
                         CreateLectureResponse.from(lecture)
                 ));
     }
+
+    // 챕터 등록 API
+    // 챕터 기본 정보만 JSON으로 받고, 동영상은 별도 API에서 form-data로 등록
+    @PostMapping("/{lectureId}/chapters")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
+    public ResponseEntity<ApiResponse<CreateChapterResponse>> createChapter(
+            Authentication authentication,
+            @PathVariable Long lectureId,
+            @Valid @RequestBody CreateChapterRequest request
+    ) {
+        // Authorization 토큰에서 로그인한 강사의 email을 가져옴
+        String teacherEmail = authentication.getName();
+
+        // Request DTO를 application 계층의 Command로 변환
+        var command = request.toCommand(teacherEmail, lectureId);
+
+        // 챕터 등록 유스케이스를 실행
+        LectureChapter chapter = chapterCommandUseCase.createChapter(command);
+
+        // 201 Created 응답을 반환
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.created(
+                        ApiResponseCode.CREATED,
+                        "챕터가 등록되었습니다.",
+                        CreateChapterResponse.from(chapter)
+                ));
+    }
+
+
 }

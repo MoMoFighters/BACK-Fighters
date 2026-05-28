@@ -172,4 +172,5 @@ public class LectureRepositoryAdapter implements LectureRepository {
                 entity.getUpdatedAt()
         );
     }
+
 }

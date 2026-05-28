@@ -1,5 +1,8 @@
 package com.wanted.momocity.auth.domain.exception;
 
+import com.wanted.momocity.auth.infrastructure.exception.ExpiredJwtCustomException;
+import com.wanted.momocity.auth.infrastructure.exception.InvalidJwtCustomException;
+import com.wanted.momocity.auth.infrastructure.exception.InvalidRefreshTokenException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -82,4 +85,24 @@ public class AuthExceptionHandler {
                 .body(Map.of("success", false, "message", e.getMessage()));
     }
 
+    // 리프레시 토큰이 없거나 유효하지 않을 때
+    @ExceptionHandler(InvalidRefreshTokenException.class)
+    public ResponseEntity<?> handleInvalidRefreshToken(InvalidRefreshTokenException e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("success", false, "message", e.getMessage()));
+    }
+
+    // 잘못된 형식의 JWT 토큰일 때
+    @ExceptionHandler(InvalidJwtCustomException.class)
+    public ResponseEntity<?> handleInvalidJwt(InvalidJwtCustomException e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("success", false, "message", "유효하지 않은 토큰입니다. 다시 로그인해주세요."));
+    }
+
+    // 리프레시 토큰 만료됐을 때
+    @ExceptionHandler(ExpiredJwtCustomException.class)
+    public ResponseEntity<?> handleExpiredJwt(ExpiredJwtCustomException e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("success", false, "message", "로그인이 만료되었습니다. 다시 로그인해주세요."));
+    }
 }
