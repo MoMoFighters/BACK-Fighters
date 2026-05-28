@@ -15,6 +15,7 @@ import jakarta.validation.constraints.NotNull;
 public record SaveProgressRequest(
         @NotNull(message = "재생 시간 값은 필수 항목입니다.")
         @Min(value = 0, message = "재생 시간은 0 이상이어야 합니다.")
+        // 현재 재생 위치
         Integer playbackSeconds
 ) {
 }

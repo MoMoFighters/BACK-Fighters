@@ -49,6 +49,21 @@ public class LearningHistoryJpaEntity extends BaseTimeEntity {
     @Column(name = "progress_rate", nullable = false)
     private int progressRate;
 
+    /*
+    * comment.
+    *  @Version : 낙관적 락 (Optimistic Lock) 핵심 필드
+    *  동작 방식 : 조회 시 version 값 합께 읽어옴 -> 저장 시 현재 version 과 DB version 비교
+    *  -> 일치하면 저장 후 version +1 -> 실제 DB Lock 없이 충돌 감지 가능 (성능 유리)
+    *  -
+    *  5-10 초 주기로 saveProgress() 호출
+    *  -> 같은 챕터 동시 요청 시 데이터 정합성 보장
+    *  -> 실제 DB Lock 없이 충돌 감지 가능 (성능 유리)
+    * */
+
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version;
+
     // Domain Model -> JpaEntity 변환 (저장용)
     public static LearningHistoryJpaEntity from(LearningHistory domain) {
         LearningHistoryJpaEntity entity = new LearningHistoryJpaEntity();

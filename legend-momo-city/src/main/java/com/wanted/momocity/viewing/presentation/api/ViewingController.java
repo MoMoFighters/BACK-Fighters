@@ -7,13 +7,13 @@ import com.wanted.momocity.viewing.application.usecase.*;
 import com.wanted.momocity.viewing.presentation.api.common.ViewingResponseCode;
 import com.wanted.momocity.viewing.presentation.api.request.SaveProgressRequest;
 import com.wanted.momocity.viewing.presentation.api.response.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 /*
 * comment.
@@ -36,6 +36,14 @@ public class ViewingController {
 
     // S3 Presigned URL 발급
     // GET /api/v1/lectures/{lectureId}/chapters/{chapterId}/stream
+    @Operation(summary = "S3 Presigned URL 발급",
+            description = "챕터 클릭 시 해당 챕터의 영상 URL 발급. 유효시간 1시간.")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "URL 발급 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "재생 불가 영상"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 토큰 만료"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "수강 권한 없음")
+    })
     @GetMapping("/lectures/{lectureId}/chapters/{chapterId}/stream")
     public ResponseEntity<ApiResponse<StreamingUrlResponse>> getStreamingUrl (
             @PathVariable Long lectureId,
@@ -63,6 +71,13 @@ public class ViewingController {
 
     // 강의 메타데이터 조회
     // GET /api/v1/lectures/{lectureId}
+    @Operation(summary = "강의 메타데이터 조회",
+            description = "플레이어 UI 상단에 강의 제목, 강사명, 현재 차시 표시용.")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 토큰 만료"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "수강 권한 없음")
+    })
     @GetMapping("/lectures/{lectureId}")
     public ResponseEntity<ApiResponse<LectureMetaResponse>> getLectureMeta(
             @PathVariable Long lectureId,
@@ -89,6 +104,14 @@ public class ViewingController {
 
     // 강의 영상 재생 진척도 저장
     // PATCH /api/v1/lectures/{lectureId}/chapters/{chapterId}/progress
+    @Operation(summary = "강의 영상 진척도 저장",
+            description = "프론트에서 5~10초 주기로 현재 재생 위치 전송. 90% 이상 시청 시 챕터 완료 처리.")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "저장 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "필수값 누락"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 토큰 만료"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "수강 권한 없음")
+    })
     @PatchMapping("/lectures/{lectureId}/chapters/{chapterId}/progress")
     public ResponseEntity<ApiResponse<SaveProgressResponse>> saveProgress(
             @PathVariable Long lectureId,
@@ -124,6 +147,13 @@ public class ViewingController {
 
     // 챕터 이어보기
     // GET /api/v1/lectures/{lectureId}/chapters/{chapterId}/resume
+    @Operation(summary = "챕터 이어보기",
+            description = "마지막 재생 위치 반환. 시청 기록 없으면 lastPositionSec: 0 반환.")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 토큰 만료"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "수강 권한 없음")
+    })
     @GetMapping("/lectures/{lectureId}/chapters/{chapterId}/resume")
     public ResponseEntity<ApiResponse<ChapterResumeResponse>> getChapterResume(
             @PathVariable Long lectureId,
@@ -151,6 +181,13 @@ public class ViewingController {
 
     // 전체 진척도 조회
     // GET /api/v1/lectures/{lectureId}/progress
+    @Operation(summary = "전체 진척도 조회",
+            description = "완료 챕터 durationSec + 미완료 챕터 watchedSeconds 합산으로 계산.")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 토큰 만료"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "수강 권한 없음")
+    })
     @GetMapping("/lectures/{lectureId}/progress")
     public ResponseEntity<ApiResponse<TotalProgressResponse>> getTotalProgress(
             @PathVariable Long lectureId,
@@ -176,6 +213,13 @@ public class ViewingController {
 
     // 챕터별 진척도 조회
     // GET /api/v1/lectures/{lectureId}/chapters/progress
+    @Operation(summary = "챕터별 진척도 조회",
+            description = "미시청 챕터는 watchedSeconds: 0, progressRate: 0, isCompleted: false 반환.")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 토큰 만료"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "수강 권한 없음")
+    })
     @GetMapping("/lectures/{lectureId}/chapters/progress")
     public ResponseEntity<ApiResponse<ChapterProgressResponse>> getChapterProgress(
             @PathVariable Long lectureId,
@@ -202,17 +246,22 @@ public class ViewingController {
 
     // 내 수강 강의 목록 조회
     // GET /api/v1/users/me/lectures
+    @Operation(summary = "내 수강 강의 목록 조회",
+            description = "수강 강의 없으면 lectures: [] 빈 배열 반환.")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 토큰 만료")
+    })
     @GetMapping("/users/me/lectures")
-    public ResponseEntity<ApiResponse<List<MyLectureResponse>>> getMyLectures (
+    public ResponseEntity<ApiResponse<MyLecturesResponse>> getMyLectures (
             @AuthenticationPrincipal CustomUserDetails userDetails
-
     ) {
 
 //        Long userId = 1L;
         Long userId = userDetails.getUserId();
 
-
-        List<MyLectureResponse> responses = getMyLectureUseCase
+        // MyLecturesResponse 래핑 구조로 반환
+        MyLecturesResponse responses = getMyLectureUseCase
                 .getMyLectures(userId);
 
         return ResponseEntity.ok(

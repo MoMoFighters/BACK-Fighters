@@ -21,6 +21,11 @@ public interface CalendarRepository {
     // 단건 조회
     Optional<Calendar> findById(Long id);
 
+    // 기간별 조회
+    List<Calendar> findByUserIdAndDateBetween(
+            Long userId, LocalDate start, LocalDate endDate
+    );
+
     // 날짜별 조회 (Todo + Memo)
     // start <= date AND (end >= date OR end is NULL)
     List<Calendar> findByUserIdAndDate (Long userId, LocalDate date);

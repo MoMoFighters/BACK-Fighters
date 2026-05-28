@@ -30,4 +30,23 @@ public class Chapter {
         return this.videoStatus == VideoStatus.READY;
     }
 
+    // DB 에서 조회한 데이터로 도메인 객체 복원용
+    // create() 는 신규 생성, reconstitute() 는 DB 복원
+    public static Chapter reconstitute(
+            Long id, Long lectureId, String title,
+            int orderNo, String videoUrl, int durationSec,
+            VideoStatus videoStatus
+    ) {
+        Chapter chapter = new Chapter();
+        chapter.id = id;
+        chapter.lectureId = lectureId;
+        chapter.title = title;
+        chapter.orderNo = orderNo;
+        chapter.videoUrl = videoUrl;
+        chapter.durationSec = durationSec;
+        chapter.videoStatus = videoStatus;
+        return chapter;
+
+    }
+
 }
