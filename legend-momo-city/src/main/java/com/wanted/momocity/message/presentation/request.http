@@ -47,20 +47,20 @@ POST localhost:8080/api/v1/messages/chatrooms/create/2
 Authorization: Bearer {{auth_token}}
 
 ### 메시지 전송
-POST localhost:8080/api/v1/messages/send/3
+POST localhost:8080/api/v1/messages/send/
 Authorization: Bearer {{auth_token}}
 Content-Type: application/json
 
 {
-    "content" : "메시지 볼 수 있나 테스트2"
+    "content" : "안뇽"
 }
 
 ### 메시지 읽음 처리
-PATCH localhost:8080/api/v1/messages/read/4
+PATCH localhost:8080/api/v1/messages/read/6
 Authorization: Bearer {{auth_token}}
 
 ### 메시지 내역 조회(20개씩)-최초 진입
-GET localhost:8080/api/v1/messages/history/4
+GET localhost:8080/api/v1/messages/history/6
 Authorization: Bearer {{auth_token}}
 
 ### 메시지 내역 조회(20개씩)-스크롤
