@@ -36,7 +36,9 @@ public class UserQueryService implements UserQueryUsecase {
                 user.getEmail(),
                 user.getName(),
                 user.getNickname(),
-                user.getBirth()
+                user.getBirth(),
+                user.getTempPwd(),
+                user.getCreatedAt()
         );
     }
 

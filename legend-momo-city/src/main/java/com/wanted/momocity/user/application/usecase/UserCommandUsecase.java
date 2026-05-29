@@ -5,7 +5,7 @@ import com.wanted.momocity.user.application.command.RejectTeacherCommand;
 import com.wanted.momocity.user.application.command.NicknameRegisterCommand;
 import com.wanted.momocity.user.application.command.UpdateUserInfoCommand;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 public interface UserCommandUsecase {
 
@@ -28,7 +28,7 @@ public interface UserCommandUsecase {
             Long userId,
             String status,
             String reason,
-            Instant processedAt
+            LocalDateTime processedAt
     ) {
     }
 

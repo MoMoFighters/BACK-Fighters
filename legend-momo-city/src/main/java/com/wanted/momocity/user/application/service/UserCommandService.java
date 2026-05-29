@@ -9,6 +9,7 @@ import com.wanted.momocity.user.application.command.UpdateUserInfoCommand;
 import com.wanted.momocity.user.application.policy.UserPolicy;
 import com.wanted.momocity.user.application.port.UserEmailSendPort;
 import com.wanted.momocity.user.application.usecase.UserCommandUsecase;
+import com.wanted.momocity.user.domain.exception.InvalidReasonException;
 import com.wanted.momocity.user.domain.model.Role;
 import com.wanted.momocity.user.domain.model.Status;
 import com.wanted.momocity.user.domain.repository.UserRepository;
@@ -16,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -68,7 +69,7 @@ public class UserCommandService implements UserCommandUsecase {
 
         userRepository.updateRoleAndStatus(command.userId(), Role.TEACHER, Status.ACTIVE);
         userEmailSendPort.sendTeacherResult(email, "ACTIVE", null);
-        return new TeacherActionResult(command.userId(), "ACTIVE", null, Instant.now());
+        return new TeacherActionResult(command.userId(), "ACTIVE", null, LocalDateTime.now());
     }
 
     // 강사거절
@@ -85,6 +86,6 @@ public class UserCommandService implements UserCommandUsecase {
 
         userRepository.updateRoleAndStatus(command.userId(), Role.TEACHER, Status.REJECTED);
         userEmailSendPort.sendTeacherResult(email, "REJECTED", command.reason());
-        return new TeacherActionResult(command.userId(), "REJECTED", command.reason(), Instant.now());
+        return new TeacherActionResult(command.userId(), "REJECTED", command.reason(), LocalDateTime.now());
     }
 }

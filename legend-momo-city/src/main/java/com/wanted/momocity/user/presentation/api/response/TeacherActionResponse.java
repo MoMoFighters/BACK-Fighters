@@ -1,6 +1,7 @@
 package com.wanted.momocity.user.presentation.api.response;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 /* comment.
     TeacherActionResponse 정리
@@ -23,6 +24,6 @@ public record TeacherActionResponse(
         Long userId,
         String status,
         String reason,
-        Instant processedAt
+        LocalDateTime processedAt
 ) {
 }

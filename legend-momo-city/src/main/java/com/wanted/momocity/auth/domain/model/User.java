@@ -1,7 +1,5 @@
 package com.wanted.momocity.auth.domain.model;
 
-
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -21,12 +19,12 @@ public class User {
     private final Long point;
     private final Boolean isPaid;  // 결제를 했는지 안 했는지
     private final Boolean doNotDisturb; // 설정 끄기를 했는지 안 했는지
-    private final Instant createdAt;
+    private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
     private final LocalDateTime deletedAt;
     private final Boolean isTempPwd;  // 이 사용자의 비밀번호가 임시비밀번호인지 아닌지
 
-    private User(Long id, String email, String password, String name, String nickname, LocalDate birth, String profileImageUrl, Role role, Status status, Category category, String proof, Long point, Boolean isPaid, Boolean doNotDisturb, Instant createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, Boolean isTempPwd) {
+    private User(Long id, String email, String password, String name, String nickname, LocalDate birth, String profileImageUrl, Role role, Status status, Category category, String proof, Long point, Boolean isPaid, Boolean doNotDisturb, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, Boolean isTempPwd) {
         this.id = id;
         this.email = email;
         this.password = password;
@@ -48,7 +46,7 @@ public class User {
     }
 
     // DB에서 꺼내 쓸 메서드
-    public static User restore(Long id, String email, String password, String name, String nickname, LocalDate birth, String profileImageUrl, Role role, Status status, Category category, String proof, long point, boolean isPaid, boolean doNotDisturb, Instant createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, boolean isTempPwd) {
+    public static User restore(Long id, String email, String password, String name, String nickname, LocalDate birth, String profileImageUrl, Role role, Status status, Category category, String proof, long point, boolean isPaid, boolean doNotDisturb, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, boolean isTempPwd) {
         return new User(id, email, password, name, nickname, birth, profileImageUrl,
                 role, status, category, proof, point,
                 isPaid, doNotDisturb, createdAt, updatedAt, deletedAt, isTempPwd);
@@ -79,7 +77,7 @@ public class User {
                 0L,              // point
                 false,          // isPaid
                 false,          // doNotDisturb
-                Instant.now(),    // createdAt
+                LocalDateTime.now(),    // createdAt
                 LocalDateTime.now(),    // updatedAt
                 null,           // deletedAt
                 false           // isTempPwd
@@ -102,7 +100,7 @@ public class User {
                 0L,              // point
                 false,          // isPaid
                 false,          // doNotDisturb
-                Instant.now(),    // createdAt
+                LocalDateTime.now(),    // createdAt
                 LocalDateTime.now(),    // updatedAt
                 null,           // deletedAt
                 false           // isTempPwd
@@ -129,7 +127,7 @@ public class User {
         return point;
     }
 
-    public Instant getCreatedAt(){
+    public LocalDateTime getCreatedAt(){
         return createdAt;
     }
 
@@ -164,7 +162,7 @@ public class User {
                 0L,             // point
                 false,          // isPaid
                 false,          // doNotDisturb
-                Instant.now(),  // createdAt
+                LocalDateTime.now(),  // createdAt
                 LocalDateTime.now(), // updatedAt
                 null,           // deletedAt
                 false           // isTempPwd
