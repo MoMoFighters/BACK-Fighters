@@ -363,24 +363,25 @@ VALUES
 --   ★ 신규일수록 PENDING(분 단위 전), 오래될수록 처리완료(수일 전) = 운영 흐름 재현
 --   (GET /api/v1/reports?status=PENDING 필터 시 6건, 최근순 정렬 시 r1 이 최상단)
 -- =====================================================================
--- ※ 실제 스키마 반영: reporter_user_id(NOT NULL, reporter_id 와 동일인) / reported_at(NOT NULL, 접수시각)
---   / updated_at(NOT NULL) 추가. 처리완료(REVIEWED/RESOLVED/REJECTED) 건만 handled_at + handler_admin_id(관리자=1) 채움.
---   created_at = reported_at 로 맞춰 최근순 정렬 일관성 확보. PENDING 은 handled_at/handler NULL.
+-- ※ 실제 엔티티 스키마 반영 (잔재 컬럼 reporter_id/target_nickname/reason_detail 은 00-ddl-fix.sql 에서 DROP).
+--   현재 엔티티 사용 컬럼만: reporter_user_id(신고자) / detail(사유 상세) / reported_at(접수시각) / updated_at.
+--   처리완료(REVIEWED/RESOLVED/REJECTED) 건만 handled_at + handler_admin_id(관리자=1). created_at=reported_at 로 정렬 일관성.
+--   ※ target 은 (target_type + target_id) 로 식별. (대상 닉네임은 엔티티가 저장 안 함)
 INSERT INTO `report`
-  (`id`,`reporter_id`,`reporter_user_id`,`target_type`,`target_id`,`target_nickname`,`reason`,`reason_detail`,`status`,`created_at`,`reported_at`,`updated_at`,`handled_at`,`handler_admin_id`)
+  (`id`,`reporter_user_id`,`target_type`,`target_id`,`reason`,`detail`,`status`,`created_at`,`reported_at`,`updated_at`,`handled_at`,`handler_admin_id`)
 VALUES
-  (1 ,2,2,'USER'   ,10,'banned_user','SPAM'         ,'DM으로 광고를 계속 보냅니다.'      ,'PENDING' ,NOW() - INTERVAL 4 MINUTE ,NOW() - INTERVAL 4 MINUTE ,NOW() - INTERVAL 4 MINUTE ,NULL                  ,NULL),
-  (2 ,3,3,'COMMENT',11,'banned_user','ABUSE'        ,'댓글에 욕설과 비방이 있습니다.'     ,'PENDING' ,NOW() - INTERVAL 51 MINUTE,NOW() - INTERVAL 51 MINUTE,NOW() - INTERVAL 51 MINUTE,NULL                  ,NULL),
-  (3 ,4,4,'COMMENT',12,'black_user' ,'SPAM'         ,'스팸 광고 댓글을 도배합니다.'      ,'PENDING' ,NOW() - INTERVAL 19 HOUR  ,NOW() - INTERVAL 19 HOUR  ,NOW() - INTERVAL 19 HOUR  ,NULL                  ,NULL),
-  (4 ,5,5,'POST'   ,8 ,'jiyoung'    ,'INAPPROPRIATE','게시글에 부적절한 이미지가 있어요.','REVIEWED',NOW() - INTERVAL 2 DAY    ,NOW() - INTERVAL 2 DAY    ,NOW() - INTERVAL 44 HOUR  ,NOW() - INTERVAL 44 HOUR,1),
-  (5 ,2,2,'USER'   ,11,'black_user' ,'ABUSE'        ,'지속적으로 비방 메시지를 보냅니다.','RESOLVED',NOW() - INTERVAL 3 DAY    ,NOW() - INTERVAL 3 DAY    ,NOW() - INTERVAL 2 DAY    ,NOW() - INTERVAL 2 DAY  ,1),
-  (6 ,3,3,'LECTURE',10,'chef_park'  ,'ETC'          ,'강의 내용이 설명과 다릅니다.'      ,'PENDING' ,NOW() - INTERVAL 5 HOUR   ,NOW() - INTERVAL 5 HOUR   ,NOW() - INTERVAL 5 HOUR   ,NULL                  ,NULL),
-  (7 ,4,4,'POST'   ,2 ,'minsu'      ,'SPAM'         ,'홍보성 글로 의심됩니다.'          ,'REJECTED',NOW() - INTERVAL 4 DAY - INTERVAL 3 HOUR,NOW() - INTERVAL 4 DAY - INTERVAL 3 HOUR,NOW() - INTERVAL 4 DAY,NOW() - INTERVAL 4 DAY,1),
-  (8 ,5,5,'USER'   ,10,'banned_user','ABUSE'        ,'욕설이 담긴 DM을 받았습니다.'      ,'REVIEWED',NOW() - INTERVAL 26 HOUR  ,NOW() - INTERVAL 26 HOUR  ,NOW() - INTERVAL 20 HOUR  ,NOW() - INTERVAL 20 HOUR,1),
-  (9 ,6,6,'COMMENT',11,'banned_user','INAPPROPRIATE','외부 광고 링크를 첨부했습니다.'   ,'PENDING' ,NOW() - INTERVAL 23 MINUTE,NOW() - INTERVAL 23 MINUTE,NOW() - INTERVAL 23 MINUTE,NULL                  ,NULL),
-  (10,2,2,'POST'   ,9 ,'hyunwoo'    ,'ETC'          ,'동일 내용을 중복 게시했습니다.'    ,'RESOLVED',NOW() - INTERVAL 4 DAY    ,NOW() - INTERVAL 4 DAY    ,NOW() - INTERVAL 3 DAY    ,NOW() - INTERVAL 3 DAY  ,1),
-  (11,7,7,'USER'   ,11,'black_user' ,'SPAM'         ,'대량으로 친구신청 스팸을 보냅니다.','PENDING' ,NOW() - INTERVAL 2 HOUR   ,NOW() - INTERVAL 2 HOUR   ,NOW() - INTERVAL 2 HOUR   ,NULL                  ,NULL),
-  (12,3,3,'LECTURE',5 ,'coach_kim'  ,'ETC'          ,'강의 일정을 지키지 않았습니다.'    ,'REJECTED',NOW() - INTERVAL 6 DAY    ,NOW() - INTERVAL 6 DAY    ,NOW() - INTERVAL 5 DAY    ,NOW() - INTERVAL 5 DAY  ,1);
+  (1 ,2,'USER'   ,10,'SPAM'         ,'DM으로 광고를 계속 보냅니다.'      ,'PENDING' ,NOW() - INTERVAL 4 MINUTE ,NOW() - INTERVAL 4 MINUTE ,NOW() - INTERVAL 4 MINUTE ,NULL                  ,NULL),
+  (2 ,3,'COMMENT',11,'ABUSE'        ,'댓글에 욕설과 비방이 있습니다.'     ,'PENDING' ,NOW() - INTERVAL 51 MINUTE,NOW() - INTERVAL 51 MINUTE,NOW() - INTERVAL 51 MINUTE,NULL                  ,NULL),
+  (3 ,4,'COMMENT',12,'SPAM'         ,'스팸 광고 댓글을 도배합니다.'      ,'PENDING' ,NOW() - INTERVAL 19 HOUR  ,NOW() - INTERVAL 19 HOUR  ,NOW() - INTERVAL 19 HOUR  ,NULL                  ,NULL),
+  (4 ,5,'POST'   ,8 ,'INAPPROPRIATE','게시글에 부적절한 이미지가 있어요.','REVIEWED',NOW() - INTERVAL 2 DAY    ,NOW() - INTERVAL 2 DAY    ,NOW() - INTERVAL 44 HOUR  ,NOW() - INTERVAL 44 HOUR,1),
+  (5 ,2,'USER'   ,11,'ABUSE'        ,'지속적으로 비방 메시지를 보냅니다.','RESOLVED',NOW() - INTERVAL 3 DAY    ,NOW() - INTERVAL 3 DAY    ,NOW() - INTERVAL 2 DAY    ,NOW() - INTERVAL 2 DAY  ,1),
+  (6 ,3,'LECTURE',10,'ETC'          ,'강의 내용이 설명과 다릅니다.'      ,'PENDING' ,NOW() - INTERVAL 5 HOUR   ,NOW() - INTERVAL 5 HOUR   ,NOW() - INTERVAL 5 HOUR   ,NULL                  ,NULL),
+  (7 ,4,'POST'   ,2 ,'SPAM'         ,'홍보성 글로 의심됩니다.'          ,'REJECTED',NOW() - INTERVAL 4 DAY - INTERVAL 3 HOUR,NOW() - INTERVAL 4 DAY - INTERVAL 3 HOUR,NOW() - INTERVAL 4 DAY,NOW() - INTERVAL 4 DAY,1),
+  (8 ,5,'USER'   ,10,'ABUSE'        ,'욕설이 담긴 DM을 받았습니다.'      ,'REVIEWED',NOW() - INTERVAL 26 HOUR  ,NOW() - INTERVAL 26 HOUR  ,NOW() - INTERVAL 20 HOUR  ,NOW() - INTERVAL 20 HOUR,1),
+  (9 ,6,'COMMENT',11,'INAPPROPRIATE','외부 광고 링크를 첨부했습니다.'   ,'PENDING' ,NOW() - INTERVAL 23 MINUTE,NOW() - INTERVAL 23 MINUTE,NOW() - INTERVAL 23 MINUTE,NULL                  ,NULL),
+  (10,2,'POST'   ,9 ,'ETC'          ,'동일 내용을 중복 게시했습니다.'    ,'RESOLVED',NOW() - INTERVAL 4 DAY    ,NOW() - INTERVAL 4 DAY    ,NOW() - INTERVAL 3 DAY    ,NOW() - INTERVAL 3 DAY  ,1),
+  (11,7,'USER'   ,11,'SPAM'         ,'대량으로 친구신청 스팸을 보냅니다.','PENDING' ,NOW() - INTERVAL 2 HOUR   ,NOW() - INTERVAL 2 HOUR   ,NOW() - INTERVAL 2 HOUR   ,NULL                  ,NULL),
+  (12,3,'LECTURE',5 ,'ETC'          ,'강의 일정을 지키지 않았습니다.'    ,'REJECTED',NOW() - INTERVAL 6 DAY    ,NOW() - INTERVAL 6 DAY    ,NOW() - INTERVAL 5 DAY    ,NOW() - INTERVAL 5 DAY  ,1);
 
 -- =====================================================================
 --  23. payment  (8개 - 결제는 가입 직후~최근 구독 갱신까지)
