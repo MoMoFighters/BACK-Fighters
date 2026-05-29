@@ -2,6 +2,7 @@ package com.wanted.momocity.lecture.domain.repository;
 
 
 import com.wanted.momocity.lecture.domain.model.LectureChapter;
+import com.wanted.momocity.lecture.domain.model.VideoStatus;
 
 import java.util.List;
 import java.util.Optional;
@@ -29,4 +30,7 @@ public interface ChapterRepository {
 
     // 특정 강의에 등록된 챕터 목록을 orderNo 오름차순으로 조회
     List<LectureChapter> findAllByLectureIdOrderByOrderNoAsc(Long lectureId);
+
+    // 특정 강의 안에 지정한 영상 상태가 아닌 챕터가 있는지 확인한
+    boolean existsByLectureIdAndVideoStatusNot(Long lectureId, VideoStatus videoStatus);
 }
