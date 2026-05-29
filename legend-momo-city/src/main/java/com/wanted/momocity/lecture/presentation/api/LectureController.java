@@ -97,6 +97,11 @@ public class LectureController {
             ));
         }
 
+        /*
+         * 학생 강의 목록 조회
+         * 학생은 ACTIVE 상태의 강의만 조회하고,
+         * 응답에는 수강 여부(isEnrolled)가 포함된다.
+         */
         GetLecturesQuery query = new GetLecturesQuery(
                 userId,
                 parseCategory(category),
@@ -106,8 +111,8 @@ public class LectureController {
                 size
         );
 
-        // 학생 강의 목록 조회
-        StudentLecturePageResponse response = lectureQueryUseCase.getLectures(query);
+        StudentLecturePageResponse response =
+                lectureQueryUseCase.getLectures(query);
 
         return ResponseEntity.ok(ApiResponse.success(
                 ApiResponseCode.SUCCESS,
