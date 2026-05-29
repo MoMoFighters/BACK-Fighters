@@ -294,7 +294,7 @@ public class TeacherLectureController {
             @Valid @RequestBody ChangeChapterVideoStatusRequest request
     ) {
         // Authorization 토큰에서 로그인한 강사 식별 값을 가져온다.
-        String teacherId = authentication.getName();
+        Long teacherId = Long.parseLong(authentication.getName());
 
         // Request DTO를 Application 계층에서 사용할 Command로 변환한다.
         ChangeChapterVideoStatusCommand command = request.toCommand(
