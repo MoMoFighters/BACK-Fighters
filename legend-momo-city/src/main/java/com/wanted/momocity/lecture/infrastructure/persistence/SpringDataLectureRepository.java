@@ -10,25 +10,23 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.util.Collection;
 
-/**
- * SpringDataLectureRepository는 실제 lecture 테이블 조회를 담당하는 JPA Repository
- */
+// SpringDataLectureRepository는 실제 lecture 테이블 조회를 담당하는 JPA Repository
 public interface SpringDataLectureRepository extends JpaRepository<LectureJpaEntity, Long> {
 
-    // 강의 상태 조건으로 강의 목록을 조회합니다.
+    // 강의 상태 조건으로 강의 목록을 조회
     Page<LectureJpaEntity> findAllByStatus(
             LectureStatus status,
             Pageable pageable
     );
 
-    // 카테고리와 강의 상태 조건으로 강의 목록을 조회합니다.
+    // 카테고리와 강의 상태 조건으로 강의 목록을 조회
     Page<LectureJpaEntity> findAllByCategoryAndStatus(
             LectureCategory category,
             LectureStatus status,
             Pageable pageable
     );
 
-    // 특정 ID 목록에 포함되고, 특정 상태인 강의만 조회합니다.
+    // 특정 ID 목록에 포함되고, 특정 상태인 강의만 조회
 // enrolled=true 조건에서 사용합니다.
     Page<LectureJpaEntity> findAllByStatusAndIdIn(
             LectureStatus status,
@@ -36,7 +34,7 @@ public interface SpringDataLectureRepository extends JpaRepository<LectureJpaEnt
             Pageable pageable
     );
 
-    // 카테고리 조건까지 함께 적용해서, 특정 ID 목록에 포함된 강의만 조회합니다.
+    // 카테고리 조건까지 함께 적용해서, 특정 ID 목록에 포함된 강의만 조회
     Page<LectureJpaEntity> findAllByCategoryAndStatusAndIdIn(
             LectureCategory category,
             LectureStatus status,
@@ -44,7 +42,7 @@ public interface SpringDataLectureRepository extends JpaRepository<LectureJpaEnt
             Pageable pageable
     );
 
-    // 특정 ID 목록에 포함되지 않고, 특정 상태인 강의만 조회합니다.
+    // 특정 ID 목록에 포함되지 않고, 특정 상태인 강의만 조회
 // enrolled=false 조건에서 사용합니다.
     Page<LectureJpaEntity> findAllByStatusAndIdNotIn(
             LectureStatus status,
@@ -52,7 +50,7 @@ public interface SpringDataLectureRepository extends JpaRepository<LectureJpaEnt
             Pageable pageable
     );
 
-    // 카테고리 조건까지 함께 적용해서, 특정 ID 목록에 포함되지 않은 강의만 조회합니다.
+    // 카테고리 조건까지 함께 적용해서, 특정 ID 목록에 포함되지 않은 강의만 조회
     Page<LectureJpaEntity> findAllByCategoryAndStatusAndIdNotIn(
             LectureCategory category,
             LectureStatus status,
@@ -60,7 +58,7 @@ public interface SpringDataLectureRepository extends JpaRepository<LectureJpaEnt
             Pageable pageable
     );
 
-    /*
+    /* comment
      * 강사가 본인이 등록한 강의 목록을 조회합니다.
      *  Query문 쓴 이유 :  선택 필터가 있는 목록 조회를 메서드 여러 개로 나누지 않고, 하나의 조회 메서드에서 처리하기 위해서
      * 조회 결과로 LectureJpaEntity 객체 전체를 가져와서 LectureJpaEntity에서 데이터를 조회하고,
@@ -82,7 +80,7 @@ public interface SpringDataLectureRepository extends JpaRepository<LectureJpaEnt
             Pageable pageable
     );
 
-    /*
+    /* comment
      * 학생용 강의 목록을 조회합니다.
      *
      * 조건:
@@ -107,7 +105,7 @@ public interface SpringDataLectureRepository extends JpaRepository<LectureJpaEnt
             Pageable pageable
     );
 
-    /*
+    /* comment
      * 학생용 강의 목록 중,
      * 로그인한 사용자가 이미 수강신청한 강의만 조회합니다.
      *
@@ -130,7 +128,7 @@ public interface SpringDataLectureRepository extends JpaRepository<LectureJpaEnt
             Pageable pageable
     );
 
-    /*
+    /* comment
      * 학생용 강의 목록 중,
      * 로그인한 사용자가 아직 수강신청하지 않은 강의만 조회합니다.
      *

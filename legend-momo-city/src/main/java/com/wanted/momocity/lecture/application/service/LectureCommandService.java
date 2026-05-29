@@ -18,9 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 
-/*
- * LectureCommandService는 강의 등록 유스케이스의 실제 흐름을 담당한다.
- */
+// LectureCommandService는 강의 등록 유스케이스의 실제 흐름을 담당
 @Service
 @Transactional
 public class LectureCommandService implements LectureCommandUseCase {
@@ -45,11 +43,11 @@ public class LectureCommandService implements LectureCommandUseCase {
     @Override
     public LectureAggregate createLecture(CreateLectureCommand command) {
         /*
-         * Authorization 토큰에서 얻은 email로 강사 id를 조회한다.
+         * Authorization 토큰에서 얻은 email로 강사 id를 조회
          */
         Long teacherId = teacherAccountPort.getTeacherId(command.teacherId());
 
-        // command.thumbnailUrl()은 S3 업로드 후 생성된 이미지 URL이다.
+        // command.thumbnailUrl()은 S3 업로드 후 생성된 이미지 URL
         LectureAggregate lecture = LectureAggregate.create(
                 teacherId,
                 command.title(),
@@ -72,16 +70,14 @@ public class LectureCommandService implements LectureCommandUseCase {
 
     @Override
     public LectureAggregate changeLectureStatus(ChangeLectureStatusCommand command) {
-        /*
-         * Authorization 토큰에서 얻은 email로 강사 id를 조회합니다.
-         */
+        // Authorization 토큰에서 얻은 email로 강사 id를 조회
         Long teacherId = teacherAccountPort.getTeacherId(command.teacherId());
 
-        // 상태를 변경할 강의를 조회합니다.
+        // 상태를 변경할 강의를 조회
         LectureAggregate lecture = lectureRepository.findById(command.lectureId())
                 .orElseThrow(() -> new LectureNotFoundException("강의를 찾을 수 없습니다."));
 
-        // 본인이 등록한 강의만 상태를 변경할 수 있습니다.
+        // 본인이 등록한 강의만 상태를 변경할 수 있음.
         if (!lecture.isOwnedBy(teacherId)) {
             throw new AccessDeniedException("본인이 등록한 강의만 상태를 변경할 수 있습니다.");
         }
@@ -91,26 +87,26 @@ public class LectureCommandService implements LectureCommandUseCase {
             throw new DomainRuleViolationException("강사는 강의를 검수 요청 상태로만 변경할 수 있습니다.");
         }
 
-        /*
+        /* comment
          * WAITING은 강사가 강의를 등록 하자마자 대기 상태로 변한다.
-         * 관리자가 승인 해줘야 ACTIVE로 학생에게 공개된다.
+         * 관리자가 승인 해줘야 ACTIVE로 학생에게 공개
          */
         if (command.lectureStatus() == LectureStatus.WAITING) {
             validateLectureReadyForReview(command.lectureId());
         }
 
-        // 도메인 모델에 상태 변경을 요청합니다.
+        // 도메인 모델에 상태 변경을 요청
         LectureAggregate changedLecture = lecture.changeStatus(command.lectureStatus());
 
-        // 변경된 강의를 저장합니다.
+        // 변경된 강의를 저장
         return lectureRepository.save(changedLecture);
     }
 
-    /*
+    /* comment
      * 강의를 ACTIVE 상태로 변경할 수 있는지 검증
      * 조건:
-     * 1. 챕터가 최소 1개 이상 있어야 합니다.
-     * 2. 모든 챕터에 동영상이 등록되어 있어야 합니다.
+     * 1. 챕터가 최소 1개 이상 있어야 함
+     * 2. 모든 챕터에 동영상이 등록되어 있어야 함
      */
     private void validateLectureReadyForReview(Long lectureId) {
         int chapterCount = chapterRepository.countByLectureId(lectureId);

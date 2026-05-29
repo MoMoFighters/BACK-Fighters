@@ -103,9 +103,9 @@ public class LectureChapter {
         );
     }
 
-    /*
-     * 챕터에 동영상을 등록합니다.
-     * 기존 챕터 정보를 유지하면서 동영상 관련 값만 채운 새로운 LectureChapter 객체를 반환합니다.
+    /* comment
+     * 챕터에 동영상을 등록
+     * 기존 챕터 정보를 유지하면서 동영상 관련 값만 채운 새로운 LectureChapter 객체를 반환
      */
     public LectureChapter registerVideo(
             String videoUrl,
@@ -133,7 +133,7 @@ public class LectureChapter {
         );
     }
 
-    /*
+    /* comment
      * 이미 동영상이 등록된 챕터인지 확인
      * 서비스에서 중복 등록을 막을 때 사용
      */
@@ -141,7 +141,7 @@ public class LectureChapter {
         return videoUrl != null && !videoUrl.isBlank();
     }
 
-    /*
+    /* comment
      * 이 챕터가 요청한 강의에 속한 챕터인지 확인
      * 다른 강의의 챕터에 영상을 등록하는 것을 막기 위해 사용
      */

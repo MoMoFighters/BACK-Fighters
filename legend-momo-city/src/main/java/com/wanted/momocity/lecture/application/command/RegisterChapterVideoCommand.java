@@ -2,10 +2,7 @@ package com.wanted.momocity.lecture.application.command;
 
 import org.springframework.web.multipart.MultipartFile;
 
-/*
-*   챕터 동영상 등록은 유스케이스에 필요한 값을 담은 command
-*   Controller는 HTTTP 요청을 받고, Service는 이 Commnad만 보고 비즈니스 로직 처리
-* */
+// 챕터 동영상 등록은 유스케이스에 필요한 값을 담은 command
 public record RegisterChapterVideoCommand(
         // Authorization 토큰에서 꺼낸 로그인 강사 Email
         Long teacherId,

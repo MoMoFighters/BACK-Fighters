@@ -1,6 +1,6 @@
 package com.wanted.momocity.lecture.domain.model;
 
-// 챕터 동영상 처리 상태입니다.
+// 챕터 동영상 처리 상태
 public enum VideoStatus {
     // 챕터 생성 직후 또는 동영상 업로드 전 기본 상태
     UPLOADING,

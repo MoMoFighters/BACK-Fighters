@@ -9,6 +9,7 @@ import com.wanted.momocity.lecture.presentation.api.response.StudentLecturePageR
 import com.wanted.momocity.lecture.presentation.api.response.TeacherLectureDetailResponse;
 import com.wanted.momocity.lecture.presentation.api.response.TeacherLecturePageResponse;
 
+// 조회 관련 UseCase
 public interface LectureQueryUseCase {
 
     // 학생용 강의 목록 조회

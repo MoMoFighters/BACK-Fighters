@@ -2,12 +2,7 @@ package com.wanted.momocity.lecture.presentation.api.response;
 
 import java.util.List;
 
-/**
- * LecturePageResponse는 강의 목록 페이지 응답 DTO
- *
- * content에는 강의 목록이 들어가고,
- * page, size, totalElements, totalPages는 페이징 정보를 나타냄
- */
+// LecturePageResponse는 강의 목록 페이지 응답 DTO
 public record LecturePageResponse(
 
         // 현재 페이지의 강의 목록
