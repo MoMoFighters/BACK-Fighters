@@ -8,7 +8,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.List;
 
 // SpringDataLectureRepository는 실제 lecture 테이블 조회를 담당하는 JPA Repository
 public interface SpringDataLectureRepository extends JpaRepository<LectureJpaEntity, Long> {
@@ -59,6 +61,21 @@ public interface SpringDataLectureRepository extends JpaRepository<LectureJpaEnt
     );
 
     /* comment
+     * 특정 상태의 강의 개수를 조회한다.
+     * 관리자 대시보드에서 현재 진행 중인 강의 수를 계산할 때 사용한다.
+     */
+    long countByStatus(LectureStatus status);
+
+    /* comment
+     * 특정 날짜 이전에 생성된 특정 상태의 강의 개수를 조회한다.
+     * 관리자 대시보드에서 이전 기간 대비 증감률을 계산할 때 사용한다.
+     */
+    long countByStatusAndCreatedAtBefore(
+            LectureStatus status,
+            LocalDateTime createdAt
+    );
+
+    /* comment
      * 강사가 본인이 등록한 강의 목록을 조회합니다.
      *  Query문 쓴 이유 :  선택 필터가 있는 목록 조회를 메서드 여러 개로 나누지 않고, 하나의 조회 메서드에서 처리하기 위해서
      * 조회 결과로 LectureJpaEntity 객체 전체를 가져와서 LectureJpaEntity에서 데이터를 조회하고,
@@ -75,6 +92,31 @@ public interface SpringDataLectureRepository extends JpaRepository<LectureJpaEnt
         """)
     Page<LectureJpaEntity> findTeacherLectures(
             @Param("teacherId") Long teacherId,
+            @Param("category") LectureCategory category,
+            @Param("keyword") String keyword,
+            Pageable pageable
+    );
+
+    /* comment
+     * 관리자가 강의 목록을 조회
+     *
+     * 조건:
+     * - statuses 안에 포함된 강의 상태만 조회한다.
+     *   예: WAITING, ACTIVE
+     * - category가 있으면 해당 카테고리만 조회한다.
+     * - keyword가 있으면 강의 제목에 keyword가 포함된 강의만 조회한다.
+     * - 최신 등록순으로 정렬한다.
+     */
+    @Query("""
+    select l
+    from LectureJpaEntity l
+    where l.status in :statuses
+      and (:category is null or l.category = :category)
+      and (:keyword is null or l.title like concat('%', :keyword, '%'))
+    order by l.createdAt desc
+    """)
+    Page<LectureJpaEntity> findAdminLectures(
+            @Param("statuses") List<LectureStatus> statuses,
             @Param("category") LectureCategory category,
             @Param("keyword") String keyword,
             Pageable pageable

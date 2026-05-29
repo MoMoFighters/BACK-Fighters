@@ -22,7 +22,7 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
         response.getWriter().write("""
                 {
                     "success": false,
-                    "message": "인증 정보가 유효하지 않습니다."
+                    "message": "다시 로그인 해주세요."
                 }
                 """);
     }

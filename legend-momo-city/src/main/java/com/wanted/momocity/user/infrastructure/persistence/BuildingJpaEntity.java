@@ -1,7 +1,6 @@
 package com.wanted.momocity.user.infrastructure.persistence;
 
 import com.wanted.momocity.global.infrastructure.persistence.BaseTimeEntity;
-import com.wanted.momocity.user.domain.model.Building;
 import com.wanted.momocity.user.domain.model.Category;
 import jakarta.persistence.*;
 

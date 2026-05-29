@@ -4,6 +4,7 @@ import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
+import com.wanted.momocity.lecture.application.command.ChangeChapterVideoStatusCommand;
 import com.wanted.momocity.lecture.application.command.ChangeLectureStatusCommand;
 import com.wanted.momocity.lecture.application.command.RegisterChapterVideoCommand;
 import com.wanted.momocity.lecture.application.query.GetTeacherLectureDetailQuery;
@@ -14,10 +15,7 @@ import com.wanted.momocity.lecture.application.usecase.LectureQueryUseCase;
 import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.model.LectureCategory;
 import com.wanted.momocity.lecture.domain.model.LectureChapter;
-import com.wanted.momocity.lecture.presentation.api.request.ChangeLectureStatusRequest;
-import com.wanted.momocity.lecture.presentation.api.request.CreateChapterRequest;
-import com.wanted.momocity.lecture.presentation.api.request.CreateLectureRequest;
-import com.wanted.momocity.lecture.presentation.api.request.RegisterChapterVideoRequest;
+import com.wanted.momocity.lecture.presentation.api.request.*;
 import com.wanted.momocity.lecture.presentation.api.response.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -285,6 +283,36 @@ public class TeacherLectureController {
                 "강사 강의 상세 조회에 성공했습니다.",
                 response
         ));
+    }
+
+    @PatchMapping("/{lectureId}/chapters/{chapterId}/video/status")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
+    public ResponseEntity<ApiResponse<RegisterChapterVideoResponse>> changeChapterVideoStatus(
+            Authentication authentication,
+            @PathVariable Long lectureId,
+            @PathVariable Long chapterId,
+            @Valid @RequestBody ChangeChapterVideoStatusRequest request
+    ) {
+        // Authorization 토큰에서 로그인한 강사 식별 값을 가져온다.
+        Long teacherId = Long.parseLong(authentication.getName());
+
+        // Request DTO를 Application 계층에서 사용할 Command로 변환한다.
+        ChangeChapterVideoStatusCommand command = request.toCommand(
+                teacherId,
+                lectureId,
+                chapterId
+        );
+
+        // 챕터 동영상 상태 변경 유스케이스를 실행한다.
+        LectureChapter chapter = chapterCommandUseCase.changeChapterVideoStatus(command);
+
+        // 변경된 챕터 정보를 응답한다.
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        ApiResponseCode.SUCCESS,
+                        "챕터 동영상 상태가 변경되었습니다.",
+                        RegisterChapterVideoResponse.from(chapter)
+                ));
     }
 
 }

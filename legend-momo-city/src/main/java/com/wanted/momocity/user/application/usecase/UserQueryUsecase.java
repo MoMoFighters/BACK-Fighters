@@ -1,8 +1,11 @@
 package com.wanted.momocity.user.application.usecase;
 
+import com.wanted.momocity.user.domain.model.TeacherApplication;
 import com.wanted.momocity.user.domain.model.Category;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 
 public interface UserQueryUsecase {
 
@@ -17,7 +20,10 @@ public interface UserQueryUsecase {
             String email,
             String name,
             String nickname,
-            LocalDate birth
+            LocalDate birth,
+            Boolean isTempPwd,
+            LocalDateTime createdAt
+
     ){}
 
     record RenderingBuildingsView(
@@ -25,4 +31,20 @@ public interface UserQueryUsecase {
             Long position,
             Integer level
     ){}
+
+
+    // 승인 대기 중인 강사 전체 목록 조회
+    TeacherApplicationListResult getApplicationList(int page, int size);
+
+    // 승인 대기 중인 강사 목록 상세
+    TeacherApplication getApplicationDetail(Long userId);
+
+    record TeacherApplicationListResult(
+            List<TeacherApplication> applications,
+            int page,
+            int size,
+            long totalElements,
+            int totalPages
+    ) {
+    }
 }

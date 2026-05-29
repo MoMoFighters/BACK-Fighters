@@ -6,6 +6,7 @@ import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -14,11 +15,13 @@ public class EmailSendAdapter implements EmailSendPort {
 
     private final JavaMailSender mailSender;
 
+    @Async
     @Override
     public void send(String toEmail, String code) {
         sendEmail(toEmail, code, "인증 코드");
     }
 
+    @Async
     @Override
     public void sendTempPassword(String toEmail, String tempPassword) {
         sendEmail(toEmail, tempPassword, "임시 비밀번호");

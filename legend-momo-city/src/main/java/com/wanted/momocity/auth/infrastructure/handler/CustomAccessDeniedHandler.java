@@ -19,7 +19,7 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
 
         response.setStatus(HttpServletResponse.SC_FORBIDDEN); // 403
         response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write("{ \"error\": \"접근 권한이 없습니다.\" }");
+        response.getWriter().write("{ 접근 권한이 없습니다. }");
     }
 
 }

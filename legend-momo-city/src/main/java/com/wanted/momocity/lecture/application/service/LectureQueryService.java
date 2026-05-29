@@ -54,18 +54,29 @@ public class LectureQueryService implements LectureQueryUseCase {
     // 강사 이름과 프로필 이미지를 조회하기 위한 auth 포트
     private final LoadUserPort loadUserPort;
 
-    // 강의 목록을 조회
     @Override
+    @Transactional(readOnly = true)
     public StudentLecturePageResponse getLectures(GetLecturesQuery query) {
 
-        // Authorization 토큰에서 꺼낸 email로 userId를 조회
-        Long userId = studentAccountPort.getStudentId(query.userId());
+        /*
+         * Authorization 토큰에서 꺼낸 로그인 사용자 ID로 학생 ID를 조회한다.
+         * 컨트롤러에서는 인증된 사용자 ID만 넘기고,
+         * 실제 학생 식별자는 studentAccountPort를 통해 가져온다.
+         */
+        Long studentId = studentAccountPort.getStudentId(query.userId());
 
-        // userId 기준으로 수강 신청한 강의 ID 목록을 조회
-        List<Long> enrolledLectureIds = lectureEnrollmentQueryPort.findLectureIdsByUserId(userId);
+        /*
+         * 현재 학생이 이미 수강 신청한 강의 ID 목록을 조회한다.
+         * 이 목록은 isEnrolled 값을 만들고,
+         * enrolled=true/false 필터링에도 사용된다.
+         */
+        List<Long> enrolledLectureIds =
+                lectureEnrollmentQueryPort.findLectureIdsByUserId(studentId);
 
-        // 강의 목록을 조회
-        // category와 enrolled 조건은 repository에서 처리함.
+        /*
+         * 학생에게 보여줄 강의 목록을 조회한다.
+         * category, keyword, enrolled 조건과 페이지네이션은 repository에서 처리한다.
+         */
         var lecturePage = lectureRepository.findLectures(
                 query.category(),
                 query.keyword(),
@@ -75,15 +86,22 @@ public class LectureQueryService implements LectureQueryUseCase {
                 query.size()
         );
 
-        // 조회된 강의들을 응답 DTO로 변환합니다.
+        /*
+         * 조회된 강의들을 목록 응답 item으로 변환한다.
+         * 강의가 1개여도 content 배열 안에 들어가야 하므로 List로 변환한다.
+         */
         List<StudentLectureListItemResponse> content = lecturePage.content().stream()
                 .map(lecture -> toResponse(
                         lecture,
                         enrolledLectureIds.contains(lecture.getId()),
-                        userId
+                        studentId
                 ))
                 .toList();
 
+        /*
+         * 최종 data 영역을 만든다.
+         * Controller에서는 이 객체를 ApiResponse.data에 넣어 응답한다.
+         */
         return new StudentLecturePageResponse(
                 content,
                 query.page(),
