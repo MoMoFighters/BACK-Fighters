@@ -90,7 +90,7 @@ public class FindChatRoomQueryService implements FindChatRoomQueryUseCase {
                     friendStatus = "me";
                 } //2순위 판별: 최초의 방이 아닌데 혼자(상대방 나간 방)
                 else {
-                    log.info("[FriendChatRoomQueryService] 상대방이 나가서 혼자 남은 방 탐색됨 - 방ID: {}", roomId);
+                    log.info("[FindChatRoomQueryService] 상대방이 나가서 혼자 남은 방 탐색됨 - 방ID: {}", roomId);
                     //해당 채팅방에 로그인 유저 말고 다른 사람이 보낸 메시지가 있는지 확인
                     //로그인 유저 외에 다른 사용자가 보낸 메시지가 있다면 그 방은 상대방이 나간 방
                     //과거 메시지 내역에서 나간 상대방의 유저 정보를 역추적하여 가져옴
@@ -100,12 +100,12 @@ public class FindChatRoomQueryService implements FindChatRoomQueryUseCase {
                     if (otherMsgOpt.isPresent()) {
                             //나간 상대방 유저 정보 꺼내기
                             targetUser = otherMsgOpt.get().getSenderId();
+                            isLeftRoom = true;
                     } else {
-                            //진짜 나와의 채탱방
-                            targetUser = loginUser;
-                            friendStatus = "me";
+                            //상대방도 없고 상대방이 보낸 메시지도 없을 때는 조회 안됨
+                            log.warn("[FindChatRoomQueryService] 메시지 내역이 없는 유령 방이므로 노출에서 제외합니다. - 방ID: {}", roomId);
+                            targetUser = null;
                     }
-                    isLeftRoom = true;
                 }
             }
 
