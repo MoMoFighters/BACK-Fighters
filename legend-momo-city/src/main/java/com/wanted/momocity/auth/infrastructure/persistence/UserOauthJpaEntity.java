@@ -2,7 +2,7 @@ package com.wanted.momocity.auth.infrastructure.persistence;
 
 import jakarta.persistence.*;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "user_oauth")
@@ -23,11 +23,11 @@ public class UserOauthJpaEntity {
     private String providerId;
 
     @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
+    private LocalDateTime createdAt;
 
     protected UserOauthJpaEntity() {}
 
-    public UserOauthJpaEntity(UserJpaEntity user, String provider, String providerId, Instant createdAt) {
+    public UserOauthJpaEntity(UserJpaEntity user, String provider, String providerId, LocalDateTime createdAt) {
         this.user = user;
         this.provider = provider;
         this.providerId = providerId;
@@ -38,5 +38,5 @@ public class UserOauthJpaEntity {
     public UserJpaEntity getUser() { return user; }
     public String getProvider() { return provider; }
     public String getProviderId() { return providerId; }
-    public Instant getCreatedAt() { return createdAt; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
 }

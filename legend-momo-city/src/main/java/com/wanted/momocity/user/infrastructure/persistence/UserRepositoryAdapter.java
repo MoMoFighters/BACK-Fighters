@@ -49,6 +49,12 @@ public class UserRepositoryAdapter implements UserRepository {
         );
     }
 
+    // 임시비번에서 새로운 비번 변경하면 is_tempPwd false 로 변경
+    @Override
+    public void clearTempPwd(Long userId) {
+        springDataUserRepository.clearTempPwd(userId);
+    }
+
     @Override
     public String findPasswordById(Long userId) {
         return springDataUserRepository.findById(userId)
@@ -95,7 +101,9 @@ public class UserRepositoryAdapter implements UserRepository {
                 entity.getEmail(),
                 entity.getName(),
                 entity.getNickname(),
-                entity.getBirth()
+                entity.getBirth(),
+                entity.isTempPwd(),
+                entity.getCreatedAt()
         );
     }
 

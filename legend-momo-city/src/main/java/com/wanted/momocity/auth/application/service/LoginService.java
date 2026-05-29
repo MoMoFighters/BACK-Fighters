@@ -61,7 +61,9 @@ public class LoginService implements LoginUsecase {
         }
 
         // 인증 성공 후 액세스 토큰 발급
-        String accessToken = tokenProviderPort.createAccessToken(authentication);
+        String accessToken = user.getIsTempPwd()
+                ? tokenProviderPort.createTempAccessToken(authentication)
+                : tokenProviderPort.createAccessToken(authentication);
 
         // 리프레시 토큰 발급
         String refreshToken = tokenProviderPort.createRefreshToken(String.valueOf(user.getId()));
@@ -74,6 +76,10 @@ public class LoginService implements LoginUsecase {
         );
 
         // 컨트롤러로 보내서 프론트에게 전달할 수 있도록 리턴
-        return new LoginResponse(accessToken, refreshToken,user.getStatus(),tokenProviderPort.getAccessTokenValidityMilliseconds() / 1000 );
+        long accessTokenExpiry = user.getIsTempPwd()
+                ? 3 * 60  // 3분
+                : tokenProviderPort.getAccessTokenValidityMilliseconds() / 1000;
+
+        return new LoginResponse(accessToken, refreshToken, user.getStatus(), accessTokenExpiry);
     }
 }
