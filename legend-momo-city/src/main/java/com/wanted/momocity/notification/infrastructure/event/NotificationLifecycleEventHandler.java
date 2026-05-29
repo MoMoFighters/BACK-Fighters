@@ -64,9 +64,10 @@ public class NotificationLifecycleEventHandler {
         log.info("[NotificationLifecycleEventHandler] 메시지 전송 -> 알림 서비스로 이동");
 
         notificationHandlerService.sendMessageNotification(
-                event.messageId(), //refId용
+                event.roomId(), //refId용
                 event.senderNickname(), //문구에 들어갈 보낸 사람 닉네임
                 event.senderId(), //보낸 사람
+                event.receiverId(),
                 event.createdAt() //날짜 업데이트용
         );
 

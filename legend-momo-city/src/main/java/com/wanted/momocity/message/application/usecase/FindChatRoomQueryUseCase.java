@@ -17,6 +17,7 @@ public interface FindChatRoomQueryUseCase {
             String content, //마지막 채팅 내역
             LocalDateTime createdAt, //마지막 채팅 시각
             Long unreadCount, //읽지 않은 메시지 수
-            List<String> lectureTitle //가공된 강의명 묶음
+            List<String> lectureTitle, //가공된 강의명 묶음
+            String profileImageUrl
     ) {}
 }

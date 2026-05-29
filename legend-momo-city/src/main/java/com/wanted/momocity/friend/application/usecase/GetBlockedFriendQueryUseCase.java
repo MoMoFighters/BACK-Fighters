@@ -10,6 +10,7 @@ public interface GetBlockedFriendQueryUseCase {
             String nickname,
             String role,
             String status,
-            Boolean isNotActive
+            Boolean isNotActive,
+            String profileImageUrl
     ) {}
 }

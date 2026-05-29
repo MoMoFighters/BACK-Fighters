@@ -4,6 +4,8 @@ import com.wanted.momocity.friend.application.command.RejectRequestFriendCommand
 import com.wanted.momocity.friend.application.policy.FriendEligibilityPolicy;
 import com.wanted.momocity.friend.application.usecase.RejectRequestFriendCommandUseCase;
 import com.wanted.momocity.friend.domain.repository.FriendRepository;
+import com.wanted.momocity.friend.fmexception.FMResourceAccessDeniedException;
+import com.wanted.momocity.friend.fmexception.FMResourceNotFoundException;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
@@ -31,7 +33,7 @@ public class RejectRequestFriendCommandService implements RejectRequestFriendCom
 
         //요청자(상대방) 검증
         UserWithFMJpaEntity fromUser = friendRepository.findUserById(command.fromUserId())
-                .orElseThrow(() -> new DomainRuleViolationException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 사용자입니다."));
 
         //두 사람 사이의 관계 조회
         Optional<FriendJpaEntity> relationOpt = friendRepository.findRelationBetween(command.fromUserId(), command.userId());
@@ -44,7 +46,7 @@ public class RejectRequestFriendCommandService implements RejectRequestFriendCom
         //403(나에게 온 요청이 아닌 경우)
         if (!relation.getToUserId().getId().equals(command.userId())) {
             log.warn("[RejectRequestFriendCommandService] 거절 실패 - 본인에게 온 요청이 아님");
-            throw new AccessDeniedException("본인에게 온 요청만 거절할 수 있습니다.");
+            throw new FMResourceAccessDeniedException("본인에게 온 요청만 거절할 수 있습니다.");
         }
 
         //거절 시 관계 행 완전 삭제
