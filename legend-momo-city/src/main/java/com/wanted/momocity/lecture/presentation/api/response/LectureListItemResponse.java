@@ -1,8 +1,6 @@
 package com.wanted.momocity.lecture.presentation.api.response;
 
-/**
- * LectureListItemResponse는 강의 목록의 강의 1개를 표현하는 응답 DTO
- */
+// LectureListItemResponse는 강의 목록의 강의 1개를 표현하는 응답 DTO
 public record LectureListItemResponse(
 
         // 수강신청 ID

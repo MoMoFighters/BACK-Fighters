@@ -52,17 +52,29 @@ public class LearningHistoryJpaEntity extends BaseTimeEntity {
     /*
     * comment.
     *  @Version : 낙관적 락 (Optimistic Lock) 핵심 필드
-    *  동작 방식 : 조회 시 version 값 합께 읽어옴 -> 저장 시 현재 version 과 DB version 비교
+    *  [동작 방식]
+    *  조회 시 version 값 합께 읽어옴 -> 저장 시 현재 version 과 DB version 비교
     *  -> 일치하면 저장 후 version +1 -> 실제 DB Lock 없이 충돌 감지 가능 (성능 유리)
+    *  -> 불일치하면 OptimisticLockingFailureException 발생
     *  -
     *  5-10 초 주기로 saveProgress() 호출
     *  -> 같은 챕터 동시 요청 시 데이터 정합성 보장
     *  -> 실제 DB Lock 없이 충돌 감지 가능 (성능 유리)
     * */
 
-//    @Version
-//    @Column(name = "version", nullable = false)
-//    private Long version;
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version;
+
+    /*
+    * comment.
+    *  @Version 이 하는 일
+    *  1. 저장 시 자동으로 Version + 1
+    *  2. 저장 시 WHERE version = ? 조건 추가
+    *  -> UPDATE learning_history
+    *     SET watched_seconds = ?, version = 1
+    *     WHERE id = ? AND version = 0 <- 해당 조건 불일치시 Exception 발생
+    * */
 
     // Domain Model -> JpaEntity 변환 (저장용)
     public static LearningHistoryJpaEntity from(LearningHistory domain) {

@@ -4,10 +4,7 @@ import com.wanted.momocity.lecture.domain.model.LectureChapter;
 
 import java.time.LocalDateTime;
 
-/*
- * 챕터 동영상 등록 성공 응답 DTO
- * 도메인 모델 LectureChapter에서 프론트에 필요한 값만 꺼내 응답
- */
+// 챕터 동영상 등록 성공 응답 DTO
 public record RegisterChapterVideoResponse(
         Long chapterId,
         Long lectureId,
@@ -21,9 +18,7 @@ public record RegisterChapterVideoResponse(
         LocalDateTime updatedAt
 ) {
 
-    /*
-     * LectureChapter 도메인 모델을 응답 DTO로 변환합니다.
-     */
+    // LectureChapter 도메인 모델을 응답 DTO로 변환
     public static RegisterChapterVideoResponse from(LectureChapter chapter) {
         return new RegisterChapterVideoResponse(
                 chapter.getId(),

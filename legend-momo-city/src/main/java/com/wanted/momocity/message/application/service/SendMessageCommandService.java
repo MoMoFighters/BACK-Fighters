@@ -1,5 +1,6 @@
 package com.wanted.momocity.message.application.service;
 
+import com.wanted.momocity.friend.fmexception.FMResourceNotFoundException;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
@@ -46,11 +47,11 @@ public class SendMessageCommandService implements SendMessageCommandUseCase {
 
         UserWithFMJpaEntity sender = messageSideUserRepository.findUserById(senderId)
                 .map(obj -> (UserWithFMJpaEntity) obj)
-                .orElseThrow(() -> new DomainRuleViolationException("존재하지 않는 발신자입니다."));
+                .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 사용자입니다."));
 
         //채팅방 조회
         ChatRoomJpaEntity chatRoom = messageRepository.findChatRoomById(roomId)
-                .orElseThrow(() -> new DomainRuleViolationException("존재하지 않는 채팅방입니다."));
+                .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 채팅방입니다."));
 
         //어댑터에서 멤버 테이블 찔러서 현재 방에 소속된 멤버 긁어오기
         List<ChatRoomMemberJpaEntity> members = messageRepository.findMembersByRoomId(roomId);
@@ -61,17 +62,21 @@ public class SendMessageCommandService implements SendMessageCommandUseCase {
                 .map(ChatRoomMemberJpaEntity::getUserId)
                 .filter(user -> !user.getId().equals(senderId))
                 .findFirst()
-                .orElse(null); //나와의 채팅방일 때 상대방이 없으므로 null
+                .orElse(sender); //나와의 채팅방일 때 상대방이 없으므로 null
 
         //상대방과의 친구 관게 조회
         //두 사람 사이의 관계 양방향 조회
         String friendStatus = "none";
-        Optional<FriendJpaEntity> relationOpt = messageSideFriendRepository.findByFromUserId_IdAndToUserId_Id(senderId, targetUser.getId());
-        if (relationOpt.isEmpty()) {
-            relationOpt = messageSideFriendRepository.findByFromUserId_IdAndToUserId_Id(targetUser.getId(), senderId);
-        }
-        if (relationOpt.isPresent()) {
-            friendStatus = relationOpt.get().getStatus();
+        if (targetUser == null) {
+            friendStatus = "me";
+        } else {
+            Optional<FriendJpaEntity> relationOpt = messageSideFriendRepository.findByFromUserId_IdAndToUserId_Id(senderId, targetUser.getId());
+            if (relationOpt.isEmpty()) {
+                relationOpt = messageSideFriendRepository.findByFromUserId_IdAndToUserId_Id(targetUser.getId(), senderId);
+            }
+            if (relationOpt.isPresent()) {
+                friendStatus = relationOpt.get().getStatus();
+            }
         }
 
         messageEligibilityPolicy.sendable(roomId, senderId, friendStatus, roomMemberCount);
@@ -103,15 +108,14 @@ public class SendMessageCommandService implements SendMessageCommandUseCase {
         log.info("[웹소켓 발송] {} 경로로 실시간 메시지 브로드캐스팅 완료", destination);
 
         // 🎯 2. 나와의 채팅방이 아닐 때만 상대방(targetUser)에게 알림 이벤트 발행
-        if (targetUser != null) {
             log.info("[SendMessageService] 메시지 전송 성공 - 알림 발행. 수신자: {}", targetUser.getId());
             eventPublisher.publishEvent(new SendMessagePublishedEvent(
-                    newMessage.getId(),
+                    roomId,
                     senderId,
                     sender.getNickname(),   // 발신자 닉네임 추출
+                    targetUser.getId(),
                     newMessage.getCreatedAt()
             ));
-        }
 
         return new SendView(
                 roomId,

@@ -1,6 +1,7 @@
 package com.wanted.momocity.notification.application.service;
 
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
+import com.wanted.momocity.message.application.policy.MessageEligibilityPolicy;
 import com.wanted.momocity.notification.domain.model.Notification;
 import com.wanted.momocity.notification.infrastructure.persistence.NotificationJpaEntity;
 import com.wanted.momocity.notification.domain.repository.NotificationRepository;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -60,6 +62,49 @@ public class NotificationHandlerService {
     }
 
     //메시지 전송
-    public void sendMessageNotification(Long aLong, String s, Long aLong1, LocalDateTime localDateTime) {
+    public void sendMessageNotification(Long roomId, String senderNickname, Long senderId, Long receiverId, LocalDateTime createdAt) {
+        log.info("[NotificationHandlerService] 메시지 전송으로 인한 알림 처리 - 방ID(refId): {}", roomId);
+
+        // 나와의 채팅 확인
+        if (senderId.equals(receiverId)) {
+            log.info("[NotificationHandlerService] 나와의 채팅방 메시지이므로 알림 생성을 건너뜀");
+            return;
+        }
+
+        //방 번호와 타입, senderId으로 기존 알림이 이미 존재하는 지 확인
+        Optional<Notification> existingNotificationOpt = notificationRepository.findByRefIdAndTypeAndUserId_Id(roomId, "MESSAGE", senderId);
+
+        String message = String.format("%s님이 메시지를 보냈습니다.", senderNickname);
+
+        //기존 알림이 존재하는 경우 ->시간만 업데이트, 읽지 않음 처리
+        if (existingNotificationOpt.isPresent()) {
+            log.info("[NotificationHandlerService] 기존 알림 존재 -> 시간 업데이트 및 읽지 않음 상태로 변경");
+            Notification existingNotification = existingNotificationOpt.get();
+
+            Notification updatedNotification = new Notification(
+                    existingNotification.getId(),
+                    existingNotification.getUserId(), // receiverId가 유지됨
+                    existingNotification.getType(),
+                    existingNotification.getRefId(),
+                    message
+                    //추후 isRead 생기면 주석 해제
+//                    false
+            );
+
+            notificationRepository.save(updatedNotification);
+            return;
+        }
+
+        //기존 알림이 없는 경우 -> 새로 행 추가
+        log.info("[NotificationHandlerService] 기존 알림 없음 -> 새로운 알림 행 추가");
+
+        Notification newNotification = Notification.createMessageNotification(
+                senderId,
+                "MESSAGE",
+                roomId,
+                message
+        );
+
+        notificationRepository.save(newNotification);
     }
 }

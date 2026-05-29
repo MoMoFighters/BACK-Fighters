@@ -1,5 +1,6 @@
 package com.wanted.momocity.message.application.policy;
 
+import com.wanted.momocity.friend.fmexception.FMBusinessRuleViolationException;
 import com.wanted.momocity.friend.fmexception.FMResourceAccessDeniedException;
 import com.wanted.momocity.friend.fmexception.FMResourceConflictException;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
@@ -100,13 +101,33 @@ public class MessageEligibilityPolicy {
 
     }
 
-//    //채팅방 나가기 검증
-//    public void leaveChatRoom(Long userId, Long roomId) {
-//        //사용자의 최초 방ID를 비교
-//        Long firstRoomId = springDataChatRoomMemberRepository.findFirstRoomdIdByUserId(userId);
-//
-//        if (roomId.equals(firstRoomId)) {
-//            throw new DomainRuleViolationException("나와의 채팅방은 나갈 수 없습니다.");
-//        }
-//    }
+    //채팅방 나가기 검증
+    public void leaveChatRoom(Long userId, Long roomId, List<ChatRoomMemberJpaEntity> allMembers) {
+        //로그인 유저가 해당 방의 멤버가 맞는지 확인(403)
+        ChatRoomMemberJpaEntity myMembership = allMembers.stream()
+                .filter(m -> m.getUserId().getId().equals(userId))
+                .findFirst()
+                .orElseThrow(() -> new FMResourceAccessDeniedException("해당 채팅방을 나갈 권한이 없습니다."));
+
+        //사용자의 최초 방ID를 비교(나와의 채팅방)(409)
+        List<ChatRoomMemberJpaEntity> myAllRooms = springDataChatRoomMemberRepository.findByUserId_Id(userId);
+        Long firstRoomId = myAllRooms.stream()
+                .map(member -> member.getRoomId().getId())
+                .min(Long::compare)
+                .orElse(-1L);
+
+        if (roomId.equals(firstRoomId)) {
+            log.warn("[MessageEligibilityPolicy] 나와의 채팅방은 퇴장할 수 없습니다. 유저: {}, 방: {}", userId, roomId);
+            throw new FMResourceConflictException("나와의 채팅방은 나갈 수 없습니다.");
+        }
+
+        //강사가 포함된 채팅방인지 확인(강사는 친구 기능이 없고 학생이 개설해야만 존재)
+        boolean hasTeacherInRoom = allMembers.stream()
+                .anyMatch(m -> "TEACHER".equals(m.getUserId().getRole()));
+
+        if (hasTeacherInRoom) {
+            log.warn("[MessageEligibilityPolicy] 강사가 포함된 대화창은 퇴장할 수 없습니다. 요청 유저: {}, 방ID: {}", userId, roomId);
+            throw new FMBusinessRuleViolationException("해당 채팅방을 나갈 권한이 없습니다. (강사와의 채팅방은 퇴장 불가)");
+        }
+    }
 }

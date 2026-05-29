@@ -30,30 +30,44 @@ public class FMExceptionHandler {
 
     //409 예외 핸들러
     @ExceptionHandler(FMResourceConflictException.class)
-    public ResponseEntity<FMErrorResponse> handlerResourceConflict(FMResourceConflictException exception) {
+    public ResponseEntity<ApiErrorResponse> handlerResourceConflict(FMResourceConflictException exception) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(FMErrorResponse.of(
+                .body(ApiErrorResponse.of(
                         HttpStatus.CONFLICT.value(),
+                        "RESOURCE_CONFLICT",
                         exception.getMessage()
                 ));
     }
 
     //404 예외 핸들러
     @ExceptionHandler(FMResourceNotFoundException.class)
-    public ResponseEntity<FMErrorResponse> handleResourceNotFound(FMResourceNotFoundException exception) {
+    public ResponseEntity<ApiErrorResponse> handleResourceNotFound(FMResourceNotFoundException exception) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(FMErrorResponse.of(
+                .body(ApiErrorResponse.of(
                         HttpStatus.NOT_FOUND.value(),
+                        "RESOURCE_NOT_FOUND",
                         exception.getMessage()
                 ));
     }
 
     //403 예외 핸들러
     @ExceptionHandler(FMResourceAccessDeniedException.class)
-    public ResponseEntity<FMErrorResponse> handleResourceAccessDenied(FMResourceAccessDeniedException exception) {
+    public ResponseEntity<ApiErrorResponse> handleResourceAccessDenied(FMResourceAccessDeniedException exception) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(FMErrorResponse.of(
+                .body(ApiErrorResponse.of(
                         HttpStatus.FORBIDDEN.value(),
+                        "ACCESS_DENIED",
+                        exception.getMessage()
+                ));
+    }
+
+    //400 예외 핸들러
+    @ExceptionHandler(FMBusinessRuleViolationException.class)
+    public ResponseEntity<ApiErrorResponse> handleBusinessRuleViolation(FMBusinessRuleViolationException exception) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiErrorResponse.of(
+                        HttpStatus.BAD_REQUEST.value(),
+                        "BAD_REQUEST",
                         exception.getMessage()
                 ));
     }

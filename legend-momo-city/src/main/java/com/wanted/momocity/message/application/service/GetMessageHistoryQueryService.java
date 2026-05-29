@@ -3,6 +3,7 @@ package com.wanted.momocity.message.application.service;
 
 import com.wanted.momocity.friend.enrollment.EnrollmentWithFMJpaEntity;
 import com.wanted.momocity.friend.fmexception.FMResourceAccessDeniedException;
+import com.wanted.momocity.friend.fmexception.FMResourceNotFoundException;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 
 import com.wanted.momocity.friend.lecture.LectureWithFMJpaEntity;
@@ -18,6 +19,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -45,15 +47,39 @@ public class GetMessageHistoryQueryService implements GetMessageHistoryQueryUseC
         // 1. 유저 정보 및 권한 확인
         UserWithFMJpaEntity loginUser = messageSideUserRepository.findUserById(userId)
                 .map(obj -> (UserWithFMJpaEntity) obj)
-                .orElseThrow(() -> new FMResourceAccessDeniedException("존재하지 않는 유저입니다."));
+                .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 유저입니다."));
 
         //방 멤버가 맞는지 검증
-        boolean isMember = springDataMessageRepository.existsByRoomId_IdAndSenderId_Id(roomId, userId);
-        if (!isMember) {
+        boolean isCurrentMember = springDataChatRoomMemberRepository.existsByRoomId_IdAndUserId_Id(roomId, userId);
+        //멤버엔 없지만 과거 메시지엔 있는지
+        boolean hasPastMessage = springDataMessageRepository.existsByRoomId_IdAndSenderId_Id(roomId, userId);
+        if (!isCurrentMember && !hasPastMessage) {
             throw new FMResourceAccessDeniedException("해당 채팅방에 접근할 권한이 없습니다.");
         }
 
         List<ChatRoomMemberJpaEntity> allMembers = springDataChatRoomMemberRepository.findByRoomId_Id(roomId);
+
+        //채팅방 나갔다 들어온 사람 처리
+        //기존 멤버는 모든 메시지 다 보여줌(채팅방 생성 시간==멤버 생성 시간)
+        LocalDateTime chatCreatedAt = allMembers.isEmpty() ? LocalDateTime.now() : allMembers.get(0).getRoomId().getCreatedAt();
+        LocalDateTime messageVisibleStartTimeLine = chatCreatedAt;
+
+        if (isCurrentMember) {
+            //현재 멤버인 경우 나의 멤버 정보 추출
+            ChatRoomMemberJpaEntity myMembership = allMembers.stream()
+                    .filter(member -> member.getUserId().getId().equals(userId))
+                    .findFirst()
+                    .orElse(null);
+
+            if (myMembership != null) {
+                ChatRoomJpaEntity chatRoom = myMembership.getRoomId();
+                //방 생성 날짜와 멤버 생성 날자가 다른 경우(나갔다 들어옴)
+                if (!chatRoom.getCreatedAt().equals(myMembership.getJoinedAt())) {
+                    messageVisibleStartTimeLine = myMembership.getJoinedAt(); //나갔다 들어온 날짜 이후 메시지만 보여줌
+                    log.info("[타임라인 필터] 재입장 유저 감지 - 멤버 가입일({}) 이후의 메시지만 조회합니다.", messageVisibleStartTimeLine);
+                }
+            }
+        }
 
         // 2. 상대방 유저 특정 및 나가기 역추적 (목록 조회 로직 이식)
         UserWithFMJpaEntity targetUser = null;
@@ -77,8 +103,23 @@ public class GetMessageHistoryQueryService implements GetMessageHistoryQueryUseC
                 targetUser = otherMsgOpt.get().getSenderId();
                 isLeftRoom = true;
             } else {
-                targetUser = loginUser;
-                friendStatus = "me";
+
+                // 🎯 변경 2: 메시지가 0개일 때, 로그인 유저가 참여한 방 중 가장 작은 ID(최초 생성 방)와 비교
+                List<ChatRoomMemberJpaEntity> myAllRooms = springDataChatRoomMemberRepository.findByUserId_Id(userId);
+                Long firstRoomId = myAllRooms.stream()
+                        .map(member -> member.getRoomId().getId())
+                        .min(Long::compare)
+                        .orElse(-1L);
+
+                if (roomId.equals(firstRoomId)) {
+                    // 내 첫 번째 자동 개설 방이 맞다면 진짜 '나와의 채팅방'
+                    targetUser = loginUser;
+                    friendStatus = "me";
+                } else {
+                    // 첫 번째 방이 아닌데 메시지도 없고 나 혼자 남았다면 상대방이 나가버린 방
+                    isLeftRoom = true;
+                    friendStatus = "none";
+                }
             }
         }
 
@@ -130,10 +171,11 @@ public class GetMessageHistoryQueryService implements GetMessageHistoryQueryUseC
         //메시지 내역 자르기
         List<MessageJpaEntity> messages;
         if (lastMessageId == null) {
-            messages = springDataMessageRepository.findTop20ByRoomId_IdOrderByIdDesc(roomId);
+            messages = springDataMessageRepository.findTop20ByRoomId_IdAndCreatedAtGreaterThanEqualOrderByIdDesc(roomId, messageVisibleStartTimeLine);
         } else {
-            messages = springDataMessageRepository.findTop20ByRoomId_IdAndIdLessThanOrderByIdDesc(roomId, lastMessageId);
+            messages = springDataMessageRepository.findTop20ByRoomId_IdAndIdLessThanAndCreatedAtGreaterThanEqualOrderByIdDesc(roomId, lastMessageId, messageVisibleStartTimeLine);
         }
+
         //프론트 응답: 과거 대화가 위로, 최신 대화가 아래로
         List<MessageJpaEntity> sortedMessages = new ArrayList<>(messages);
         Collections.reverse(sortedMessages);
@@ -155,7 +197,8 @@ public class GetMessageHistoryQueryService implements GetMessageHistoryQueryUseC
                     msg.getContent(), // 🎯 빠져있던 본문 추가!
                     msg.getCreatedAt(),
                     true, // 과거 내역은 무조건 다 읽음 처리
-                    isMine
+                    isMine,
+                    targetUser != null ? targetUser.getProfileImageUrl() : loginUser.getProfileImageUrl()
             ));
         }
 

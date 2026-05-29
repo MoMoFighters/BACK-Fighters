@@ -1,5 +1,6 @@
 package com.wanted.momocity.message.application.service;
 
+import com.wanted.momocity.friend.fmexception.FMBusinessRuleViolationException;
 import com.wanted.momocity.friend.fmexception.FMResourceNotFoundException;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 
@@ -88,7 +89,7 @@ public class CreateChatRoomCommandService implements CreateChatRoomCommandUseCas
                         //로그인 유저가 나갔던 방이므로 해당 채팅방 멤버로 복구
                         UserWithFMJpaEntity loginUser = messageSideUserRepository.getReferenceById(userId);
                         ChatRoomJpaEntity existingRoom = messageRepository.findChatRoomById(finalRoomId)
-                                .orElseThrow(() -> new DomainRuleViolationException("존재하지 않는 채팅방입니다."));
+                                .orElseThrow(() -> new FMBusinessRuleViolationException("존재하지 않는 채팅방입니다."));
 
                         ChatRoomMemberJpaEntity myNewMembership = ChatRoomMemberJpaEntity.createMembership(existingRoom, loginUser);
                         messageRepository.saveChatRoomMember(myNewMembership);

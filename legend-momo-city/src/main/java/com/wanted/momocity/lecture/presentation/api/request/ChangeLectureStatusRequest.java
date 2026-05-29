@@ -25,7 +25,7 @@ public record ChangeLectureStatusRequest(
         );
     }
 
-    /*
+    /* comment
      * 요청 상태값을 LectureStatus enum으로 변환
      * 허용되지 않은 값이면 400으로 처리될 도메인 예외를 던집니다.
      */

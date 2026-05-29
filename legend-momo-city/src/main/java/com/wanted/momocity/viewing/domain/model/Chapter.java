@@ -2,15 +2,20 @@ package com.wanted.momocity.viewing.domain.model;
 
 import lombok.Getter;
 
+import java.io.Serializable;
+
 /*
 * comment.
 *  Chapter 은 catalog 컨텍스트 소유 -> READ 전용
 *  생성 / 수정 없이 조회만 하기 때문에 create() 는 생성하지 않음
 *  isPlayable() : S3 URL 발급 전에 반드시 체크해야 하는 비지니스 규칙
+*  -
+*  Redis 직렬화를 위해 Serializable 구현 필요
+*  -> Redis 에 객체 저장 시 직렬화/역직렬화 필요
 * */
 
 @Getter
-public class Chapter {
+public class Chapter implements Serializable {
 
     private Long id;
     private Long lectureId;

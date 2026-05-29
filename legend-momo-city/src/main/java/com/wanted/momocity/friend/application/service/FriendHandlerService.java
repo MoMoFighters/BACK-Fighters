@@ -2,6 +2,7 @@ package com.wanted.momocity.friend.application.service;
 
 import com.wanted.momocity.friend.application.policy.FriendEligibilityPolicy;
 import com.wanted.momocity.friend.domain.model.Friend;
+import com.wanted.momocity.friend.fmexception.FMResourceNotFoundException;
 import com.wanted.momocity.friend.infrastructure.catalog.CatalogFriendAdapter;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendSideLectureRepository;

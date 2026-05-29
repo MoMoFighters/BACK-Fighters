@@ -4,7 +4,7 @@ import com.wanted.momocity.lecture.domain.model.LectureChapter;
 
 import java.time.LocalDateTime;
 
-// CreateChapterResponse는 챕터 등록 성공 시 프론트에 내려주는 응답 DTO입니다.
+// CreateChapterResponse는 챕터 등록 성공 시 프론트에 내려주는 응답 DTO
 public record CreateChapterResponse(
         Long chapterId,
         Long lectureId,
@@ -19,7 +19,7 @@ public record CreateChapterResponse(
         LocalDateTime updatedAt
 ) {
 
-    // 도메인 모델 LectureChapter를 응답 DTO로 변환합니다.
+    // 도메인 모델 LectureChapter를 응답 DTO로 변환
     public static CreateChapterResponse from(LectureChapter chapter) {
         return new CreateChapterResponse(
                 chapter.getId(),

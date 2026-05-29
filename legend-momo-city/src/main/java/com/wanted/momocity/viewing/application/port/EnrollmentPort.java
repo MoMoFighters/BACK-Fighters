@@ -1,5 +1,6 @@
 package com.wanted.momocity.viewing.application.port;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,7 +27,8 @@ public interface EnrollmentPort {
    record EnrollmentInfo(
            Long enrollmentId,
            Long userId,
-           Long lectureId
+           Long lectureId,
+           LocalDateTime enrolledAt
    ) {}
 
 }

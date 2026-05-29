@@ -9,6 +9,7 @@ import com.wanted.momocity.message.application.usecase.FindChatRoomQueryUseCase.
 import com.wanted.momocity.message.application.usecase.ReadMessageCommandUseCase.ReadView;
 import com.wanted.momocity.message.application.usecase.SendMessageCommandUseCase.SendView;
 import com.wanted.momocity.message.application.usecase.GetMessageHistoryQueryUseCase.MessageHistoryView;
+import com.wanted.momocity.message.application.usecase.LeaveChatRoomCommandUseCase.LeaveChatRoomView;
 import com.wanted.momocity.message.presentation.api.request.SendMessageRequest;
 import com.wanted.momocity.message.presentation.api.response.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,6 +32,7 @@ public class MessageController {
     private final SendMessageCommandUseCase sendMessageCommandUseCase;
     private final ReadMessageCommandUseCase readMessageCommandUseCase;
     private final GetMessageHistoryQueryUseCase getMessageHistoryQueryUseCase;
+    private final LeaveChatRoomCommandUseCase leaveChatRoomCommandUseCase;
 
     @GetMapping("/rooms")
     @Operation(summary = "채팅방 목록", description = "로그인 유저가 존재하는 모든 채팅방을 조회한다.")
@@ -177,6 +179,40 @@ public class MessageController {
         return ResponseEntity.ok(ApiResponse.success(
                 "SUCCESS",
                 "채팅 내역 조회 성공",
+                responseData
+        ));
+    }
+
+    @DeleteMapping("/chatRooms/leave/{roomId}")
+    @Operation(summary = "채팅방 나가기", description = "혼자 남으면 전체 폭파하고 누군가 남아있으면 멤버에서만 삭제한다.")
+    public ResponseEntity<ApiResponse<LeaveChatRoomResponse>> leaveChatRoom(@AuthenticationPrincipal CustomUserDetails userDetails, @PathVariable("roomId") Long roomId) {
+
+        Long userId = userDetails.getUserId();
+
+        LeaveChatRoomView view = leaveChatRoomCommandUseCase.handle(roomId, userId);
+
+        //채팅방에 마지막 남은 사용자일 때
+        if (view.isLastMember()) {
+            return ResponseEntity.ok(ApiResponse.success(
+                    "SUCCESS",
+                    "해당 채팅방을 나갔습니다. 다시 채팅방을 개설할 수 있습니다.",
+                    new LeaveChatRoomResponse(null, null, null, null, null)
+            ));
+        }
+
+        //상대방이 남아있을 때
+        LeaveChatRoomResponse responseData = new LeaveChatRoomResponse(
+                view.roomId(),
+                view.userId(),
+                view.nickname(),
+                view.role(),
+                view.status()
+        );
+
+        String successMessage = String.format("%s님과의 대화창을 나갔습니다.", view.nickname());
+        return ResponseEntity.ok(ApiResponse.success(
+                "SUCCESS",
+                successMessage,
                 responseData
         ));
     }

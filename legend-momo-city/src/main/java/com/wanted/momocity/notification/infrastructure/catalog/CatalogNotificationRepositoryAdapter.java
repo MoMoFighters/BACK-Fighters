@@ -13,6 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Repository
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -48,5 +50,15 @@ public class CatalogNotificationRepositoryAdapter implements NotificationReposit
         springDataNotificationRepository.deleteByRefIdAndType(refId, type);
 
         log.info("[CatalogNotificationRepositoryAdapter] notification 테이블 행 삭제 완료");
+    }
+
+    //메시지 전송
+    @Override
+    public Optional<Notification> findByRefIdAndTypeAndUserId_Id(Long roomId, String type, Long senderId) {
+        log.info("[CatalogNotificationRepositoryAdapter] 기존 메시지 알림 조회 시도 - 방ID: {}, 타입: {}, 발신자ID: {}", roomId, type, senderId);
+
+        // 실제 Spring Data JPA 리포지토리를 호출하여 엔티티를 꺼내온 뒤, 도메인 모델로 복원하여 반환합니다.
+        return springDataNotificationRepository.findByRefIdAndTypeAndUserId_Id(roomId, type, senderId)
+                .map(NotificationJpaEntity::toDomain);
     }
 }

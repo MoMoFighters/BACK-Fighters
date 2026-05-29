@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 // EnrollmentController는 수강신청 API 요청을 받는 컨트롤러
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/api/v1/lectures")
 @Tag(name = "Enrollment", description = "수강신청 API")
 public class EnrollmentController {
 
@@ -30,7 +31,7 @@ public class EnrollmentController {
             description = "로그인한 학생이 특정 강의를 수강신청합니다."
     )
     // 수강신청 API
-    @PostMapping("/api/v1/lectures/{lectureId}/enrollments")
+    @PostMapping("/{lectureId}/enrollments")
     public ResponseEntity<ApiResponse<CreateEnrollmentResponse>> createEnrollment(
             Authentication authentication,
             @PathVariable Long lectureId

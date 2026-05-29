@@ -17,7 +17,8 @@ public record FindChatRoomResponse(
         Long roomId,
         String content,
         LocalDateTime createdAt,
-        Long unreadCount
+        Long unreadCount,
+        String profileImageUrl
 ) {
     public static FindChatRoomResponse from(ChatRoomView view) {
         //ACTIVE아니면 (알 수 없음) 가공
@@ -47,7 +48,8 @@ public record FindChatRoomResponse(
                 view.roomId(),
                 view.content(),
                 view.createdAt(),
-                view.unreadCount()
+                view.unreadCount(),
+                view.profileImageUrl()
         );
     }
 }

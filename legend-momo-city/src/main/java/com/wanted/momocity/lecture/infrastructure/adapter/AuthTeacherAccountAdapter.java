@@ -8,7 +8,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.stereotype.Component;
 
-/*
+/* comment
  * Auth와 TeacherAccountPort와 연결해주는 adapter
  * 이 adapter를 통해 인증된 사용자 정보를 조회
  */
@@ -21,7 +21,7 @@ public class AuthTeacherAccountAdapter implements TeacherAccountPort {
         this.loadUserPort = loadUserPort;
     }
 
-    /*
+    /* comment
      * JWT에서 추출한 email로 사용자를 조회하고,
      * 해당 사용자가 강사인지 확인한 뒤 user id를 teacherId로 반환
      */

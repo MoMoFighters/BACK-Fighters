@@ -6,7 +6,8 @@ public record BlockedFriendResponse(
         Long userId,
         String nickname,
         String role,
-        String status
+        String status,
+        String profileImageUrl
 ) {
     public static BlockedFriendResponse from(BlockedView view) {
         //ACTIVE가 아니면 (알 수 없음)
@@ -19,7 +20,8 @@ public record BlockedFriendResponse(
                 view.userId(),
                 displayNickname,
                 view.role(),
-                view.status()
+                view.status(),
+                view.profileImageUrl()
         );
     }
 }
