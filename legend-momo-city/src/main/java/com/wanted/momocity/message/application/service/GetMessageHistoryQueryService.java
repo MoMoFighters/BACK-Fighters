@@ -38,6 +38,7 @@ public class GetMessageHistoryQueryService implements GetMessageHistoryQueryUseC
     private final MessageSideEnrollmentRepository messageSideEnrollmentRepository;
     private final SpringDataChatRoomMemberRepository springDataChatRoomMemberRepository;
     private final SpringDataMessageRepository springDataMessageRepository;
+    private final SpringDataChatRoomRepository springDataChatRoomRepository;
 
     //메시지 내역 조회
     @Override
@@ -48,6 +49,12 @@ public class GetMessageHistoryQueryService implements GetMessageHistoryQueryUseC
         UserWithFMJpaEntity loginUser = messageSideUserRepository.findUserById(userId)
                 .map(obj -> (UserWithFMJpaEntity) obj)
                 .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 유저입니다."));
+
+        //방 존재 검증
+        boolean existsRoom = springDataChatRoomRepository.existsById(roomId);
+        if (!existsRoom) {
+            throw new FMResourceNotFoundException("존재하지 않거나 삭제된 채팅방입니다.");
+        }
 
         //방 멤버가 맞는지 검증
         boolean isCurrentMember = springDataChatRoomMemberRepository.existsByRoomId_IdAndUserId_Id(roomId, userId);

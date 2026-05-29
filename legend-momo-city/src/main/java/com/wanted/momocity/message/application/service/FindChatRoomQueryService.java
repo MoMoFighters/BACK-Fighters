@@ -81,7 +81,7 @@ public class FindChatRoomQueryService implements FindChatRoomQueryUseCase {
             boolean isLeftRoom = false; //상대방이 나갔는지 기록
 
             //나와의 채팅 처리
-            if (targetUser == null && allMembers.size() == 1) {
+            if (allMembers.size() == 1) {
 
                 //1순위 판별: 가장 작은 방ID
                 if (roomId.equals(firstRoomId)) {
@@ -90,7 +90,7 @@ public class FindChatRoomQueryService implements FindChatRoomQueryUseCase {
                     friendStatus = "me";
                 } //2순위 판별: 최초의 방이 아닌데 혼자(상대방 나간 방)
                 else {
-                    log.info("[FriendChatRoomQueryService] 상대방이 나가서 혼자 남은 방 탐색됨 - 방ID: {}", roomId);
+                    log.info("[FindChatRoomQueryService] 상대방이 나가서 혼자 남은 방 탐색됨 - 방ID: {}", roomId);
                     //해당 채팅방에 로그인 유저 말고 다른 사람이 보낸 메시지가 있는지 확인
                     //로그인 유저 외에 다른 사용자가 보낸 메시지가 있다면 그 방은 상대방이 나간 방
                     //과거 메시지 내역에서 나간 상대방의 유저 정보를 역추적하여 가져옴
@@ -100,19 +100,22 @@ public class FindChatRoomQueryService implements FindChatRoomQueryUseCase {
                     if (otherMsgOpt.isPresent()) {
                             //나간 상대방 유저 정보 꺼내기
                             targetUser = otherMsgOpt.get().getSenderId();
+                            isLeftRoom = true;
                     } else {
-                            //진짜 나와의 채탱방
-                            targetUser = loginUser;
+                            //상대방도 없고 상대방이 보낸 메시지도 없을 때
+                            log.warn("[FindChatRoomQueryService] 메시지 내역이 없는 유령 방 - 방ID: {}", roomId);
+                            targetUser = null;
                     }
-                    isLeftRoom = true;
                 }
             }
 
-            if (targetUser == null) continue;
+            if (targetUser == null) {
+                isLeftRoom = true;
+            }
 
             //친구 삭제의 경우에도 (알 수 없음) 처리, 있으면 실제 상태 추출
             //친구 상태 양방향 조회 (나와의 채팅이면 관계 조회 필요없이 me 상태로 처리)
-            if (!"me".equals(friendStatus) && !targetUser.getId().equals(userId)) {
+            if (targetUser != null && !"me".equals(friendStatus) && !targetUser.getId().equals(userId)) {
                 Optional<FriendJpaEntity> relationOpt = messageSideFriendRepository.findByFromUserId_IdAndToUserId_Id(userId, targetUser.getId());
                 if (relationOpt.isEmpty()) {
                     relationOpt = messageSideFriendRepository.findByFromUserId_IdAndToUserId_Id(targetUser.getId(), userId);
@@ -123,7 +126,7 @@ public class FindChatRoomQueryService implements FindChatRoomQueryUseCase {
             }
 
             //학생끼리의 대화방
-            if ("STUDENT".equals(loginUserRole) && "STUDENT".equals(targetUser.getRole())) {
+            if (targetUser != null && "STUDENT".equals(loginUserRole) && "STUDENT".equals(targetUser.getRole())) {
                 if ("SENT".equals(friendStatus)) {
                     log.info("[FindChatRoomQueryService] 학생간 대화 중 SENT 상태인 방 노출 제외 - 방ID: {}", pro.roomId());
                     continue;
@@ -146,7 +149,7 @@ public class FindChatRoomQueryService implements FindChatRoomQueryUseCase {
             List<String> lectureTitleList = new ArrayList<>();
 
             //학생 간엔 강의명 없음
-            if (!targetUser.getId().equals(userId)
+            if (targetUser != null && !targetUser.getId().equals(userId)
                     && !("STUDENT".equals(loginUserRole)
                     && "STUDENT".equals(targetUser.getRole()))) {
                 //로그인 유저가 학생, 상대가 강사
@@ -174,13 +177,21 @@ public class FindChatRoomQueryService implements FindChatRoomQueryUseCase {
             LocalDateTime lastChattedAt = (pro.lastMessage() != null) ? pro.lastMessage().getCreatedAt() : null;
 
             //채팅방별 안읽은 메시지
-            Long unreadCount = messageRepository.countUnreadMessage(roomId, userId);
+            Long unreadCount = 0L;
+            if (targetUser == null || "me".equals(friendStatus) || targetUser.getId().equals(userId)) {
+                //나와의 채팅에 보낸 방은 안읽은 메시지 0개
+                unreadCount = 0L;
+            } else {
+                //일반 채팅방만 안읽은 메시지 카운트
+                unreadCount = messageRepository.countUnreadMessage(roomId, userId);
+            }
+
 
             result.add(new ChatRoomView(
-                    targetUser.getId(),
-                    targetUser.getName(),
-                    targetUser.getNickname(),
-                    targetUser.getRole(),
+                    targetUser != null ? targetUser.getId() : null,
+                    targetUser != null ? targetUser.getName() : null,
+                    targetUser != null ? targetUser.getNickname() : null, // ◀️ null로 들어감
+                    targetUser != null ? targetUser.getRole() : "STUDENT",
                     friendStatus,
                     isNotActive, //비활성 여부(user 테이블)
                     roomId,
@@ -188,7 +199,7 @@ public class FindChatRoomQueryService implements FindChatRoomQueryUseCase {
                     lastChattedAt,
                     unreadCount,
                     lectureTitleList,
-                    targetUser.getProfileImageUrl()
+                    targetUser != null ? targetUser.getProfileImageUrl() : null
             ));
         }
 

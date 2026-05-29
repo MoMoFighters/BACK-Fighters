@@ -2,12 +2,10 @@ package com.wanted.momocity.message.application.service;
 
 
 import com.wanted.momocity.friend.fmexception.FMResourceAccessDeniedException;
+import com.wanted.momocity.friend.fmexception.FMResourceNotFoundException;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import com.wanted.momocity.message.application.usecase.ReadMessageCommandUseCase;
-import com.wanted.momocity.message.infrastructure.persistence.ChatRoomMemberJpaEntity;
-import com.wanted.momocity.message.infrastructure.persistence.MessageJpaEntity;
-import com.wanted.momocity.message.infrastructure.persistence.SpringDataChatRoomMemberRepository;
-import com.wanted.momocity.message.infrastructure.persistence.SpringDataMessageRepository;
+import com.wanted.momocity.message.infrastructure.persistence.*;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,10 +22,18 @@ public class ReadMessageCommandService implements ReadMessageCommandUseCase {
 
     private final SpringDataChatRoomMemberRepository chatRoomMemberRepository;
     private final SpringDataMessageRepository messageRepository;
+    private final SpringDataChatRoomRepository chatRoomRepository;
 
     //메시지 읽음
     @Override
     public ReadView handle(Long roomId, Long userId) {
+
+        //방 존재 검증
+        boolean existsRoom = chatRoomRepository.existsById(roomId);
+        if (!existsRoom) {
+            throw new FMResourceNotFoundException("존재하지 않거나 삭제된 채팅방입니다.");
+        }
+
         //권한 체크(방 멤버가 맞는지)
         boolean isMember = chatRoomMemberRepository.existsByRoomId_IdAndUserId_Id(roomId, userId);
         if (!isMember) {

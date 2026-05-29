@@ -43,24 +43,24 @@ GET localhost:8080/api/v1/messages/rooms
 Authorization: Bearer {{auth_token}}
 
 ### 채팅방 조회 및 개설
-POST localhost:8080/api/v1/messages/chatrooms/create/2
+POST localhost:8080/api/v1/messages/chatrooms/create/1
 Authorization: Bearer {{auth_token}}
 
 ### 메시지 전송
-POST localhost:8080/api/v1/messages/send/3
+POST localhost:8080/api/v1/messages/send/20
 Authorization: Bearer {{auth_token}}
 Content-Type: application/json
 
 {
-    "content" : "메시지 볼 수 있나 테스트2"
+    "content" : "안뇽"
 }
 
 ### 메시지 읽음 처리
-PATCH localhost:8080/api/v1/messages/read/4
+PATCH localhost:8080/api/v1/messages/read/10
 Authorization: Bearer {{auth_token}}
 
 ### 메시지 내역 조회(20개씩)-최초 진입
-GET localhost:8080/api/v1/messages/history/4
+GET localhost:8080/api/v1/messages/history/10
 Authorization: Bearer {{auth_token}}
 
 ### 메시지 내역 조회(20개씩)-스크롤
@@ -68,5 +68,5 @@ GET localhost:8080/api/v1/messages/history/2?lastMessageId=7
 Authorization: Bearer {{auth_token}}
 
 ### 채팅방 나가기
-DELETE localhost:8080/api/v1/messages/chatRooms/leave/4
+DELETE localhost:8080/api/v1/messages/chatRooms/leave/1
 Authorization: Bearer {{auth_token}}
