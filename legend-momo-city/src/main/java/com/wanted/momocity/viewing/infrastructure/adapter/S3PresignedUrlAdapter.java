@@ -29,9 +29,15 @@ public class S3PresignedUrlAdapter implements S3Port {
 
     @Override
     public String generatePresignedUrl(String videoUrl) {
+
+        String key = videoUrl.contains(".amazonaws.com/")
+                ? videoUrl.substring(videoUrl.indexOf(".amazonaws.com/") + ".amazonaws.com/".length())
+                : videoUrl;
+
         GetObjectRequest getObjectRequest = GetObjectRequest.builder()
                 .bucket(bucketName)
-                .key(videoUrl)
+                // videoUrl 대신 key 사용
+                .key(key)
                 .build();
 
         GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
