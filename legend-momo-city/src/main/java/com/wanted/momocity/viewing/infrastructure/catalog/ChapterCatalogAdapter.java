@@ -1,5 +1,7 @@
 package com.wanted.momocity.viewing.infrastructure.catalog;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.lecture.domain.model.VideoStatus;
 import com.wanted.momocity.lecture.infrastructure.persistence.ChapterJpaEntity;
@@ -7,9 +9,12 @@ import com.wanted.momocity.lecture.infrastructure.persistence.SpringDataChapterR
 import com.wanted.momocity.viewing.application.port.ChapterPort;
 import com.wanted.momocity.viewing.domain.model.Chapter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.util.List;
 
 /*
@@ -45,6 +50,7 @@ import java.util.List;
 * → toVideoStatus() 로 변환
 * */
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class ChapterCatalogAdapter implements ChapterPort {
@@ -52,14 +58,17 @@ public class ChapterCatalogAdapter implements ChapterPort {
     // SpringDataChapterRepository 주입
     // → JpaRepository 상속받아 findById, findAllByLectureIdOrderByOrderNoAsc 등 제공
     private final SpringDataChapterRepository springDataChapterRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final ObjectMapper objectMapper;
 
     /*
      * comment.
-     *  챕터 단건 조
+     *  챕터 단건 조회
      *  @Cacheable("chapter")
      *  -> 처음 호출 시 DB 조회 후 Redis 에 저장
      *  -> 이후 호출 시 Redis 에서 반환 (DB 조회 없음)
      *  -> key = "chapter::1", "chapter::2" 형태로 저장
+     *  -> 단건은 역직렬화 문제 없음
      */
 
     @Override
@@ -82,18 +91,50 @@ public class ChapterCatalogAdapter implements ChapterPort {
      *  -> 처음 호출 시 강의 전체 챕터 목록 DB 조회 후 Redis 에 저장
      *  -> 이후 호출 시 Redis 에서 반환
      *  -> key = "chapters::1", "chapters::2" 형태로 저장
+     *  -
+     *  - RedisTemplate 직접 사용
+     *  -> List<Chapter> 역직렬화 문제 해결
+     *  -> TypeReference 로 정확한 타입 지정
      */
     @Override
-    @Cacheable(value = "chapters", key = "#lectureId")
     public List<Chapter> findAllByLectureId(Long lectureId) {
 
+        String cacheKey = "chapters::" + lectureId;
+
+        try {
+            // Redis 에서 캐시 조회
+            Object cached = redisTemplate.opsForValue().get(cacheKey);
+            if (cached != null) {
+                // TypeReference 로 List<Chapter> 정확히 변환
+                List<Chapter> chapters = objectMapper.convertValue(
+                        cached,
+                        new TypeReference<List<Chapter>>() {}
+                );
+                log.debug("[Viewing] chapters 캐시 히트 | lectureId={}", lectureId);
+                return chapters;
+            }
+        } catch (Exception e) {
+            log.warn("[Viewing] chapters 캐시 조회 실패, DB 조회로 fallback | lectureId={}", lectureId);
+        }
+
         // findAllByLectureIdOrderByOrderNoAsc: lectureId 기준 챕터 목록 orderNo 오름차순 조회
-        return springDataChapterRepository
+        List<Chapter>chapters = springDataChapterRepository
                 .findAllByLectureIdOrderByOrderNoAsc(lectureId)
                 .stream()
                 // ChapterJpaEntity -> Chapter 도메인으로 변환
                 .map(this::toChapter)
                 .toList();
+
+        // Redis 에 저장 (TTL 1시간)
+        try {
+            redisTemplate.opsForValue().set(cacheKey, chapters, Duration.ofHours(1));
+            log.debug("[Viewing] chapters 캐시 저장 | lectureId={}", lectureId);
+        } catch (Exception e) {
+            log.warn("[Viewing] chapters 캐시 저장 실패 | lectureId={}", lectureId);
+        }
+
+        return chapters;
+
     }
 
     /*
@@ -110,7 +151,7 @@ public class ChapterCatalogAdapter implements ChapterPort {
                 entity.getVideoUrl(),
                 // durationSec null 가능 → 0 처리
                 entity.getDurationSec() != null ? entity.getDurationSec() : 0,
-                // 팀원 VideoStatus → 누님 Chapter.VideoStatus 변환
+                // VideoStatus → Chapter.VideoStatus 변환
                 toVideoStatus(entity.getVideoStatus())
         );
     }

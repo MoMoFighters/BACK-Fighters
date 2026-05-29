@@ -1,11 +1,15 @@
 package com.wanted.momocity.global.infrastructure.config;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
@@ -45,6 +49,25 @@ public class RedisConfig {
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
 
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        // [필수 추가] 날짜/시간 모듈 등록
+        // LocalDateTime 등을 처리하기 위해 꼭 필요합니다.
+        objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+
+        BasicPolymorphicTypeValidator typeValidator =
+                BasicPolymorphicTypeValidator.builder()
+                        .allowIfBaseType(Object.class).build();
+
+        objectMapper.activateDefaultTyping(
+                typeValidator,
+                ObjectMapper.DefaultTyping.NON_FINAL,
+                JsonTypeInfo.As.PROPERTY
+        );
+
+        GenericJackson2JsonRedisSerializer serializer =
+                new GenericJackson2JsonRedisSerializer(redisObjectMapper());
+
         // 기본 캐시 설정
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration
                 .defaultCacheConfig()
@@ -60,29 +83,56 @@ public class RedisConfig {
                 // value 를 JSON 으로 변환해서 저장
                 .serializeValuesWith(
                 RedisSerializationContext.SerializationPair
-                        .fromSerializer(new GenericJackson2JsonRedisSerializer())
+                        .fromSerializer(serializer)
                 )
                 // null 캐싱 방지
                 // 없는 챕터를 조회해도 Redis 에 저장 안 됨
                 .disableCachingNullValues();
 
+
         // 캐시별 개별 TTL 설정
-        Map<String, RedisCacheConfiguration> cacheConfigs = new HashMap<>();
+//        Map<String, RedisCacheConfiguration> cacheConfigs = new HashMap<>();
 
         // chapter 단건 조회 캐시
-        cacheConfigs.put("chapter", defaultConfig.entryTtl(Duration.ofHours(1)));
+//        cacheConfigs.put("chapter", defaultConfig.entryTtl(Duration.ofHours(1)));
 
         // 강의별 전체 챕터 목록 캐시
-        cacheConfigs.put("chapters", defaultConfig.entryTtl(Duration.ofHours(1)));
+//        cacheConfigs.put("chapters", defaultConfig.entryTtl(Duration.ofHours(1)));
 
         // lecture 단건 조회 캐시
-        cacheConfigs.put("lecture", defaultConfig.entryTtl(Duration.ofHours(1)));
+//        cacheConfigs.put("lecture", defaultConfig.entryTtl(Duration.ofHours(1)));
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
-                .withInitialCacheConfigurations(cacheConfigs)
+//                .withInitialCacheConfigurations(cacheConfigs)
                 .build();
 
     }
+
+    @Bean
+    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
+        RedisTemplate<String, Object> template = new RedisTemplate<>();
+        template.setConnectionFactory(connectionFactory);
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setValueSerializer(new GenericJackson2JsonRedisSerializer(redisObjectMapper()));
+        return template;
+    }
+
+    private ObjectMapper redisObjectMapper () {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+        BasicPolymorphicTypeValidator typeValidator = BasicPolymorphicTypeValidator.builder()
+                .allowIfBaseType(Object.class)
+                .build();
+        objectMapper.activateDefaultTyping(
+                typeValidator,
+                ObjectMapper.DefaultTyping.NON_FINAL,
+                JsonTypeInfo.As.PROPERTY
+        );
+
+        return objectMapper;
+
+    }
+
 
 }
