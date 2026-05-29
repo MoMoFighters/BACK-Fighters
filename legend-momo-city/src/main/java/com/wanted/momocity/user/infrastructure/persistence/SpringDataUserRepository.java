@@ -3,7 +3,6 @@ package com.wanted.momocity.user.infrastructure.persistence;
 
 import com.wanted.momocity.user.domain.model.Role;
 import com.wanted.momocity.user.domain.model.Status;
-import com.wanted.momocity.user.domain.model.TeacherApplication;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;

@@ -42,4 +42,14 @@ public class UserExceptionHandler {
                 ));
     }
 
+    @ExceptionHandler(InvalidReasonException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidReason(InvalidReasonException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiErrorResponse.of(
+                        HttpStatus.BAD_REQUEST.value(),
+                        "INVALID_REASON",
+                        e.getMessage()
+                ));
+    }
+
 }

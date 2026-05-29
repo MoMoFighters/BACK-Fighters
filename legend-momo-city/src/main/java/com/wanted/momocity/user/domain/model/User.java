@@ -1,8 +1,5 @@
 package com.wanted.momocity.user.domain.model;
 
-import com.wanted.momocity.user.domain.model.Category;
-import com.wanted.momocity.user.domain.model.Role;
-import com.wanted.momocity.user.domain.model.Status;
 import lombok.Builder;
 
 import java.time.Instant;

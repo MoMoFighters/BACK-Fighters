@@ -76,7 +76,7 @@ public class UserCommandService implements UserCommandUsecase {
     public TeacherActionResult reject(RejectTeacherCommand command) {
 
         if (command.reason() == null || command.reason().length() < 10) {
-            throw new DomainRuleViolationException("반려 사유는 최소 10자 이상이어야 합니다.");
+            throw new InvalidReasonException("반려 사유는 최소 10자 이상이어야 합니다.");
         }
 
         String email = userRepository.findById(command.userId())
