@@ -22,10 +22,10 @@ import java.util.List;
     ErrorLogController 정리
     1. 이 클래스의 역할 : 에러 로그 조회 HTTP API 진입점. FE 대시보드 에러 로그 위젯이 호출
     2. 다루는 API :
-        - GET /api/v1/admin/error-logs?limit=N
+        - GET /api/v1/error-logs?limit=N
     3. 클래스 레벨 어노테이션 :
         - @RestController              : REST API 컨트롤러 표시. 반환값 자동 JSON 직렬화
-        - @RequestMapping("/api/v1/admin") : 클래스 내 모든 핸들러의 공통 URL prefix
+        - @RequestMapping("/api/v1") : 클래스 내 모든 핸들러의 공통 URL prefix
         - @PreAuthorize("hasRole('ADMIN')") : 모든 핸들러 호출 전 ADMIN 권한 검사. 미충족 시 403
         - @Tag                         : Swagger UI 에서 "Admin - 에러 로그" 그룹으로 묶어 표시
     4. 의존성 :
@@ -38,7 +38,7 @@ import java.util.List;
         e) ApiResponse wrapper 로 감싸 ResponseEntity 반환 (전 컨트롤러 일관성)
  */
 @RestController
-@RequestMapping("/api/v1/admin")
+@RequestMapping("/api/v1")
 @PreAuthorize("hasRole('ADMIN')")
 @Tag(name = "Admin - 에러 로그", description = "관리자 대시보드 에러 로그 조회")
 public class ErrorLogController {
