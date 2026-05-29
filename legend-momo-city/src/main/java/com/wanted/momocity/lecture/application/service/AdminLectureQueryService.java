@@ -44,9 +44,11 @@ public class AdminLectureQueryService implements AdminLectureQueryUseCase {
 
         // 도메인 모델을 관리자 목록 응답 DTO로 변환한다.
         List<AdminLectureListItemResponse> content = lecturePage.content().stream()
-                .map(AdminLectureListItemResponse::from)
-                .toList();
-
+                .map(lecture -> AdminLectureListItemResponse.from(
+                        lecture,
+                        0.0,
+                        0
+                )).toList();
         // 페이지 정보와 목록을 함께 반환한다.
         return new AdminLecturePageResponse(
                 content,
