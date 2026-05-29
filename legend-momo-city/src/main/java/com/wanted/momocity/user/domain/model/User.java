@@ -1,8 +1,8 @@
 package com.wanted.momocity.user.domain.model;
 
-import com.wanted.momocity.auth.domain.model.Category;
-import com.wanted.momocity.auth.domain.model.Role;
-import com.wanted.momocity.auth.domain.model.Status;
+import com.wanted.momocity.user.domain.model.Category;
+import com.wanted.momocity.user.domain.model.Role;
+import com.wanted.momocity.user.domain.model.Status;
 import lombok.Builder;
 
 import java.time.Instant;
@@ -66,8 +66,16 @@ public class User {
     }
 
 
+    public Long getId() {
+        return id;
+    }
+
     public String getEmail() {
         return email;
+    }
+
+    public String getPassword() {
+        return password;
     }
 
     public String getName() {
@@ -85,4 +93,49 @@ public class User {
     public String getProfileImageUrl() {
         return profileImageUrl;
     }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public Category getCategory() {
+        return category;
+    }
+
+    public String getProof() {
+        return proof;
+    }
+
+    public Long getPoint() {
+        return point;
+    }
+
+    public Boolean getPaid() {
+        return isPaid;
+    }
+
+    public Boolean getDoNotDisturb() {
+        return doNotDisturb;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public LocalDateTime getDeletedAt() {
+        return deletedAt;
+    }
+
+    public Boolean getTempPwd() {
+        return isTempPwd;
+    }
+
 }

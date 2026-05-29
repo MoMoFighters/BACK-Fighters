@@ -1,8 +1,9 @@
 package com.wanted.momocity.user.infrastructure.persistence;
 
-import com.wanted.momocity.auth.domain.model.Category;
-import com.wanted.momocity.auth.domain.model.Role;
-import com.wanted.momocity.auth.domain.model.Status;
+import com.wanted.momocity.user.domain.model.Category;
+import com.wanted.momocity.user.domain.model.Role;
+import com.wanted.momocity.user.domain.model.Status;
+import com.wanted.momocity.user.domain.model.User;
 import jakarta.persistence.*;
 
 import java.time.Instant;
@@ -74,7 +75,9 @@ public class UserJpaEntity {
 
     protected UserJpaEntity() {}
 
-    public UserJpaEntity(String email, String password, String name, String nickname, LocalDate birth, String profileImageUrl, Role role, Status status, Category category, String proof, Long point, boolean isPaid, boolean doNotDisturb, Instant createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, boolean isTempPwd) {
+    // id 포함 생성자 추가
+    public UserJpaEntity(Long id, String email, String password, String name, String nickname, LocalDate birth, String profileImageUrl, Role role, Status status, Category category, String proof, Long point, boolean isPaid, boolean doNotDisturb, Instant createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, boolean isTempPwd) {
+        this.id = id;
         this.email = email;
         this.password = password;
         this.name = name;
@@ -94,8 +97,40 @@ public class UserJpaEntity {
         this.isTempPwd = isTempPwd;
     }
 
+    // fromDomain
+    public static UserJpaEntity fromDomain(User user) {
+        return new UserJpaEntity(
+                user.getId(),
+                user.getEmail(),
+                user.getPassword(),
+                user.getName(),
+                user.getNickname(),
+                user.getBirth(),
+                user.getProfileImageUrl(),
+                user.getRole(),
+                user.getStatus(),
+                user.getCategory(),
+                user.getProof(),
+                user.getPoint(),
+                user.getPaid(),
+                user.getDoNotDisturb(),
+                user.getCreatedAt(),
+                user.getUpdatedAt(),
+                user.getDeletedAt(),
+                user.getTempPwd()
+        );
+    }
+
+    public Long getId() {
+        return id;
+    }
+
     public String getEmail() {
         return email;
+    }
+
+    public String getPassword() {
+        return password;
     }
 
     public String getName() {
@@ -114,7 +149,47 @@ public class UserJpaEntity {
         return profileImageUrl;
     }
 
-    public String getPassword() {
-        return password;
+    public Role getRole() {
+        return role;
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public Category getCategory() {
+        return category;
+    }
+
+    public String getProof() {
+        return proof;
+    }
+
+    public Long getPoint() {
+        return point;
+    }
+
+    public boolean isPaid() {
+        return isPaid;
+    }
+
+    public boolean isDoNotDisturb() {
+        return doNotDisturb;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public LocalDateTime getDeletedAt() {
+        return deletedAt;
+    }
+
+    public boolean isTempPwd() {
+        return isTempPwd;
     }
 }

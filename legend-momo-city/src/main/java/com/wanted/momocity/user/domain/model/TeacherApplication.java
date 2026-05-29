@@ -1,4 +1,4 @@
-package com.wanted.momocity.teacher.domain.model;
+package com.wanted.momocity.user.domain.model;
 
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 

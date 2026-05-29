@@ -1,4 +1,4 @@
-package com.wanted.momocity.teacher.application.command;
+package com.wanted.momocity.user.application.command;
 
 /* comment.
     ApproveTeacherCommand 정리

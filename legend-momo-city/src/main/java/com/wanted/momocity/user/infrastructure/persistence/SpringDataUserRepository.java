@@ -1,11 +1,18 @@
 package com.wanted.momocity.user.infrastructure.persistence;
 
 
+import com.wanted.momocity.user.domain.model.Role;
+import com.wanted.momocity.user.domain.model.Status;
+import com.wanted.momocity.user.domain.model.TeacherApplication;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, Long> {
 
@@ -27,4 +34,21 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
     void updateUserInfo(@Param("userId") Long userId,
                         @Param("nickname") String nickname,
                         @Param("profileImageUrl") String profileImageUrl,
-                        @Param("password") String password);}
+                        @Param("password") String password);
+
+
+    @Query("SELECT u FROM UserUser u WHERE u.role = :role AND u.status = :status ORDER BY u.updatedAt DESC")
+    List<UserJpaEntity> findByRoleAndStatus(@Param("role") Role role, @Param("status") Status status, Pageable pageable);
+
+    long countByRoleAndStatus(Role role, Status status);
+
+    // 강사 승인 여부에 따른 status 변환
+    @Modifying
+    @Transactional
+    @Query("UPDATE UserUser u SET u.role = :role, u.status = :status, u.updatedAt = :updatedAt WHERE u.id = :userId")
+    void updateRoleAndStatus(@Param("userId") Long userId,
+                             @Param("role") Role role,
+                             @Param("status") Status status,
+                             @Param("updatedAt") LocalDateTime updatedAt);
+
+}

@@ -1,4 +1,4 @@
-package com.wanted.momocity.teacher.presentation.api.request;
+package com.wanted.momocity.user.presentation.api.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
