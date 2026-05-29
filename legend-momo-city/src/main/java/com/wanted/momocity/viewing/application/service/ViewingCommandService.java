@@ -1,5 +1,6 @@
 package com.wanted.momocity.viewing.application.service;
 
+import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.viewing.application.command.SaveProgressCommand;
 import com.wanted.momocity.viewing.application.policy.EnrollmentAccessPolicy;
 import com.wanted.momocity.viewing.application.port.ChapterPort;
@@ -12,6 +13,7 @@ import com.wanted.momocity.viewing.presentation.api.response.SaveProgressRespons
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,6 +43,44 @@ public class ViewingCommandService implements ViewingCommandUseCase {
 
     @Override
     public SaveProgressResponse handle(SaveProgressCommand command) {
+
+        // 최대 재시도 횟수
+        int maxRetry = 3;
+        int retryCount = 0;
+
+        while (true) {
+            try {
+                // 저장 시도
+                return doSaveProgress(command);
+            } catch (ObjectOptimisticLockingFailureException e) {
+                // 충돌 발생
+                retryCount++;
+
+                log.warn("[Viewing] 낙관적 락 충돌 발생 | 재시도 {}/{} | userId={}, chapterId = {}",
+                        retryCount, maxRetry,
+                        command.userId(), command.chapterId());
+
+                // 최대 재시도 횟수 초과시 예외 발생
+                if (retryCount >= maxRetry) {
+                    throw new DomainRuleViolationException(
+                            "진척도 저장에 실패했습니다. 잠시 후 다시 시도해주세요."
+                    );
+                }
+
+                try {
+                    // 재시도 전 50ms 대기 (서버 부하 방지)
+                    Thread.sleep(50);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+    }
+
+
+    // doSaveProgress
+    // 실제 진척도 저장 로직 -> handle() 에서 재시도 시 반복 호출
+    private SaveProgressResponse doSaveProgress(SaveProgressCommand command) {
 
         // 수강 여부 확인 (Policy)
         enrollmentAccessPolicy.ensureEnrolled(command.userId(), command.lectureId());
@@ -129,7 +169,7 @@ public class ViewingCommandService implements ViewingCommandUseCase {
         if (totalDurationSum == 0) return 0;
 
         int result = (int) Math.round(
-                (double)(completedDurationSum + inProgressWatchedSum)
+                (double) (completedDurationSum + inProgressWatchedSum)
                         / totalDurationSum * 100
         );
 

@@ -1,7 +1,7 @@
 ### ==========================================
 ### Calendar API 전체 테스트
 ### ==========================================
-### @token = 로그인_후_발급된_토큰_붙여넣기
+@token = eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxIiwicm9sZXMiOiJST0xFX1NUVURFTlQiLCJpYXQiOjE3Nzk5Nzc3MDksImV4cCI6MTc3OTk4MTMwOX0.n85VC_QqrRnrMAEx3RZIzDa90hYc-hz1QYilaLHlsK2ZYe63WOMdrtbovdLMxij94uSU7xAn7MeQoC4GfqBwrw
 
 ###
 
@@ -10,7 +10,7 @@
 ### ==========================================
 
 ### 1. 날짜별 캘린더 조회 - 정상
-GET http://localhost:8080/api/v1/calendar/daily?date=2026-05-27
+GET http://localhost:8080/api/v1/calendar/monthly?month=2026-05-01
 Content-Type: application/json
 Authorization: Bearer {{token}}
 

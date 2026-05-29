@@ -1,5 +1,6 @@
 package com.wanted.momocity.viewing.presentation.api.response;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /*
@@ -20,6 +21,7 @@ public record MyLecturesResponse(
             String lectureTitle,
             String thumbnailUrl,
             String category,
-            int totalProgress
+            int totalProgress,
+            LocalDateTime enrolledAt
     ) {}
 }

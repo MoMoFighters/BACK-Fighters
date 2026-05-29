@@ -2,8 +2,10 @@ package com.wanted.momocity.viewing.domain.model;
 
 import lombok.Getter;
 
+import java.io.Serializable;
+
 @Getter
-public class Lecture {
+public class Lecture implements Serializable {
 
     private Long id;
     private Long teacherId;

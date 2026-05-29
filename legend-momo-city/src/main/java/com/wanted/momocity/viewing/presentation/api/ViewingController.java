@@ -62,7 +62,7 @@ public class ViewingController {
     }
 
     // 강의 메타데이터 조회
-    // GET /api/v1/lectures/{lectureId}
+    // GET /api/v1/lectures/{lectureId}/meta
     @Operation(summary = "강의 메타데이터 조회",
             description = "플레이어 UI 상단에 강의 제목, 강사명, 현재 차시 표시용.")
     @ApiResponses(value = {
@@ -70,7 +70,7 @@ public class ViewingController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 토큰 만료"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "수강 권한 없음")
     })
-    @GetMapping("/lectures/{lectureId}")
+    @GetMapping("/lectures/{lectureId}/meta")
     public ResponseEntity<ApiResponse<LectureMetaResponse>> getLectureMeta(
             @Parameter(description = "강의 ID", required = true) @PathVariable Long lectureId,
             @AuthenticationPrincipal CustomUserDetails userDetails
@@ -209,7 +209,7 @@ public class ViewingController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 토큰 만료")
     })
-    @GetMapping("/users/me/lectures")
+    @GetMapping("/user/me/lectures")
     public ResponseEntity<ApiResponse<MyLecturesResponse>> getMyLectures (
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
