@@ -56,7 +56,7 @@ POST http://localhost:8080/api/v1/lectures/2/enrollments
 Authorization: Bearer {{auth_token}}
 
 ### 친구 요청 철회 -> notifcation 행 삭제
-DELETE localhost:8080/api/v1/friends/request/1
+DELETE localhost:8080/api/v1/friends/request/20
 Authorization: Bearer {{auth_token}}
 
 ### 보낸 친구 요청 목록
@@ -76,7 +76,7 @@ GET localhost:8080/api/v1/friends/received
 Authorization: Bearer {{auth_token}}
 
 ### 친구 차단
-PATCH localhost:8080/api/v1/friends/block/1
+PATCH localhost:8080/api/v1/friends/block/3
 Authorization: Bearer {{auth_token}}
 
 ### 차단한 목록
