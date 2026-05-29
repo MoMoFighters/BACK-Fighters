@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.Collection;
+import java.util.List;
 
 // SpringDataLectureRepository는 실제 lecture 테이블 조회를 담당하는 JPA Repository
 public interface SpringDataLectureRepository extends JpaRepository<LectureJpaEntity, Long> {
@@ -75,6 +76,31 @@ public interface SpringDataLectureRepository extends JpaRepository<LectureJpaEnt
         """)
     Page<LectureJpaEntity> findTeacherLectures(
             @Param("teacherId") Long teacherId,
+            @Param("category") LectureCategory category,
+            @Param("keyword") String keyword,
+            Pageable pageable
+    );
+
+    /* comment
+     * 관리자가 강의 목록을 조회
+     *
+     * 조건:
+     * - statuses 안에 포함된 강의 상태만 조회한다.
+     *   예: WAITING, ACTIVE
+     * - category가 있으면 해당 카테고리만 조회한다.
+     * - keyword가 있으면 강의 제목에 keyword가 포함된 강의만 조회한다.
+     * - 최신 등록순으로 정렬한다.
+     */
+    @Query("""
+    select l
+    from LectureJpaEntity l
+    where l.status in :statuses
+      and (:category is null or l.category = :category)
+      and (:keyword is null or l.title like concat('%', :keyword, '%'))
+    order by l.createdAt desc
+    """)
+    Page<LectureJpaEntity> findAdminLectures(
+            @Param("statuses") List<LectureStatus> statuses,
             @Param("category") LectureCategory category,
             @Param("keyword") String keyword,
             Pageable pageable
