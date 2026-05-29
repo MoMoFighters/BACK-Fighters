@@ -4,6 +4,7 @@ import com.wanted.momocity.user.domain.model.TeacherApplication;
 import com.wanted.momocity.user.domain.model.Category;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface UserQueryUsecase {
@@ -19,7 +20,10 @@ public interface UserQueryUsecase {
             String email,
             String name,
             String nickname,
-            LocalDate birth
+            LocalDate birth,
+            Boolean isTempPwd,
+            LocalDateTime createdAt
+
     ){}
 
     record RenderingBuildingsView(

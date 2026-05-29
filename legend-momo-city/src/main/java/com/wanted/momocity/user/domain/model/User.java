@@ -2,7 +2,6 @@ package com.wanted.momocity.user.domain.model;
 
 import lombok.Builder;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -23,12 +22,12 @@ public class User {
     private final Long point;
     private final Boolean isPaid;  // 결제를 했는지 안 했는지
     private final Boolean doNotDisturb; // 설정 끄기를 했는지 안 했는지
-    private final Instant createdAt;
+    private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
     private final LocalDateTime deletedAt;
     private final Boolean isTempPwd;  // 이 사용자의 비밀번호가 임시비밀번호인지 아닌지
 
-    public User(Long id, String email, String password, String name, String nickname, LocalDate birth, String profileImageUrl, Role role, Status status, Category category, String proof, Long point, Boolean isPaid, Boolean doNotDisturb, Instant createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, Boolean isTempPwd) {
+    public User(Long id, String email, String password, String name, String nickname, LocalDate birth, String profileImageUrl, Role role, Status status, Category category, String proof, Long point, Boolean isPaid, Boolean doNotDisturb, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, Boolean isTempPwd) {
         this.id = id;
         this.email = email;
         this.password = password;
@@ -52,13 +51,15 @@ public class User {
     // 마이페이지에서 사용자에게 제시할 사용자 정보가 몇 개 없어서 user칼럼 전체 다 가져오면 널이 너무 만ㅎ음
     // -> 빌더 사용
     public static User restore(String profileImageUrl, String email,
-                               String name, String nickname, LocalDate birth) {
+                               String name, String nickname, LocalDate birth, Boolean isTempPwd, LocalDateTime createdAt) {
         return User.builder()
                 .profileImageUrl(profileImageUrl)
                 .email(email)
                 .name(name)
                 .nickname(nickname)
                 .birth(birth)
+                .isTempPwd(isTempPwd)
+                .createdAt(createdAt)
                 .build();
     }
 
@@ -119,7 +120,7 @@ public class User {
         return doNotDisturb;
     }
 
-    public Instant getCreatedAt() {
+    public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 

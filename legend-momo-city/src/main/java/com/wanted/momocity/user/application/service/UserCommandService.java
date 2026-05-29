@@ -17,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -48,6 +48,7 @@ public class UserCommandService implements UserCommandUsecase {
             String storedPassword = userRepository.findPasswordById(command.userId());
             userPolicy.passwordPolicy(command.currentPassword(), command.password(), storedPassword);
             encodedPassword = passwordEncodePort.encode(command.password());  // 검증 통과 후 암호화
+            userRepository.clearTempPwd(command.userId());
         }
 
         userRepository.updateUserInfo(new UpdateUserInfoCommand(
@@ -69,7 +70,7 @@ public class UserCommandService implements UserCommandUsecase {
 
         userRepository.updateRoleAndStatus(command.userId(), Role.TEACHER, Status.ACTIVE);
         userEmailSendPort.sendTeacherResult(email, "ACTIVE", null);
-        return new TeacherActionResult(command.userId(), "ACTIVE", null, Instant.now());
+        return new TeacherActionResult(command.userId(), "ACTIVE", null, LocalDateTime.now());
     }
 
     // 강사거절
@@ -86,6 +87,6 @@ public class UserCommandService implements UserCommandUsecase {
 
         userRepository.updateRoleAndStatus(command.userId(), Role.TEACHER, Status.REJECTED);
         userEmailSendPort.sendTeacherResult(email, "REJECTED", command.reason());
-        return new TeacherActionResult(command.userId(), "REJECTED", command.reason(), Instant.now());
+        return new TeacherActionResult(command.userId(), "REJECTED", command.reason(), LocalDateTime.now());
     }
 }

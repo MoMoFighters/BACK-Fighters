@@ -6,7 +6,6 @@ import com.wanted.momocity.user.domain.model.Status;
 import com.wanted.momocity.user.domain.model.User;
 import jakarta.persistence.*;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -61,7 +60,7 @@ public class UserJpaEntity {
     private boolean doNotDisturb;
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private Instant createdAt;
+    private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
@@ -76,7 +75,7 @@ public class UserJpaEntity {
     protected UserJpaEntity() {}
 
     // id 포함 생성자 추가
-    public UserJpaEntity(Long id, String email, String password, String name, String nickname, LocalDate birth, String profileImageUrl, Role role, Status status, Category category, String proof, Long point, boolean isPaid, boolean doNotDisturb, Instant createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, boolean isTempPwd) {
+    public UserJpaEntity(Long id, String email, String password, String name, String nickname, LocalDate birth, String profileImageUrl, Role role, Status status, Category category, String proof, Long point, boolean isPaid, boolean doNotDisturb, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, boolean isTempPwd) {
         this.id = id;
         this.email = email;
         this.password = password;
@@ -177,7 +176,7 @@ public class UserJpaEntity {
         return doNotDisturb;
     }
 
-    public Instant getCreatedAt() {
+    public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 

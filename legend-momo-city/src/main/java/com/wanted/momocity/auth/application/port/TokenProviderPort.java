@@ -15,6 +15,9 @@ public interface TokenProviderPort {
     long getRefreshTokenValidityMilliseconds();
     long getAccessTokenValidityMilliseconds();
 
+    // 임시비밀번호 발급용 3분짜리 액세스 토큰 생성
+    String createTempAccessToken(Authentication authentication);
+
     // 소셜 로그인 용 -> 이메일이랑 role만 가지고 access 토큰 발급하기
     String createAccessToken(String userId, String role);
 

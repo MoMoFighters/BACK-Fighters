@@ -47,6 +47,11 @@ public class RefreshService implements NewTokenUsecase {
             throw new InvalidRefreshTokenException("아직 승인되지 않은 계정입니다.");
         }
 
+        // 임시비번 로그인 유저는 토큰 연장 불가
+        if (user.getIsTempPwd()) {
+            throw new InvalidRefreshTokenException("임시 비밀번호를 변경 후 이용해주세요.");
+        }
+
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 String.valueOf(user.getId()),
                 null,

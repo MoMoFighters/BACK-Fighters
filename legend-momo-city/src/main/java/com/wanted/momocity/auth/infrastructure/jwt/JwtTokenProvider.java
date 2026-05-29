@@ -166,6 +166,23 @@ public class JwtTokenProvider implements TokenProviderPort {
         return ACCESS_TOKEN_EXPIRE_TIME;
     }
 
+    // 임시비밀번호 발급용 3분짜리 액세스 토큰 생성
+    @Override
+    public String createTempAccessToken(Authentication authentication) {
+        String username = authentication.getName();
+        String authorities = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.joining(","));
+
+        return Jwts.builder()
+                .setSubject(username)
+                .claim("roles", authorities)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + 3 * 60 * 1000L)) // 3분
+                .signWith(SignatureAlgorithm.HS512, key)
+                .compact();
+    }
+
     // 소셜 로그인에서는 authentication이 없으니까 서비스에서 소셜로그인 하고 얻은
     @Override
     public String createAccessToken(String userId, String role) {
