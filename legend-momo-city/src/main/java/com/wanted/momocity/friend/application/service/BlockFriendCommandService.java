@@ -33,11 +33,12 @@ public class BlockFriendCommandService implements BlockFriendCommandUseCase {
 
         //차단 대상자 유저 객체 담기(행의 방향과 상관없이 '로그인한 유저'가 아닌 상대방 유저의 정보 추출
         String targetRole = "STUDENT";
+        UserWithFMJpaEntity targetUser = null;
 
         if (relationOpt.isPresent()) {
             //검증 통과했으므로 무조건 행 존재
             FriendJpaEntity relation = relationOpt.get();
-            UserWithFMJpaEntity targetUser = (relation.getFromUserId().getId().equals(command.userId()))
+            targetUser = (relation.getFromUserId().getId().equals(command.userId()))
                     ? relation.getToUserId() : relation.getFromUserId();
             targetRole = targetUser.getRole();
         }
@@ -45,14 +46,16 @@ public class BlockFriendCommandService implements BlockFriendCommandUseCase {
         friendEligibilityPolicy.ensureBlockable(relationOpt,  targetRole);
 
         FriendJpaEntity relation = relationOpt.get();
+        String finalStatus = "BLOCK";
 
-        // 차단 대상자 유저 객체 담기
-        UserWithFMJpaEntity targetUser = (relation.getFromUserId().getId().equals(command.userId()))
-                ? relation.getToUserId() : relation.getFromUserId();
-
-        //상태를 BLOCK으로 변경
-        relation.changeStatus("BLOCK");
-        log.info("[BlockFriendCommandService] BLOCK으로 변경 완료 - 행ID: {}", relation.getId());
+        if (relation.getToUserId().getId().equals(command.userId())) {
+            log.info("[BlockFriendCommandService] 로그인 유저가 To이므로 행의 방향을 바꾸고 BLOCK 처리 - 행ID: {}", relation.getId());
+            relation.swapDirectionAndBlock();
+        } else {
+            //상태를 BLOCK으로 변경
+            relation.changeStatus("BLOCK");
+            log.info("[BlockFriendCommandService] BLOCK으로 변경 완료 - 행ID: {}", relation.getId());
+        }
 
 
         log.info("[BlockFriendCommandService] 최종 친구 차단 완료 - 대상 닉네임: {}, 상태: {}", targetUser.getNickname(), relation.getStatus());

@@ -30,9 +30,10 @@ POST localhost:8080/api/v1/auth/login
 Content-Type: application/json
 
 {
-  "email" : "seolim8203@naver.com",
-  "password": "password123!"
+  "email": "student1@momo.city",
+  "password": "password123"
 }
+
 
 > {%
     // 🔴 로그인 성공 시 나오는 accessToken을 인텔리제이 메모리에 'auth_token'이라는 이름으로 자동 저장!
@@ -44,11 +45,11 @@ GET localhost:8080/api/v1/friends
 Authorization: Bearer {{auth_token}}
 
 ### 사용자 검색
-GET localhost:8080/api/v1/friends/find?nickname=영
+GET localhost:8080/api/v1/friends/find?nickname=s
 Authorization: Bearer {{auth_token}}
 
 ### 친구 요청: 1번 유저에게 친구 요청 -> notification 행 추가
-POST localhost:8080/api/v1/friends/request/1
+POST localhost:8080/api/v1/friends/request/2
 Authorization: Bearer {{auth_token}}
 
 ### 수강신청 후 친구 자동 추가
@@ -56,7 +57,7 @@ POST http://localhost:8080/api/v1/lectures/2/enrollments
 Authorization: Bearer {{auth_token}}
 
 ### 친구 요청 철회 -> notifcation 행 삭제
-DELETE localhost:8080/api/v1/friends/request/20
+DELETE localhost:8080/api/v1/friends/request/1
 Authorization: Bearer {{auth_token}}
 
 ### 보낸 친구 요청 목록
@@ -76,7 +77,7 @@ GET localhost:8080/api/v1/friends/received
 Authorization: Bearer {{auth_token}}
 
 ### 친구 차단
-PATCH localhost:8080/api/v1/friends/block/3
+PATCH localhost:8080/api/v1/friends/block/1
 Authorization: Bearer {{auth_token}}
 
 ### 차단한 목록
