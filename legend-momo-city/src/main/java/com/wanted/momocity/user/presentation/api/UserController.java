@@ -1,5 +1,8 @@
 package com.wanted.momocity.user.presentation.api;
 
+import com.wanted.momocity.auth.application.port.BlacklistPort;
+import com.wanted.momocity.auth.application.port.RedisRefreshTokenPort;
+import com.wanted.momocity.auth.application.port.TokenProviderPort;
 import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.user.application.command.NicknameRegisterCommand;
@@ -9,6 +12,7 @@ import com.wanted.momocity.user.application.usecase.UserQueryUsecase;
 import com.wanted.momocity.user.presentation.api.request.NicknameRequest;
 import com.wanted.momocity.user.presentation.api.request.UpdateUserInfoRequest;
 import com.wanted.momocity.user.presentation.api.response.NicknameRegisterResponse;
+import com.wanted.momocity.user.presentation.api.response.UserInfoUpdateResponse;
 import com.wanted.momocity.user.presentation.api.response.UserResponseCode;
 import com.wanted.momocity.user.presentation.api.response.UserResponseMessage;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,6 +33,10 @@ public class UserController {
 
     private final UserCommandUsecase userCommandUsecase;
     private final UserQueryUsecase userQueryUsecase;
+
+    private final BlacklistPort blacklistPort;
+    private final TokenProviderPort tokenProviderPort;
+    private final RedisRefreshTokenPort redisRefreshTokenPort;
 
 
     @GetMapping("/user/detail")
@@ -67,19 +75,34 @@ public class UserController {
     @PatchMapping("/user/update")
     @Operation(summary = "사용자 정보 수정",
                 description = "프로필 이미지(모듈4부터), 닉네임, 비밀번호 변경 가능")
-    public ResponseEntity<ApiResponse<Void>> updateUserInfo(
+    public ResponseEntity<ApiResponse<UserInfoUpdateResponse>> updateUserInfo(
             @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestHeader("Authorization") String bearerToken,
             @RequestBody @Valid UpdateUserInfoRequest request){
 
         userCommandUsecase.updateUserInfo(new UpdateUserInfoCommand(
                 userDetails.getUserId(),request.profileImageUrl(),request.nickname(),request.currentPassword(),request.password()
         ));
 
+        boolean isPwdChanged = request.password() != null;
+
+        // 비밀번호 변경되면 있는 토큰 다 만료시키고 액세스 블랙리스트 처리 - 로그아웃이랑 동일
+        if (isPwdChanged) {
+            String accessToken = bearerToken.substring(7);
+            long remaining = tokenProviderPort.getRemainingMillis(accessToken);
+            if (remaining > 0) {
+                // 액세스 토큰 블랙리스트에 추가
+                blacklistPort.addBlacklist(accessToken, remaining);
+            }
+            // 리프레시 토큰 삭제
+            redisRefreshTokenPort.deleteByUserId(String.valueOf(userDetails.getUserId()));
+        }
+
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(
                         UserResponseCode.SUCCESS,
                         UserResponseMessage.USER_INFO_UPDATE_SUCCESS,
-                    null
+                        new UserInfoUpdateResponse(isPwdChanged)
                 ));
     }
 

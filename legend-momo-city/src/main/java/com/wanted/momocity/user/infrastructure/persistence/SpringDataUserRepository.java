@@ -50,4 +50,8 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
                              @Param("status") Status status,
                              @Param("updatedAt") LocalDateTime updatedAt);
 
-}
+    // 임시비번을 사용자가 변경했을 때
+    @Modifying
+    @Transactional
+    @Query("UPDATE UserUser u SET u.isTempPwd = false WHERE u.id = :userId")
+    void clearTempPwd(@Param("userId") Long userId);}

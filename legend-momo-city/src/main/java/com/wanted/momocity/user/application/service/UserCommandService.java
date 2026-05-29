@@ -48,6 +48,7 @@ public class UserCommandService implements UserCommandUsecase {
             String storedPassword = userRepository.findPasswordById(command.userId());
             userPolicy.passwordPolicy(command.currentPassword(), command.password(), storedPassword);
             encodedPassword = passwordEncodePort.encode(command.password());  // 검증 통과 후 암호화
+            userRepository.clearTempPwd(command.userId());
         }
 
         userRepository.updateUserInfo(new UpdateUserInfoCommand(
