@@ -133,6 +133,26 @@ public class LectureChapter {
         );
     }
 
+    // 챕터 동영상 처리 상태를 변경
+    // 예: UPLOADING -> ENCODING -> READY -> FAILED
+    public LectureChapter changeVideoStatus(VideoStatus videoStatus) {
+        validateVideoStatus(videoStatus);
+
+        return new LectureChapter(
+                id,
+                lectureId,
+                title,
+                orderNo,
+                videoUrl,
+                videoSizeBytes,
+                durationSec,
+                videoStatus,
+                originalFilename,
+                createdAt,
+                updatedAt
+        );
+    }
+
     /* comment
      * 이미 동영상이 등록된 챕터인지 확인
      * 서비스에서 중복 등록을 막을 때 사용

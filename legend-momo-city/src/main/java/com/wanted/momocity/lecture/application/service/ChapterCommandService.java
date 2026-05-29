@@ -2,6 +2,7 @@ package com.wanted.momocity.lecture.application.service;
 
 import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
+import com.wanted.momocity.lecture.application.command.ChangeChapterVideoStatusCommand;
 import com.wanted.momocity.lecture.application.command.CreateChapterCommand;
 import com.wanted.momocity.lecture.application.command.RegisterChapterVideoCommand;
 import com.wanted.momocity.lecture.application.port.TeacherAccountPort;
@@ -140,5 +141,40 @@ public class ChapterCommandService implements ChapterCommandUseCase {
         return chapterRepository.save(updatedChapter);
     }
 
+
+    @Override
+    public LectureChapter changeChapterVideoStatus(ChangeChapterVideoStatusCommand command) {
+        // Authorization 토큰에서 가져온 값으로 강사 ID를 조회
+        Long teacherId = teacherAccountPort.getTeacherId(command.teacherId());
+
+        // 상태를 변경할 강의를 조회
+        LectureAggregate lecture = lectureRepository.findById(command.lectureId())
+                .orElseThrow(() -> new LectureNotFoundException("강의를 찾을 수 없습니다."));
+
+        // 본인이 등록한 강의의 챕터만 동영상 상태를 변경
+        if (!lecture.isOwnedBy(teacherId)) {
+            throw new AccessDeniedException("본인이 등록한 강의의 챕터만 동영상 상태를 변경할 수 있습니다.");
+        }
+
+        // 상태를 변경할 챕터를 조회
+        LectureChapter chapter = chapterRepository.findById(command.chapterId())
+                .orElseThrow(() -> new ChapterNotFoundException("챕터를 찾을 수 없습니다."));
+
+        // 요청한 챕터가 요청한 강의에 속한 챕터인지 확인
+        if (!chapter.belongsTo(command.lectureId())) {
+            throw new ChapterNotFoundException("유효하지 않은 챕터 식별자입니다.");
+        }
+
+        // 동영상이 등록되지 않은 챕터는 READY 같은 상태로 바꿈
+        if (!chapter.hasVideo()) {
+            throw new DomainRuleViolationException("동영상이 등록된 챕터만 상태를 변경할 수 있습니다.");
+        }
+
+        // 도메인 모델에서 videoStatus를 변경
+        LectureChapter changedChapter = chapter.changeVideoStatus(command.videoStatus());
+
+        // 변경된 챕터를 저장
+        return chapterRepository.save(changedChapter);
+    }
 
 }
