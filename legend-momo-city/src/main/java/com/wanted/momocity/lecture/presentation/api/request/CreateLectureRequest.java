@@ -37,9 +37,7 @@ public record CreateLectureRequest(
         );
     }
 
-    /*
-     * S3 업로드 전에 카테고리를 먼저 검증한다.
-     */
+    // S3 업로드 전에 카테고리를 먼저 검증
     public void validateCategory() {
         parseCategory(category);
     }

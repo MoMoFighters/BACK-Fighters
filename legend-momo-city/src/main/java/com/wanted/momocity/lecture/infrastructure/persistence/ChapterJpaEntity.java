@@ -5,8 +5,7 @@ import com.wanted.momocity.lecture.domain.model.LectureChapter;
 import com.wanted.momocity.lecture.domain.model.VideoStatus;
 import jakarta.persistence.*;
 
-// ChapterJpaEntity는 chapter 테이블과 매핑되는 JPA Entity입니다.
-// 도메인 모델이 아니라 DB 저장용 객체입니다.
+// ChapterJpaEntity는 chapter 테이블과 매핑되는 JPA Entity
 @Entity
 @Table(name = "chapter")
 public class ChapterJpaEntity extends BaseTimeEntity {
@@ -15,36 +14,36 @@ public class ChapterJpaEntity extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 어떤 강의에 소속된 챕터인지 나타냅니다.
+    // 어떤 강의에 소속된 챕터인지 확인
     @Column(name = "lecture_id", nullable = false)
     private Long lectureId;
 
-    // 챕터 제목입니다.
+    // 챕터 제목
     @Column(nullable = false, length = 200)
     private String title;
 
-    // 강의 내 챕터 노출 순서입니다.
+    // 강의 내 챕터 노출 순서
     @Column(name = "order_no", nullable = false)
     private int orderNo;
 
-    // 동영상 S3 URL입니다. 챕터 등록 시점에는 null일 수 있습니다.
+    // 동영상 S3 URL
     @Column(name = "video_url", length = 500)
     private String videoUrl;
 
-    // 동영상 파일 크기입니다. 동영상 등록 전에는 null일 수 있습니다.
+    // 동영상 파일 크기
     @Column(name = "video_size_bytes")
     private Long videoSizeBytes;
 
-    // 동영상 재생 시간입니다. 인코딩 전에는 null일 수 있습니다.
+    // 동영상 재생 시간
     @Column(name = "duration_sec")
     private Integer durationSec;
 
-    // 동영상 처리 상태입니다.
+    // 동영상 처리 상태
     @Enumerated(EnumType.STRING)
     @Column(name = "video_status", nullable = false, length = 30)
     private VideoStatus videoStatus;
 
-    // 원본 동영상 파일명입니다. 동영상 등록 전에는 null일 수 있습니다.
+    // 원본 동영상 파일명
     @Column(name = "original_filename", length = 255)
     private String originalFilename;
 
@@ -73,7 +72,7 @@ public class ChapterJpaEntity extends BaseTimeEntity {
         this.originalFilename = originalFilename;
     }
 
-    // 도메인 모델을 JPA Entity로 변환합니다.
+    // 도메인 모델을 JPA Entity로 변환
     public static ChapterJpaEntity from(LectureChapter chapter) {
         return new ChapterJpaEntity(
                 chapter.getId(),
@@ -88,7 +87,7 @@ public class ChapterJpaEntity extends BaseTimeEntity {
         );
     }
 
-    // JPA Entity를 도메인 모델로 복원합니다.
+    // JPA Entity를 도메인 모델로 복원
     public LectureChapter toDomain() {
         return LectureChapter.restore(
                 id,

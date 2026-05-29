@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
-// ChapterRepositoryAdapter는 도메인 Repository를 JPA Repository와 연결합니다.
+// ChapterRepositoryAdapter는 도메인 Repository를 JPA Repository와 연결
 @Repository
 public class ChapterRepositoryAdapter implements ChapterRepository {
 

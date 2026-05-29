@@ -4,12 +4,7 @@ import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationExc
 
 import java.time.LocalDateTime;
 
-/*
- * Lecture는 강의 도메인 모델이다.
- *
- * JPA Entity가 아니므로 DB 어노테이션을 알지 않고,
- * 강의의 핵심 상태와 비즈니스 규칙만 표현한다.
- */
+// LectureAggregate는 강의 도메인 모델
 public class LectureAggregate {
 
     private final Long id;
@@ -47,11 +42,9 @@ public class LectureAggregate {
         this.updatedAt = updatedAt;
     }
 
-    /*
-     * 신규 강의를 생성할 때 사용하는 정적 팩토리 메서드다.
-     *
-     * 생성 직후 id와 시간 값은 DB 저장 전이므로 null이다.
-     * 수강 완료 인원 수는 처음 생성 시 0명으로 시작한다.
+    /* comment
+     * 신규 강의를 생성할 때 사용하는 메서드
+     * 수강 완료 인원 수는 처음 생성 시 0명으로 시작
      */
     public static LectureAggregate create(
             Long teacherId,
@@ -79,10 +72,9 @@ public class LectureAggregate {
         );
     }
 
-    /*
-     * DB에서 조회한 값을 도메인 모델로 복원할 때 사용한다.
-     *
-     * JPA Entity에서 id, 생성일, 수정일을 포함해 Lecture로 변환할 때 호출한다.
+    /* comment
+     * DB에서 조회한 값을 도메인 모델로 복원할 때 사용
+     * JPA Entity에서 id, 생성일, 수정일을 포함해 Lecture로 변환할 때 호출
      */
     public static LectureAggregate restore(
             Long id,
@@ -110,11 +102,10 @@ public class LectureAggregate {
         );
     }
 
-    /*
-     * 강의 정보를 수정한다.
-     *
+    /* comment
+     * 강의 정보를 수정
      * 기존 강의의 id, teacherId, 상태, 생성일은 유지하고,
-     * 제목/설명/썸네일/카테고리만 새 값으로 교체한다.
+     * 제목/설명/썸네일/카테고리만 새 값으로 교체
      */
     public LectureAggregate update(
             String title,
@@ -140,9 +131,9 @@ public class LectureAggregate {
         );
     }
 
-    /*
+    /* comment
      * 강의 상태를 변경
-     * 강의의 기본 정보는 유지하고 status 값만 새로운 상태로 교체합니다.
+     * 강의의 기본 정보는 유지하고 status 값만 새로운 상태로 교체
      */
     public LectureAggregate changeStatus(LectureStatus newStatus) {
         validateStatus(newStatus);
@@ -161,7 +152,7 @@ public class LectureAggregate {
         );
     }
 
-    /*
+    /* comment
      * 요청한 teacherId가 이 강의의 소유자인지 확인
      * 수정/삭제 권한 검증에서 사용
      */
@@ -169,9 +160,7 @@ public class LectureAggregate {
         return this.teacherId != null && this.teacherId.equals(teacherId);
     }
 
-    /*
-     * 강사 정보가 없으면 강의를 생성 X
-     */
+    // 강사 정보가 없으면 강의를 생성 X
     private static void validateTeacherId(Long teacherId) {
         if (teacherId == null) {
             throw new DomainRuleViolationException("강사 정보는 필수입니다.");

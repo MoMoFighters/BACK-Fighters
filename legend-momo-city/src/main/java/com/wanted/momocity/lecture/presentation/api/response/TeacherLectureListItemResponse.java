@@ -6,6 +6,7 @@ import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import java.time.LocalDateTime;
 
 // 강사 강의 목록에서 강의 1개를 표현하는 응답 DTO
+
 /* comment
 *   여기서 isEnabled는 넣지 않는다.
 *   강사 목록 조회는 본인 강의를 출력을 하는데 수강여부가 아닌 관리 대상 여부가 중요하다.

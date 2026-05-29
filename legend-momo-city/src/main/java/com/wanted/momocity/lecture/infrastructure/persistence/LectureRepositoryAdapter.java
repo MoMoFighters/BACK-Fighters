@@ -24,7 +24,7 @@ public class LectureRepositoryAdapter implements LectureRepository {
         this.repository = repository;
     }
 
-    // 강의를 저장합니다.
+    // 강의를 저장
     /* 강의 등록
     *    → id null
     *   → 새 row 저장
@@ -57,7 +57,7 @@ public class LectureRepositoryAdapter implements LectureRepository {
         return toDomain(saved);
     }
 
-    // 강의 ID로 강의를 조회합니다.
+    // 강의 ID로 강의를 조회
     @Override
     @Transactional(readOnly = true)
     public Optional<LectureAggregate> findById(Long lectureId) {
@@ -66,7 +66,7 @@ public class LectureRepositoryAdapter implements LectureRepository {
     }
 
     // 학생용 강의 목록을 조회
-    // 학생용 목록은 기본적으로 ACTIVE 상태의 강의만 내려준다.
+    // 학생용 목록은 기본적으로 ACTIVE 상태의 강의 보여준다.
     @Override
     @Transactional(readOnly = true)
     public LecturePage findLectures(
@@ -110,7 +110,7 @@ public class LectureRepositoryAdapter implements LectureRepository {
             int page,
             int size
     ) {
-        // 프론트는 page를 1부터 보내고, Spring Data JPA는 page를 0부터 시작합니다.
+        // 프론트는 page를 1부터 보내고, Spring Data JPA는 page를 0부터 시작
         Pageable pageable = PageRequest.of(page - 1, size);
 
         // keyword가 null이거나 공백이면 검색 조건을 적용하지 않도록 null로 정리
@@ -144,7 +144,7 @@ public class LectureRepositoryAdapter implements LectureRepository {
         return keyword.trim();
     }
 
-    // category, enrolled 조건에 맞춰 ACTIVE 강의만 조회합니다.
+    // category, enrolled 조건에 맞춰 ACTIVE 강의만 조회
     private Page<LectureJpaEntity> findLecturePage(
             LectureCategory category,
             String keyword,
@@ -152,17 +152,10 @@ public class LectureRepositoryAdapter implements LectureRepository {
             List<Long> enrolledLectureIds,
             Pageable pageable
     ) {
-        // 학생용 목록에서는 항상 ACTIVE 상태의 강의만 조회합니다.
+        // 학생용 목록에서는 항상 ACTIVE 상태의 강의만 조회
         LectureStatus status = LectureStatus.ACTIVE;
 
-        /*
-         * enrolled 조건이 없으면 수강 여부와 상관없이 ACTIVE 강의를 조회합니다.
-         *
-         * 예:
-         * GET /api/v1/lectures
-         * GET /api/v1/lectures?category=STUDY
-         * GET /api/v1/lectures?keyword=Spring
-         */
+        // enrolled 조건이 없으면 수강 여부와 상관없이 ACTIVE 강의를 조회
         if (enrolled == null) {
             return repository.findStudentLectures(
                     status,
@@ -172,21 +165,12 @@ public class LectureRepositoryAdapter implements LectureRepository {
             );
         }
 
-        /*
-         * enrolled=true인데 내가 신청한 강의가 하나도 없다면,
-         * 조회 결과는 빈 페이지가 맞습니다.
-         */
+        // enrolled=true인데 내가 신청한 강의가 하나도 없다면, 조회 결과는 빈 페이지
         if (Boolean.TRUE.equals(enrolled) && enrolledLectureIds.isEmpty()) {
             return Page.empty(pageable);
         }
 
-        /*
-         * enrolled=true이면 내가 신청한 ACTIVE 강의만 조회합니다.
-         *
-         * 예:
-         * GET /api/v1/lectures?enrolled=true
-         * GET /api/v1/lectures?category=STUDY&enrolled=true
-         */
+        // enrolled=true이면 내가 신청한 ACTIVE 강의만 조회
         if (Boolean.TRUE.equals(enrolled)) {
             return repository.findStudentLecturesByEnrolled(
                     status,
@@ -197,10 +181,7 @@ public class LectureRepositoryAdapter implements LectureRepository {
             );
         }
 
-        /*
-         * enrolled=false인데 내가 신청한 강의가 없다면,
-         * 제외할 강의가 없으므로 ACTIVE 강의 전체를 조회합니다.
-         */
+        // enrolled=false인데 내가 신청한 강의가 없다면,제외할 강의가 없으므로 ACTIVE 강의 전체를 조회
         if (enrolledLectureIds.isEmpty()) {
             return repository.findStudentLectures(
                     status,
@@ -210,13 +191,7 @@ public class LectureRepositoryAdapter implements LectureRepository {
             );
         }
 
-        /*
-         * enrolled=false이면 내가 신청하지 않은 ACTIVE 강의만 조회합니다.
-         *
-         * 예:
-         * GET /api/v1/lectures?enrolled=false
-         * GET /api/v1/lectures?category=STUDY&enrolled=false
-         */
+        // enrolled=false이면 내가 신청하지 않은 ACTIVE 강의만 조회
         return repository.findStudentLecturesByNotEnrolled(
                 status,
                 enrolledLectureIds,
@@ -227,7 +202,7 @@ public class LectureRepositoryAdapter implements LectureRepository {
 
     }
 
-    // JPA Entity를 도메인 모델로 변환합니다.
+    // JPA Entity를 도메인 모델로 변환
     private LectureAggregate toDomain(LectureJpaEntity entity) {
         return LectureAggregate.restore(
                 entity.getId(),

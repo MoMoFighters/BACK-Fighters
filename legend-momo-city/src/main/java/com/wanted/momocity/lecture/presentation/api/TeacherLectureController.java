@@ -54,16 +54,17 @@ public class TeacherLectureController {
             summary = "강의 등록",
             description = "강사가 새로운 강의를 등록합니다. 썸네일 이미지는 multipart/form-data로 업로드합니다."
     )
-    // Content-Type: multipart/form-data 즉, Json이 아닌 Form-data로 요청 받는다
+    // Content-Type: multipart/form-data 즉, Json이 아닌 Form-data로 요청 받음
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     // 실행 전 권한 검증
-    @PreAuthorize("hasAuthority('ROLE_TEACHER')") // 강사일 때만 이 API 가 호출 된다.
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')") // 강사일 때만 이 API 가 호출
     public ResponseEntity<ApiResponse<CreateLectureResponse>> createLecture(
             Authentication authentication,
             @Valid @ModelAttribute CreateLectureRequest request
     ) {
         Long teacherId = Long.parseLong(authentication.getName());
-        /*
+
+        /* comment
          * S3 업로드 전에 category를 먼저 검증
          * 잘못된 카테고리 요청이면 여기서 400 응답으로 끝나고, 썸네일 파일은 업로드 X
          */
@@ -113,7 +114,7 @@ public class TeacherLectureController {
                 ));
     }
 
-    /*
+    /* comment
      * 챕터 동영상 등록 API
      * 동영상 파일은 JSON이 아니라 multipart/form-data로 받는다.
      */
@@ -133,20 +134,20 @@ public class TeacherLectureController {
             @PathVariable Long chapterId,
             @Valid @ModelAttribute RegisterChapterVideoRequest request
     ) {
-        // Authorization 토큰에서 로그인한 강사의 email을 가져옵니다.
+        // Authorization 토큰에서 로그인한 강사의 email을 가져온다.
         Long teacherId = Long.parseLong(authentication.getName());
 
-        // 요청 DTO를 Application 계층에서 사용할 Command로 변환합니다.
+        // 요청 DTO를 Application 계층에서 사용할 Command로 변환
         RegisterChapterVideoCommand command = request.toCommand(
                 teacherId,
                 lectureId,
                 chapterId
         );
 
-        // 챕터 동영상 등록 유스케이스를 실행합니다.
+        // 챕터 동영상 등록 유스케이스를 실행
         LectureChapter chapter = chapterCommandUseCase.registerChapterVideo(command);
 
-        // 200 OK 응답을 반환합니다.
+        // 200 OK 응답을 반환
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(
                         ApiResponseCode.SUCCESS,
@@ -192,9 +193,9 @@ public class TeacherLectureController {
                 ));
     }
 
-    /*
+    /* comment
      * 강사 강의 목록 조회 API
-     * 로그인한 강사가 본인이 등록한 강의 목록을 조회합니다.
+     * 로그인한 강사가 본인이 등록한 강의 목록을 조회
      */
     @Operation(
             summary = "강사 강의 목록 조회",
@@ -213,10 +214,10 @@ public class TeacherLectureController {
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String keyword
     ) {
-        // Authorization 토큰에서 로그인한 강사의 email을 가져옵니다.
+        // Authorization 토큰에서 로그인한 강사의 email을 가져온다.
         Long teacherId = Long.parseLong(authentication.getName());
 
-        // 요청 파라미터를 Application 계층의 Query 객체로 변환합니다.
+        // 요청 파라미터를 Application 계층의 Query 객체로 변환
         GetTeacherLecturesQuery query = new GetTeacherLecturesQuery(
                 teacherId,
                 page,
@@ -225,10 +226,10 @@ public class TeacherLectureController {
                 keyword
         );
 
-        // 강사 강의 목록 조회 유스케이스를 실행합니다.
+        // 강사 강의 목록 조회 유스케이스를 실행
         TeacherLecturePageResponse response = lectureQueryUseCase.getTeacherLectures(query);
 
-        // 200 OK 응답을 반환합니다.
+        // 200 OK 응답을 반환
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(
                         ApiResponseCode.SUCCESS,
@@ -237,9 +238,9 @@ public class TeacherLectureController {
                 ));
     }
 
-    /*
-     * category 요청 파라미터를 LectureCategory enum으로 변환합니다.
-     * category가 없으면 필터를 적용하지 않기 위해 null을 반환합니다.
+    /* comment
+     * category 요청 파라미터를 LectureCategory enum으로 변환
+     * category가 없으면 필터를 적용하지 않기 위해 null을 반환
      */
     private LectureCategory parseCategory(String category) {
         if (category == null || category.isBlank()) {
@@ -253,8 +254,8 @@ public class TeacherLectureController {
         }
     }
 
-    // 강사 강의 상세 조회 API입니다.
-    // 로그인한 강사가 본인이 등록한 강의의 상세 정보와 챕터 목록을 조회합니다.
+    // 강사 강의 상세 조회 API
+    // 로그인한 강사가 본인이 등록한 강의의 상세 정보와 챕터 목록을 조회
     @Operation(
             summary = "강사 강의 상세 조회",
             description = "로그인한 강사가 본인이 등록한 강의의 상세 정보와 챕터 목록을 조회합니다."
@@ -265,20 +266,20 @@ public class TeacherLectureController {
             Authentication authentication,
             @PathVariable Long lectureId
     ) {
-        // Authorization 토큰에서 로그인한 강사 ID를 꺼냅니다.
+        // Authorization 토큰에서 로그인한 강사 ID를 꺼낸다.
         Long teacherId = Long.parseLong(authentication.getName());
 
-        // Controller에서 받은 값을 Application 계층에서 사용할 Query 객체로 묶습니다.
+        // Controller에서 받은 값을 Application 계층에서 사용할 Query 객체로 묶는다.
         GetTeacherLectureDetailQuery query = new GetTeacherLectureDetailQuery(
                 teacherId,
                 lectureId
         );
 
-        // 강사 강의 상세 조회 UseCase를 실행합니다.
+        // 강사 강의 상세 조회 UseCase를 실행
         TeacherLectureDetailResponse response =
                 lectureQueryUseCase.getTeacherLectureDetail(query);
 
-        // 조회 성공 응답을 반환합니다.
+        // 조회 성공 응답을 반환
         return ResponseEntity.ok(ApiResponse.success(
                 ApiResponseCode.SUCCESS,
                 "강사 강의 상세 조회에 성공했습니다.",

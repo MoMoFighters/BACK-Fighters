@@ -51,9 +51,7 @@ public class LectureExceptionHandler {
                 ));
     }
 
-    /*
-     * 챕터를 찾을 수 없을 때 404 응답을 반환합니다.
-     */
+    // 챕터를 찾을 수 없을 때 404 응답을 반환
     @ExceptionHandler(ChapterNotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleChapterNotFound(ChapterNotFoundException exception) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -64,9 +62,7 @@ public class LectureExceptionHandler {
                 ));
     }
 
-    /*
-     * 이미 동영상이 등록된 챕터에 다시 등록 요청이 들어오면 409 응답을 반환합니다.
-     */
+    // 이미 동영상이 등록된 챕터에 다시 등록 요청이 들어오면 409 응답을 반환
     @ExceptionHandler(ChapterVideoAlreadyExistsException.class)
     public ResponseEntity<ApiErrorResponse> handleChapterVideoAlreadyExists(ChapterVideoAlreadyExistsException exception) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
