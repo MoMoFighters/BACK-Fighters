@@ -3,6 +3,7 @@ package com.wanted.momocity.lecture.domain.repository;
 import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.model.LectureCategory;
 import com.wanted.momocity.lecture.domain.model.LecturePage;
+import com.wanted.momocity.lecture.domain.model.LectureStatus;
 
 import java.util.List;
 import java.util.Optional;
@@ -30,9 +31,19 @@ public interface LectureRepository {
             int size
     );
 
-    // 강사가 등록한 강의 목록을 조회한다.
+    // 강사가 등록한 강의 목록을 조회
     LecturePage findTeacherLectures(
             Long teacherId,
+            LectureCategory category,
+            String keyword,
+            int page,
+            int size
+    );
+
+    // 관리자가 강의 목록을 조회
+    // status 목록을 받아 WAITING, ACTIVE 같은 여러 상태를 한 번에 조회
+    LecturePage findAdminLectures(
+            List<LectureStatus> statuses,
             LectureCategory category,
             String keyword,
             int page,

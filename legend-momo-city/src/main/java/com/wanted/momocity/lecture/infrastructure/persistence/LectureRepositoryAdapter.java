@@ -65,6 +65,7 @@ public class LectureRepositoryAdapter implements LectureRepository {
                 .map(this::toDomain);
     }
 
+
     // 학생용 강의 목록을 조회
     // 학생용 목록은 기본적으로 ACTIVE 상태의 강의 보여준다.
     @Override
@@ -128,6 +129,44 @@ public class LectureRepositoryAdapter implements LectureRepository {
                 .map(this::toDomain)
                 .toList();
 
+        return new LecturePage(
+                content,
+                lecturePage.getTotalElements(),
+                lecturePage.getTotalPages()
+        );
+    }
+
+    // 관리자가 강의 목록을 조회
+    // statuses에는 기본적으로 WAITING, ACTIVE가 들어온다.
+    @Override
+    @Transactional(readOnly = true)
+    public LecturePage findAdminLectures(
+            List<LectureStatus> statuses,
+            LectureCategory category,
+            String keyword,
+            int page,
+            int size
+    ) {
+        // 프론트는 page를 1부터 보내고, Spring Data JPA는 page를 0부터 시작
+        Pageable pageable = PageRequest.of(page - 1, size);
+
+        // keyword가 null이거나 공백이면 검색 조건을 적용하지 않기 위해 null로 정리
+        String normalizedKeyword = normalizeKeyword(keyword);
+
+        // 관리자 강의 목록 조회 쿼리를 실행
+        Page<LectureJpaEntity> lecturePage = repository.findAdminLectures(
+                statuses,
+                category,
+                normalizedKeyword,
+                pageable
+        );
+
+        // JPA Entity를 도메인 모델로 변환
+        List<LectureAggregate> content = lecturePage.getContent().stream()
+                .map(this::toDomain)
+                .toList();
+
+        // 도메인 페이지 객체로 감싸서 반환
         return new LecturePage(
                 content,
                 lecturePage.getTotalElements(),
