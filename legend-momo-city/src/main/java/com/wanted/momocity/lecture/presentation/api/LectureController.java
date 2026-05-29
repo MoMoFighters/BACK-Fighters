@@ -3,18 +3,12 @@ package com.wanted.momocity.lecture.presentation.api;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
-import com.wanted.momocity.lecture.application.query.GetAdminLecturesQuery;
-import com.wanted.momocity.lecture.application.query.GetLecturesQuery;
-import com.wanted.momocity.lecture.application.query.GetStudentLectureDetailQuery;
-import com.wanted.momocity.lecture.application.query.GetTeacherLecturesQuery;
+import com.wanted.momocity.lecture.application.query.*;
 import com.wanted.momocity.lecture.application.usecase.AdminLectureQueryUseCase;
 import com.wanted.momocity.lecture.application.usecase.LectureQueryUseCase;
 import com.wanted.momocity.lecture.domain.model.LectureCategory;
 import com.wanted.momocity.lecture.domain.model.LectureStatus;
-import com.wanted.momocity.lecture.presentation.api.response.AdminLecturePageResponse;
-import com.wanted.momocity.lecture.presentation.api.response.StudentLectureDetailResponse;
-import com.wanted.momocity.lecture.presentation.api.response.StudentLecturePageResponse;
-import com.wanted.momocity.lecture.presentation.api.response.TeacherLecturePageResponse;
+import com.wanted.momocity.lecture.presentation.api.response.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -135,50 +129,60 @@ public class LectureController {
     // 학생은 ACTIVE 상태의 강의만 상세 조회
     @Operation(
             summary = "강의 상세 조회",
-            description = "학생 또는 회원이 ACTIVE 상태의 강의 상세 정보를 조회합니다."
+            description = "권한에 따라 강의 상세 정보를 조회합니다. 관리자는 승인 대기/진행 중 강의를 조회하고, 학생은 ACTIVE 강의만 조회합니다."
     )
     @GetMapping("/{lectureId}")
-    public ResponseEntity<ApiResponse<StudentLectureDetailResponse>> getLectureDetail(
+    public ResponseEntity<ApiResponse<?>> getLectureDetail(
             Authentication authentication,
 
             // 상세 조회할 강의 ID
             @PathVariable Long lectureId
     ) {
-        // Authorization 토큰에서 로그인한 사용자 ID를 꺼낸다
+        /*
+         * Authorization 토큰에서 로그인 사용자 ID와 권한을 꺼낸다.
+         * 같은 URL이라도 권한에 따라 조회 정책과 응답 DTO가 달라진다.
+         */
         Long userId = Long.parseLong(authentication.getName());
+        String role = getRole(authentication);
 
-        // Controller에서 받은 값을 Application 계층에서 사용할 Query 객체로 묶는다.
+        /*
+         * 관리자 강의 상세 조회
+         * 관리자는 승인 대기(WAITING) 또는 진행 중(ACTIVE) 강의를 상세 조회한다.
+         */
+        if ("ROLE_ADMIN".equals(role)) {
+            GetAdminLectureDetailQuery query = new GetAdminLectureDetailQuery(
+                    userId,
+                    lectureId
+            );
+
+            AdminLectureDetailResponse response =
+                    adminLectureQueryUseCase.getAdminLectureDetail(query);
+
+            return ResponseEntity.ok(ApiResponse.success(
+                    ApiResponseCode.SUCCESS,
+                    "관리자 강의 상세 조회에 성공했습니다.",
+                    response
+            ));
+        }
+
+        /*
+         * 학생 강의 상세 조회
+         * 학생은 ACTIVE 상태의 강의만 상세 조회한다.
+         * 응답에는 isEnrolled가 포함된다.
+         */
         GetStudentLectureDetailQuery query = new GetStudentLectureDetailQuery(
                 userId,
                 lectureId
         );
 
-        // 학생 강의 상세 조회 UseCase를 실행
         StudentLectureDetailResponse response =
                 lectureQueryUseCase.getStudentLectureDetail(query);
 
-        // 조회 성공 응답을 반환
         return ResponseEntity.ok(ApiResponse.success(
                 ApiResponseCode.SUCCESS,
                 "강의 상세 조회에 성공했습니다.",
                 response
         ));
-    }
-
-    /* comment
-     * 문자열 category를 LectureCategory enum으로 변환
-     * category가 없으면 null을 반환해서 전체 카테고리를 조회
-     */
-    private LectureCategory parseCategory(String category) {
-        if (category == null || category.isBlank()) {
-            return null;
-        }
-
-        try {
-            return LectureCategory.valueOf(category.toUpperCase());
-        } catch (IllegalArgumentException exception) {
-            throw new DomainRuleViolationException("허용되지 않는 강의 카테고리입니다.");
-        }
     }
 
     // 문자열 status를 LectureStatus enum으로 변환한다.
@@ -192,6 +196,22 @@ public class LectureController {
             return LectureStatus.valueOf(status.toUpperCase());
         } catch (IllegalArgumentException exception) {
             throw new DomainRuleViolationException("허용되지 않은 강의 상태입니다.");
+        }
+    }
+
+    /*
+     * 문자열 category를 LectureCategory enum으로 변환한다.
+     * category가 없으면 null을 반환해서 전체 카테고리 조회로 처리한다.
+     */
+    private LectureCategory parseCategory(String category) {
+        if (category == null || category.isBlank()) {
+            return null;
+        }
+
+        try {
+            return LectureCategory.valueOf(category.toUpperCase());
+        } catch (IllegalArgumentException exception) {
+            throw new DomainRuleViolationException("허용되지 않은 강의 카테고리입니다.");
         }
     }
 

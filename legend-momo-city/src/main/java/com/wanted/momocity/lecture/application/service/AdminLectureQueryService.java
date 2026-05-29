@@ -1,9 +1,16 @@
 package com.wanted.momocity.lecture.application.service;
 
+import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
+import com.wanted.momocity.lecture.application.query.GetAdminLectureDetailQuery;
 import com.wanted.momocity.lecture.application.query.GetAdminLecturesQuery;
 import com.wanted.momocity.lecture.application.usecase.AdminLectureQueryUseCase;
+import com.wanted.momocity.lecture.domain.exception.LectureNotFoundException;
+import com.wanted.momocity.lecture.domain.model.LectureAggregate;
+import com.wanted.momocity.lecture.domain.model.LectureChapter;
 import com.wanted.momocity.lecture.domain.model.LectureStatus;
+import com.wanted.momocity.lecture.domain.repository.ChapterRepository;
 import com.wanted.momocity.lecture.domain.repository.LectureRepository;
+import com.wanted.momocity.lecture.presentation.api.response.AdminLectureDetailResponse;
 import com.wanted.momocity.lecture.presentation.api.response.AdminLectureListItemResponse;
 import com.wanted.momocity.lecture.presentation.api.response.AdminLecturePageResponse;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +26,7 @@ import java.util.List;
 public class AdminLectureQueryService implements AdminLectureQueryUseCase {
 
     private final LectureRepository lectureRepository;
+    private final ChapterRepository chapterRepository;
 
     @Override
     public AdminLecturePageResponse getAdminLectures(GetAdminLecturesQuery query) {
@@ -59,5 +67,36 @@ public class AdminLectureQueryService implements AdminLectureQueryUseCase {
         }
 
         return List.of(status);
+    }
+
+    @Override
+    public AdminLectureDetailResponse getAdminLectureDetail(GetAdminLectureDetailQuery query) {
+        /*
+         * 관리자 상세 조회 대상 강의를 조회한다.
+         * 강의가 없으면 404로 변환될 수 있는 예외를 던진다.
+         */
+        LectureAggregate lecture = lectureRepository.findById(query.lectureId())
+                .orElseThrow(() -> new LectureNotFoundException("강의를 찾을 수 없습니다."));
+
+        /*
+         * 관리자 화면에서는 승인 대기(WAITING) 또는 진행 중(ACTIVE) 강의만 상세 조회한다.
+         * HOLD, DELETED까지 보여줄 정책이면 이 조건은 나중에 확장하면 된다.
+         */
+        if (lecture.getStatus() != LectureStatus.WAITING
+                && lecture.getStatus() != LectureStatus.ACTIVE) {
+            throw new DomainRuleViolationException("관리자는 승인 대기 또는 진행 중 강의만 조회할 수 있습니다.");
+        }
+
+        /*
+         * 강의에 연결된 챕터 목록을 노출 순서대로 조회한다.
+         * 관리자 상세 화면에서 챕터와 영상 상태를 함께 확인하기 위해 필요하다.
+         */
+        List<LectureChapter> chapters =
+                chapterRepository.findAllByLectureIdOrderByOrderNoAsc(query.lectureId());
+
+        /*
+         * 강의 정보와 챕터 목록을 관리자 상세 응답 DTO로 변환한다.
+         */
+        return AdminLectureDetailResponse.from(lecture, chapters);
     }
 }
