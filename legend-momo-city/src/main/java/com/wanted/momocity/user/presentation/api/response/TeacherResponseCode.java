@@ -1,4 +1,4 @@
-package com.wanted.momocity.teacher.presentation.api;
+package com.wanted.momocity.user.presentation.api.response;
 
 /* comment
     TeacherResponseCode 정리

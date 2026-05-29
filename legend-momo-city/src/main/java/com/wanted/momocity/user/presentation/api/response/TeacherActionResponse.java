@@ -1,4 +1,4 @@
-package com.wanted.momocity.teacher.presentation.api.response;
+package com.wanted.momocity.user.presentation.api.response;
 
 import java.time.Instant;
 

@@ -1,4 +1,4 @@
-package com.wanted.momocity.teacher.presentation.api;
+package com.wanted.momocity.user.presentation.api.response;
 
 /* comment.
     1. 해당 클래스가 하는 일 : 강사 영역 전용 응답 메시지(사람이 읽는 텍스트) 상수 모음
