@@ -96,7 +96,14 @@ public class FriendEligibilityPolicy {
     }
 
     //차단 검증
-    public void ensureBlockable(Optional<FriendJpaEntity> existingRelation) {
+    public void ensureBlockable(Optional<FriendJpaEntity> existingRelation, String targetRole) {
+
+        //강사는 차단 불가(409)
+        if ("TEACHER".equals(targetRole)) {
+            log.warn("[FriendEligibilityPolicy] 차단 검증 실패 - 대상이 강사(TEACHER)임");
+            throw new FMResourceConflictException("강사는 차단할 수 없습니다.");
+
+        }
         //친구 행 없으면 아니면 차단 불가(409)
         if (existingRelation.isEmpty()) {
             log.warn("[FriendEligibilityPolicy] 차단 검증 실패 - 아무런 관계 내역이 없음(친구 상태가 아님)");
@@ -150,7 +157,8 @@ public class FriendEligibilityPolicy {
         FriendJpaEntity relation = existingRelation.get();
 
         //FRIEND 상태가 아닐 때 삭제 불가(409)
-        if (!"FRIEND".equals(relation.getStatus())) {
+        if (!"FRIEND".equals(relation.getStatus())
+        && !"BLOCK".equals(relation.getStatus())) {
             log.warn("[FriendEligibilityPolicy] 친구 삭제 검증 실패 - 친구 상태가 아님(현재 상태: {})", relation.getStatus());
             throw new FMResourceConflictException("이미 친구 관계가 아니거나 삭제할 수 없는 대상입니다.");
         }

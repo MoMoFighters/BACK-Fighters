@@ -31,19 +31,29 @@ public class BlockFriendCommandService implements BlockFriendCommandUseCase {
         //두 사람 사이의 관계 존재 확인
         Optional<FriendJpaEntity> relationOpt = friendRepository.findAnyRelationBetween(command.userId(), command.targetUserId());
 
-        //FRIEND일 때만 통과
-        friendEligibilityPolicy.ensureBlockable(relationOpt);
+        //차단 대상자 유저 객체 담기(행의 방향과 상관없이 '로그인한 유저'가 아닌 상대방 유저의 정보 추출
+        String targetRole = "STUDENT";
 
-        //검증 통과했으므로 무조건 행 존재
+        if (relationOpt.isPresent()) {
+            //검증 통과했으므로 무조건 행 존재
+            FriendJpaEntity relation = relationOpt.get();
+            UserWithFMJpaEntity targetUser = (relation.getFromUserId().getId().equals(command.userId()))
+                    ? relation.getToUserId() : relation.getFromUserId();
+            targetRole = targetUser.getRole();
+        }
+        //FRIEND일 때만 통과
+        friendEligibilityPolicy.ensureBlockable(relationOpt,  targetRole);
+
         FriendJpaEntity relation = relationOpt.get();
+
+        // 차단 대상자 유저 객체 담기
+        UserWithFMJpaEntity targetUser = (relation.getFromUserId().getId().equals(command.userId()))
+                ? relation.getToUserId() : relation.getFromUserId();
 
         //상태를 BLOCK으로 변경
         relation.changeStatus("BLOCK");
         log.info("[BlockFriendCommandService] BLOCK으로 변경 완료 - 행ID: {}", relation.getId());
 
-        //차단 대상자 유저 객체 담기(행의 방향과 상관없이 '로그인한 유저'가 아닌 상대방 유저의 정보 추출
-        UserWithFMJpaEntity targetUser = (relation.getFromUserId().getId().equals(command.userId()))
-                ? relation.getToUserId() : relation.getFromUserId();
 
         log.info("[BlockFriendCommandService] 최종 친구 차단 완료 - 대상 닉네임: {}, 상태: {}", targetUser.getNickname(), relation.getStatus());
 
