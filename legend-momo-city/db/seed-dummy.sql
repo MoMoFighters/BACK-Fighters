@@ -1,24 +1,58 @@
 -- =====================================================================
---  MoMo City - 더미 데이터 시드 스크립트 (개발/시연용)  [LIVE 버전]
+--  MoMo City - 통합 시드 스크립트 (스키마 패치 + 리셋 + 더미 236행)  [LIVE]
 --  대상 DB : momo (MySQL, utf8mb4)
+-- =====================================================================
+--  ★ 팀 DB 셋업은 이 파일 하나면 끝. 아래 3단계가 순서대로 자동 실행된다.
+--    STEP 0  스키마 수정사항 적용 (category HEALTH->FITNESS / email NULL / report 잔재컬럼 정리)
+--    STEP 1  전체 테이블 리셋(TRUNCATE)  → 멱등: 언제 재실행해도 깨끗하게 다시 채워짐
+--    STEP 2  더미데이터 INSERT (26테이블 236행)
 -- ---------------------------------------------------------------------
---  [이 버전의 특징 - "방금 전까지 운영되던 서비스"처럼]
---   - 모든 시간 컬럼을 고정 날짜가 아니라 NOW()/CURDATE() 기준 상대값으로 박았다.
---   - 따라서 이 스크립트를 "언제 실행하든" 데이터가 항상 방금까지 살아있던 것처럼 보인다.
---     예) 가장 최근 신고 = 약 4분 전 / 최신 에러로그 = 약 2분 전 / 가입 = 수개월 전
---   - 신규일수록 PENDING(미처리), 오래될수록 RESOLVED/REJECTED(처리완료) 로 운영 흐름 재현.
---   - ※ NOW()/INTERVAL 은 값 계산 표현식일 뿐, ERD/DDL(테이블 구조)에는 영향 없음.
--- ---------------------------------------------------------------------
---  [실행 전제]
---   1) DB 'momo' 에 ver3.4 DDL(수정본)이 이미 적용돼 있어야 한다.
---      - 수정 ① user.email : NOT NULL -> NULL (널 허용)
---      - 수정 ② category ENUM : 'HEALTH' -> 'FITNESS' (user/lecture/building 3곳)
---   2) 앱을 1회 bootRun 하여 Hibernate(ddl-auto:update)가 'error_log' 테이블을
---      먼저 생성한 상태여야 한다.
--- ---------------------------------------------------------------------
---  [로그인 정보] 비밀번호 평문 : password123 (bcrypt, 검증 완료) / id=12 카카오는 널
---  [주의] 멱등 아님. 재실행 시 PK 중복 -> 재시드하려면 TRUNCATE 후 실행.
---         birth(생년월일)만 고정 리터럴(절대값) 유지, 나머지 시간은 전부 상대값.
+--  [실행 전제] 앱을 1회 bootRun 하여 Hibernate 가 전체 테이블(error_log 포함)을 생성한 상태.
+--  [실행 방법] mysql -u root -p momo < seed-dummy.sql   (또는 워크벤치에서 전체 선택 실행)
+--  [로그인]   전 계정 비밀번호 password123 (bcrypt 검증완료) / id=12 카카오는 email·password 널.
+--  [시간값]   전부 NOW()/CURDATE() 상대값 → 항상 "방금까지 운영된" 데이터. birth(생년월일)만 고정.
+--  [참고]     ERD 설계 문서(테이블 구조)는 schema-v3.5.sql 참조. 이 파일은 "데이터 적재" 전용.
+-- =====================================================================
+
+-- =====================================================================
+--  STEP 0. 스키마 수정사항 적용  (구 00-ddl-fix.sql 통합)
+--   ① category ENUM 'HEALTH'->'FITNESS' (user/lecture/building)
+--   ② user.email NOT NULL -> NULL
+--   ③ report 잔재(orphan) 컬럼 정리 : reporter_id / target_nickname / reason_detail
+--      (ddl-auto:update 가 안 지운 옛 컬럼. 현재 엔티티는 reporter_user_id / detail 사용)
+--   ※ 멱등: 이미 적용된 상태여도 안전. 잔재 컬럼은 "존재할 때만" DROP.
+-- =====================================================================
+ALTER TABLE `user`     MODIFY `category` ENUM('FITNESS','STUDY','COOK','BEAUTY','ART') NULL;
+ALTER TABLE `lecture`  MODIFY `category` ENUM('FITNESS','STUDY','COOK','BEAUTY','ART') NOT NULL;
+ALTER TABLE `building` MODIFY `category` ENUM('FITNESS','STUDY','COOK','BEAUTY','ART') NOT NULL;
+ALTER TABLE `user`     MODIFY `email`    VARCHAR(255) NULL;
+
+SET @db := DATABASE();
+-- reporter_id 에 걸린 옛 FK 먼저 제거(이름 동적 조회) 후 컬럼 DROP
+SET @fk := (SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE
+            WHERE TABLE_SCHEMA=@db AND TABLE_NAME='report' AND COLUMN_NAME='reporter_id'
+              AND REFERENCED_TABLE_NAME IS NOT NULL LIMIT 1);
+SET @sql := IF(@fk IS NOT NULL, CONCAT('ALTER TABLE `report` DROP FOREIGN KEY `',@fk,'`'), 'DO 0');
+PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
+SET @sql := IF(EXISTS(SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=@db AND TABLE_NAME='report' AND COLUMN_NAME='reporter_id'),
+               'ALTER TABLE `report` DROP COLUMN `reporter_id`', 'DO 0');
+PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
+SET @sql := IF(EXISTS(SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=@db AND TABLE_NAME='report' AND COLUMN_NAME='target_nickname'),
+               'ALTER TABLE `report` DROP COLUMN `target_nickname`', 'DO 0');
+PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
+SET @sql := IF(EXISTS(SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=@db AND TABLE_NAME='report' AND COLUMN_NAME='reason_detail'),
+               'ALTER TABLE `report` DROP COLUMN `reason_detail`', 'DO 0');
+PREPARE s FROM @sql; EXECUTE s; DEALLOCATE PREPARE s;
+
+-- =====================================================================
+--  STEP 1. 전체 테이블 리셋 (FK 끄고 TRUNCATE → 멱등성 확보)
+-- =====================================================================
+SET FOREIGN_KEY_CHECKS = 0;
+TRUNCATE `access_log`;TRUNCATE `building`;TRUNCATE `calendar`;TRUNCATE `chapter`;TRUNCATE `chat_room`;TRUNCATE `chat_room_member`;TRUNCATE `comment`;TRUNCATE `enrollment`;TRUNCATE `error_log`;TRUNCATE `friend`;TRUNCATE `guestbook`;TRUNCATE `inquiry`;TRUNCATE `learning_history`;TRUNCATE `lecture`;TRUNCATE `message`;TRUNCATE `notification`;TRUNCATE `payment`;TRUNCATE `post`;TRUNCATE `post_image`;TRUNCATE `refresh_token`;TRUNCATE `report`;TRUNCATE `review`;TRUNCATE `streak`;TRUNCATE `user`;TRUNCATE `user_oauth`;TRUNCATE `verification_code`;
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- =====================================================================
+--  STEP 2. 더미데이터 INSERT (FK 부모→자식 순서)
 -- =====================================================================
 
 -- =====================================================================
