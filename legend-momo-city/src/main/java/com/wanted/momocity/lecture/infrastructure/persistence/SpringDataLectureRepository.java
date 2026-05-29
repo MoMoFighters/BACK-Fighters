@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
@@ -57,6 +58,21 @@ public interface SpringDataLectureRepository extends JpaRepository<LectureJpaEnt
             LectureStatus status,
             Collection<Long> lectureIds,
             Pageable pageable
+    );
+
+    /* comment
+     * 특정 상태의 강의 개수를 조회한다.
+     * 관리자 대시보드에서 현재 진행 중인 강의 수를 계산할 때 사용한다.
+     */
+    long countByStatus(LectureStatus status);
+
+    /* comment
+     * 특정 날짜 이전에 생성된 특정 상태의 강의 개수를 조회한다.
+     * 관리자 대시보드에서 이전 기간 대비 증감률을 계산할 때 사용한다.
+     */
+    long countByStatusAndCreatedAtBefore(
+            LectureStatus status,
+            LocalDateTime createdAt
     );
 
     /* comment

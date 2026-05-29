@@ -9,6 +9,7 @@ import com.wanted.momocity.user.application.command.UpdateUserInfoCommand;
 import com.wanted.momocity.user.application.policy.UserPolicy;
 import com.wanted.momocity.user.application.port.UserEmailSendPort;
 import com.wanted.momocity.user.application.usecase.UserCommandUsecase;
+import com.wanted.momocity.user.domain.exception.InvalidReasonException;
 import com.wanted.momocity.user.domain.model.Role;
 import com.wanted.momocity.user.domain.model.Status;
 import com.wanted.momocity.user.domain.repository.UserRepository;
