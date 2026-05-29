@@ -102,21 +102,20 @@ public class FindChatRoomQueryService implements FindChatRoomQueryUseCase {
                             targetUser = otherMsgOpt.get().getSenderId();
                             isLeftRoom = true;
                     } else {
-                            //상대방도 없고 상대방이 보낸 메시지도 없을 때는 조회 안됨
-                            log.warn("[FindChatRoomQueryService] 메시지 내역이 없는 유령 방이므로 노출에서 제외합니다. - 방ID: {}", roomId);
+                            //상대방도 없고 상대방이 보낸 메시지도 없을 때
+                            log.warn("[FindChatRoomQueryService] 메시지 내역이 없는 유령 방 - 방ID: {}", roomId);
                             targetUser = null;
                     }
                 }
             }
 
             if (targetUser == null) {
-                log.warn("[FriendChatRoomQueryService] 상대방 유저를 특정할 수 없어 목록에서 제외됨 - 방ID: {}", roomId);
-                continue;
+                isLeftRoom = true;
             }
 
             //친구 삭제의 경우에도 (알 수 없음) 처리, 있으면 실제 상태 추출
             //친구 상태 양방향 조회 (나와의 채팅이면 관계 조회 필요없이 me 상태로 처리)
-            if (!"me".equals(friendStatus) && !targetUser.getId().equals(userId)) {
+            if (targetUser != null && !"me".equals(friendStatus) && !targetUser.getId().equals(userId)) {
                 Optional<FriendJpaEntity> relationOpt = messageSideFriendRepository.findByFromUserId_IdAndToUserId_Id(userId, targetUser.getId());
                 if (relationOpt.isEmpty()) {
                     relationOpt = messageSideFriendRepository.findByFromUserId_IdAndToUserId_Id(targetUser.getId(), userId);
@@ -127,7 +126,7 @@ public class FindChatRoomQueryService implements FindChatRoomQueryUseCase {
             }
 
             //학생끼리의 대화방
-            if ("STUDENT".equals(loginUserRole) && "STUDENT".equals(targetUser.getRole())) {
+            if (targetUser != null && "STUDENT".equals(loginUserRole) && "STUDENT".equals(targetUser.getRole())) {
                 if ("SENT".equals(friendStatus)) {
                     log.info("[FindChatRoomQueryService] 학생간 대화 중 SENT 상태인 방 노출 제외 - 방ID: {}", pro.roomId());
                     continue;
@@ -150,7 +149,7 @@ public class FindChatRoomQueryService implements FindChatRoomQueryUseCase {
             List<String> lectureTitleList = new ArrayList<>();
 
             //학생 간엔 강의명 없음
-            if (!targetUser.getId().equals(userId)
+            if (targetUser != null && !targetUser.getId().equals(userId)
                     && !("STUDENT".equals(loginUserRole)
                     && "STUDENT".equals(targetUser.getRole()))) {
                 //로그인 유저가 학생, 상대가 강사
@@ -179,7 +178,7 @@ public class FindChatRoomQueryService implements FindChatRoomQueryUseCase {
 
             //채팅방별 안읽은 메시지
             Long unreadCount = 0L;
-            if ("me".equals(friendStatus) || targetUser.getId().equals(userId)) {
+            if (targetUser == null || "me".equals(friendStatus) || targetUser.getId().equals(userId)) {
                 //나와의 채팅에 보낸 방은 안읽은 메시지 0개
                 unreadCount = 0L;
             } else {
@@ -189,10 +188,10 @@ public class FindChatRoomQueryService implements FindChatRoomQueryUseCase {
 
 
             result.add(new ChatRoomView(
-                    targetUser.getId(),
-                    targetUser.getName(),
-                    targetUser.getNickname(),
-                    targetUser.getRole(),
+                    targetUser != null ? targetUser.getId() : null,
+                    targetUser != null ? targetUser.getName() : null,
+                    targetUser != null ? targetUser.getNickname() : null, // ◀️ null로 들어감
+                    targetUser != null ? targetUser.getRole() : "STUDENT",
                     friendStatus,
                     isNotActive, //비활성 여부(user 테이블)
                     roomId,
@@ -200,7 +199,7 @@ public class FindChatRoomQueryService implements FindChatRoomQueryUseCase {
                     lastChattedAt,
                     unreadCount,
                     lectureTitleList,
-                    targetUser.getProfileImageUrl()
+                    targetUser != null ? targetUser.getProfileImageUrl() : null
             ));
         }
 
