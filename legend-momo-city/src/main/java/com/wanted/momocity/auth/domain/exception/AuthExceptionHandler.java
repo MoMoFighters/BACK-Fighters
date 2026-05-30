@@ -159,5 +159,15 @@ public class AuthExceptionHandler {
                 ));
     }
 
+    // 토큰이 없는 경우
+    @ExceptionHandler(MissingTokenException.class)
+    public ResponseEntity<ApiErrorResponse> handleMissingToken(MissingTokenException e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiErrorResponse.of(
+                        HttpStatus.UNAUTHORIZED.value(),
+                        "MISSING_TOKEN",
+                        e.getMessage()
+                ));
+    }
 
 }
