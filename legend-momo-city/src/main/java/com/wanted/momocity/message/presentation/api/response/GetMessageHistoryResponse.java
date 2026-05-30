@@ -48,6 +48,25 @@ public record GetMessageHistoryResponse(
             finalLectureTitle = "(" + String.join(", ", lectureTitle) + ")";
         }
 
+        String responseNotMeTargetName = null;
+        String responseNotMeNickname = null;
+        String responseNotMeRole = null;
+
+        if (view.isMine()) {
+            responseNotMeRole = view.notMeRole(); // 상대방의 Role (STUDENT or TEACHER)
+
+            // 💡 [정책 분기] 상대방이 강사(TEACHER)인 경우: 이름과 닉네임 둘 다 노출
+            if ("TEACHER".equals(view.notMeRole())) {
+                responseNotMeTargetName = view.notMeTargetName(); // 강사 실제 성함
+                responseNotMeNickname = view.notMeNickname();     // 강사 닉네임
+            }
+            // 💡 [정책 분기] 상대방이 학생(STUDENT)인 경우: 이름 노출 차단(null), 닉네임만 노출
+            else if ("STUDENT".equals(view.notMeRole())) {
+                responseNotMeTargetName = null;                   // 학생 이름은 프라이버시로 인해 절대 숨김!
+                responseNotMeNickname = view.notMeNickname();     // 학생 닉네임만 허용
+            }
+        }
+
         return new GetMessageHistoryResponse(
                 view.messageId(),
                 view.senderId(),
@@ -61,9 +80,9 @@ public record GetMessageHistoryResponse(
                 view.isRead(),    // true
                 view.isMine(),
                 view.profileImageUrl(),
-                view.notMeTargetName(),
-                "TEACHER".equals(view.role()) && !view.isMine() ? view.notMeNickname() : null,
-                view.notMeRole()
+                responseNotMeTargetName,
+                responseNotMeNickname,
+                responseNotMeRole
         );
     }
 }
