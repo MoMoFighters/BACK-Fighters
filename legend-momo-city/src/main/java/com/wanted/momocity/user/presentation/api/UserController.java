@@ -16,6 +16,7 @@ import com.wanted.momocity.user.presentation.api.response.UserInfoUpdateResponse
 import com.wanted.momocity.user.presentation.api.response.UserResponseCode;
 import com.wanted.momocity.user.presentation.api.response.UserResponseMessage;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +29,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1")
-@Tag(name="user controller", description = "user 정보를 다루기 위한 User api 관련 컨트롤러")
+@Tag(name="User - 사용자 정보 관리", description = "user 정보를 다루기 위한 User api 관련 컨트롤러")
 public class UserController {
 
     private final UserCommandUsecase userCommandUsecase;
@@ -44,6 +45,11 @@ public class UserController {
             summary = "회원 1명의 정보 조회",
             description = "마이페이지에서 사용자에게 제시될 정보 조회"
     )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
+    })
     public ResponseEntity<ApiResponse<UserQueryUsecase.UserDetailView>> getUserDetail(
             @AuthenticationPrincipal CustomUserDetails userDetails){
 
@@ -57,6 +63,12 @@ public class UserController {
 
     @PatchMapping("/user/register/nickname")
     @Operation(summary = "사용자의 닉네임 등록을 위한 api")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "닉네임 등록 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "유효하지 않은 닉네임 형식 (@Valid 실패)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "닉네임 중복")
+    })
     public ResponseEntity<ApiResponse<NicknameRegisterResponse>> registerNickname(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody @Valid NicknameRequest request){
@@ -74,7 +86,13 @@ public class UserController {
 
     @PatchMapping("/user/update")
     @Operation(summary = "사용자 정보 수정",
-                description = "프로필 이미지(모듈4부터), 닉네임, 비밀번호 변경 가능")
+            description = "프로필 이미지(모듈4부터), 닉네임, 비밀번호 변경 가능")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "사용자 정보 수정 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "유효하지 않은 요청 값 (@Valid 실패)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "닉네임 중복")
+    })
     public ResponseEntity<ApiResponse<UserInfoUpdateResponse>> updateUserInfo(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestHeader("Authorization") String bearerToken,
@@ -108,6 +126,11 @@ public class UserController {
 
     @PostMapping("/user/nickname/check")
     @Operation(summary = "닉네임 중복 확인")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "사용 가능한 닉네임"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "유효하지 않은 닉네임 형식 (@Valid 실패)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "닉네임 중복")
+    })
     public ResponseEntity<ApiResponse<Void>> checkNickname(
             @RequestBody @Valid NicknameRequest request) {
 

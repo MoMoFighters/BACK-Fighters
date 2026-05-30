@@ -1,5 +1,6 @@
 package com.wanted.momocity.user.presentation.api.request;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 
@@ -21,10 +22,12 @@ import jakarta.validation.constraints.Pattern;
 
 public record TeacherActionRequest(
 
+        @Schema(description = "강사 승인 또는 반려", example = "APPROVE")
         @NotBlank(message = "action 은 필수입니다")
         @Pattern(regexp = "APPROVE|REJECT", message = "action 값은 APPROVE 또는 REJECT 여야 합니다")
         String action,
 
+        @Schema(description = "반려 사유 (REJECT 시 필수, 최소 10자)", example = "자격증 서류가 불충분합니다.",minLength = 10)
         String reason
 ) {
 }
