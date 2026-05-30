@@ -14,12 +14,14 @@ import com.wanted.momocity.user.domain.model.Role;
 import com.wanted.momocity.user.domain.model.Status;
 import com.wanted.momocity.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional
 public class UserCommandService implements UserCommandUsecase {
@@ -33,6 +35,7 @@ public class UserCommandService implements UserCommandUsecase {
     public String registerNickname(NicknameRegisterCommand command) {
         userPolicy.nicknamePolicy(command.nickname());
         userRepository.registerNickname(command.userId(), command.nickname());
+        log.info("[user] 닉네임 등록 완료 | userId={} | nickname={}", command.userId(), command.nickname());
         return command.nickname();
     }
 
@@ -49,6 +52,7 @@ public class UserCommandService implements UserCommandUsecase {
             userPolicy.passwordPolicy(command.currentPassword(), command.password(), storedPassword);
             encodedPassword = passwordEncodePort.encode(command.password());  // 검증 통과 후 암호화
             userRepository.clearTempPwd(command.userId());
+            log.info("[user] 비밀번호 변경 완료 | userId={}", command.userId());
         }
 
         userRepository.updateUserInfo(new UpdateUserInfoCommand(
@@ -70,6 +74,7 @@ public class UserCommandService implements UserCommandUsecase {
 
         userRepository.updateRoleAndStatus(command.userId(), Role.TEACHER, Status.ACTIVE);
         userEmailSendPort.sendTeacherResult(email, "ACTIVE", null);
+        log.info("[teacher] 강사 승인 처리 | userId={}", command.userId());
         return new TeacherActionResult(command.userId(), "ACTIVE", null, LocalDateTime.now());
     }
 
@@ -87,6 +92,7 @@ public class UserCommandService implements UserCommandUsecase {
 
         userRepository.updateRoleAndStatus(command.userId(), Role.TEACHER, Status.REJECTED);
         userEmailSendPort.sendTeacherResult(email, "REJECTED", command.reason());
+        log.info("[teacher] 강사 반려 처리 | userId={} | reason={}", command.userId(), command.reason());
         return new TeacherActionResult(command.userId(), "REJECTED", command.reason(), LocalDateTime.now());
     }
 }
