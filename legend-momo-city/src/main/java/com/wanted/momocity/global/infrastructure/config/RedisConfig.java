@@ -54,23 +54,7 @@ public class RedisConfig {
 
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-
-        ObjectMapper objectMapper = new ObjectMapper();
-
-        // 날짜/시간 모듈 등록
-        // LocalDateTime 등을 처리하기 위해 필요
-        objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
-
-        BasicPolymorphicTypeValidator typeValidator =
-                BasicPolymorphicTypeValidator.builder()
-                        .allowIfBaseType(Object.class).build();
-
-        objectMapper.activateDefaultTyping(
-                typeValidator,
-                ObjectMapper.DefaultTyping.NON_FINAL,
-                JsonTypeInfo.As.PROPERTY
-        );
-
+        
         /*
         * comment.
         *  serializer : Java 객체 ↔ JSON 변환 담당
