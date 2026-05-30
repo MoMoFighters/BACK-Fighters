@@ -16,6 +16,7 @@ import com.wanted.momocity.auth.presentation.api.response.LoginResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -233,14 +234,18 @@ public class AuthCommandService implements AuthCommandUsecase {
 
     // 새로운 유저 db에 등록
     private User registerNewUser(String provider, OAuthUserInfoCommand oAuthUserInfoCommand) {
-        User newUser = userRepository.register(
-                User.oAuthRegister(oAuthUserInfoCommand.email(), oAuthUserInfoCommand.name())
-        );
-        userOauthRepository.save(
-                UserOauth.create(newUser, provider, oAuthUserInfoCommand.providerId())
-        );
-        eventPublisher.publishEvent(new SignupCompletedEvent(newUser.getId()));
-        return newUser;
+        try {
+            User newUser = userRepository.register(
+                    User.oAuthRegister(oAuthUserInfoCommand.email(), oAuthUserInfoCommand.name())
+            );
+            userOauthRepository.save(
+                    UserOauth.create(newUser, provider, oAuthUserInfoCommand.providerId())
+            );
+            eventPublisher.publishEvent(new SignupCompletedEvent(newUser.getId()));
+            return newUser;
+        } catch (DataIntegrityViolationException e) {
+            throw new DuplicateEmailException("이미 해당 이메일로 가입된 계정이 있습니다. 자체 로그인을 이용하거나 다른 이메일을 이용해주세요.");
+        }
     }
 
     @Override
