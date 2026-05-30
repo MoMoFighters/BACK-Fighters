@@ -5,6 +5,7 @@ import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.viewing.application.command.SaveProgressCommand;
 import com.wanted.momocity.viewing.application.usecase.*;
 import com.wanted.momocity.viewing.presentation.api.common.ViewingResponseCode;
+import com.wanted.momocity.viewing.presentation.api.request.SaveExitRequest;
 import com.wanted.momocity.viewing.presentation.api.request.SaveProgressRequest;
 import com.wanted.momocity.viewing.presentation.api.response.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -114,10 +115,33 @@ public class ViewingController {
                 ViewingResponseCode.PROGRESS_SAVED,
                 "진척도가 업데이트되었습니다.",
                 viewingCommandUseCase.handle(new SaveProgressCommand(
-                        userId, lectureId, chapterId, request.playbackSeconds()
+                        userId, lectureId, chapterId, request.playbackSeconds(), null
                 ))
         ));
 
+    }
+
+    // 강의실 나갈 때 진척고 저장
+    // PATCH /api/v1/lectures/{lectureId}/chapters/{chapterId}/exit
+    @Operation(summary = "강의실 나가기",
+            description = "나갈 때 마지막 재생 위치 저장. 팝업 예 버튼 클릭 시 호출.")
+    @PatchMapping("/lectures/{lectureId}/chapters/{chapterId}/exit")
+    public ResponseEntity<ApiResponse<SaveProgressResponse>> saveExit(
+            @PathVariable Long lectureId,
+            @PathVariable Long chapterId,
+            @RequestBody @Valid SaveExitRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long userId = userDetails.getUserId();
+        return ResponseEntity.ok(ApiResponse.success(
+                ViewingResponseCode.PROGRESS_SAVED,
+                "마지막 재생 위치가 저장되었습니다.",
+                viewingCommandUseCase.handle(new SaveProgressCommand(
+                        userId, lectureId, chapterId,
+                        request.playbackSeconds(),
+                        request.lastPositionSec()  // ← lastPositionSec 전달
+                ))
+        ));
     }
 
     // 챕터 이어보기

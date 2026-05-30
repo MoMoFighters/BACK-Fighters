@@ -105,6 +105,11 @@ public class ViewingCommandService implements ViewingCommandUseCase {
         // 챕터 완료 처리 (도메인 메서드)
         history.complete(command.playbackSeconds(), chapter.getDurationSec());
 
+        // lastPositionSec null 여부에 따라 저장 분기
+        if (command.lastPositionSec() != null) {
+            history.saveLastPosition(command.lastPositionSec());
+        }
+
         // 시청 기록 저장
         LearningHistory savedHistory = learningHistoryRepository.save(history);
 
