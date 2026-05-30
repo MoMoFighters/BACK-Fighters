@@ -45,7 +45,7 @@ public class RequestFriendCommandService implements RequestFriendCommandUseCase 
         log.info("[RequestFriendCommandService] 요청자 검증 완료 - 닉네임: '{}'", loginUser.getNickname());
 
         //기존 관계 추출
-        Optional<FriendJpaEntity> relation = friendRepository.findRelationBetween(command.userId(), command.targetUserId());
+        Optional<FriendJpaEntity> relation = friendRepository.findAnyRelationBetween(command.userId(), command.targetUserId());
 
         //검증은 policy에게 위임
         eligibilityPolicy.ensureEligible(command.userId(), command.targetUserId(), relation, targetUser.getRole());
