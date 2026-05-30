@@ -13,6 +13,7 @@ import com.wanted.momocity.auth.domain.exception.InactiveUserException;
 import com.wanted.momocity.auth.domain.exception.InvalidCredentialsException;
 import com.wanted.momocity.auth.presentation.api.response.LoginResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 
 @Service
+@Slf4j
 @Transactional
 @RequiredArgsConstructor
 public class LoginService implements LoginUsecase {
@@ -45,14 +47,16 @@ public class LoginService implements LoginUsecase {
         Authentication authentication;
         try{
             authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(String.valueOf(user.getId()), command.password())
-        );
+                    new UsernamePasswordAuthenticationToken(String.valueOf(user.getId()), command.password())
+            );
 
         }catch (BadCredentialsException e){
+            log.warn("[login] 로그인 실패 | email={} | 사유= 인증 실패", command.email());
             throw new InvalidCredentialsException("이메일 또는 비밀번호가 올바르지 않습니다.");
         }
 
         if (user.getStatus() != Status.ACTIVE) {
+            log.warn("[login] 비활성 계정 로그인 시도 | email={} | status={}", command.email(), user.getStatus());
             throw new InactiveUserException("로그인이 제한된 계정입니다.");
         }
 
@@ -80,6 +84,7 @@ public class LoginService implements LoginUsecase {
                 ? 3 * 60  // 3분
                 : tokenProviderPort.getAccessTokenValidityMilliseconds() / 1000;
 
+        log.info("[login] 로그인 성공 | userId={} | isTempPwd={}", user.getId(), user.getIsTempPwd());
         return new LoginResponse(accessToken, refreshToken, user.getStatus(), accessTokenExpiry);
     }
 }
