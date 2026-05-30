@@ -1,5 +1,6 @@
 package com.wanted.momocity.auth.application.service;
 
+import com.wanted.momocity.auth.application.port.BlacklistPort;
 import com.wanted.momocity.auth.application.port.LoadUserPort;
 import com.wanted.momocity.auth.application.port.RedisRefreshTokenPort;
 import com.wanted.momocity.auth.application.port.TokenProviderPort;
@@ -28,8 +29,15 @@ public class RefreshService implements NewTokenUsecase {
     private final TokenProviderPort tokenProviderPort;
     private final RedisRefreshTokenPort redisRefreshTokenPort;
     private final LoadUserPort loadUserPort;
+    private final BlacklistPort blacklistPort;
 
+    // 필터용 (기존 액세스 토큰 블랙리스트 처리 없음 - 이미 만료된 상태라 불필요)
     public String refreshAccessToken(String refreshToken) {
+        return refreshAccessToken(refreshToken, null);
+    }
+
+    @Override
+    public String refreshAccessToken(String refreshToken, String oldAccessToken) {
         // 토큰 유효성 검사
         tokenProviderPort.validateToken(refreshToken);
 
@@ -54,6 +62,14 @@ public class RefreshService implements NewTokenUsecase {
         if (user.getIsTempPwd()) {
             log.warn("[refresh] 토큰 연장 불가 | userId={} | 사유=임시비밀번호 미변경", userId);
             throw new InvalidRefreshTokenException("임시 비밀번호를 변경 후 이용해주세요.");
+        }
+
+        // 기존 액세스 토큰 블랙리스트 등록
+        if (oldAccessToken != null) {
+            long remainingMillis = tokenProviderPort.getRemainingMillis(oldAccessToken);
+            if (remainingMillis > 0) {
+                blacklistPort.addBlacklist(oldAccessToken, remainingMillis);
+            }
         }
 
         Authentication authentication = new UsernamePasswordAuthenticationToken(

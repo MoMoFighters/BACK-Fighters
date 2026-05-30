@@ -294,10 +294,25 @@ public class AuthController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "RefreshToken 없음 또는 만료")
     })
     public ResponseEntity<ApiResponse<NewTokenResponse>> newToken(
+            @Parameter(name = "Authorization", description = "Bearer 액세스 토큰", required = true)
+            @RequestHeader(value = "Authorization", required = false) String bearerToken,
             @Parameter(name = "Refresh-Token", description = "리프레시 토큰", required = true)
-            @RequestHeader("Refresh-Token") String refreshToken){
+            @RequestHeader(value = "Refresh-Token", required = false) String refreshToken)
+    // required = true 면 헤더 없으면 Spring이 기본 400을 던지지만
+    // 커스텀 메시지 보여주고 싶어서
+    // 헤더 없으면 null로 들어옴 → 내 if문 실행 → 커스텀 메시지 출력되도록
+    {
 
-        String newAccessToken = newTokenUsecase.refreshAccessToken(refreshToken);
+        if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
+            throw new MissingTokenException("AccessToken이 없습니다.");
+        }
+        if (refreshToken == null) {
+            throw new MissingTokenException("RefreshToken이 없습니다.");
+        }
+
+        String oldAccessToken = bearerToken.replace("Bearer ", "");
+        String newAccessToken = newTokenUsecase.refreshAccessToken(refreshToken, oldAccessToken);
+
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(
