@@ -114,12 +114,7 @@ public class ViewingQueryService implements ViewingQueryUseCase {
                 .findByUserIdAndChapterId(userId, chapterId)
                 .orElse(LearningHistory.create(userId, lectureId, chapterId));
 
-        // 전체 진척도 조회
-        int totalProgress = learningHistoryRepository
-                .findByUserIdAndLectureId(userId, lectureId)
-                .stream()
-                .mapToInt(LearningHistory::getProgressRate)
-                .sum();
+        int totalProgress = calculateTotalProgress(userId, lectureId);
 
         log.info("[Viewing] 챕터 이어보기 조회 완료 | userId={}, lectureId={}, chapterId={}, lastPositionSec={}",
                 userId, lectureId, chapterId, history.getLastPositionSec());
@@ -242,10 +237,14 @@ public class ViewingQueryService implements ViewingQueryUseCase {
 
         if (totalDurationSum == 0) return 0;
 
-        return (int) Math.round(
+        int result =  (int) Math.round(
                 (double)(completedDurationSum + inProgressWatchedSum)
                         / totalDurationSum * 100
         );
+
+        // 결과값 100 초과 방지
+        return Math.min(result, 100);
+
     }
 
     // 완료 된 챕터 수 계산 (learning_history 집계)
