@@ -148,7 +148,11 @@ public class ViewingCommandService implements ViewingCommandUseCase {
     // enrollment 진척도 재계산 및 저장
     private int calculateTotalProgress(Long userId, Long lectureId) {
 
-        List<Chapter> chapters = chapterPort.findAllByLectureId(lectureId);
+        List<Chapter> chapters = chapterPort.findAllByLectureId(lectureId)
+                .stream()
+                // READY 챕터만 필터링
+                .filter(Chapter::isPlayable)
+                .toList();
         List<LearningHistory> histories = learningHistoryRepository
                 .findByUserIdAndLectureId(userId, lectureId);
 
