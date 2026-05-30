@@ -6,9 +6,11 @@ import com.wanted.momocity.auth.application.port.RedisRefreshTokenPort;
 import com.wanted.momocity.auth.application.port.TokenProviderPort;
 import com.wanted.momocity.auth.application.usecase.LogoutUsecase;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class LogoutService implements LogoutUsecase {
 
@@ -26,6 +28,9 @@ public class LogoutService implements LogoutUsecase {
             long remainingMillis = tokenProviderPort.getRemainingMillis(command.accessToken());
             if (remainingMillis > 0) {
                 blacklistPort.addBlacklist(command.accessToken(), remainingMillis);
-            }        }
+            }
+
+            log.info("[logout] 로그아웃 완료 | remainingMillis={}", remainingMillis);
+        }
 
 }

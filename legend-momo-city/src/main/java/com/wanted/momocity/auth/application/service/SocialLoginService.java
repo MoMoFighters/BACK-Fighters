@@ -13,6 +13,7 @@ import com.wanted.momocity.auth.domain.model.UserOauth;
 import com.wanted.momocity.auth.domain.repository.UserOauthRepository;
 import com.wanted.momocity.auth.domain.repository.UserRepository;
 import com.wanted.momocity.auth.presentation.api.response.LoginResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -21,16 +22,17 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.Map;
 
+@Slf4j
 @Service
 @Transactional
 public class SocialLoginService implements KakaoLoginUsecase, GoogleLoginUsecase {
     /*소셜 로그인 기본 flow
-    * 1. 사용자 → 소셜 로그인 버튼 클릭
-    * 2. 카카오/구글 인증 페이지에서 동의 → 인가코드 발급
-    * 3. [서버] 인가코드로 액세스토큰 요청 ← API 호출 1
-    * 4. [서버] 액세스토큰으로 유저정보 요청 ← API 호출 2
-    * 5. 유저정보로 자체 로그인/회원가입 처리
-    * */
+     * 1. 사용자 → 소셜 로그인 버튼 클릭
+     * 2. 카카오/구글 인증 페이지에서 동의 → 인가코드 발급
+     * 3. [서버] 인가코드로 액세스토큰 요청 ← API 호출 1
+     * 4. [서버] 액세스토큰으로 유저정보 요청 ← API 호출 2
+     * 5. 유저정보로 자체 로그인/회원가입 처리
+     * */
 
     private final Map<String, OAuthClientPort> oAuthClientPorts;
     private final UserRepository userRepository;
@@ -72,6 +74,7 @@ public class SocialLoginService implements KakaoLoginUsecase, GoogleLoginUsecase
                 .map(UserOauth::getUser)
                 .orElseGet(() -> registerNewUser(command.provider(), oAuthUserInfo));
 
+        log.info("[social] 소셜 로그인 인증 완료 | provider={} | userId={}", command.provider(), user.getId());
 
         // 인증 성공하면 JWT 토큰 발급
         String accessToken = tokenProviderPort.createAccessToken(
