@@ -36,7 +36,8 @@ public record TeacherSignupRequest(
                 description = "회원가입 할 사용자 증빙자료 - 강사 회원가입을 위한 증빙 자료",
                 type = "string",
                 format = "binary")
-        @NotNull MultipartFile proof
+        @NotNull(message = "증빙 자료는 필수 제출입니다.")
+        MultipartFile proof
 
 
 ) {
