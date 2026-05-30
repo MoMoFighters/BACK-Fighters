@@ -181,7 +181,11 @@ public class LectureQueryService implements LectureQueryUseCase {
 
         // 도메인 모델을 강사용 목록 응답 DTO로 변환
         List<TeacherLectureListItemResponse> content = lecturePage.content().stream()
-                .map(TeacherLectureListItemResponse::from)
+                .map(lecture -> TeacherLectureListItemResponse.from(
+                        lecture,
+                        0.0,
+                        0
+                ))
                 .toList();
 
         // 페이지 정보와 목록 응답을 함께 반환
@@ -215,7 +219,12 @@ public class LectureQueryService implements LectureQueryUseCase {
                 chapterRepository.findAllByLectureIdOrderByOrderNoAsc(query.lectureId());
 
         // 강의 정보와 챕터 목록을 응답 DTO로 변환
-        return TeacherLectureDetailResponse.from(lecture, chapters);
+        return TeacherLectureDetailResponse.from(
+                lecture,
+                chapters,
+                0.0,
+                0
+        );
     }
 
     // Lecture 도메인 객체를 학생 강의 목록 응답 DTO로 변환

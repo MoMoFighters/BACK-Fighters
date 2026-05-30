@@ -33,6 +33,12 @@ public record TeacherLectureDetailResponse(
         // 수강 완료 사용자 수
         int completedUserCount,
 
+        // 강의 평점 평균
+        double averageRating,
+
+        // 리뷰 개수
+        int reviewCount,
+
         // 강의에 포함된 챕터 목
         List<TeacherLectureChapterResponse> chapters,
 
@@ -47,7 +53,9 @@ public record TeacherLectureDetailResponse(
     // LectureAggregate와 챕터 목록을 강의 상세 응답 DTO로 변환
     public static TeacherLectureDetailResponse from(
             LectureAggregate lecture,
-            List<LectureChapter> chapters
+            List<LectureChapter> chapters,
+            double averageRating,
+            int reviewCount
     ) {
         return new TeacherLectureDetailResponse(
                 lecture.getId(),
@@ -58,7 +66,8 @@ public record TeacherLectureDetailResponse(
                 lecture.getCategory().name(),
                 lecture.getStatus().name(),
                 lecture.getCompletedUserCount(),
-                chapters.stream()
+                averageRating,
+                reviewCount,                chapters.stream()
                         .map(TeacherLectureChapterResponse::from)
                         .toList(),
                 lecture.getCreatedAt(),
