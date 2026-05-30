@@ -79,17 +79,32 @@ public class LearningHistory {
 
     // 챕터 완료처리
     public void complete (int playbackSeconds, int durationSec) {
-        if(!this.isCompleted && playbackSeconds >= durationSec * 0.9) {
+        if(!this.isCompleted && watchedSeconds >= durationSec * 0.9) {
             this.isCompleted = true;
             this.progressRate = 100;
             this.watchedSeconds = durationSec;
         }
     }
 
-    // 나가기 버튼 클릭 시 이어보기 지점 저장
-    // 조건 없이 현재 위치로 덮어씀
+    /*
+     * comment.
+     *  나가기 버튼 클릭 시 이어보기 지점 저장
+     *  -
+     *  progressRate >= 90 (거의 다 본 경우):
+     *  -> lastPositionSec 저장
+     *  -> 정상적으로 시청한 것으로 판단
+     *  -
+     *  progressRate < 90:
+     *  -> watchedSeconds 저장
+     *  -> 앞으로 당겨서 나간 것으로 판단
+     *  -> 실제로 본 위치부터 이어보기
+     */
     public void saveLastPosition(int lastPositionSec) {
-        this.lastPositionSec = lastPositionSec;
+        if (this.progressRate >= 90) {
+            this.lastPositionSec = lastPositionSec;
+        } else {
+            this.lastPositionSec = this.watchedSeconds;
+        }
     }
 
     // DB 에서 조회한 데이터로 도메인 객체 복원용
