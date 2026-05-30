@@ -2,6 +2,7 @@ package com.wanted.momocity.viewing.infrastructure.adapter;
 
 import com.wanted.momocity.viewing.application.port.S3Port;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
@@ -18,6 +19,7 @@ import java.time.Duration;
 *  - Application 은 S3Port 인터페이스만 알고 이 클래스를 직접 모름
  * */
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class S3PresignedUrlAdapter implements S3Port {
@@ -44,6 +46,7 @@ public class S3PresignedUrlAdapter implements S3Port {
         String key = videoUrl.contains(".amazonaws.com/")
                 ? videoUrl.substring(videoUrl.indexOf(".amazonaws.com/") + ".amazonaws.com/".length())
                 : videoUrl;
+        log.info("[S3] key = {}", key);
 
         // GetObjectRequest: S3 에서 파일을 가져오기 위한 요청 객체
         GetObjectRequest getObjectRequest = GetObjectRequest.builder()

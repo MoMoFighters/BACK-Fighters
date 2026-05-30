@@ -70,7 +70,8 @@ public class LectureCatalogAdapter implements LecturePort {
                 entity.getTitle(),
                 entity.getThumbnailUrl(),
                 entity.getCategory().name(),
-                instructorName
+                instructorName,
+                entity.getStatus().name()
         );
     }
 }

@@ -78,7 +78,10 @@ public class ViewingQueryService implements ViewingQueryUseCase {
         Lecture lecture = lecturePort.findById(lectureId);
 
         // 전체 챕터 수 조회
-        List<Chapter> chapters = chapterPort.findAllByLectureId(lectureId);
+        List<Chapter> chapters = chapterPort.findAllByLectureId(lectureId)
+                .stream()
+                .filter(Chapter::isPlayable)
+                .toList();
 
         // 시청 기록 전체 조회
         List<LearningHistory> histories = learningHistoryRepository
@@ -153,7 +156,10 @@ public class ViewingQueryService implements ViewingQueryUseCase {
         enrollmentAccessPolicy.ensureEnrolled(userId, lectureId);
 
         // 전체 챕터 수 조회
-        List<Chapter> chapters = chapterPort.findAllByLectureId(lectureId);
+        List<Chapter> chapters = chapterPort.findAllByLectureId(lectureId)
+                .stream()
+                .filter(Chapter::isPlayable)
+                .toList();
 
         // 진척도 계산 (learning_history 집계)
         int totalProgress = calculateTotalProgress(userId, lectureId);
@@ -174,7 +180,11 @@ public class ViewingQueryService implements ViewingQueryUseCase {
         enrollmentAccessPolicy.ensureEnrolled(userId, lectureId);
 
         // 전체 챕터 목록 조회
-        List<Chapter> chapters = chapterPort.findAllByLectureId(lectureId);
+        List<Chapter> chapters = chapterPort.findAllByLectureId(lectureId)
+                .stream()
+                .filter(Chapter::isPlayable)
+                .toList();
+
         // 시청 기록 전체 조회
         List<LearningHistory> histories = learningHistoryRepository
                 .findByUserIdAndLectureId(userId, lectureId);
@@ -208,17 +218,21 @@ public class ViewingQueryService implements ViewingQueryUseCase {
         // EnrollmentProt 로 수강목록 조회
         List<MyLecturesResponse.LectureItem> lectures = enrollmentPort.findAllByUserId(userId)
                 .stream()
-                .map(enrollment -> {
-                    // LecturePort 로 강의 정보 조회
-                    Lecture lecture = lecturePort.findById(enrollment.lectureId());
+                .map(enrollment -> lecturePort.findById(enrollment.lectureId()))
+                .filter(Lecture::isViewable)
+                .map(lecture -> {
+                    int totalProgress = calculateTotalProgress(userId, lecture.getId());
                     // learning_history 집계로 전체 진척도 계산
                     // -> enrollment 테이블에 캐싱 없이 직접 계산
-                    int totalProgress = calculateTotalProgress(userId, enrollment.lectureId());
+                    EnrollmentPort.EnrollmentInfo enrollment = enrollmentPort
+                            .findByUserIdAndLectureId(userId, lecture.getId())
+                            .orElseThrow();
                     return new MyLecturesResponse.LectureItem(
                             lecture.getId(), lecture.getTitle(),
                             lecture.getThumbnailUrl(), lecture.getCategory(),
                             totalProgress, enrollment.enrolledAt()
                     );
+
                 })
                 .toList();
 
@@ -233,7 +247,11 @@ public class ViewingQueryService implements ViewingQueryUseCase {
     // enrollment 진척도 재계산 및 저장
     private int calculateTotalProgress(Long userId, Long lectureId) {
 
-        List<Chapter> chapters = chapterPort.findAllByLectureId(lectureId);
+        List<Chapter> chapters = chapterPort.findAllByLectureId(lectureId)
+                .stream()
+                // READY 챕터만 필터링
+                .filter(Chapter::isPlayable)
+                .toList();
         List<LearningHistory> histories = learningHistoryRepository
                 .findByUserIdAndLectureId(userId, lectureId);
 
