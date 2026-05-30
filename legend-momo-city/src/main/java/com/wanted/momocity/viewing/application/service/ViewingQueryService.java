@@ -80,7 +80,11 @@ public class ViewingQueryService implements ViewingQueryUseCase {
         // 전체 챕터 수 조회
         List<Chapter> chapters = chapterPort.findAllByLectureId(lectureId);
 
-        // 현재 챕터 조회
+        // 시청 기록 전체 조회
+        List<LearningHistory> histories = learningHistoryRepository
+                .findByUserIdAndLectureId(userId, lectureId);
+
+        // 현재 챕터 조회 (가장 최근 업데이트된 챕터)
         LearningHistory currentHistory = learningHistoryRepository
                 .findLatestByUserIdAndLectureId(userId, lectureId)
                 .orElse(null);
@@ -90,13 +94,30 @@ public class ViewingQueryService implements ViewingQueryUseCase {
                 ? chapterPort.findById(currentHistory.getChapterId())
                 : chapters.get(0);
 
+        List<LectureMetaResponse.ChapterItem> chaptersItem = chapters.stream()
+                        .map(chapter -> {
+                            LearningHistory history = histories.stream()
+                                    .filter(h -> h.getChapterId().equals(chapter.getId()))
+                                    .findFirst()
+                                    .orElse(LearningHistory.create(userId, lectureId, chapter.getId()));
+
+                                    return new LectureMetaResponse.ChapterItem(
+                                            chapter.getId(),
+                                            chapter.getTitle(),
+                                            chapter.getOrderNo(),
+                                            chapter.getDurationSec(),
+                                            history.getProgressRate(),
+                                            history.isCompleted()
+                                    );
+                        })
+                                .toList();
+
         log.info("[Viewing] 강의 메타데이터 조회 완료 | userId={}, lectureId={}",
                 userId, lectureId);
 
         return new LectureMetaResponse(
-                lecture.getId(), lecture.getTitle(), lecture.getInstructorName(),
-                chapters.size(), currentChapter.getOrderNo(),
-                currentChapter.getId(), currentChapter.getTitle()
+                lecture.getId(), lecture.getTitle(), lecture.getThumbnailUrl(),
+                chapters.size(), currentChapter.getId(), currentChapter.getOrderNo(), currentChapter.getTitle(), chaptersItem
         );
     }
 
