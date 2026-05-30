@@ -45,8 +45,8 @@ public class ViewingController {
     })
     @GetMapping("/lectures/{lectureId}/chapters/{chapterId}/stream")
     public ResponseEntity<ApiResponse<StreamingUrlResponse>> getStreamingUrl (
-            @Parameter(description = "강의 ID", required = true) @PathVariable Long lectureId,
-            @Parameter(description = "챕터 ID", required = true) @PathVariable Long chapterId,
+            @Parameter(description = "강의 ID", required = true) @PathVariable("lectureId") Long lectureId,
+            @Parameter(description = "챕터 ID", required = true) @PathVariable("chapterId") Long chapterId,
             @AuthenticationPrincipal CustomUserDetails userDetails
 
     ) {
@@ -73,7 +73,7 @@ public class ViewingController {
     })
     @GetMapping("/lectures/{lectureId}/meta")
     public ResponseEntity<ApiResponse<LectureMetaResponse>> getLectureMeta(
-            @Parameter(description = "강의 ID", required = true) @PathVariable Long lectureId,
+            @Parameter(description = "강의 ID", required = true) @PathVariable("lectureId") Long lectureId,
             @AuthenticationPrincipal CustomUserDetails userDetails
 
     ) {
@@ -101,8 +101,8 @@ public class ViewingController {
     })
     @PatchMapping("/lectures/{lectureId}/chapters/{chapterId}/progress")
     public ResponseEntity<ApiResponse<SaveProgressResponse>> saveProgress(
-            @Parameter(description = "강의 ID", required = true) @PathVariable Long lectureId,
-            @Parameter(description = "챕터 ID", required = true) @PathVariable Long chapterId,
+            @Parameter(description = "강의 ID", required = true) @PathVariable("lectureId") Long lectureId,
+            @Parameter(description = "챕터 ID", required = true) @PathVariable("chapterId") Long chapterId,
             @RequestBody @Valid SaveProgressRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails
 
@@ -127,8 +127,8 @@ public class ViewingController {
             description = "나갈 때 마지막 재생 위치 저장. 팝업 예 버튼 클릭 시 호출.")
     @PatchMapping("/lectures/{lectureId}/chapters/{chapterId}/exit")
     public ResponseEntity<ApiResponse<SaveProgressResponse>> saveExit(
-            @PathVariable Long lectureId,
-            @PathVariable Long chapterId,
+            @PathVariable("lectureId") Long lectureId,
+            @PathVariable("chapterId") Long chapterId,
             @RequestBody @Valid SaveExitRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
@@ -155,8 +155,8 @@ public class ViewingController {
     })
     @GetMapping("/lectures/{lectureId}/chapters/{chapterId}/resume")
     public ResponseEntity<ApiResponse<ChapterResumeResponse>> getChapterResume(
-            @Parameter(description = "강의 ID", required = true) @PathVariable Long lectureId,
-            @Parameter(description = "챕터 ID", required = true) @PathVariable Long chapterId,
+            @Parameter(description = "강의 ID", required = true) @PathVariable("lectureId") Long lectureId,
+            @Parameter(description = "챕터 ID", required = true) @PathVariable("chapterId") Long chapterId,
             @AuthenticationPrincipal CustomUserDetails userDetails
 
     ) {
@@ -183,7 +183,7 @@ public class ViewingController {
     })
     @GetMapping("/lectures/{lectureId}/progress")
     public ResponseEntity<ApiResponse<TotalProgressResponse>> getTotalProgress(
-            @Parameter(description = "강의 ID", required = true) @PathVariable Long lectureId,
+            @Parameter(description = "강의 ID", required = true) @PathVariable("lectureId") Long lectureId,
             @AuthenticationPrincipal CustomUserDetails userDetails
 
     ) {
@@ -209,7 +209,7 @@ public class ViewingController {
     })
     @GetMapping("/lectures/{lectureId}/chapters/progress")
     public ResponseEntity<ApiResponse<ChapterProgressResponse>> getChapterProgress(
-            @Parameter(description = "강의 ID", required = true) @PathVariable Long lectureId,
+            @Parameter(description = "강의 ID", required = true) @PathVariable("lectureId") Long lectureId,
             @AuthenticationPrincipal CustomUserDetails userDetails
 
     ) {
