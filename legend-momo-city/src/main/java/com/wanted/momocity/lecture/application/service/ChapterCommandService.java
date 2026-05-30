@@ -12,6 +12,7 @@ import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.model.LectureChapter;
 import com.wanted.momocity.lecture.domain.repository.ChapterRepository;
 import com.wanted.momocity.lecture.domain.repository.LectureRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 // ChapterCommandService는 챕터 등록 유스케이스를 처리하는 Service
 @Service
 @Transactional
+@Slf4j
 public class ChapterCommandService implements ChapterCommandUseCase {
 
     // 한 강의에 등록 가능한 최대 챕터 개수
@@ -85,7 +87,16 @@ public class ChapterCommandService implements ChapterCommandUseCase {
         );
 
         // 생성된 챕터를 저장합니다.
-        return chapterRepository.save(chapter);
+        LectureChapter savedChapter = chapterRepository.save(chapter);
+
+        // 챕터 등록 성공 여부를 추적하기 위한 로그
+        // 강의 승인 조건에 챕터 존재 여부가 포함되므로 lectureId와 orderNo를 함께 남긴다.
+        log.info("챕터 등록 완료 - chapterId={}, lectureId={}, orderNo={}",
+                savedChapter.getId(),
+                savedChapter.getLectureId(),
+                savedChapter.getOrderNo());
+
+        return savedChapter;
     }
 
     @Override
@@ -138,7 +149,17 @@ public class ChapterCommandService implements ChapterCommandUseCase {
         );
 
         // 변경된 챕터 정보를 저장
-        return chapterRepository.save(updatedChapter);
+        LectureChapter savedChapter = chapterRepository.save(updatedChapter);
+
+        // S3 업로드 후 챕터에 동영상 정보가 정상 연결되었는지 추적하기 위한 로그
+        // 파일 원본명이나 URL 전체는 민감하거나 길 수 있으므로 상태와 크기 중심으로 남긴다.
+        log.info("챕터 동영상 등록 완료 - chapterId={}, lectureId={}, videoStatus={}, videoSizeBytes={}",
+                savedChapter.getId(),
+                savedChapter.getLectureId(),
+                savedChapter.getVideoStatus(),
+                savedChapter.getVideoSizeBytes());
+
+        return savedChapter;
     }
 
 
@@ -174,7 +195,16 @@ public class ChapterCommandService implements ChapterCommandUseCase {
         LectureChapter changedChapter = chapter.changeVideoStatus(command.videoStatus());
 
         // 변경된 챕터를 저장
-        return chapterRepository.save(changedChapter);
+        LectureChapter savedChapter = chapterRepository.save(changedChapter);
+
+        // 동영상 상태 변경 결과를 추적하기 위한 로그
+        // READY 전환 여부가 학생 화면 노출과 연결되므로 videoStatus를 남긴다.
+        log.info("챕터 동영상 상태 변경 완료 - chapterId={}, lectureId={}, videoStatus={}",
+                savedChapter.getId(),
+                savedChapter.getLectureId(),
+                savedChapter.getVideoStatus());
+
+        return savedChapter;
     }
 
 }

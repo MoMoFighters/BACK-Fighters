@@ -11,6 +11,7 @@ import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.model.LectureStatus;
 import com.wanted.momocity.lecture.domain.repository.ChapterRepository;
 import com.wanted.momocity.lecture.domain.repository.LectureRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ import java.time.Instant;
 // LectureCommandService는 강의 등록 유스케이스의 실제 흐름을 담당
 @Service
 @Transactional
+@Slf4j
 public class LectureCommandService implements LectureCommandUseCase {
 
     private final LectureRepository lectureRepository;
@@ -64,6 +66,13 @@ public class LectureCommandService implements LectureCommandUseCase {
                 savedLecture.getTitle(),
                 Instant.now()
         ));
+
+        // 강의 등록이 정상 완료되었는지 추적하기 위한 로그
+        // S3 업로드 후 DB 저장까지 성공한 시점이므로 lectureId, teacherId, status만 남긴다.
+        log.info("강의 등록 완료 - lectureId={}, teacherId={}, status={}",
+                savedLecture.getId(),
+                savedLecture.getTeacherId(),
+                savedLecture.getStatus());
 
         return savedLecture;
     }
