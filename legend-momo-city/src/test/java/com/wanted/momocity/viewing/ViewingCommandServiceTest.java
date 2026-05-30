@@ -62,7 +62,7 @@ class ViewingCommandServiceTest {
     void 수강하지_않은_사용자가_진척도_저장_시도하면_예외가_발생한다() {
 
         // given
-        SaveProgressCommand command = new SaveProgressCommand(1L, 100L, 10L, 120);
+        SaveProgressCommand command = new SaveProgressCommand(1L, 100L, 10L, 120, null);
 
         doThrow(new DomainRuleViolationException("수강 중인 강의가 아닙니다."))
                 .when(enrollmentAccessPolicy).ensureEnrolled(command.userId(), command.lectureId());
@@ -82,7 +82,7 @@ class ViewingCommandServiceTest {
     void 존재하지_않는_챕터_조회_시_예외가_발생한다() {
 
         // given
-        SaveProgressCommand command = new SaveProgressCommand(1L, 100L, 999L, 120);
+        SaveProgressCommand command = new SaveProgressCommand(1L, 100L, 999L, 120, null);
 
         doNothing().when(enrollmentAccessPolicy).ensureEnrolled(command.userId(), command.lectureId());
         when(chapterPort.findById(999L))
@@ -101,7 +101,7 @@ class ViewingCommandServiceTest {
     void 낙관적_락_충돌이_최대_재시도_횟수_초과_시_예외가_발생한다() {
 
         // given
-        SaveProgressCommand command = new SaveProgressCommand(1L, 100L, 10L, 120);
+        SaveProgressCommand command = new SaveProgressCommand(1L, 100L, 10L, 120, null);
 
         Chapter chapter = mock(Chapter.class);
         when(chapter.getDurationSec()).thenReturn(300);
@@ -131,7 +131,7 @@ class ViewingCommandServiceTest {
     void 이미_완료된_챕터_재시청_시_이벤트가_중복_발행되지_않는다() {
 
         // given : 이미 완료 상태인 LearningHistory
-        SaveProgressCommand command = new SaveProgressCommand(1L, 100L, 10L, 300);
+        SaveProgressCommand command = new SaveProgressCommand(1L, 100L, 10L, 300, null);
 
         Chapter chapter = mock(Chapter.class);
         when(chapter.getDurationSec()).thenReturn(300);
@@ -163,7 +163,7 @@ class ViewingCommandServiceTest {
     void 챕터_durationSec이_0이면_진척률_0을_반환한다() {
 
         // given
-        SaveProgressCommand command = new SaveProgressCommand(1L, 100L, 10L, 0);
+        SaveProgressCommand command = new SaveProgressCommand(1L, 100L, 10L, 0, null);
 
         Chapter chapter = mock(Chapter.class);
         when(chapter.getDurationSec()).thenReturn(0); // durationSec = 0
