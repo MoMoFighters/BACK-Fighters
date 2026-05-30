@@ -19,7 +19,10 @@ public record GetMessageHistoryResponse(
         LocalDateTime createdAt,
         boolean isRead,
         boolean isMine,
-        String profileImageUrl
+        String profileImageUrl,
+        String notMeTargetName,
+        String notMeNickname,
+        String notMeRole
 ) {
     public static GetMessageHistoryResponse from(MessageHistoryView view) {
 
@@ -57,7 +60,10 @@ public record GetMessageHistoryResponse(
                 view.createdAt(), // T 문자열 그대로 노출
                 view.isRead(),    // true
                 view.isMine(),
-                view.profileImageUrl()
+                view.profileImageUrl(),
+                view.notMeTargetName(),
+                "TEACHER".equals(view.role()) && !view.isMine() ? view.notMeNickname() : null,
+                view.notMeRole()
         );
     }
 }
