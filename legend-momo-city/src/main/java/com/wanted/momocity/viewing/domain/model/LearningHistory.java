@@ -9,7 +9,8 @@ public class LearningHistory {
     private Long userId;
     private Long lectureId;
     private Long chapterId;
-    // 최대 누적 시청 시간 (감소 안 함)
+    // 실제로 본 최대 위치 저장
+    // 뒤로 감기해도 감소안됨, 앞으로 당기기 반영 안함 (10초 초과시 무시)
     private int watchedSeconds;
     private boolean isCompleted;
     // 마지막 재생 위치 (이어보기용)
@@ -35,20 +36,46 @@ public class LearningHistory {
     }
 
     // 진척도 업데이트
+    /*
+    * comment.
+    *  1. playbackSeconds > watchedSeconds → 앞으로 진행
+    *    AND playbackSeconds - watchedSeconds <= 10 -> 정상 시청 범위
+    *    -> watchedSeconds = playbackSeconds
+    *  -
+    *  2. playbackSeconds < watchedSeconds -> 뒤로 감기
+    *    -> watchedSeconds 업데이트 안 함
+    *  -
+    *  3. playbackSeconds - watchedSeconds > 10 -> 앞으로 당기기
+    *    -> watchedSeconds 업데이트 안 함
+    *  -
+    *  progressRate = watchedSeconds / durationSec * 100
+    * */
+
     public void updateProgress (
             // 현재 재생 위치
             int playbackSeconds, int durationSec
     ) {
-        if (playbackSeconds > this.watchedSeconds) {
+        // watchedSeconds 업데이트
+        if (playbackSeconds > this.watchedSeconds
+                && playbackSeconds - this.watchedSeconds <= 10) {
             this.watchedSeconds = playbackSeconds;
-            this.progressRate = (int) Math.round(
-                    (double) this.watchedSeconds / durationSec * 100
-            );
-            if (this.progressRate >= 100) {
-                this.progressRate = 100;
-            }
+        }
+
+        // progressRate = watchedSeconds 기준
+        this.progressRate = (int) Math.round(
+                (double) this.watchedSeconds / durationSec * 100
+        );
+        if (this.progressRate >= 100) {
+            this.progressRate = 100;
         }
     }
+
+    /*
+    * comment.
+    *  playbackSeconds >= durationSec * 0.9 시 챕터 완료 처리
+     * -> isCompleted = true
+     * -> progressRate = 100
+    * */
 
     // 챕터 완료처리
     public void complete (int playbackSeconds, int durationSec) {
@@ -60,6 +87,7 @@ public class LearningHistory {
     }
 
     // 나가기 버튼 클릭 시 이어보기 지점 저장
+    // 조건 없이 현재 위치로 덮어씀
     public void saveLastPosition(int lastPositionSec) {
         this.lastPositionSec = lastPositionSec;
     }

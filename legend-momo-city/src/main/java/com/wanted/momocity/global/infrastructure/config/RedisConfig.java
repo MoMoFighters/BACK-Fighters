@@ -54,7 +54,7 @@ public class RedisConfig {
 
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-        
+
         /*
         * comment.
         *  serializer : Java 객체 ↔ JSON 변환 담당

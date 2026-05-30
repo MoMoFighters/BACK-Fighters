@@ -165,9 +165,19 @@ public class ViewingCommandService implements ViewingCommandUseCase {
                 .sum();
 
         // 미완료 챕터 watchedSeconds 합산
+        // watchedSeconds 가 durationSec 초과 방지
         int inProgressWatchedSum = histories.stream()
                 .filter(h -> !h.isCompleted())
-                .mapToInt(LearningHistory::getWatchedSeconds)
+                .mapToInt(h ->{
+                    // 해당 챕터의 durationSec 찾기
+                    int durationSec = chapters.stream()
+                            .filter(c -> c.getId().equals(h.getChapterId()))
+                            .findFirst()
+                            .map(Chapter::getDurationSec)
+                            .orElse(0);
+                    // watchedSeconds 가 durationSec 초과 방지
+                    return Math.min(h.getWatchedSeconds(), durationSec);
+                })
                 .sum();
 
         // 전체 durationSec 합산
