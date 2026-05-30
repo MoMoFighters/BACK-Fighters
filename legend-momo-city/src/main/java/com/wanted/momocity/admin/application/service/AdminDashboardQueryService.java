@@ -1,8 +1,14 @@
 package com.wanted.momocity.admin.application.service;
 
+import com.wanted.momocity.admin.application.port.LectureStatsPort;
+import com.wanted.momocity.admin.application.port.MemberStatsPort;
+import com.wanted.momocity.admin.application.port.ReportStatsPort;
 import com.wanted.momocity.admin.application.usecase.AdminDashboardQueryUseCase;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
 
 /* comment.
     AdminDashboardQueryService 정리
@@ -14,58 +20,67 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class AdminDashboardQueryService implements AdminDashboardQueryUseCase {
 
     /* comment.
-        m03 우선순위에서 추가될 의존성 :
-        - private final MemberStatsPort memberStatsPort;   (외부 BC 회원 - PORT 패턴, 어댑터는 회원팀 제공)
-        - private final LectureStatsPort lectureStatsPort; (외부 BC 강의 - PORT 패턴, 어댑터는 성진 제공)
-        - private final ReportStatsPort reportStatsPort;   (외부 BC 신고 - PORT 패턴, 어댑터는 report BC 가 제공)
-        *
-        BC 정합 - 3개 모두 외부 BC 라 PORT 패턴 일관 적용 :
-        - admin BC 는 다른 BC 의 내부 구현을 모름 (BC 격리)
-        - 각 Port 의 어댑터는 데이터 소유자 BC 가 제공 (member / lecture / report 모두 동일)
-        *
-        현재는 회원/강의 어댑터 미구현 상태라 주입 보류.
-        ReportStatsPort 는 어댑터(ReportStatsAdapter) 완성됨 → 즉시 주입 가능.
-        모두 준비되면 생성자 주입 + 메서드 본문 실구현 예정.
- */
-    public AdminDashboardQueryService() {
-        // m03 우선순위 - 위 3개 Port 생성자 주입 예정
-    }
+        의존성 - 외부 BC 통계 Port 3개 (모두 PORT 패턴 일관 적용)
+        1. admin BC 는 다른 BC 의 내부 구현을 모르고 인터페이스(Port)에만 의존한다 (BC 격리 / DIP).
+        2. 각 Port 의 어댑터는 "데이터 소유자 BC" 가 제공한다.
+           - memberStatsPort  → MemberStatsAdapter  (user BC 제공)
+           - lectureStatsPort → LectureStatsAdapter (lecture BC 제공)
+           - reportStatsPort  → ReportStatsAdapter  (report BC 제공)
+        3. @RequiredArgsConstructor 가 final 필드 3개를 받는 생성자를 자동 생성 → 스프링이 어댑터 빈을 주입.
+     */
+    private final MemberStatsPort memberStatsPort;
+    private final LectureStatsPort lectureStatsPort;
+    private final ReportStatsPort reportStatsPort;
 
     /* comment.
-        실제 구현 시 흐름 (m03 우선순위) :
-        *
-        // 전월 말 시점 계산 (예: 5월 27일 호출 시 → 4월 30일)
+        getDashboardSummary - 여러 BC 의 통계를 모아 대시보드 요약으로 조합한다.
+        처리 흐름 5단계 :
+        a) 증감률 기준 시점(전월 말일) 계산
+        b) 회원   : 현재 수 + 전월 말 수 → 증감률
+        c) 강의   : 현재 수 + 전월 말 수 → 증감률
+        d) 신고   : 전체 수 (증감률 없음 - FE 표시 안 함)
+        e) DashboardSummary 로 묶어 반환
+     */
+    @Override
+    public DashboardSummary getDashboardSummary() {
+        // a) 전월 말 시점 (예: 5/30 호출 → 이번달 1일에서 하루 빼면 4/30)
         LocalDate previousMonthEnd = LocalDate.now().withDayOfMonth(1).minusDays(1);
-        *
-        // 회원 카운트 + 증감률
+
+        // b) 회원 카운트 + 증감률
         long memberCount        = memberStatsPort.countActive();
         long memberPrevious     = memberStatsPort.countActiveBefore(previousMonthEnd);
         double memberGrowthRate = calcGrowthRate(memberPrevious, memberCount);
-        *
-        // 강의 카운트 + 증감률
+
+        // c) 강의 카운트 + 증감률
         long lectureCount        = lectureStatsPort.countActive();
         long lecturePrevious     = lectureStatsPort.countActiveBefore(previousMonthEnd);
         double lectureGrowthRate = calcGrowthRate(lecturePrevious, lectureCount);
-        *
-        // 신고 카운트 (증감률 없음 - FE 표시 안 함)
-        long reportCount = reportQueryUseCase.countAll();
-        *
-        return new DashboardSummary(
-            memberCount, memberGrowthRate,
-            lectureCount, lectureGrowthRate,
-            reportCount
-        );
-    */
-    // 헬퍼 메서드 (private double)
-    // calcGrowthRate(long previous, long current):
-    //   if (previous == 0) return 0.0;
-    //   return ((current - previous) / (double) previous) * 100.0;
 
-    @Override
-    public DashboardSummary getDashboardSummary() {
-        throw new UnsupportedOperationException("TODO: m03 우선순위 - admin 대시보드 요약 통계 구현");
+        // d) 신고 카운트 (전체 신고 수만 - 증감률 없음)
+        long reportCount = reportStatsPort.countAll();
+
+        // e) 요약 결과로 묶어 반환
+        return new DashboardSummary(
+                memberCount, memberGrowthRate,
+                lectureCount, lectureGrowthRate,
+                reportCount
+        );
+    }
+
+    /* comment.
+        calcGrowthRate - 전월 대비 증감률(%) 계산
+        - previous(이전 시점 수) 가 0 이면 0 으로 나눌 수 없으므로 0.0 반환 (방어 로직)
+        - 공식 : (현재 - 이전) / 이전 * 100  (예: 80 → 100 이면 +25.0)
+        - (double) 캐스팅으로 정수 나눗셈이 아닌 실수 나눗셈 보장
+     */
+    private double calcGrowthRate(long previous, long current) {
+        if (previous == 0) {
+            return 0.0;
+        }
+        return ((current - previous) / (double) previous) * 100.0;
     }
 }
