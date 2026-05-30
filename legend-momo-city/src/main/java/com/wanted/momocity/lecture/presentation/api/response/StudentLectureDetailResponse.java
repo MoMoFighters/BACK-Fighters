@@ -2,6 +2,7 @@ package com.wanted.momocity.lecture.presentation.api.response;
 
 import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.model.LectureChapter;
+import com.wanted.momocity.lecture.domain.model.VideoStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -84,6 +85,7 @@ public record StudentLectureDetailResponse(
                 reviewCount,
                 isEnrolled,
                 chapters.stream()
+                        .filter(chapter -> chapter.getVideoStatus() == VideoStatus.READY)
                         .map(StudentLectureChapterResponse::from)
                         .toList(),
                 lecture.getCreatedAt(),
