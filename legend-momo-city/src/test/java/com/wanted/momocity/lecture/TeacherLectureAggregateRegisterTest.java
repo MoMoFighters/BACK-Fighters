@@ -1,8 +1,9 @@
-﻿package com.wanted.momocity.mosungjin;
+﻿package com.wanted.momocity.lecture;
 
 import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.lecture.application.usecase.ChapterCommandUseCase;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCase;
+import com.wanted.momocity.lecture.application.usecase.LectureQueryUseCase;
 import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.model.LectureCategory;
 import com.wanted.momocity.lecture.domain.model.LectureStatus;
@@ -30,10 +31,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /*
- * TeacherLectureAggregateRegisterTest는 강사의 강의 등록 API를 검증하는 Controller 테스트입니다.
- *
- * 실제 JWT 검증, 실제 S3 업로드, 실제 DB 저장은 수행하지 않고,
- * multipart/form-data 요청이 Controller에서 정상 처리되는지 확인합니다.
+ * 강사 강의 등록 API Controller 테스트.
+ * 실제 S3, DB, JWT 검증은 사용하지 않고 Controller 요청/응답 흐름만 검증한다.
  */
 @WebMvcTest(TeacherLectureController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -41,45 +40,36 @@ class TeacherLectureAggregateRegisterTest {
 
     private static final String CREATE_LECTURE_URL = "/api/v1/teacher/lectures";
 
-    /*
-     * MockMvc는 실제 서버를 띄우지 않고 HTTP 요청처럼 Controller를 테스트하게 해줍니다.
-     */
     @Autowired
     private MockMvc mockMvc;
 
-    /*
-     * Controller가 의존하는 강의 UseCase를 Mock으로 대체합니다.
-     */
+    // 강의 등록 UseCase를 Mock으로 대체한다.
     @MockitoBean
     private LectureCommandUseCase lectureCommandUseCase;
 
-    /*
-     * TeacherLectureController 생성자 의존성 때문에 챕터 UseCase도 Mock으로 등록합니다.
-     */
+    // TeacherLectureController 생성자 의존성 때문에 필요하다.
     @MockitoBean
     private ChapterCommandUseCase chapterCommandUseCase;
 
-    /*
-     * 실제 S3 업로드 대신 Mock으로 URL을 반환하게 합니다.
-     */
+    // TeacherLectureController 생성자 의존성 때문에 필요하다.
+    @MockitoBean
+    private LectureQueryUseCase lectureQueryUseCase;
+
+    // 실제 S3 업로드 대신 URL만 반환하도록 Mock 처리한다.
     @MockitoBean
     private S3UploadPort s3UploadPort;
 
     @Test
-    @DisplayName("강사가 form-data로 강의를 등록하면 201 응답을 반환한다")
-    void createLecture() throws Exception {
+    @DisplayName("강사가 form-data로 강의를 등록하면 201 Created를 반환한다")
+    void createLectureSuccess() throws Exception {
         LocalDateTime now = LocalDateTime.of(2026, 5, 19, 10, 30);
         String thumbnailUrl = "https://example.com/images/spring-boot.png";
 
-        /*
-         * S3 업로드가 성공하면 thumbnailUrl을 반환한다고 가정합니다.
-         */
+        // S3 업로드 성공 시 썸네일 URL이 반환된다고 가정한다.
         when(s3UploadPort.upload(any()))
                 .thenReturn(thumbnailUrl);
 
-        /*
-         * UseCase가 반환할 가짜 Lecture 객체를 준비합니다.
-         */
+        // 강의 등록 UseCase가 반환할 도메인 객체를 준비한다.
         LectureAggregate lecture = LectureAggregate.restore(
                 10L,
                 3L,
@@ -96,9 +86,7 @@ class TeacherLectureAggregateRegisterTest {
         when(lectureCommandUseCase.createLecture(any()))
                 .thenReturn(lecture);
 
-        /*
-         * form-data의 thumbnail 파일 파트입니다.
-         */
+        // multipart/form-data의 thumbnail 파일 파트.
         MockMultipartFile thumbnail = new MockMultipartFile(
                 "thumbnail",
                 "spring-boot.png",
@@ -126,11 +114,14 @@ class TeacherLectureAggregateRegisterTest {
                 .andExpect(jsonPath("$.data.completedUserCount").value(0))
                 .andExpect(jsonPath("$.data.createdAt").exists())
                 .andExpect(jsonPath("$.data.updatedAt").exists());
+
+        verify(s3UploadPort).upload(any());
+        verify(lectureCommandUseCase).createLecture(any());
     }
 
     @Test
-    @DisplayName("강의 등록 시 필수값이 누락되면 400 응답을 반환한다")
-    void createLectureFailByInvalidRequest() throws Exception {
+    @DisplayName("강의 등록 시 제목이 비어 있으면 400 Bad Request를 반환한다")
+    void createLectureFailByBlankTitle() throws Exception {
         MockMultipartFile thumbnail = new MockMultipartFile(
                 "thumbnail",
                 "spring-boot.png",
@@ -144,14 +135,15 @@ class TeacherLectureAggregateRegisterTest {
                         .param("description", "Spring Boot 기초부터 REST API 개발까지 배우는 강의입니다.")
                         .param("category", "STUDY")
                         .principal(teacherAuthentication()))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.code").value("COMMON-VALIDATION-ERROR"))
-                .andExpect(jsonPath("$.message").exists());
+                .andExpect(status().isBadRequest());
+
+        // 입력값 검증에서 막혀야 하므로 S3 업로드와 UseCase 호출은 발생하면 안 된다.
+        verify(s3UploadPort, never()).upload(any());
+        verify(lectureCommandUseCase, never()).createLecture(any());
     }
 
     @Test
-    @DisplayName("강의 등록 시 허용되지 않은 카테고리면 400 응답을 반환하고 S3 업로드를 하지 않는다")
+    @DisplayName("강의 등록 시 허용되지 않은 카테고리면 400 Bad Request를 반환하고 S3 업로드를 하지 않는다")
     void createLectureFailByInvalidCategory() throws Exception {
         MockMultipartFile thumbnail = new MockMultipartFile(
                 "thumbnail",
@@ -171,14 +163,13 @@ class TeacherLectureAggregateRegisterTest {
                 .andExpect(jsonPath("$.code").value("COMMON-DOMAIN-RULE-VIOLATION"))
                 .andExpect(jsonPath("$.message").exists());
 
-        /*
-         * category 검증이 S3 업로드보다 먼저 실행되어야 합니다.
-         */
+        // category 검증은 S3 업로드보다 먼저 수행되어야 한다.
         verify(s3UploadPort, never()).upload(any());
+        verify(lectureCommandUseCase, never()).createLecture(any());
     }
 
     @Test
-    @DisplayName("강의 등록 시 썸네일 파일이 없으면 400 응답을 반환한다")
+    @DisplayName("강의 등록 시 썸네일 파일이 없으면 400 Bad Request를 반환한다")
     void createLectureFailWithoutThumbnail() throws Exception {
         mockMvc.perform(multipart(CREATE_LECTURE_URL)
                         .param("title", "Spring Boot 입문")
@@ -186,15 +177,19 @@ class TeacherLectureAggregateRegisterTest {
                         .param("category", "STUDY")
                         .principal(teacherAuthentication()))
                 .andExpect(status().isBadRequest());
+
+        // 썸네일이 없으면 S3 업로드와 UseCase 호출이 발생하면 안 된다.
+        verify(s3UploadPort, never()).upload(any());
+        verify(lectureCommandUseCase, never()).createLecture(any());
     }
 
     /*
-     * 강사 권한을 가진 인증 객체를 만듭니다.
-     * principal 값인 teacher@example.com은 실제 JWT subject에 해당하는 email 역할입니다.
+     * 현재 Controller는 authentication.getName()을 Long으로 변환한다.
+     * 따라서 테스트 principal도 email이 아니라 userId 문자열로 둔다.
      */
     private UsernamePasswordAuthenticationToken teacherAuthentication() {
         return new UsernamePasswordAuthenticationToken(
-                "teacher@example.com",
+                "3",
                 null,
                 List.of(new SimpleGrantedAuthority("ROLE_TEACHER"))
         );

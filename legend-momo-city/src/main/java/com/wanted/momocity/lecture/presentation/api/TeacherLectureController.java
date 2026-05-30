@@ -284,7 +284,19 @@ public class TeacherLectureController {
                 response
         ));
     }
+    @Operation(
+            summary = "챕터 동영상 상태 변경",
+            description = """
+                강사가 본인이 등록한 강의의 챕터 동영상 상태를 변경합니다.
+                동영상 업로드 또는 인코딩 처리 이후 READY 상태로 변경할 때 사용합니다.
 
+                변경 가능한 상태값:
+                - UPLOADING: 업로드 중
+                - ENCODING: 인코딩 중
+                - READY: 재생 가능
+                - FAILED: 처리 실패
+                """
+    )
     @PatchMapping("/{lectureId}/chapters/{chapterId}/video/status")
     @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public ResponseEntity<ApiResponse<RegisterChapterVideoResponse>> changeChapterVideoStatus(
