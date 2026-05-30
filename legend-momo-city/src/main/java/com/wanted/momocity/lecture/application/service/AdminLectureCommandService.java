@@ -11,6 +11,7 @@ import com.wanted.momocity.lecture.domain.repository.ChapterRepository;
 import com.wanted.momocity.lecture.domain.repository.LectureRepository;
 import com.wanted.momocity.lecture.presentation.api.response.AdminChangeLectureStatusResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class AdminLectureCommandService implements AdminLectureCommandUseCase {
 
     private final LectureRepository lectureRepository;
@@ -45,6 +47,13 @@ public class AdminLectureCommandService implements AdminLectureCommandUseCase {
         // 변경된 강의 상태를 저장
         LectureAggregate savedLecture =
                 lectureRepository.save(changedLecture);
+
+        // 관리자 승인/거절 결과를 추적하기 위한 로그
+        // ACTIVE는 승인, HOLD는 거절 상태로 사용되므로 adminId와 변경된 상태를 남긴다.
+        log.info("관리자 강의 상태 변경 완료 - adminId={}, lectureId={}, lectureStatus={}",
+                command.adminId(),
+                savedLecture.getId(),
+                savedLecture.getStatus());
 
         // 변경 결과를 응답 DTO로 변환
         return AdminChangeLectureStatusResponse.from(savedLecture);

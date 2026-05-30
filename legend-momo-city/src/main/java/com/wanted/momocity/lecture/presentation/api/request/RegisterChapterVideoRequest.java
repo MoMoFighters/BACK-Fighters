@@ -1,7 +1,6 @@
 package com.wanted.momocity.lecture.presentation.api.request;
 
 import com.wanted.momocity.lecture.application.command.RegisterChapterVideoCommand;
-import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.web.multipart.MultipartFile;
@@ -10,12 +9,10 @@ import org.springframework.web.multipart.MultipartFile;
 public record RegisterChapterVideoRequest(
 
         // 업로드할 동영상 파일
-        @Schema(description = "업로드할 동영상 파일", type = "string", format = "binary")
         @NotNull(message = "동영상 파일은 필수입니다.")
         MultipartFile video,
 
         // 동영상 재생 시간
-        @Schema(description = "동영상 재생 시간(초)", example = "600")
         @NotNull(message = "동영상 재생 시간은 필수입니다.")
         @Min(value = 1, message = "동영상 재생 시간은 1초 이상이어야 합니다.")
         Integer durationSec

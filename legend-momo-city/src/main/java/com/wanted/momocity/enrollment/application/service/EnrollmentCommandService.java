@@ -11,6 +11,7 @@ import com.wanted.momocity.enrollment.domain.model.Enrollment;
 import com.wanted.momocity.enrollment.domain.repository.EnrollmentRepository;
 import com.wanted.momocity.lecture.domain.model.LectureStatus;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class EnrollmentCommandService implements EnrollmentCommandUseCase {
 
     // 수강신청 저장소
@@ -71,6 +73,13 @@ public class EnrollmentCommandService implements EnrollmentCommandUseCase {
                 savedEnrollment.getUserId(),
                 savedEnrollment.getLectureId()
         ));
+
+        // 수강신청 완료와 이벤트 발행 여부를 추적하기 위한 로그
+        // 수강신청 후 강사 자동 친구 추가 이벤트가 이어지므로 enrollmentId, userId, lectureId를 남긴다.
+        log.info("수강신청 완료 - enrollmentId={}, userId={}, lectureId={}",
+                savedEnrollment.getId(),
+                savedEnrollment.getUserId(),
+                savedEnrollment.getLectureId());
 
         // 저장된 수강신청 도메인 객체를 반환
         return savedEnrollment;
