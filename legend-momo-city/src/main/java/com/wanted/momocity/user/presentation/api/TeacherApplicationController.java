@@ -16,6 +16,8 @@ import com.wanted.momocity.user.presentation.api.response.TeacherApplicationDeta
 import com.wanted.momocity.user.presentation.api.response.TeacherApplicationListResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -68,6 +70,11 @@ public class TeacherApplicationController {
 
     @GetMapping("/users/instructor-applications")
     @Operation(summary = "강사 신청자 목록 조회 (MS-3)")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "강사 신청자 목록 조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한 없음")
+    })
     public ResponseEntity<ApiResponse<TeacherApplicationListResponse>> getApplicationList(
             @Parameter(description = "페이지 번호 (1-base)", example = "1")
             @RequestParam(defaultValue = "1") int page,
@@ -91,6 +98,12 @@ public class TeacherApplicationController {
 
     @GetMapping("/users/instructor-applications/{userId}")
     @Operation(summary = "강사 신청자 상세 조회 (MS-4)")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "강사 신청자 상세 조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "신청자를 찾을 수 없음")
+    })
     public ResponseEntity<ApiResponse<TeacherApplicationDetailResponse>> getApplicationDetail(
             @Parameter(description = "신청자 user PK", example = "7")
             @PathVariable Long userId
@@ -107,6 +120,13 @@ public class TeacherApplicationController {
     @PatchMapping("/users/{userId}/role")
     @Operation(summary = "강사 승인/반려 (MS-5)",
             description = "action=APPROVE 시 강사 승인, action=REJECT 시 반려. REJECT 는 reason 최소 10자.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "강사 승인 또는 반려 처리 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "유효하지 않은 요청 값 (action 누락, reason 10자 미만 등)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "신청자를 찾을 수 없음")
+    })
     public ResponseEntity<ApiResponse<TeacherActionResponse>> changeRole(
             @Parameter(description = "신청자 user PK", example = "7")
             @PathVariable Long userId,
