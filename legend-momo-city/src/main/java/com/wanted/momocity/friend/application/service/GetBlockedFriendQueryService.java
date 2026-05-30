@@ -36,6 +36,12 @@ public class GetBlockedFriendQueryService implements GetBlockedFriendQueryUseCas
                 continue;
             }
 
+            //방어막(로그인 유저가 toUser인 상태에서 BLOCK일 때만 띄움)
+            if (relation.getToUserId().getId().equals(userId)) {
+                log.info("[GetBlockedFriendQueryService] 상대방이 나를 차단한 행이므로 노출 제외 - 관계ID: {}", relation.getId());
+                continue;
+            }
+
             //로그인한 유저가 차단한 상대방 누구인지.
             UserWithFMJpaEntity targetUser;
 

@@ -8,8 +8,7 @@ import java.util.List;
 * comment.
 *  catalog 컨텍스트 소유의 Chapter 를 READ 전용으로 조회
 *  viewing 컨텍스트가 catalog 컨텍스트를 직접 참조하지 않고 해당 포트를 통해서 접근함
-*  -
-*  실제 구현체는 infrastructure.caltalog.ChapterCatalogAdater 가 담당
+*  실제 구현체 : infrastructure.caltalog.ChapterCatalogAdater 가 담당
 * */
 
 public interface ChapterPort {

@@ -16,6 +16,8 @@ public record AdminLectureDetailResponse(
         String category,
         String lectureStatus,
         int completedUserCount,
+        double averageRating,
+        int reviewCount,
         List<AdminLectureChapterResponse> chapters,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
@@ -24,7 +26,9 @@ public record AdminLectureDetailResponse(
     // 강의 도메인 모델과 챕터 목록을 관리자 상세 응답 DTO로 변환한다.
     public static AdminLectureDetailResponse from(
             LectureAggregate lecture,
-            List<LectureChapter> chapters
+            List<LectureChapter> chapters,
+            double averageRating,
+            int reviewCount
     ) {
         return new AdminLectureDetailResponse(
                 lecture.getId(),
@@ -35,6 +39,8 @@ public record AdminLectureDetailResponse(
                 lecture.getCategory().name(),
                 lecture.getStatus().name(),
                 lecture.getCompletedUserCount(),
+                averageRating,
+                reviewCount,
                 chapters.stream()
                         .map(AdminLectureChapterResponse::from)
                         .toList(),

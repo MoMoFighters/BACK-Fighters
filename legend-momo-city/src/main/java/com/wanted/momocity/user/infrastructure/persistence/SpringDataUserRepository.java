@@ -54,4 +54,11 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
     @Modifying
     @Transactional
     @Query("UPDATE UserUser u SET u.isTempPwd = false WHERE u.id = :userId")
-    void clearTempPwd(@Param("userId") Long userId);}
+    void clearTempPwd(@Param("userId") Long userId);
+
+    // active인 사용자 수 세기
+    long countByStatus(Status status);
+
+    // 특정 날짜 이전의 active인 사용자 수 세기
+    long countByStatusAndCreatedAtBefore(Status status, LocalDateTime localDateTime);
+}

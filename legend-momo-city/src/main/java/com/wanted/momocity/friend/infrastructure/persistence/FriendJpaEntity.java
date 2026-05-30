@@ -62,4 +62,15 @@ public class FriendJpaEntity {
         this.status = newStatus;
         this.updatedAt = LocalDateTime.now();
     }
+
+    //친구 차단 로직 변경(로그인 유저를 from으로)
+    public void swapDirectionAndBlock() {
+        //from과 to 바꾸기
+        UserWithFMJpaEntity temp = this.fromUserId;
+        this.fromUserId = this.toUserId;
+        this.toUserId = temp;
+
+        //상태를 BLOCK으로 변경
+        this.status = "BLOCK";
+    }
 }

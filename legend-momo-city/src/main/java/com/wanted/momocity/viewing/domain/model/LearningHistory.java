@@ -16,6 +16,7 @@ public class LearningHistory {
     private int lastPositionSec;
     private int progressRate;
     // createdAt, updateAt 은 JPA 에서 관리
+    private Long version;
 
     // 신규 생성용
     public static LearningHistory create(
@@ -29,6 +30,7 @@ public class LearningHistory {
         history.isCompleted = false;
         history.lastPositionSec = 0;
         history.progressRate = 0;
+        // version = null -> 신규 INSERT 시 DB 가 0 으로 세팅
         return history;
     }
 
@@ -66,7 +68,7 @@ public class LearningHistory {
     // create() 는 신규 생성, reconstitute() 는 DB 복원
     public static LearningHistory reconstitute(
             Long id, Long userId, Long lectureId, Long chapterId, int watchedSeconds, boolean isCompleted,
-            int lastPositionSec, int progressRate
+            int lastPositionSec, int progressRate, Long version
     ) {
         LearningHistory history = new LearningHistory();
         history.id = id;
@@ -77,6 +79,7 @@ public class LearningHistory {
         history.isCompleted = isCompleted;
         history.lastPositionSec = lastPositionSec;
         history.progressRate = progressRate;
+        history.version = version;
         return history;
     }
 

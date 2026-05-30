@@ -20,12 +20,18 @@ public record TeacherLectureListItemResponse(
         String category,
         String lectureStatus,
         int completedUserCount,
+        double averageRating,
+        int reviewCount,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
 
     // 도메인 모델 LectureAggregate를 강사용 목록 응답 DTO
-    public static TeacherLectureListItemResponse from(LectureAggregate lecture) {
+    public static TeacherLectureListItemResponse from(
+            LectureAggregate lecture,
+            double averageRating,
+            int reviewCount
+    ) {
         return new TeacherLectureListItemResponse(
                 lecture.getId(),
                 lecture.getTeacherId(),
@@ -35,6 +41,8 @@ public record TeacherLectureListItemResponse(
                 lecture.getCategory().name(),
                 lecture.getStatus().name(),
                 lecture.getCompletedUserCount(),
+                averageRating,
+                reviewCount,
                 lecture.getCreatedAt(),
                 lecture.getUpdatedAt()
         );

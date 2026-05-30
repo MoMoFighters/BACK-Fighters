@@ -96,9 +96,12 @@ public class AdminLectureQueryService implements AdminLectureQueryUseCase {
         List<LectureChapter> chapters =
                 chapterRepository.findAllByLectureIdOrderByOrderNoAsc(query.lectureId());
 
-        /*
-         * 강의 정보와 챕터 목록을 관리자 상세 응답 DTO로 변환한다.
-         */
-        return AdminLectureDetailResponse.from(lecture, chapters);
+        // 강의 정보와 챕터 목록을 관리자 상세 응답 DTO로 변환
+        return AdminLectureDetailResponse.from(
+                lecture,
+                chapters,
+                0.0,
+                0
+        );
     }
 }

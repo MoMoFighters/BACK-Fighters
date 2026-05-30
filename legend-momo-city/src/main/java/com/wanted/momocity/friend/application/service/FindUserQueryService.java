@@ -76,7 +76,7 @@ public class FindUserQueryService implements FindUserQueryUseCase {
 
             //강사 쪽에는 강의명
             List<String> lectureTitleList = new ArrayList<>();
-            if ("ACTIVE".equals(targetUser.getStatus()) && "TEACHER".equals(targetUser.getRole())) {
+            if ("ACTIVE".equals(targetUser.getStatus()) && "TEACHER".equals(targetUser.getRole()) && "FRIEND".equals(status)) {
                 for (EnrollmentWithFMJpaEntity enrollment : myEnrollments) {
                     LectureWithFMJpaEntity lecture = enrollment.getLectureId();
 
