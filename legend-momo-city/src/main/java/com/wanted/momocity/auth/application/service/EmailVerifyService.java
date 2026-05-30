@@ -5,10 +5,12 @@ import com.wanted.momocity.auth.application.port.EmailCodePort;
 import com.wanted.momocity.auth.application.usecase.EmailVerifyUsecase;
 import com.wanted.momocity.auth.domain.exception.InvalidVerificationCodeException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Slf4j
 @Transactional
 @RequiredArgsConstructor
 public class EmailVerifyService implements EmailVerifyUsecase {
@@ -21,15 +23,18 @@ public class EmailVerifyService implements EmailVerifyUsecase {
 
 
         if (savedCode == null) { // 만료되었거나 존재하지 않는 경우
+            log.warn("[email] 인증코드 만료 | email={}", command.email());
             throw new InvalidVerificationCodeException("인증 코드가 만료되었습니다. 재발송 버튼을 눌러 인증코드를 다시 발급받아 입력해주세요.");
         }
 
         if (!savedCode.equals(command.code())) { // 코드가 틀린 경우
+            log.warn("[email] 인증코드 불일치 | email={}", command.email());
             throw new InvalidVerificationCodeException("인증 코드가 올바르지 않습니다.");
         }
 
         emailCodePort.delete(command.email());
         emailCodePort.saveVerified(command.email(), 180L);  // 인증 성공하면 그 값을 3분동안 유지하고
+        log.info("[email] 이메일 인증 완료 | email={}", command.email());
 
     }
 }

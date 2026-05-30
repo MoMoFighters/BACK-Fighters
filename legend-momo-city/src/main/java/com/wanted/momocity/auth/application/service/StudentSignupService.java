@@ -8,12 +8,14 @@ import com.wanted.momocity.auth.domain.event.SignupCompletedEvent;
 import com.wanted.momocity.auth.domain.model.User;
 import com.wanted.momocity.auth.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Slf4j
 @Transactional
 @RequiredArgsConstructor
 public class StudentSignupService implements StudentSignupUsecase {
@@ -38,6 +40,8 @@ public class StudentSignupService implements StudentSignupUsecase {
 
         // 회원가입 하고서 이벤트 발행 - 나와의 채팅 생성용
         eventPublisher.publishEvent(new SignupCompletedEvent(user.getId()));
+
+        log.info("[signup] 회원가입 완료 | email={} | role=STUDENT", command.email());
 
     }
 }
