@@ -93,6 +93,21 @@ public class UserRepositoryAdapter implements UserRepository {
         springDataUserRepository.updateRoleAndStatus(userId, role, status, LocalDateTime.now());
     }
 
+    // 관리자 회원관리용 회원 목록 조회 - role/status 조건에 따라
+    @Override
+    public List<User> findAllForAdmin(Role role, Status status, int page, int size) {
+        Pageable pageable = PageRequest.of(page - 1, size);
+        return springDataUserRepository.findAllForAdmin(role, status, pageable)
+                .stream().map(this::toDomainForAdmin).toList();
+    }
+
+    // 페이지네이션 totalElements 계산용 전체 개수 조회
+    @Override
+    public long countForAdmin(Role role, Status status) {
+        return springDataUserRepository.countForAdmin(role, status);
+    }
+
+
 
     // 마이페이지 내 정보 조회용
     private User toDomain(UserJpaEntity entity) {
@@ -119,6 +134,20 @@ public class UserRepositoryAdapter implements UserRepository {
                 entity.getCategory() != null ? entity.getCategory().name() : null,
                 entity.getProof(),
                 entity.getUpdatedAt()
+        );
+    }
+
+    // 관리자 회원관리 회원 조회용
+    private User toDomainForAdmin(UserJpaEntity entity) {
+        return User.restoreForAdmin(
+                entity.getId(),
+                entity.getName(),
+                entity.getRole(),
+                entity.getEmail(),
+                entity.getCreatedAt(),
+                entity.getDeletedAt(),
+                entity.getStatus(),
+                entity.getRole() == Role.TEACHER ? entity.getProof() : null
         );
     }
 }

@@ -63,6 +63,22 @@ public class User {
                 .build();
     }
 
+    // 광리자 대시보드용 사용자 정보 덩어리 가져오기
+    public static User restoreForAdmin(Long id, String name, Role role, String email,
+                                       LocalDateTime createdAt, LocalDateTime deletedAt,
+                                       Status status, String proof) {
+        return User.builder()
+                .id(id)
+                .name(name)
+                .role(role)
+                .email(email)
+                .createdAt(createdAt)
+                .deletedAt(deletedAt)
+                .status(status)
+                .proof(proof)
+                .build();
+    }
+
 
     public Long getId() {
         return id;

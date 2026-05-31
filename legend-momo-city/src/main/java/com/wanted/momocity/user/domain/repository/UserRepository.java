@@ -44,4 +44,9 @@ public interface UserRepository {
     // 강사 승인 여부에 따른 status 업데이트
     void updateRoleAndStatus(Long userId, Role role, Status status);
 
+    // 관리자 회원관리에서 사용자 조회
+    List<User> findAllForAdmin(Role role, Status status, int page, int size);
+
+    long countForAdmin(Role role, Status status);
+
 }

@@ -16,10 +16,10 @@ public final class ApiResponseMessage {
     public static final String CREATED = "Resource created successfully.";
 
     // ===== 공통 실패 =====
-    public static final String VALIDATION_ERROR        = "Validation failed.";
-    public static final String DOMAIN_RULE_VIOLATION   = "Domain rule violated.";
-    public static final String NOT_FOUND               = "Resource not found.";
-    public static final String UNAUTHORIZED            = "Authentication required.";
-    public static final String FORBIDDEN               = "Access denied.";
-    public static final String INTERNAL_ERROR          = "Unexpected server error.";
+    public static final String VALIDATION_ERROR        = "입력값이 올바르지 않습니다.";
+    public static final String DOMAIN_RULE_VIOLATION   = "요청을 처리할 수 없습니다.";
+    public static final String NOT_FOUND               = "조회하신 내용을 찾을 수 없습니다.";
+    public static final String UNAUTHORIZED            = "다시 로그인 해주세요.";
+    public static final String FORBIDDEN               = "접근 권한이 없습니다.";
+    public static final String INTERNAL_ERROR          = "알 수 없는 문제가 발생했습니다. ";
 }
