@@ -71,8 +71,8 @@ VALUES
   (5 ,'student4@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','최서연','seoyeon'    ,'1997-05-30','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE'  ,NULL     ,NULL,  50,0,0,NOW() - INTERVAL 78 DAY ,NULL,0),
   (6 ,'teacher1@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','김강사','coach_kim'  ,'1988-09-09','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','TEACHER','ACTIVE'  ,'FITNESS','https://momo.city/proof/kim.pdf',2000,1,0,NOW() - INTERVAL 129 DAY,NULL,0),
   (7 ,'teacher2@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','박강사','chef_park'  ,'1985-12-01','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','TEACHER','ACTIVE'  ,'COOK'   ,'https://momo.city/proof/park.pdf',1700,1,0,NOW() - INTERVAL 124 DAY,NULL,0),
-  (8 ,'pending@momo.city' ,'$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','정대기','wannabe'    ,'1995-04-18','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','PENDING' ,'STUDY'  ,'https://momo.city/proof/wannabe.pdf',0,0,0,NOW() - INTERVAL 9 DAY ,NULL,0),
-  (9 ,'rejected@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','한거절','rejected_t' ,'1993-08-08','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','REJECTED','ART'    ,'https://momo.city/proof/rejected.pdf',0,0,0,NOW() - INTERVAL 19 DAY,NULL,0),
+  (8 ,'pending@momo.city' ,'$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','정대기','wannabe'    ,'1995-04-18','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','TEACHER','PENDING' ,'STUDY'  ,'https://momo.city/proof/wannabe.pdf',0,0,0,NOW() - INTERVAL 9 DAY ,NULL,0),
+  (9 ,'rejected@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','한거절','rejected_t' ,'1993-08-08','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','TEACHER','REJECTED','ART'    ,'https://momo.city/proof/rejected.pdf',0,0,0,NOW() - INTERVAL 19 DAY,NULL,0),
   (10,'banned@momo.city'  ,'$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','노정지','banned_user','1996-06-06','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','BANNED'  ,NULL     ,NULL,0,0,0,NOW() - INTERVAL 58 DAY,NULL,0),
   (11,'black@momo.city'   ,'$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','영구정','black_user' ,'1994-02-14','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','BLACK'   ,NULL     ,NULL,0,0,0,NOW() - INTERVAL 68 DAY,NULL,0),
   (12,NULL                ,NULL                                                          ,'카카오','kakao_user' ,'2001-10-10','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE'  ,NULL     ,NULL, 100,0,0,NOW() - INTERVAL 24 DAY,NULL,0),
@@ -496,14 +496,14 @@ VALUES
 INSERT INTO `user`
   (`id`,`email`,`password`,`name`,`nickname`,`birth`,`profile_image_url`,`role`,`status`,`category`,`proof`,`point`,`is_paid`,`do_not_disturb`,`created_at`,`deleted_at`,`is_tempPWD`)
 VALUES
-  (14,'teacher5@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','이코치','coach_lee','1987-03-03','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','TEACHER','ACTIVE','FITNESS','https://momo.city/proof/lee.pdf',900,1,0,NOW() - INTERVAL 50 DAY,NULL,0),
-  (15,'teacher6@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','최셰프','chef_choi','1986-05-05','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','TEACHER','ACTIVE','COOK','https://momo.city/proof/choi.pdf',1100,1,0,NOW() - INTERVAL 48 DAY,NULL,0),
-  (16,'pageuser16@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','유저열여섯','page_u16','1995-01-01','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE',NULL,NULL,120,0,0,NOW() - INTERVAL 46 DAY,NULL,0),
+  (14,'teacher5@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','이코치','coach_lee','1987-03-03','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','TEACHER','BANNED','FITNESS','https://momo.city/proof/lee.pdf',900,1,0,NOW() - INTERVAL 50 DAY,NULL,0),
+  (15,'teacher6@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','최셰프','chef_choi','1986-05-05','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','TEACHER','DELETED','COOK','https://momo.city/proof/choi.pdf',1100,1,0,NOW() - INTERVAL 48 DAY,NOW() - INTERVAL 5 DAY,0),
+  (16,'teacher7@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','윤강사','coach_yoon','1989-07-07','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','TEACHER','BLACK','STUDY','https://momo.city/proof/yoon.pdf',0,0,0,NOW() - INTERVAL 46 DAY,NULL,0),
   (17,'pageuser17@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','유저열일곱','page_u17','1996-02-02','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE',NULL,NULL,80,0,0,NOW() - INTERVAL 44 DAY,NULL,0),
   (18,'pageuser18@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','유저열여덟','page_u18','1997-03-03','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE',NULL,NULL,300,1,0,NOW() - INTERVAL 42 DAY,NULL,0),
-  (19,'pageuser19@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','유저열아홉','page_u19','1998-04-04','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE',NULL,NULL,50,0,0,NOW() - INTERVAL 40 DAY,NULL,0),
-  (20,'pageuser20@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','유저스물','page_u20','1999-05-05','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE',NULL,NULL,200,1,0,NOW() - INTERVAL 38 DAY,NULL,0),
-  (21,'pageuser21@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','유저스물하나','page_u21','1994-06-06','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE',NULL,NULL,0,0,0,NOW() - INTERVAL 36 DAY,NULL,0),
+  (19,'pageuser19@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','유저열아홉','page_u19','1998-04-04','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','BANNED',NULL,NULL,50,0,0,NOW() - INTERVAL 40 DAY,NULL,0),
+  (20,'pageuser20@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','유저스물','page_u20','1999-05-05','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','BLACK',NULL,NULL,200,1,0,NOW() - INTERVAL 38 DAY,NULL,0),
+  (21,'pageuser21@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','유저스물하나','page_u21','1994-06-06','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','DELETED',NULL,NULL,0,0,0,NOW() - INTERVAL 36 DAY,NOW() - INTERVAL 3 DAY,0),
   (22,'pageuser22@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','유저스물둘','page_u22','1993-07-07','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE',NULL,NULL,90,0,0,NOW() - INTERVAL 34 DAY,NULL,0),
   (23,'pageuser23@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','유저스물셋','page_u23','1992-08-08','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE',NULL,NULL,150,1,0,NOW() - INTERVAL 32 DAY,NULL,0),
   (24,'pageuser24@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','유저스물넷','page_u24','1995-09-09','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE',NULL,NULL,70,0,0,NOW() - INTERVAL 30 DAY,NULL,0),
@@ -787,7 +787,7 @@ INSERT INTO `notification` (`id`,`user_id`,`type`,`ref_id`,`message`,`created_at
 -- verification_code (id 7~26)
 INSERT INTO `verification_code` (`id`,`user_id`,`email`,`code`,`purpose`,`expires_at`,`used`) VALUES
   (7,14,'teacher5@momo.city','100014','SIGNUP',NOW() - INTERVAL 50 DAY,1),(8,15,'teacher6@momo.city','100015','SIGNUP',NOW() - INTERVAL 48 DAY,1),
-  (9,16,'pageuser16@momo.city','100016','SIGNUP',NOW() - INTERVAL 46 DAY,1),(10,17,'pageuser17@momo.city','100017','SIGNUP',NOW() - INTERVAL 44 DAY,1),
+  (9,16,'teacher7@momo.city','100016','SIGNUP',NOW() - INTERVAL 46 DAY,1),(10,17,'pageuser17@momo.city','100017','SIGNUP',NOW() - INTERVAL 44 DAY,1),
   (11,18,'pageuser18@momo.city','100018','SIGNUP',NOW() - INTERVAL 42 DAY,1),(12,19,'pageuser19@momo.city','100019','SIGNUP',NOW() - INTERVAL 40 DAY,1),
   (13,20,'pageuser20@momo.city','100020','SIGNUP',NOW() - INTERVAL 38 DAY,1),(14,21,'pageuser21@momo.city','100021','PASSWORD_RESET',NOW() + INTERVAL 9 MINUTE,0),
   (15,22,'pageuser22@momo.city','100022','SIGNUP',NOW() - INTERVAL 34 DAY,1),(16,23,'pageuser23@momo.city','100023','SIGNUP',NOW() - INTERVAL 32 DAY,1),
@@ -883,6 +883,17 @@ INSERT INTO `error_log` (`id`,`level`,`source`,`message`,`occurred_at`,`created_
   (31,'ERROR','API Error','Page error 31',NOW() - INTERVAL 5 DAY,NOW() - INTERVAL 5 DAY,NOW() - INTERVAL 5 DAY),
   (32,'WARNING','Database','Page error 32',NOW() - INTERVAL 6 DAY,NOW() - INTERVAL 6 DAY,NOW() - INTERVAL 6 DAY);
 
+-- #####################################################################
+-- ##  STEP 4. lecture 썸네일 채우기  [FE 요청 - 더미 썸네일에 아무 이미지]
+-- ##   - picsum.photos seed 방식: 강의 id 별로 다른 실제 사진이 뜬다.
+-- ##   - seed 고정이라 새로고침해도 같은 이미지(데모 일관성). 400x250 비율.
+-- #####################################################################
+UPDATE `lecture`
+SET `thumbnail_url` = CONCAT('https://picsum.photos/seed/momolecture', `id`, '/400/250')
+WHERE `thumbnail_url` IS NULL;
+
 -- =====================================================================
 --  END OF SEED  (25 tables + error_log / 기존 236행 + 페이지네이션 +520행)
+--  + user status 규칙(학생 REJECTED/PENDING 제외, 강사 다양화, DELETED 포함)
+--  + lecture 썸네일 picsum 적용
 -- =====================================================================
