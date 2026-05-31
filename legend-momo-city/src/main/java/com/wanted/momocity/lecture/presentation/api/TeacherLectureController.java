@@ -166,7 +166,7 @@ public class TeacherLectureController {
                 """
     )
     @PatchMapping("/{lectureId}/status")
-    @PreAuthorize("hasAuthority('ROLE_Admin')")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<ApiResponse<ChangeLectureStatusResponse>> changeLectureStatus(
             Authentication authentication,
             @PathVariable Long lectureId,
