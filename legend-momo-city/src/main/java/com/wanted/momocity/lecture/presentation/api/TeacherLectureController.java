@@ -160,13 +160,13 @@ public class TeacherLectureController {
     @Operation(
             summary = "강의 상태 변경",
             description = """
-                강사가 본인이 등록한 강의의 상태를 변경합니다.
+                관리자는 강사가 등록한 강의의 상태를 변경합니다.
                 ACTIVE 상태로 변경하려면 챕터가 최소 1개 이상 있어야 하고,
                 모든 챕터에 동영상이 등록되어 있어야 합니다.
                 """
     )
     @PatchMapping("/{lectureId}/status")
-    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
+    @PreAuthorize("hasAuthority('ROLE_Admin')")
     public ResponseEntity<ApiResponse<ChangeLectureStatusResponse>> changeLectureStatus(
             Authentication authentication,
             @PathVariable Long lectureId,
