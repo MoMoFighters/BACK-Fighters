@@ -19,6 +19,9 @@ public interface GetMessageHistoryQueryUseCase {
             LocalDateTime createdAt,
             boolean isRead,
             boolean isMine,
-            String profileImageUrl
+            String profileImageUrl,
+            String notMeTargetName,
+            String notMeNickname,
+            String notMeRole
     ) {}
 }

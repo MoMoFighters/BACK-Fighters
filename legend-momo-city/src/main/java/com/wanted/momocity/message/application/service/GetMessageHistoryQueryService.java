@@ -88,6 +88,7 @@ public class GetMessageHistoryQueryService implements GetMessageHistoryQueryUseC
             }
         }
 
+
         // 2. 상대방 유저 특정 및 나가기 역추적 (목록 조회 로직 이식)
         UserWithFMJpaEntity targetUser = null;
         for (ChatRoomMemberJpaEntity member : allMembers) {
@@ -191,6 +192,17 @@ public class GetMessageHistoryQueryService implements GetMessageHistoryQueryUseC
         List<MessageHistoryView> viewList = new ArrayList<>();
         for (MessageJpaEntity msg : sortedMessages) {
             boolean isMine = msg.getSenderId().getId().equals(userId);
+            UserWithFMJpaEntity sender = msg.getSenderId();
+
+            String notMeTargetName = sender.getName();
+            String notMeNickname = sender.getNickname();
+            String notMeRole = sender.getRole();
+
+            if (isMine && targetUser != null) {
+                notMeTargetName = targetUser.getName();
+                notMeNickname = targetUser.getNickname();
+                notMeRole = targetUser.getRole();
+            }
 
             viewList.add(new MessageHistoryView(
                     msg.getId(),
@@ -205,7 +217,10 @@ public class GetMessageHistoryQueryService implements GetMessageHistoryQueryUseC
                     msg.getCreatedAt(),
                     true, // 과거 내역은 무조건 다 읽음 처리
                     isMine,
-                    targetUser != null ? targetUser.getProfileImageUrl() : loginUser.getProfileImageUrl()
+                    targetUser != null ? targetUser.getProfileImageUrl() : loginUser.getProfileImageUrl(),
+                    notMeTargetName,
+                    notMeNickname,
+                    notMeRole
             ));
         }
 
