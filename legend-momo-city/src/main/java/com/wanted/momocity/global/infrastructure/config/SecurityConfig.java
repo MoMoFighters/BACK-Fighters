@@ -127,7 +127,7 @@ public class SecurityConfig {
                         // 메서드 레벨에서 2차 방호벽 구축
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers("/api/v1/reports", "/api/v1/reports/**").hasAnyAuthority("ROLE_ADMIN")
+                        // /api/v1/reports : URL 역할 규칙 제거 → 메서드 레벨 @PreAuthorize 로 인가 (GET=ADMIN 조회 / POST=인증 회원 신고)
                         .requestMatchers("/api/v1/error-logs").hasAnyAuthority("ROLE_ADMIN")
                         .requestMatchers("/api/v1/teacher/**").hasAnyAuthority("ROLE_TEACHER")
                         .requestMatchers("/api/v1/auth/login/completed").authenticated()

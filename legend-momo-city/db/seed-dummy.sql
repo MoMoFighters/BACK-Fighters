@@ -890,7 +890,7 @@ INSERT INTO `error_log` (`id`,`level`,`source`,`message`,`occurred_at`,`created_
 -- #####################################################################
 UPDATE `lecture`
 SET `thumbnail_url` = CONCAT('https://picsum.photos/seed/momolecture', `id`, '/400/250')
-WHERE `thumbnail_url` IS NULL;
+WHERE `id` > 0 AND `thumbnail_url` IS NULL;   -- id(PK) 조건: Workbench Safe Update Mode(Error 1175) 통과용
 
 -- =====================================================================
 --  END OF SEED  (25 tables + error_log / 기존 236행 + 페이지네이션 +520행)
