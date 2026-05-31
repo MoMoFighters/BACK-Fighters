@@ -12,7 +12,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -53,7 +52,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
                 String refreshTokenValue = jwtTokenProvider.resolveRefreshToken(request);
                 if (refreshTokenValue != null) {
-                    String newAccessToken = refreshService.refreshAccessToken(refreshTokenValue); // 여기만 변경
+                    String newAccessToken = refreshService.refreshAccessToken(refreshTokenValue);
 
                     Authentication newAuthentication = jwtTokenProvider.getAuthentication(newAccessToken);
                     SecurityContextHolder.getContext().setAuthentication(newAuthentication);
@@ -82,8 +81,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private void sendUnauthorized(HttpServletResponse response, String message) throws IOException {
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401 에러
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write("{\"success\": false, \"message\": \"" + message + "\"}");
+        response.getWriter().write(
+                "{\"timestamp\": \"" + java.time.LocalDateTime.now() + "\", \"status\": 401, \"code\": \"UNAUTHORIZED\", \"message\": \"" + message + "\"}"
+        );
     }
 }

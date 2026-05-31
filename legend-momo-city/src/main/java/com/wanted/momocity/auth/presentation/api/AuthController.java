@@ -26,20 +26,12 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name="Auth - 인증·인가 ", description = "인증·인가를 위한 Auth api 관련 컨트롤러")
 public class AuthController {
 
-    private final StudentSignupUsecase studentSignupUsecase;
-    private final TeacherSignupUseCase teacherSignupUseCase;
-    private final LoginUsecase loginUsecase;
-    private final LoginCompletedUsecase loginCompletedUsecase;
-    private final EmailSendUsecase emailSendUsecase;
-    private final EmailVerifyUsecase emailVerifyUsecase;
-    private final TempPasswordUsecase tempPasswordUsecase;
-    private final KakaoLoginUsecase kakaoLoginUsecase;
-    private final GoogleLoginUsecase googleLoginUsecase;
-    private final LogoutUsecase logoutUsecase;
+    private final AuthQueryUsecase authQueryUsecase;
+    private final AuthCommandUsecase authCommandUsecase;
+
     private final NewTokenUsecase newTokenUsecase;
 
     private final TokenProviderPort tokenProviderPort;
-
     private final S3UploadPort s3UploadPort;
 
 
@@ -56,7 +48,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Void>> studentSignup (
             @Valid @RequestBody StudentSignupRequest request){
 
-        studentSignupUsecase.signup(new StudentSignupCommand(request.email(),request.password(),request.name()));
+        authCommandUsecase.signup(new StudentSignupCommand(request.email(),request.password(),request.name()));
 
         return ResponseEntity.status(HttpStatus.CREATED) //201
                 .body(ApiResponse.created(
@@ -82,7 +74,7 @@ public class AuthController {
 
         String proofUrl = s3UploadPort.upload(request.proof());  // 여기서 선언하고 값 넣어줌
 
-        teacherSignupUseCase.signup(new TeacherSignupCommand(request.email(),request.password(),request.name(),request.category(),proofUrl));
+        authCommandUsecase.signup(new TeacherSignupCommand(request.email(),request.password(),request.name(),request.category(),proofUrl));
 
         return ResponseEntity.status(HttpStatus.CREATED) //201
                 .body(ApiResponse.created(
@@ -106,7 +98,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<LoginResponse>> login(
             @Valid @RequestBody LoginRequest request){
 
-        LoginResponse result =loginUsecase.login(new LoginCommand(request.email(),request.password()));
+        LoginResponse result =authCommandUsecase.login(new LoginCommand(request.email(),request.password()));
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(
@@ -130,7 +122,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<LoginCompletedResponse>> loginCompleted(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        LoginCompletedResponse result = loginCompletedUsecase.getInfo(userDetails.getUsername()); // id
+        LoginCompletedResponse result = authQueryUsecase.getInfo(userDetails.getUsername()); // id
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(
@@ -154,7 +146,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<EmailSendResponse>> emailSend(
             @Valid @RequestBody EmailSendRequest request){
 
-        EmailSendResponse result = emailSendUsecase.emailSend(new EmailSendCommand(request.email()));
+        EmailSendResponse result = authCommandUsecase.emailSend(new EmailSendCommand(request.email()));
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(
@@ -177,7 +169,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<EmailVerifyResponse>> emailVerify(
             @Valid @RequestBody EmailVerifyRequest request){
 
-        emailVerifyUsecase.emailVerify(new EmailVerifyCommand(request.email(), request.code()));
+        authQueryUsecase.emailVerify(new EmailVerifyCommand(request.email(), request.code()));
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(
@@ -203,7 +195,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Void>> tempPasswordSend(
             @Valid @RequestBody EmailSendRequest request){
 
-        tempPasswordUsecase.sendTempPassword(new EmailSendCommand(request.email()));
+        authCommandUsecase.sendTempPassword(new EmailSendCommand(request.email()));
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(
@@ -224,7 +216,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<LoginResponse>> kakaoLogin(
             @Valid @RequestBody SocialLoginRequest request){
 
-        LoginResponse result = kakaoLoginUsecase.socialLogin(new SocialLoginCommand("KAKAO",request.code()));
+        LoginResponse result = authCommandUsecase.socialLogin(new SocialLoginCommand("KAKAO",request.code()));
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(
@@ -245,7 +237,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<LoginResponse>> googleLogin(
             @Valid @RequestBody SocialLoginRequest request){
 
-        LoginResponse result = googleLoginUsecase.socialLogin(new SocialLoginCommand("GOOGLE",request.code()));
+        LoginResponse result = authCommandUsecase.socialLogin(new SocialLoginCommand("GOOGLE",request.code()));
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(
@@ -283,7 +275,7 @@ public class AuthController {
         // Authorization: Bearer {accessToken} 에서 앞부분 떼고 액세스 토큰만 가져옴
         String accessToken = bearerToken.replace("Bearer ", "");
 
-        logoutUsecase.logout(new LogoutCommand(accessToken,refreshToken));
+        authCommandUsecase.logout(new LogoutCommand(accessToken,refreshToken));
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(
@@ -302,10 +294,25 @@ public class AuthController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "RefreshToken 없음 또는 만료")
     })
     public ResponseEntity<ApiResponse<NewTokenResponse>> newToken(
+            @Parameter(name = "Authorization", description = "Bearer 액세스 토큰", required = true)
+            @RequestHeader(value = "Authorization", required = false) String bearerToken,
             @Parameter(name = "Refresh-Token", description = "리프레시 토큰", required = true)
-            @RequestHeader("Refresh-Token") String refreshToken){
+            @RequestHeader(value = "Refresh-Token", required = false) String refreshToken)
+    // required = true 면 헤더 없으면 Spring이 기본 400을 던지지만
+    // 커스텀 메시지 보여주고 싶어서
+    // 헤더 없으면 null로 들어옴 → 내 if문 실행 → 커스텀 메시지 출력되도록
+    {
 
-        String newAccessToken = newTokenUsecase.refreshAccessToken(refreshToken);
+        if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
+            throw new MissingTokenException("AccessToken이 없습니다.");
+        }
+        if (refreshToken == null) {
+            throw new MissingTokenException("RefreshToken이 없습니다.");
+        }
+
+        String oldAccessToken = bearerToken.replace("Bearer ", "");
+        String newAccessToken = newTokenUsecase.refreshAccessToken(refreshToken, oldAccessToken);
+
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(
