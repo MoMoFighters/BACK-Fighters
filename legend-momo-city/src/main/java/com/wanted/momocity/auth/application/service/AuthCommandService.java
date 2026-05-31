@@ -149,7 +149,13 @@ public class AuthCommandService implements AuthCommandUsecase {
 
         if (user.getStatus() != Status.ACTIVE) {
             log.warn("[login] 비활성 계정 로그인 시도 | email={} | status={}", command.email(), user.getStatus());
-            throw new InactiveUserException("로그인이 제한된 계정입니다.");
+            String message = switch (user.getStatus()) {
+                case PENDING -> "강사 승인 대기중입니다.";
+                case REJECTED -> "강사 신청이 반려되었습니다. 증빙자료를 다시 제출해주세요.";
+                case BANNED -> "정지된 계정입니다.";
+                default -> "해당 계정은 현재 로그인이 불가능한 상태입니다.";
+            };
+            throw new InactiveUserException(message, user.getStatus());
         }
 
         if (user.getIsTempPwd() && !emailCodePort.isTempPasswordVerified(command.email())) {

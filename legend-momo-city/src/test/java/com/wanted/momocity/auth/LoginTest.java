@@ -5,7 +5,7 @@ import com.wanted.momocity.auth.application.port.EmailCodePort;
 import com.wanted.momocity.auth.application.port.LoadUserPort;
 import com.wanted.momocity.auth.application.port.RedisRefreshTokenPort;
 import com.wanted.momocity.auth.application.port.TokenProviderPort;
-import com.wanted.momocity.auth.application.service.LoginService;
+import com.wanted.momocity.auth.application.service.AuthCommandService;
 import com.wanted.momocity.auth.domain.exception.InactiveUserException;
 import com.wanted.momocity.auth.domain.exception.InvalidCredentialsException;
 import com.wanted.momocity.auth.domain.exception.TempPasswordExpiredException;
@@ -40,7 +40,7 @@ public class LoginTest {
     @Mock private EmailCodePort emailCodePort;
 
     @InjectMocks
-    private LoginService loginService;
+    private AuthCommandService loginService;
 
     @BeforeEach
     void setup() {

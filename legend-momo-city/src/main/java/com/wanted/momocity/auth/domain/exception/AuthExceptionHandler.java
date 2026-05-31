@@ -33,7 +33,7 @@ public class AuthExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(ApiErrorResponse.of(
                         HttpStatus.UNAUTHORIZED.value(),
-                        "INACTIVE_USER",
+                        e.getStatus(),
                         e.getMessage()
                 ));
     }
