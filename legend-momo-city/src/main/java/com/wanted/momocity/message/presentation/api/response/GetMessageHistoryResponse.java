@@ -22,7 +22,8 @@ public record GetMessageHistoryResponse(
         String profileImageUrl,
         String notMeTargetName,
         String notMeNickname,
-        String notMeRole
+        String notMeRole,
+        String notMeLectureTitle
 ) {
     public static GetMessageHistoryResponse from(MessageHistoryView view) {
 
@@ -51,6 +52,7 @@ public record GetMessageHistoryResponse(
         String responseNotMeTargetName = null;
         String responseNotMeNickname = null;
         String responseNotMeRole = null;
+        String responseNotMeLectureTitle= null;
 
         if (view.isMine()) {
             responseNotMeRole = view.notMeRole(); // 상대방의 Role (STUDENT or TEACHER)
@@ -59,6 +61,7 @@ public record GetMessageHistoryResponse(
             if ("TEACHER".equals(view.notMeRole())) {
                 responseNotMeTargetName = view.notMeTargetName(); // 강사 실제 성함
                 responseNotMeNickname = view.notMeNickname();     // 강사 닉네임
+                responseNotMeLectureTitle = finalLectureTitle;
             }
             // 💡 [정책 분기] 상대방이 학생(STUDENT)인 경우: 이름 노출 차단(null), 닉네임만 노출
             else if ("STUDENT".equals(view.notMeRole())) {
@@ -82,7 +85,8 @@ public record GetMessageHistoryResponse(
                 view.profileImageUrl(),
                 responseNotMeTargetName,
                 responseNotMeNickname,
-                responseNotMeRole
+                responseNotMeRole,
+                responseNotMeLectureTitle
         );
     }
 }
