@@ -19,10 +19,10 @@ import org.springframework.web.bind.annotation.RestController;
     2. 다루는 API :
         - GET /api/v1/dashboard/summary
     3. 클래스 레벨 어노테이션 :
-        - @RestController              : REST API 컨트롤러, 반환값 자동 JSON 변환
+        - @RestController : REST API 컨트롤러, 반환값 자동 JSON 변환
         - @RequestMapping("/api/v1") : 클래스 안 모든 핸들러 URL 앞에 공통 prefix
         - @PreAuthorize("hasRole('ADMIN')") : 모든 핸들러 호출 전 권한 검사. ADMIN 아니면 403
-        - @Tag                         : Swagger UI 에서 "Admin - 대시보드" 그룹으로 표시
+        - @Tag : Swagger UI 에서 "Admin - 대시보드" 그룹으로 표시
     4. 의존성 :
         - AdminDashboardQueryUseCase : UseCase 인터페이스 의존
     5. MS-6 컨트롤러와 핵심 차이 :

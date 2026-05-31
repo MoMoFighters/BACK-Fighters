@@ -15,7 +15,7 @@ import java.time.LocalDate;
     1. 이 클래스의 역할 : AdminDashboardQueryUseCase 의 구현체 / 다른 영역 통계를 모은다.
     2. 위치 : admin/application/service (응용 계층 - 구현)
     3. 왜 @Transactional 에 readOnly = true 인가 (MS-6 와 다른 부분!) : Query 라서 조회만 하게 진행함
-    4. 왜 의존성 필드가 아직 비어있는가 : 다른 영역의 공개 서비스 단계라 주입 보류
+    4. 의존성 : 외부 BC 통계 Port 3개 (Member/Lecture/Report) 주입 — 구현 아닌 인터페이스에 의존
     5. MS-6 의 MemberCommandService 와 핵심 차이 : MemberCommandService 는 자기 영역 데이터만 변경
  */
 @Service
