@@ -73,12 +73,14 @@ public class SecurityConfig {
                 "Origin",
                 "Access-Control-Request-Method",
                 "Access-Control-Request-Headers",
-                "X-Refresh-Token" // 리프레시 토큰을 위한 커스텀 헤더
+                "X-Refresh-Token", // 리프레시 토큰을 위한 커스텀 헤더
+                "Cookie"
         ));
 
         configuration.setExposedHeaders(Arrays.asList(
                 "Authorization",
-                "New-Access-Token" // 새 액세스 토큰 전달용 커스텀 헤더
+                "New-Access-Token", // 새 액세스 토큰 전달용 커스텀 헤더
+                "Set-Cookie"
         ));
 
         configuration.setAllowCredentials(true);
@@ -113,6 +115,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable()) // Stateless 환경에선 CSRF 불필요
                 .sessionManagement(sess -> sess
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 세션 생성 X
@@ -122,13 +125,14 @@ public class SecurityConfig {
                         // 여기서 1차 인가 관련 방호벽
                         // /api/user/ 하위에 endpoint 중에 admin / user 권한 별로 접근하기 위해서는
                         // 메서드 레벨에서 2차 방호벽 구축
-                        .requestMatchers("/api/v1/auth/**").permitAll() // 인증 없이 허용
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasAnyAuthority("ROLE_ADMIN")
                         .requestMatchers("/api/v1/teacher/**").hasAnyAuthority("ROLE_TEACHER")
                         .requestMatchers("/api/v1/auth/login/completed").authenticated()
                         .requestMatchers("/api/v1/auth/logout").authenticated()
                         // 임시 비밀번호 발급도 인증 토큰 필요
+                        .requestMatchers("/api/v1/auth/**").permitAll() // 인증 없이 허용
                         .anyRequest().authenticated()) // 나머지는 인증 필요
 //                ========================================================================
 

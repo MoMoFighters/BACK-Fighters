@@ -1,5 +1,6 @@
 package com.wanted.momocity.auth.application.service;
 
+import com.wanted.momocity.auth.application.port.BlacklistPort;
 import com.wanted.momocity.auth.application.port.LoadUserPort;
 import com.wanted.momocity.auth.application.port.RedisRefreshTokenPort;
 import com.wanted.momocity.auth.application.port.TokenProviderPort;
@@ -8,6 +9,7 @@ import com.wanted.momocity.auth.domain.model.Status;
 import com.wanted.momocity.auth.domain.model.User;
 import com.wanted.momocity.auth.infrastructure.exception.InvalidRefreshTokenException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -18,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional
 public class RefreshService implements NewTokenUsecase {
@@ -26,8 +29,15 @@ public class RefreshService implements NewTokenUsecase {
     private final TokenProviderPort tokenProviderPort;
     private final RedisRefreshTokenPort redisRefreshTokenPort;
     private final LoadUserPort loadUserPort;
+    private final BlacklistPort blacklistPort;
 
+    // 필터용 (기존 액세스 토큰 블랙리스트 처리 없음 - 이미 만료된 상태라 불필요)
     public String refreshAccessToken(String refreshToken) {
+        return refreshAccessToken(refreshToken, null);
+    }
+
+    @Override
+    public String refreshAccessToken(String refreshToken, String oldAccessToken) {
         // 토큰 유효성 검사
         tokenProviderPort.validateToken(refreshToken);
 
@@ -44,12 +54,22 @@ public class RefreshService implements NewTokenUsecase {
 
         // 상태 체크 추가
         if (user.getStatus() == Status.PENDING) {
+            log.warn("[refresh] 토큰 연장 불가 | userId={} | 사유=미승인 계정", userId);
             throw new InvalidRefreshTokenException("아직 승인되지 않은 계정입니다.");
         }
 
         // 임시비번 로그인 유저는 토큰 연장 불가
         if (user.getIsTempPwd()) {
+            log.warn("[refresh] 토큰 연장 불가 | userId={} | 사유=임시비밀번호 미변경", userId);
             throw new InvalidRefreshTokenException("임시 비밀번호를 변경 후 이용해주세요.");
+        }
+
+        // 기존 액세스 토큰 블랙리스트 등록
+        if (oldAccessToken != null) {
+            long remainingMillis = tokenProviderPort.getRemainingMillis(oldAccessToken);
+            if (remainingMillis > 0) {
+                blacklistPort.addBlacklist(oldAccessToken, remainingMillis);
+            }
         }
 
         Authentication authentication = new UsernamePasswordAuthenticationToken(
@@ -57,6 +77,8 @@ public class RefreshService implements NewTokenUsecase {
                 null,
                 List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
         );
+
+        log.info("[refresh] 액세스 토큰 재발급 | userId={}", userId);
         // 새 액세스 토큰 발급
         return tokenProviderPort.createAccessToken(authentication);
     }

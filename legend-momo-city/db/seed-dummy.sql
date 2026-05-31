@@ -14,6 +14,9 @@
 --  [참고]     ERD 설계 문서(테이블 구조)는 schema-v3.5.sql 참조. 이 파일은 "데이터 적재" 전용.
 -- =====================================================================
 
+-- 대상 DB 선택 (워크벤치에서 스키마 미선택 시 1046 "No database selected" 방지)
+USE `momo`;
+
 -- =====================================================================
 --  STEP 0. 스키마 수정사항 적용  (구 00-ddl-fix.sql 통합)
 --   ① category ENUM 'HEALTH'->'FITNESS' (user/lecture/building)
@@ -61,19 +64,19 @@ SET FOREIGN_KEY_CHECKS = 1;
 INSERT INTO `user`
   (`id`,`email`,`password`,`name`,`nickname`,`birth`,`profile_image_url`,`role`,`status`,`category`,`proof`,`point`,`is_paid`,`do_not_disturb`,`created_at`,`deleted_at`,`is_tempPWD`)
 VALUES
-  (1 ,'admin@momo.city'   ,'$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','관리자','momo_admin' ,'1990-01-01',NULL,'ADMIN'  ,'ACTIVE'  ,NULL     ,NULL,5000,1,0,NOW() - INTERVAL 147 DAY,NULL,0),
-  (2 ,'student1@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','김민수','minsu'      ,'1998-03-12',NULL,'STUDENT','ACTIVE'  ,NULL     ,NULL,1200,1,0,NOW() - INTERVAL 108 DAY,NULL,0),
-  (3 ,'student2@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','이지영','jiyoung'    ,'1999-07-05',NULL,'STUDENT','ACTIVE'  ,NULL     ,NULL, 300,0,0,NOW() - INTERVAL 103 DAY,NULL,0),
-  (4 ,'student3@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','박현우','hyunwoo'    ,'2000-11-23',NULL,'STUDENT','ACTIVE'  ,NULL     ,NULL, 850,1,1,NOW() - INTERVAL 89 DAY ,NULL,0),
-  (5 ,'student4@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','최서연','seoyeon'    ,'1997-05-30',NULL,'STUDENT','ACTIVE'  ,NULL     ,NULL,  50,0,0,NOW() - INTERVAL 78 DAY ,NULL,0),
-  (6 ,'teacher1@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','김강사','coach_kim'  ,'1988-09-09',NULL,'TEACHER','ACTIVE'  ,'FITNESS','https://momo.city/proof/kim.pdf',2000,1,0,NOW() - INTERVAL 129 DAY,NULL,0),
-  (7 ,'teacher2@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','박강사','chef_park'  ,'1985-12-01',NULL,'TEACHER','ACTIVE'  ,'COOK'   ,'https://momo.city/proof/park.pdf',1700,1,0,NOW() - INTERVAL 124 DAY,NULL,0),
-  (8 ,'pending@momo.city' ,'$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','정대기','wannabe'    ,'1995-04-18',NULL,'STUDENT','PENDING' ,'STUDY'  ,'https://momo.city/proof/wannabe.pdf',0,0,0,NOW() - INTERVAL 9 DAY ,NULL,0),
-  (9 ,'rejected@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','한거절','rejected_t' ,'1993-08-08',NULL,'STUDENT','REJECTED','ART'    ,'https://momo.city/proof/rejected.pdf',0,0,0,NOW() - INTERVAL 19 DAY,NULL,0),
-  (10,'banned@momo.city'  ,'$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','노정지','banned_user','1996-06-06',NULL,'STUDENT','BANNED'  ,NULL     ,NULL,0,0,0,NOW() - INTERVAL 58 DAY,NULL,0),
-  (11,'black@momo.city'   ,'$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','영구정','black_user' ,'1994-02-14',NULL,'STUDENT','BLACK'   ,NULL     ,NULL,0,0,0,NOW() - INTERVAL 68 DAY,NULL,0),
-  (12,NULL                ,NULL                                                          ,'카카오','kakao_user' ,'2001-10-10',NULL,'STUDENT','ACTIVE'  ,NULL     ,NULL, 100,0,0,NOW() - INTERVAL 24 DAY,NULL,0),
-  (13,'left@momo.city'    ,'$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','떠난이','left_user'  ,'1992-01-01',NULL,'STUDENT','DELETED' ,NULL     ,NULL,0,0,0,NOW() - INTERVAL 118 DAY,NOW() - INTERVAL 14 DAY,0);
+  (1 ,'admin@momo.city'   ,'$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','관리자','momo_admin' ,'1990-01-01','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','ADMIN'  ,'ACTIVE'  ,NULL     ,NULL,5000,1,0,NOW() - INTERVAL 147 DAY,NULL,0),
+  (2 ,'student1@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','김민수','minsu'      ,'1998-03-12','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE'  ,NULL     ,NULL,1200,1,0,NOW() - INTERVAL 108 DAY,NULL,0),
+  (3 ,'student2@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','이지영','jiyoung'    ,'1999-07-05','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE'  ,NULL     ,NULL, 300,0,0,NOW() - INTERVAL 103 DAY,NULL,0),
+  (4 ,'student3@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','박현우','hyunwoo'    ,'2000-11-23','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE'  ,NULL     ,NULL, 850,1,1,NOW() - INTERVAL 89 DAY ,NULL,0),
+  (5 ,'student4@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','최서연','seoyeon'    ,'1997-05-30','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE'  ,NULL     ,NULL,  50,0,0,NOW() - INTERVAL 78 DAY ,NULL,0),
+  (6 ,'teacher1@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','김강사','coach_kim'  ,'1988-09-09','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','TEACHER','ACTIVE'  ,'FITNESS','https://momo.city/proof/kim.pdf',2000,1,0,NOW() - INTERVAL 129 DAY,NULL,0),
+  (7 ,'teacher2@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','박강사','chef_park'  ,'1985-12-01','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','TEACHER','ACTIVE'  ,'COOK'   ,'https://momo.city/proof/park.pdf',1700,1,0,NOW() - INTERVAL 124 DAY,NULL,0),
+  (8 ,'pending@momo.city' ,'$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','정대기','wannabe'    ,'1995-04-18','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','PENDING' ,'STUDY'  ,'https://momo.city/proof/wannabe.pdf',0,0,0,NOW() - INTERVAL 9 DAY ,NULL,0),
+  (9 ,'rejected@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','한거절','rejected_t' ,'1993-08-08','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','REJECTED','ART'    ,'https://momo.city/proof/rejected.pdf',0,0,0,NOW() - INTERVAL 19 DAY,NULL,0),
+  (10,'banned@momo.city'  ,'$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','노정지','banned_user','1996-06-06','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','BANNED'  ,NULL     ,NULL,0,0,0,NOW() - INTERVAL 58 DAY,NULL,0),
+  (11,'black@momo.city'   ,'$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','영구정','black_user' ,'1994-02-14','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','BLACK'   ,NULL     ,NULL,0,0,0,NOW() - INTERVAL 68 DAY,NULL,0),
+  (12,NULL                ,NULL                                                          ,'카카오','kakao_user' ,'2001-10-10','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE'  ,NULL     ,NULL, 100,0,0,NOW() - INTERVAL 24 DAY,NULL,0),
+  (13,'left@momo.city'    ,'$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','떠난이','left_user'  ,'1992-01-01','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','DELETED' ,NULL     ,NULL,0,0,0,NOW() - INTERVAL 118 DAY,NOW() - INTERVAL 14 DAY,0);
 
 -- =====================================================================
 --  2. lecture  (10개 - 개설은 수개월 전, WAITING 건만 최근)
@@ -482,6 +485,404 @@ VALUES
   (11,'CRITICAL','Database' ,'Replication lag exceeded threshold (30s)'              ,NOW() - INTERVAL 2 DAY - INTERVAL 4 HOUR,NOW() - INTERVAL 2 DAY - INTERVAL 4 HOUR,NOW() - INTERVAL 2 DAY - INTERVAL 4 HOUR),
   (12,'ERROR'   ,'API Error','Kakao OAuth token exchange failed (400)'               ,NOW() - INTERVAL 3 DAY    ,NOW() - INTERVAL 3 DAY    ,NOW() - INTERVAL 3 DAY);
 
+-- #####################################################################
+-- ##  STEP 3. 페이지네이션용 추가 더미 (+20행/테이블)  [FE 요청]
+-- ##   - 기존 데이터 뒤에 id 를 이어붙인다 (충돌 없음).
+-- ##   - 모든 user profile_image_url = 기본 프사(S3).
+-- ##   - created_at 은 NOW() 상대값으로 분산 → 정렬/페이지 넘김 테스트.
+-- #####################################################################
+
+-- user (id 14~33) : 강사 2(14,15) + 학생 18(16~33)
+INSERT INTO `user`
+  (`id`,`email`,`password`,`name`,`nickname`,`birth`,`profile_image_url`,`role`,`status`,`category`,`proof`,`point`,`is_paid`,`do_not_disturb`,`created_at`,`deleted_at`,`is_tempPWD`)
+VALUES
+  (14,'teacher5@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','이코치','coach_lee','1987-03-03','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','TEACHER','ACTIVE','FITNESS','https://momo.city/proof/lee.pdf',900,1,0,NOW() - INTERVAL 50 DAY,NULL,0),
+  (15,'teacher6@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','최셰프','chef_choi','1986-05-05','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','TEACHER','ACTIVE','COOK','https://momo.city/proof/choi.pdf',1100,1,0,NOW() - INTERVAL 48 DAY,NULL,0),
+  (16,'pageuser16@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','유저열여섯','page_u16','1995-01-01','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE',NULL,NULL,120,0,0,NOW() - INTERVAL 46 DAY,NULL,0),
+  (17,'pageuser17@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','유저열일곱','page_u17','1996-02-02','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE',NULL,NULL,80,0,0,NOW() - INTERVAL 44 DAY,NULL,0),
+  (18,'pageuser18@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','유저열여덟','page_u18','1997-03-03','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE',NULL,NULL,300,1,0,NOW() - INTERVAL 42 DAY,NULL,0),
+  (19,'pageuser19@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','유저열아홉','page_u19','1998-04-04','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE',NULL,NULL,50,0,0,NOW() - INTERVAL 40 DAY,NULL,0),
+  (20,'pageuser20@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','유저스물','page_u20','1999-05-05','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE',NULL,NULL,200,1,0,NOW() - INTERVAL 38 DAY,NULL,0),
+  (21,'pageuser21@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','유저스물하나','page_u21','1994-06-06','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE',NULL,NULL,0,0,0,NOW() - INTERVAL 36 DAY,NULL,0),
+  (22,'pageuser22@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','유저스물둘','page_u22','1993-07-07','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE',NULL,NULL,90,0,0,NOW() - INTERVAL 34 DAY,NULL,0),
+  (23,'pageuser23@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','유저스물셋','page_u23','1992-08-08','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE',NULL,NULL,150,1,0,NOW() - INTERVAL 32 DAY,NULL,0),
+  (24,'pageuser24@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','유저스물넷','page_u24','1995-09-09','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE',NULL,NULL,70,0,0,NOW() - INTERVAL 30 DAY,NULL,0),
+  (25,'pageuser25@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','유저스물다섯','page_u25','1996-10-10','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE',NULL,NULL,310,1,0,NOW() - INTERVAL 28 DAY,NULL,0),
+  (26,'pageuser26@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','유저스물여섯','page_u26','1997-11-11','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE',NULL,NULL,40,0,0,NOW() - INTERVAL 26 DAY,NULL,0),
+  (27,'pageuser27@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','유저스물일곱','page_u27','1998-12-12','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE',NULL,NULL,220,1,0,NOW() - INTERVAL 24 DAY,NULL,0),
+  (28,'pageuser28@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','유저스물여덟','page_u28','1999-01-13','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE',NULL,NULL,60,0,0,NOW() - INTERVAL 22 DAY,NULL,0),
+  (29,'pageuser29@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','유저스물아홉','page_u29','1994-02-14','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE',NULL,NULL,180,1,0,NOW() - INTERVAL 20 DAY,NULL,0),
+  (30,'pageuser30@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','유저서른','page_u30','1995-03-15','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE',NULL,NULL,110,0,0,NOW() - INTERVAL 18 DAY,NULL,0),
+  (31,'pageuser31@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','유저서른하나','page_u31','1996-04-16','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE',NULL,NULL,260,1,0,NOW() - INTERVAL 16 DAY,NULL,0),
+  (32,'pageuser32@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','유저서른둘','page_u32','1997-05-17','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE',NULL,NULL,30,0,0,NOW() - INTERVAL 14 DAY,NULL,0),
+  (33,'pageuser33@momo.city','$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm','유저서른셋','page_u33','1998-06-18','https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png','STUDENT','ACTIVE',NULL,NULL,140,1,0,NOW() - INTERVAL 12 DAY,NULL,0);
+
+-- user_oauth (id 6~25) : 새 user 14~33 LOCAL
+INSERT INTO `user_oauth` (`id`,`user_id`,`provider`,`provider_id`,`created_at`) VALUES
+  (6,14,'LOCAL','local_14',NOW() - INTERVAL 50 DAY),(7,15,'LOCAL','local_15',NOW() - INTERVAL 48 DAY),
+  (8,16,'LOCAL','local_16',NOW() - INTERVAL 46 DAY),(9,17,'LOCAL','local_17',NOW() - INTERVAL 44 DAY),
+  (10,18,'LOCAL','local_18',NOW() - INTERVAL 42 DAY),(11,19,'LOCAL','local_19',NOW() - INTERVAL 40 DAY),
+  (12,20,'LOCAL','local_20',NOW() - INTERVAL 38 DAY),(13,21,'LOCAL','local_21',NOW() - INTERVAL 36 DAY),
+  (14,22,'LOCAL','local_22',NOW() - INTERVAL 34 DAY),(15,23,'LOCAL','local_23',NOW() - INTERVAL 32 DAY),
+  (16,24,'LOCAL','local_24',NOW() - INTERVAL 30 DAY),(17,25,'LOCAL','local_25',NOW() - INTERVAL 28 DAY),
+  (18,26,'LOCAL','local_26',NOW() - INTERVAL 26 DAY),(19,27,'LOCAL','local_27',NOW() - INTERVAL 24 DAY),
+  (20,28,'LOCAL','local_28',NOW() - INTERVAL 22 DAY),(21,29,'LOCAL','local_29',NOW() - INTERVAL 20 DAY),
+  (22,30,'LOCAL','local_30',NOW() - INTERVAL 18 DAY),(23,31,'LOCAL','local_31',NOW() - INTERVAL 16 DAY),
+  (24,32,'LOCAL','local_32',NOW() - INTERVAL 14 DAY),(25,33,'LOCAL','local_33',NOW() - INTERVAL 12 DAY);
+
+-- refresh_token (id 7~26) : 새 user 14~33 (user_id UNIQUE)
+INSERT INTO `refresh_token` (`id`,`user_id`,`token`,`expires_at`,`created_at`) VALUES
+  (7,14,'rt_page_14',NOW() + INTERVAL 14 DAY,NOW() - INTERVAL 1 HOUR),(8,15,'rt_page_15',NOW() + INTERVAL 14 DAY,NOW() - INTERVAL 2 HOUR),
+  (9,16,'rt_page_16',NOW() + INTERVAL 14 DAY,NOW() - INTERVAL 3 HOUR),(10,17,'rt_page_17',NOW() + INTERVAL 14 DAY,NOW() - INTERVAL 4 HOUR),
+  (11,18,'rt_page_18',NOW() + INTERVAL 14 DAY,NOW() - INTERVAL 5 HOUR),(12,19,'rt_page_19',NOW() + INTERVAL 14 DAY,NOW() - INTERVAL 6 HOUR),
+  (13,20,'rt_page_20',NOW() + INTERVAL 14 DAY,NOW() - INTERVAL 7 HOUR),(14,21,'rt_page_21',NOW() + INTERVAL 14 DAY,NOW() - INTERVAL 8 HOUR),
+  (15,22,'rt_page_22',NOW() + INTERVAL 14 DAY,NOW() - INTERVAL 9 HOUR),(16,23,'rt_page_23',NOW() + INTERVAL 14 DAY,NOW() - INTERVAL 10 HOUR),
+  (17,24,'rt_page_24',NOW() + INTERVAL 14 DAY,NOW() - INTERVAL 11 HOUR),(18,25,'rt_page_25',NOW() + INTERVAL 14 DAY,NOW() - INTERVAL 12 HOUR),
+  (19,26,'rt_page_26',NOW() + INTERVAL 14 DAY,NOW() - INTERVAL 13 HOUR),(20,27,'rt_page_27',NOW() + INTERVAL 14 DAY,NOW() - INTERVAL 14 HOUR),
+  (21,28,'rt_page_28',NOW() + INTERVAL 14 DAY,NOW() - INTERVAL 15 HOUR),(22,29,'rt_page_29',NOW() + INTERVAL 14 DAY,NOW() - INTERVAL 16 HOUR),
+  (23,30,'rt_page_30',NOW() + INTERVAL 14 DAY,NOW() - INTERVAL 17 HOUR),(24,31,'rt_page_31',NOW() + INTERVAL 14 DAY,NOW() - INTERVAL 18 HOUR),
+  (25,32,'rt_page_32',NOW() + INTERVAL 14 DAY,NOW() - INTERVAL 19 HOUR),(26,33,'rt_page_33',NOW() + INTERVAL 14 DAY,NOW() - INTERVAL 20 HOUR);
+
+-- lecture (id 11~30) : teacher_id ∈ {6,7,14,15}
+INSERT INTO `lecture` (`id`,`teacher_id`,`title`,`description`,`thumbnail_url`,`category`,`status`,`completed_user_count`,`created_at`) VALUES
+  (11,6 ,'페이지 강의 11','전신 순환 운동',NULL,'FITNESS','ACTIVE',12,NOW() - INTERVAL 47 DAY),
+  (12,7 ,'페이지 강의 12','반찬 만들기',NULL,'COOK','ACTIVE',8,NOW() - INTERVAL 45 DAY),
+  (13,14,'페이지 강의 13','홈트 입문',NULL,'FITNESS','ACTIVE',20,NOW() - INTERVAL 43 DAY),
+  (14,15,'페이지 강의 14','베이킹 중급',NULL,'COOK','ACTIVE',5,NOW() - INTERVAL 41 DAY),
+  (15,6 ,'페이지 강의 15','스트레칭',NULL,'FITNESS','ACTIVE',14,NOW() - INTERVAL 39 DAY),
+  (16,7 ,'페이지 강의 16','국물 요리',NULL,'COOK','ACTIVE',9,NOW() - INTERVAL 37 DAY),
+  (17,14,'페이지 강의 17','체형 교정',NULL,'FITNESS','ACTIVE',7,NOW() - INTERVAL 35 DAY),
+  (18,15,'페이지 강의 18','디저트 클래스',NULL,'COOK','ACTIVE',11,NOW() - INTERVAL 33 DAY),
+  (19,6 ,'페이지 강의 19','코어 운동',NULL,'FITNESS','ACTIVE',16,NOW() - INTERVAL 31 DAY),
+  (20,7 ,'페이지 강의 20','한식 기본',NULL,'COOK','ACTIVE',6,NOW() - INTERVAL 29 DAY),
+  (21,14,'페이지 강의 21','유산소 루틴',NULL,'FITNESS','WAITING',0,NOW() - INTERVAL 27 DAY),
+  (22,15,'페이지 강의 22','브런치 요리',NULL,'COOK','ACTIVE',13,NOW() - INTERVAL 25 DAY),
+  (23,6 ,'페이지 강의 23','마음챙김 요가 입문',NULL,'FITNESS','ACTIVE',10,NOW() - INTERVAL 23 DAY),
+  (24,7 ,'페이지 강의 24','면 요리',NULL,'COOK','HOLD',3,NOW() - INTERVAL 21 DAY),
+  (25,14,'페이지 강의 25','근력 강화',NULL,'FITNESS','ACTIVE',18,NOW() - INTERVAL 19 DAY),
+  (26,15,'페이지 강의 26','홈카페',NULL,'COOK','ACTIVE',4,NOW() - INTERVAL 17 DAY),
+  (27,6 ,'페이지 강의 27','필라테스 심화',NULL,'FITNESS','ACTIVE',9,NOW() - INTERVAL 15 DAY),
+  (28,7 ,'페이지 강의 28','샐러드 만들기',NULL,'COOK','ACTIVE',7,NOW() - INTERVAL 13 DAY),
+  (29,14,'페이지 강의 29','맨몸 운동',NULL,'FITNESS','ACTIVE',15,NOW() - INTERVAL 11 DAY),
+  (30,15,'페이지 강의 30','파스타 클래스',NULL,'COOK','WAITING',0,NOW() - INTERVAL 9 DAY);
+
+-- chapter (id 11~30) : lecture 11~30 각 1챕터
+INSERT INTO `chapter` (`id`,`lecture_id`,`title`,`order_no`,`video_url`,`video_size_bytes`,`duration_sec`,`video_status`,`original_filename`,`created_at`) VALUES
+  (11,11,'1강',1,'https://cdn.momo.city/v/p11.mp4',104857600,600,'READY','p11.mp4',NOW() - INTERVAL 47 DAY),
+  (12,12,'1강',1,'https://cdn.momo.city/v/p12.mp4',104857600,600,'READY','p12.mp4',NOW() - INTERVAL 45 DAY),
+  (13,13,'1강',1,'https://cdn.momo.city/v/p13.mp4',104857600,600,'READY','p13.mp4',NOW() - INTERVAL 43 DAY),
+  (14,14,'1강',1,'https://cdn.momo.city/v/p14.mp4',104857600,600,'READY','p14.mp4',NOW() - INTERVAL 41 DAY),
+  (15,15,'1강',1,'https://cdn.momo.city/v/p15.mp4',104857600,600,'READY','p15.mp4',NOW() - INTERVAL 39 DAY),
+  (16,16,'1강',1,'https://cdn.momo.city/v/p16.mp4',104857600,600,'READY','p16.mp4',NOW() - INTERVAL 37 DAY),
+  (17,17,'1강',1,'https://cdn.momo.city/v/p17.mp4',104857600,600,'READY','p17.mp4',NOW() - INTERVAL 35 DAY),
+  (18,18,'1강',1,'https://cdn.momo.city/v/p18.mp4',104857600,600,'READY','p18.mp4',NOW() - INTERVAL 33 DAY),
+  (19,19,'1강',1,'https://cdn.momo.city/v/p19.mp4',104857600,600,'READY','p19.mp4',NOW() - INTERVAL 31 DAY),
+  (20,20,'1강',1,'https://cdn.momo.city/v/p20.mp4',104857600,600,'READY','p20.mp4',NOW() - INTERVAL 29 DAY),
+  (21,21,'1강',1,NULL,NULL,NULL,'UPLOADING','p21.mp4',NOW() - INTERVAL 27 DAY),
+  (22,22,'1강',1,'https://cdn.momo.city/v/p22.mp4',104857600,600,'READY','p22.mp4',NOW() - INTERVAL 25 DAY),
+  (23,23,'1강',1,'https://cdn.momo.city/v/p23.mp4',104857600,600,'READY','p23.mp4',NOW() - INTERVAL 23 DAY),
+  (24,24,'1강',1,'https://cdn.momo.city/v/p24.mp4',104857600,600,'READY','p24.mp4',NOW() - INTERVAL 21 DAY),
+  (25,25,'1강',1,'https://cdn.momo.city/v/p25.mp4',104857600,600,'READY','p25.mp4',NOW() - INTERVAL 19 DAY),
+  (26,26,'1강',1,'https://cdn.momo.city/v/p26.mp4',104857600,600,'READY','p26.mp4',NOW() - INTERVAL 17 DAY),
+  (27,27,'1강',1,'https://cdn.momo.city/v/p27.mp4',104857600,600,'READY','p27.mp4',NOW() - INTERVAL 15 DAY),
+  (28,28,'1강',1,'https://cdn.momo.city/v/p28.mp4',104857600,600,'READY','p28.mp4',NOW() - INTERVAL 13 DAY),
+  (29,29,'1강',1,'https://cdn.momo.city/v/p29.mp4',104857600,600,'READY','p29.mp4',NOW() - INTERVAL 11 DAY),
+  (30,30,'1강',1,NULL,NULL,NULL,'ENCODING','p30.mp4',NOW() - INTERVAL 9 DAY);
+
+-- post (id 11~30) : user_id 16~33
+INSERT INTO `post` (`id`,`user_id`,`type`,`title`,`content`,`is_pinned`,`view_count`,`created_at`) VALUES
+  (11,16,'FREE','페이지 게시글 11','내용 11',0,15,NOW() - INTERVAL 20 DAY),
+  (12,17,'FREE','페이지 게시글 12','내용 12',0,22,NOW() - INTERVAL 19 DAY),
+  (13,18,'QNA','페이지 게시글 13','질문 13',0,31,NOW() - INTERVAL 18 DAY),
+  (14,19,'FREE','페이지 게시글 14','내용 14',0,8,NOW() - INTERVAL 17 DAY),
+  (15,20,'FREE','페이지 게시글 15','내용 15',0,44,NOW() - INTERVAL 16 DAY),
+  (16,21,'QNA','페이지 게시글 16','질문 16',0,12,NOW() - INTERVAL 15 DAY),
+  (17,22,'FREE','페이지 게시글 17','내용 17',0,27,NOW() - INTERVAL 14 DAY),
+  (18,23,'FREE','페이지 게시글 18','내용 18',0,19,NOW() - INTERVAL 13 DAY),
+  (19,24,'QNA','페이지 게시글 19','질문 19',0,33,NOW() - INTERVAL 12 DAY),
+  (20,25,'FREE','페이지 게시글 20','내용 20',0,5,NOW() - INTERVAL 11 DAY),
+  (21,26,'FREE','페이지 게시글 21','내용 21',0,48,NOW() - INTERVAL 10 DAY),
+  (22,27,'QNA','페이지 게시글 22','질문 22',0,16,NOW() - INTERVAL 9 DAY),
+  (23,28,'FREE','페이지 게시글 23','내용 23',0,29,NOW() - INTERVAL 8 DAY),
+  (24,29,'FREE','페이지 게시글 24','내용 24',0,21,NOW() - INTERVAL 7 DAY),
+  (25,30,'QNA','페이지 게시글 25','질문 25',0,37,NOW() - INTERVAL 6 DAY),
+  (26,31,'FREE','페이지 게시글 26','내용 26',0,9,NOW() - INTERVAL 5 DAY),
+  (27,32,'FREE','페이지 게시글 27','내용 27',0,52,NOW() - INTERVAL 4 DAY),
+  (28,33,'QNA','페이지 게시글 28','질문 28',0,14,NOW() - INTERVAL 3 DAY),
+  (29,16,'FREE','페이지 게시글 29','내용 29',0,25,NOW() - INTERVAL 2 DAY),
+  (30,17,'FREE','페이지 게시글 30','내용 30',0,40,NOW() - INTERVAL 1 DAY);
+
+-- comment (id 13~32) : post 11~30, user 16~33
+INSERT INTO `comment` (`id`,`post_id`,`user_id`,`parent_id`,`content`,`created_at`) VALUES
+  (13,11,17,NULL,'댓글 13',NOW() - INTERVAL 19 DAY),(14,12,18,NULL,'댓글 14',NOW() - INTERVAL 18 DAY),
+  (15,13,19,NULL,'댓글 15',NOW() - INTERVAL 17 DAY),(16,14,20,NULL,'댓글 16',NOW() - INTERVAL 16 DAY),
+  (17,15,21,NULL,'댓글 17',NOW() - INTERVAL 15 DAY),(18,16,22,NULL,'댓글 18',NOW() - INTERVAL 14 DAY),
+  (19,17,23,NULL,'댓글 19',NOW() - INTERVAL 13 DAY),(20,18,24,NULL,'댓글 20',NOW() - INTERVAL 12 DAY),
+  (21,19,25,NULL,'댓글 21',NOW() - INTERVAL 11 DAY),(22,20,26,NULL,'댓글 22',NOW() - INTERVAL 10 DAY),
+  (23,21,27,NULL,'댓글 23',NOW() - INTERVAL 9 DAY),(24,22,28,NULL,'댓글 24',NOW() - INTERVAL 8 DAY),
+  (25,23,29,NULL,'댓글 25',NOW() - INTERVAL 7 DAY),(26,24,30,NULL,'댓글 26',NOW() - INTERVAL 6 DAY),
+  (27,25,31,NULL,'댓글 27',NOW() - INTERVAL 5 DAY),(28,26,32,NULL,'댓글 28',NOW() - INTERVAL 4 DAY),
+  (29,27,33,NULL,'댓글 29',NOW() - INTERVAL 3 DAY),(30,28,16,NULL,'댓글 30',NOW() - INTERVAL 2 DAY),
+  (31,29,17,NULL,'댓글 31',NOW() - INTERVAL 1 DAY),(32,30,18,NULL,'댓글 32',NOW() - INTERVAL 12 HOUR);
+
+-- post_image (id 9~28) : post 11~30
+INSERT INTO `post_image` (`id`,`post_id`,`image_url`,`order_no`,`created_at`) VALUES
+  (9,11,'https://cdn.momo.city/img/p11.jpg',0,NOW() - INTERVAL 20 DAY),(10,12,'https://cdn.momo.city/img/p12.jpg',0,NOW() - INTERVAL 19 DAY),
+  (11,13,'https://cdn.momo.city/img/p13.jpg',0,NOW() - INTERVAL 18 DAY),(12,14,'https://cdn.momo.city/img/p14.jpg',0,NOW() - INTERVAL 17 DAY),
+  (13,15,'https://cdn.momo.city/img/p15.jpg',0,NOW() - INTERVAL 16 DAY),(14,16,'https://cdn.momo.city/img/p16.jpg',0,NOW() - INTERVAL 15 DAY),
+  (15,17,'https://cdn.momo.city/img/p17.jpg',0,NOW() - INTERVAL 14 DAY),(16,18,'https://cdn.momo.city/img/p18.jpg',0,NOW() - INTERVAL 13 DAY),
+  (17,19,'https://cdn.momo.city/img/p19.jpg',0,NOW() - INTERVAL 12 DAY),(18,20,'https://cdn.momo.city/img/p20.jpg',0,NOW() - INTERVAL 11 DAY),
+  (19,21,'https://cdn.momo.city/img/p21.jpg',0,NOW() - INTERVAL 10 DAY),(20,22,'https://cdn.momo.city/img/p22.jpg',0,NOW() - INTERVAL 9 DAY),
+  (21,23,'https://cdn.momo.city/img/p23.jpg',0,NOW() - INTERVAL 8 DAY),(22,24,'https://cdn.momo.city/img/p24.jpg',0,NOW() - INTERVAL 7 DAY),
+  (23,25,'https://cdn.momo.city/img/p25.jpg',0,NOW() - INTERVAL 6 DAY),(24,26,'https://cdn.momo.city/img/p26.jpg',0,NOW() - INTERVAL 5 DAY),
+  (25,27,'https://cdn.momo.city/img/p27.jpg',0,NOW() - INTERVAL 4 DAY),(26,28,'https://cdn.momo.city/img/p28.jpg',0,NOW() - INTERVAL 3 DAY),
+  (27,29,'https://cdn.momo.city/img/p29.jpg',0,NOW() - INTERVAL 2 DAY),(28,30,'https://cdn.momo.city/img/p30.jpg',0,NOW() - INTERVAL 1 DAY);
+
+-- enrollment (id 11~30) : user 16~33 x lecture 11~30 (lecture_id 유니크라 pair 유니크)
+INSERT INTO `enrollment` (`id`,`user_id`,`lecture_id`,`total_progress`,`completed_count`,`enrolled_at`) VALUES
+  (11,16,11,30,1,NOW() - INTERVAL 40 DAY),(12,17,12,50,1,NOW() - INTERVAL 39 DAY),
+  (13,18,13,70,2,NOW() - INTERVAL 38 DAY),(14,19,14,10,0,NOW() - INTERVAL 37 DAY),
+  (15,20,15,90,1,NOW() - INTERVAL 36 DAY),(16,21,16,20,0,NOW() - INTERVAL 35 DAY),
+  (17,22,17,60,1,NOW() - INTERVAL 34 DAY),(18,23,18,40,0,NOW() - INTERVAL 33 DAY),
+  (19,24,19,80,2,NOW() - INTERVAL 32 DAY),(20,25,20,15,0,NOW() - INTERVAL 31 DAY),
+  (21,26,21,55,1,NOW() - INTERVAL 30 DAY),(22,27,22,33,0,NOW() - INTERVAL 29 DAY),
+  (23,28,23,100,1,NOW() - INTERVAL 28 DAY),(24,29,24,25,0,NOW() - INTERVAL 27 DAY),
+  (25,30,25,65,1,NOW() - INTERVAL 26 DAY),(26,31,26,45,0,NOW() - INTERVAL 25 DAY),
+  (27,32,27,75,2,NOW() - INTERVAL 24 DAY),(28,33,28,5,0,NOW() - INTERVAL 23 DAY),
+  (29,16,29,95,1,NOW() - INTERVAL 22 DAY),(30,17,30,12,0,NOW() - INTERVAL 21 DAY);
+
+-- learning_history (id 11~30) : version 컬럼 필수
+INSERT INTO `learning_history` (`id`,`user_id`,`lecture_id`,`chapter_id`,`watched_seconds`,`is_completed`,`last_position_sec`,`progress_rate`,`created_at`,`version`) VALUES
+  (11,16,11,11,600,1,600,100,NOW() - INTERVAL 39 DAY,0),(12,17,12,12,300,0,300,50,NOW() - INTERVAL 38 DAY,0),
+  (13,18,13,13,600,1,600,100,NOW() - INTERVAL 37 DAY,0),(14,19,14,14,120,0,120,20,NOW() - INTERVAL 36 DAY,0),
+  (15,20,15,15,600,1,600,100,NOW() - INTERVAL 35 DAY,0),(16,21,16,16,240,0,240,40,NOW() - INTERVAL 34 DAY,0),
+  (17,22,17,17,600,1,600,100,NOW() - INTERVAL 33 DAY,0),(18,23,18,18,360,0,360,60,NOW() - INTERVAL 32 DAY,0),
+  (19,24,19,19,600,1,600,100,NOW() - INTERVAL 31 DAY,0),(20,25,20,20,180,0,180,30,NOW() - INTERVAL 30 DAY,0),
+  (21,26,21,21,600,1,600,100,NOW() - INTERVAL 29 DAY,0),(22,27,22,22,420,0,420,70,NOW() - INTERVAL 28 DAY,0),
+  (23,28,23,23,600,1,600,100,NOW() - INTERVAL 27 DAY,0),(24,29,24,24,60,0,60,10,NOW() - INTERVAL 26 DAY,0),
+  (25,30,25,25,600,1,600,100,NOW() - INTERVAL 25 DAY,0),(26,31,26,26,480,0,480,80,NOW() - INTERVAL 24 DAY,0),
+  (27,32,27,27,600,1,600,100,NOW() - INTERVAL 23 DAY,0),(28,33,28,28,540,0,540,90,NOW() - INTERVAL 22 DAY,0),
+  (29,16,29,29,600,1,600,100,NOW() - INTERVAL 21 DAY,0),(30,17,30,30,300,0,300,50,NOW() - INTERVAL 20 DAY,0);
+
+-- review (id 9~28)
+INSERT INTO `review` (`id`,`user_id`,`lecture_id`,`rating`,`content`,`created_at`) VALUES
+  (9,16,11,5,'리뷰 9',NOW() - INTERVAL 30 DAY),(10,17,12,4,'리뷰 10',NOW() - INTERVAL 29 DAY),
+  (11,18,13,5,'리뷰 11',NOW() - INTERVAL 28 DAY),(12,19,14,3,'리뷰 12',NOW() - INTERVAL 27 DAY),
+  (13,20,15,4,'리뷰 13',NOW() - INTERVAL 26 DAY),(14,21,16,5,'리뷰 14',NOW() - INTERVAL 25 DAY),
+  (15,22,17,2,'리뷰 15',NOW() - INTERVAL 24 DAY),(16,23,18,4,'리뷰 16',NOW() - INTERVAL 23 DAY),
+  (17,24,19,5,'리뷰 17',NOW() - INTERVAL 22 DAY),(18,25,20,3,'리뷰 18',NOW() - INTERVAL 21 DAY),
+  (19,26,21,4,'리뷰 19',NOW() - INTERVAL 20 DAY),(20,27,22,5,'리뷰 20',NOW() - INTERVAL 19 DAY),
+  (21,28,23,4,'리뷰 21',NOW() - INTERVAL 18 DAY),(22,29,24,3,'리뷰 22',NOW() - INTERVAL 17 DAY),
+  (23,30,25,5,'리뷰 23',NOW() - INTERVAL 16 DAY),(24,31,26,4,'리뷰 24',NOW() - INTERVAL 15 DAY),
+  (25,32,27,5,'리뷰 25',NOW() - INTERVAL 14 DAY),(26,33,28,2,'리뷰 26',NOW() - INTERVAL 13 DAY),
+  (27,16,29,4,'리뷰 27',NOW() - INTERVAL 12 DAY),(28,17,30,5,'리뷰 28',NOW() - INTERVAL 11 DAY);
+
+-- streak (id 11~30) : chapter 11~30
+INSERT INTO `streak` (`id`,`user_id`,`chapter_id`,`streak_date`,`created_at`) VALUES
+  (11,16,11,CURDATE() - INTERVAL 19 DAY,NOW() - INTERVAL 19 DAY),(12,17,12,CURDATE() - INTERVAL 18 DAY,NOW() - INTERVAL 18 DAY),
+  (13,18,13,CURDATE() - INTERVAL 17 DAY,NOW() - INTERVAL 17 DAY),(14,19,14,CURDATE() - INTERVAL 16 DAY,NOW() - INTERVAL 16 DAY),
+  (15,20,15,CURDATE() - INTERVAL 15 DAY,NOW() - INTERVAL 15 DAY),(16,21,16,CURDATE() - INTERVAL 14 DAY,NOW() - INTERVAL 14 DAY),
+  (17,22,17,CURDATE() - INTERVAL 13 DAY,NOW() - INTERVAL 13 DAY),(18,23,18,CURDATE() - INTERVAL 12 DAY,NOW() - INTERVAL 12 DAY),
+  (19,24,19,CURDATE() - INTERVAL 11 DAY,NOW() - INTERVAL 11 DAY),(20,25,20,CURDATE() - INTERVAL 10 DAY,NOW() - INTERVAL 10 DAY),
+  (21,26,21,CURDATE() - INTERVAL 9 DAY,NOW() - INTERVAL 9 DAY),(22,27,22,CURDATE() - INTERVAL 8 DAY,NOW() - INTERVAL 8 DAY),
+  (23,28,23,CURDATE() - INTERVAL 7 DAY,NOW() - INTERVAL 7 DAY),(24,29,24,CURDATE() - INTERVAL 6 DAY,NOW() - INTERVAL 6 DAY),
+  (25,30,25,CURDATE() - INTERVAL 5 DAY,NOW() - INTERVAL 5 DAY),(26,31,26,CURDATE() - INTERVAL 4 DAY,NOW() - INTERVAL 4 DAY),
+  (27,32,27,CURDATE() - INTERVAL 3 DAY,NOW() - INTERVAL 3 DAY),(28,33,28,CURDATE() - INTERVAL 2 DAY,NOW() - INTERVAL 2 DAY),
+  (29,16,29,CURDATE() - INTERVAL 1 DAY,NOW() - INTERVAL 1 DAY),(30,17,30,CURDATE(),NOW() - INTERVAL 2 HOUR);
+
+-- building (id 11~30)
+INSERT INTO `building` (`id`,`user_id`,`category`,`position`,`level`,`created_at`) VALUES
+  (11,16,'FITNESS',1,1,NOW() - INTERVAL 40 DAY),(12,17,'COOK',1,2,NOW() - INTERVAL 39 DAY),
+  (13,18,'STUDY',1,1,NOW() - INTERVAL 38 DAY),(14,19,'BEAUTY',1,3,NOW() - INTERVAL 37 DAY),
+  (15,20,'ART',1,1,NOW() - INTERVAL 36 DAY),(16,21,'FITNESS',2,2,NOW() - INTERVAL 35 DAY),
+  (17,22,'COOK',2,1,NOW() - INTERVAL 34 DAY),(18,23,'STUDY',2,4,NOW() - INTERVAL 33 DAY),
+  (19,24,'BEAUTY',2,1,NOW() - INTERVAL 32 DAY),(20,25,'ART',2,2,NOW() - INTERVAL 31 DAY),
+  (21,26,'FITNESS',3,1,NOW() - INTERVAL 30 DAY),(22,27,'COOK',3,3,NOW() - INTERVAL 29 DAY),
+  (23,28,'STUDY',3,1,NOW() - INTERVAL 28 DAY),(24,29,'BEAUTY',3,2,NOW() - INTERVAL 27 DAY),
+  (25,30,'ART',3,1,NOW() - INTERVAL 26 DAY),(26,31,'FITNESS',4,5,NOW() - INTERVAL 25 DAY),
+  (27,32,'COOK',4,1,NOW() - INTERVAL 24 DAY),(28,33,'STUDY',4,2,NOW() - INTERVAL 23 DAY),
+  (29,16,'BEAUTY',5,1,NOW() - INTERVAL 22 DAY),(30,17,'ART',5,3,NOW() - INTERVAL 21 DAY);
+
+-- calendar (id 11~30)
+INSERT INTO `calendar` (`id`,`user_id`,`start`,`title`,`end`,`category`,`is_completed`,`created_at`) VALUES
+  (11,16,CURDATE() + INTERVAL 1 DAY,'일정 11',NULL,'TODO',0,NOW() - INTERVAL 10 DAY),(12,17,CURDATE() + INTERVAL 2 DAY,'일정 12',NULL,'TODO',0,NOW() - INTERVAL 9 DAY),
+  (13,18,CURDATE() + INTERVAL 3 DAY,'일정 13',NULL,'MEMO',0,NOW() - INTERVAL 9 DAY),(14,19,CURDATE() + INTERVAL 1 DAY,'일정 14',NULL,'TODO',0,NOW() - INTERVAL 8 DAY),
+  (15,20,CURDATE() + INTERVAL 4 DAY,'일정 15',NULL,'TODO',0,NOW() - INTERVAL 8 DAY),(16,21,CURDATE() + INTERVAL 2 DAY,'일정 16',NULL,'MEMO',0,NOW() - INTERVAL 7 DAY),
+  (17,22,CURDATE() + INTERVAL 5 DAY,'일정 17',NULL,'TODO',0,NOW() - INTERVAL 7 DAY),(18,23,CURDATE() + INTERVAL 1 DAY,'일정 18',NULL,'TODO',0,NOW() - INTERVAL 6 DAY),
+  (19,24,CURDATE() + INTERVAL 3 DAY,'일정 19',NULL,'MEMO',0,NOW() - INTERVAL 6 DAY),(20,25,CURDATE() + INTERVAL 6 DAY,'일정 20',NULL,'TODO',0,NOW() - INTERVAL 5 DAY),
+  (21,26,CURDATE() + INTERVAL 2 DAY,'일정 21',NULL,'TODO',0,NOW() - INTERVAL 5 DAY),(22,27,CURDATE() + INTERVAL 4 DAY,'일정 22',NULL,'MEMO',0,NOW() - INTERVAL 4 DAY),
+  (23,28,CURDATE() + INTERVAL 1 DAY,'일정 23',NULL,'TODO',0,NOW() - INTERVAL 4 DAY),(24,29,CURDATE() + INTERVAL 7 DAY,'일정 24',NULL,'TODO',0,NOW() - INTERVAL 3 DAY),
+  (25,30,CURDATE() + INTERVAL 2 DAY,'일정 25',NULL,'MEMO',0,NOW() - INTERVAL 3 DAY),(26,31,CURDATE() + INTERVAL 3 DAY,'일정 26',NULL,'TODO',0,NOW() - INTERVAL 2 DAY),
+  (27,32,CURDATE() + INTERVAL 5 DAY,'일정 27',NULL,'TODO',0,NOW() - INTERVAL 2 DAY),(28,33,CURDATE() + INTERVAL 1 DAY,'일정 28',NULL,'MEMO',0,NOW() - INTERVAL 1 DAY),
+  (29,16,CURDATE() + INTERVAL 8 DAY,'일정 29',NULL,'TODO',0,NOW() - INTERVAL 1 DAY),(30,17,CURDATE(),'일정 30',CURDATE(),'TODO',1,NOW() - INTERVAL 5 HOUR);
+
+-- chat_room (id 5~24)
+INSERT INTO `chat_room` (`id`,`created_at`) VALUES
+  (5,NOW() - INTERVAL 20 DAY),(6,NOW() - INTERVAL 19 DAY),(7,NOW() - INTERVAL 18 DAY),(8,NOW() - INTERVAL 17 DAY),
+  (9,NOW() - INTERVAL 16 DAY),(10,NOW() - INTERVAL 15 DAY),(11,NOW() - INTERVAL 14 DAY),(12,NOW() - INTERVAL 13 DAY),
+  (13,NOW() - INTERVAL 12 DAY),(14,NOW() - INTERVAL 11 DAY),(15,NOW() - INTERVAL 10 DAY),(16,NOW() - INTERVAL 9 DAY),
+  (17,NOW() - INTERVAL 8 DAY),(18,NOW() - INTERVAL 7 DAY),(19,NOW() - INTERVAL 6 DAY),(20,NOW() - INTERVAL 5 DAY),
+  (21,NOW() - INTERVAL 4 DAY),(22,NOW() - INTERVAL 3 DAY),(23,NOW() - INTERVAL 2 DAY),(24,NOW() - INTERVAL 1 DAY);
+
+-- chat_room_member (id 9~28) : room 5~24 각 멤버 1명 (room,user 유니크)
+INSERT INTO `chat_room_member` (`id`,`room_id`,`user_id`,`joined_at`) VALUES
+  (9,5,16,NOW() - INTERVAL 20 DAY),(10,6,17,NOW() - INTERVAL 19 DAY),(11,7,18,NOW() - INTERVAL 18 DAY),(12,8,19,NOW() - INTERVAL 17 DAY),
+  (13,9,20,NOW() - INTERVAL 16 DAY),(14,10,21,NOW() - INTERVAL 15 DAY),(15,11,22,NOW() - INTERVAL 14 DAY),(16,12,23,NOW() - INTERVAL 13 DAY),
+  (17,13,24,NOW() - INTERVAL 12 DAY),(18,14,25,NOW() - INTERVAL 11 DAY),(19,15,26,NOW() - INTERVAL 10 DAY),(20,16,27,NOW() - INTERVAL 9 DAY),
+  (21,17,28,NOW() - INTERVAL 8 DAY),(22,18,29,NOW() - INTERVAL 7 DAY),(23,19,30,NOW() - INTERVAL 6 DAY),(24,20,31,NOW() - INTERVAL 5 DAY),
+  (25,21,32,NOW() - INTERVAL 4 DAY),(26,22,33,NOW() - INTERVAL 3 DAY),(27,23,16,NOW() - INTERVAL 2 DAY),(28,24,17,NOW() - INTERVAL 1 DAY);
+
+-- message (id 11~30) : room 5~24, sender 16~33
+INSERT INTO `message` (`id`,`room_id`,`sender_id`,`content`,`is_read`,`created_at`) VALUES
+  (11,5,16,'메시지 11',1,NOW() - INTERVAL 20 DAY),(12,6,17,'메시지 12',1,NOW() - INTERVAL 19 DAY),
+  (13,7,18,'메시지 13',1,NOW() - INTERVAL 18 DAY),(14,8,19,'메시지 14',0,NOW() - INTERVAL 17 DAY),
+  (15,9,20,'메시지 15',1,NOW() - INTERVAL 16 DAY),(16,10,21,'메시지 16',0,NOW() - INTERVAL 15 DAY),
+  (17,11,22,'메시지 17',1,NOW() - INTERVAL 14 DAY),(18,12,23,'메시지 18',1,NOW() - INTERVAL 13 DAY),
+  (19,13,24,'메시지 19',0,NOW() - INTERVAL 12 DAY),(20,14,25,'메시지 20',1,NOW() - INTERVAL 11 DAY),
+  (21,15,26,'메시지 21',1,NOW() - INTERVAL 10 DAY),(22,16,27,'메시지 22',0,NOW() - INTERVAL 9 DAY),
+  (23,17,28,'메시지 23',1,NOW() - INTERVAL 8 DAY),(24,18,29,'메시지 24',1,NOW() - INTERVAL 7 DAY),
+  (25,19,30,'메시지 25',0,NOW() - INTERVAL 6 DAY),(26,20,31,'메시지 26',1,NOW() - INTERVAL 5 DAY),
+  (27,21,32,'메시지 27',1,NOW() - INTERVAL 4 DAY),(28,22,33,'메시지 28',0,NOW() - INTERVAL 3 DAY),
+  (29,23,16,'메시지 29',1,NOW() - INTERVAL 2 DAY),(30,24,17,'메시지 30',0,NOW() - INTERVAL 1 DAY);
+
+-- friend (id 9~28) : (from,to) 유니크. from 14/15, to 16~25
+INSERT INTO `friend` (`id`,`from_user_id`,`to_user_id`,`status`,`created_at`) VALUES
+  (9,14,16,'FRIEND',NOW() - INTERVAL 40 DAY),(10,14,17,'FRIEND',NOW() - INTERVAL 39 DAY),
+  (11,14,18,'FRIEND',NOW() - INTERVAL 38 DAY),(12,14,19,'SENT',NOW() - INTERVAL 2 DAY),
+  (13,14,20,'FRIEND',NOW() - INTERVAL 37 DAY),(14,14,21,'FRIEND',NOW() - INTERVAL 36 DAY),
+  (15,14,22,'FRIEND',NOW() - INTERVAL 35 DAY),(16,14,23,'SENT',NOW() - INTERVAL 1 DAY),
+  (17,14,24,'FRIEND',NOW() - INTERVAL 34 DAY),(18,14,25,'FRIEND',NOW() - INTERVAL 33 DAY),
+  (19,15,16,'FRIEND',NOW() - INTERVAL 32 DAY),(20,15,17,'FRIEND',NOW() - INTERVAL 31 DAY),
+  (21,15,18,'SENT',NOW() - INTERVAL 3 HOUR),(22,15,19,'FRIEND',NOW() - INTERVAL 30 DAY),
+  (23,15,20,'FRIEND',NOW() - INTERVAL 29 DAY),(24,15,21,'FRIEND',NOW() - INTERVAL 28 DAY),
+  (25,15,22,'BLOCK',NOW() - INTERVAL 5 DAY),(26,15,23,'FRIEND',NOW() - INTERVAL 27 DAY),
+  (27,15,24,'FRIEND',NOW() - INTERVAL 26 DAY),(28,15,25,'FRIEND',NOW() - INTERVAL 25 DAY);
+
+-- guestbook (id 9~28)
+INSERT INTO `guestbook` (`id`,`writer_id`,`owner_id`,`content`,`is_read`,`created_at`) VALUES
+  (9,16,17,'방명록 9',0,NOW() - INTERVAL 18 DAY),(10,17,18,'방명록 10',1,NOW() - INTERVAL 17 DAY),
+  (11,18,19,'방명록 11',0,NOW() - INTERVAL 16 DAY),(12,19,20,'방명록 12',1,NOW() - INTERVAL 15 DAY),
+  (13,20,21,'방명록 13',0,NOW() - INTERVAL 14 DAY),(14,21,22,'방명록 14',1,NOW() - INTERVAL 13 DAY),
+  (15,22,23,'방명록 15',0,NOW() - INTERVAL 12 DAY),(16,23,24,'방명록 16',1,NOW() - INTERVAL 11 DAY),
+  (17,24,25,'방명록 17',0,NOW() - INTERVAL 10 DAY),(18,25,26,'방명록 18',1,NOW() - INTERVAL 9 DAY),
+  (19,26,27,'방명록 19',0,NOW() - INTERVAL 8 DAY),(20,27,28,'방명록 20',1,NOW() - INTERVAL 7 DAY),
+  (21,28,29,'방명록 21',0,NOW() - INTERVAL 6 DAY),(22,29,30,'방명록 22',1,NOW() - INTERVAL 5 DAY),
+  (23,30,31,'방명록 23',0,NOW() - INTERVAL 4 DAY),(24,31,32,'방명록 24',1,NOW() - INTERVAL 3 DAY),
+  (25,32,33,'방명록 25',0,NOW() - INTERVAL 2 DAY),(26,33,16,'방명록 26',1,NOW() - INTERVAL 1 DAY),
+  (27,16,18,'방명록 27',0,NOW() - INTERVAL 12 HOUR),(28,17,19,'방명록 28',0,NOW() - INTERVAL 6 HOUR);
+
+-- notification (id 11~30)
+INSERT INTO `notification` (`id`,`user_id`,`type`,`ref_id`,`message`,`created_at`) VALUES
+  (11,16,'ENROLLMENT',11,'알림 11',NOW() - INTERVAL 40 DAY),(12,17,'FRIEND_REQUEST',9,'알림 12',NOW() - INTERVAL 2 DAY),
+  (13,18,'NOTICE',1,'알림 13',NOW() - INTERVAL 38 DAY),(14,19,'MESSAGE',14,'알림 14',NOW() - INTERVAL 17 DAY),
+  (15,20,'GUESTBOOK',13,'알림 15',NOW() - INTERVAL 14 DAY),(16,21,'ENROLLMENT',16,'알림 16',NOW() - INTERVAL 35 DAY),
+  (17,22,'FRIEND_REQUEST',15,'알림 17',NOW() - INTERVAL 1 DAY),(18,23,'NOTICE',1,'알림 18',NOW() - INTERVAL 33 DAY),
+  (19,24,'MESSAGE',19,'알림 19',NOW() - INTERVAL 12 DAY),(20,25,'ENROLLMENT',20,'알림 20',NOW() - INTERVAL 31 DAY),
+  (21,26,'GUESTBOOK',19,'알림 21',NOW() - INTERVAL 8 DAY),(22,27,'NOTICE',1,'알림 22',NOW() - INTERVAL 29 DAY),
+  (23,28,'ENROLLMENT',23,'알림 23',NOW() - INTERVAL 28 DAY),(24,29,'MESSAGE',24,'알림 24',NOW() - INTERVAL 7 DAY),
+  (25,30,'FRIEND_REQUEST',23,'알림 25',NOW() - INTERVAL 5 HOUR),(26,31,'ENROLLMENT',26,'알림 26',NOW() - INTERVAL 25 DAY),
+  (27,32,'NOTICE',1,'알림 27',NOW() - INTERVAL 24 DAY),(28,33,'GUESTBOOK',25,'알림 28',NOW() - INTERVAL 2 DAY),
+  (29,16,'MESSAGE',29,'알림 29',NOW() - INTERVAL 2 DAY),(30,17,'ENROLLMENT',30,'알림 30',NOW() - INTERVAL 1 DAY);
+
+-- verification_code (id 7~26)
+INSERT INTO `verification_code` (`id`,`user_id`,`email`,`code`,`purpose`,`expires_at`,`used`) VALUES
+  (7,14,'teacher5@momo.city','100014','SIGNUP',NOW() - INTERVAL 50 DAY,1),(8,15,'teacher6@momo.city','100015','SIGNUP',NOW() - INTERVAL 48 DAY,1),
+  (9,16,'pageuser16@momo.city','100016','SIGNUP',NOW() - INTERVAL 46 DAY,1),(10,17,'pageuser17@momo.city','100017','SIGNUP',NOW() - INTERVAL 44 DAY,1),
+  (11,18,'pageuser18@momo.city','100018','SIGNUP',NOW() - INTERVAL 42 DAY,1),(12,19,'pageuser19@momo.city','100019','SIGNUP',NOW() - INTERVAL 40 DAY,1),
+  (13,20,'pageuser20@momo.city','100020','SIGNUP',NOW() - INTERVAL 38 DAY,1),(14,21,'pageuser21@momo.city','100021','PASSWORD_RESET',NOW() + INTERVAL 9 MINUTE,0),
+  (15,22,'pageuser22@momo.city','100022','SIGNUP',NOW() - INTERVAL 34 DAY,1),(16,23,'pageuser23@momo.city','100023','SIGNUP',NOW() - INTERVAL 32 DAY,1),
+  (17,24,'pageuser24@momo.city','100024','EMAIL_CHANGE',NOW() + INTERVAL 8 MINUTE,0),(18,25,'pageuser25@momo.city','100025','SIGNUP',NOW() - INTERVAL 28 DAY,1),
+  (19,26,'pageuser26@momo.city','100026','SIGNUP',NOW() - INTERVAL 26 DAY,1),(20,27,'pageuser27@momo.city','100027','SIGNUP',NOW() - INTERVAL 24 DAY,1),
+  (21,28,'pageuser28@momo.city','100028','SIGNUP',NOW() - INTERVAL 22 DAY,1),(22,29,'pageuser29@momo.city','100029','PASSWORD_RESET',NOW() + INTERVAL 7 MINUTE,0),
+  (23,30,'pageuser30@momo.city','100030','SIGNUP',NOW() - INTERVAL 18 DAY,1),(24,31,'pageuser31@momo.city','100031','SIGNUP',NOW() - INTERVAL 16 DAY,1),
+  (25,32,'pageuser32@momo.city','100032','SIGNUP',NOW() - INTERVAL 14 DAY,1),(26,33,'pageuser33@momo.city','100033','SIGNUP',NOW() - INTERVAL 12 DAY,1);
+
+-- access_log (id 11~30)
+INSERT INTO `access_log` (`id`,`user_id`,`ip`,`action`,`created_at`) VALUES
+  (11,16,'10.0.1.16','LOGIN',NOW() - INTERVAL 50 MINUTE),(12,17,'10.0.1.17','LOGIN',NOW() - INTERVAL 48 MINUTE),
+  (13,18,'10.0.1.18','VIEW_LECTURE',NOW() - INTERVAL 46 MINUTE),(14,19,'10.0.1.19','LOGIN',NOW() - INTERVAL 44 MINUTE),
+  (15,20,'10.0.1.20','ENROLL',NOW() - INTERVAL 42 MINUTE),(16,21,'10.0.1.21','LOGIN',NOW() - INTERVAL 40 MINUTE),
+  (17,22,'10.0.1.22','LOGOUT',NOW() - INTERVAL 38 MINUTE),(18,23,'10.0.1.23','LOGIN',NOW() - INTERVAL 36 MINUTE),
+  (19,24,'10.0.1.24','VIEW_LECTURE',NOW() - INTERVAL 34 MINUTE),(20,25,'10.0.1.25','LOGIN',NOW() - INTERVAL 32 MINUTE),
+  (21,26,'10.0.1.26','ENROLL',NOW() - INTERVAL 30 MINUTE),(22,27,'10.0.1.27','LOGIN',NOW() - INTERVAL 28 MINUTE),
+  (23,28,'10.0.1.28','LOGOUT',NOW() - INTERVAL 26 MINUTE),(24,29,'10.0.1.29','LOGIN',NOW() - INTERVAL 24 MINUTE),
+  (25,30,'10.0.1.30','VIEW_LECTURE',NOW() - INTERVAL 22 MINUTE),(26,31,'10.0.1.31','LOGIN',NOW() - INTERVAL 20 MINUTE),
+  (27,32,'10.0.1.32','ENROLL',NOW() - INTERVAL 18 MINUTE),(28,33,'10.0.1.33','LOGIN',NOW() - INTERVAL 16 MINUTE),
+  (29,16,'10.0.1.16','VIEW_DASHBOARD',NOW() - INTERVAL 14 MINUTE),(30,NULL,'203.0.113.50','LOGIN_FAILED',NOW() - INTERVAL 12 MINUTE);
+
+-- report (id 13~32) : reporter_user_id 신고자 / 처리완료 건 handler_admin_id=1
+INSERT INTO `report`
+  (`id`,`reporter_user_id`,`target_type`,`target_id`,`reason`,`detail`,`status`,`created_at`,`reported_at`,`updated_at`,`handled_at`,`handler_admin_id`) VALUES
+  (13,16,'POST'   ,11,'SPAM'         ,'신고 13',  'PENDING' ,NOW() - INTERVAL 10 MINUTE,NOW() - INTERVAL 10 MINUTE,NOW() - INTERVAL 10 MINUTE,NULL,NULL),
+  (14,17,'COMMENT',13,'ABUSE'        ,'신고 14',  'PENDING' ,NOW() - INTERVAL 30 MINUTE,NOW() - INTERVAL 30 MINUTE,NOW() - INTERVAL 30 MINUTE,NULL,NULL),
+  (15,18,'POST'   ,12,'INAPPROPRIATE','신고 15',  'PENDING' ,NOW() - INTERVAL 1 HOUR,NOW() - INTERVAL 1 HOUR,NOW() - INTERVAL 1 HOUR,NULL,NULL),
+  (16,19,'USER'   ,22,'ETC'          ,'신고 16',  'REVIEWED',NOW() - INTERVAL 1 DAY,NOW() - INTERVAL 1 DAY,NOW() - INTERVAL 20 HOUR,NOW() - INTERVAL 20 HOUR,1),
+  (17,20,'COMMENT',15,'SPAM'         ,'신고 17',  'PENDING' ,NOW() - INTERVAL 2 HOUR,NOW() - INTERVAL 2 HOUR,NOW() - INTERVAL 2 HOUR,NULL,NULL),
+  (18,21,'POST'   ,14,'ABUSE'        ,'신고 18',  'RESOLVED',NOW() - INTERVAL 2 DAY,NOW() - INTERVAL 2 DAY,NOW() - INTERVAL 1 DAY,NOW() - INTERVAL 1 DAY,1),
+  (19,22,'USER'   ,25,'INAPPROPRIATE','신고 19',  'PENDING' ,NOW() - INTERVAL 3 HOUR,NOW() - INTERVAL 3 HOUR,NOW() - INTERVAL 3 HOUR,NULL,NULL),
+  (20,23,'LECTURE',13,'ETC'          ,'신고 20',  'REJECTED',NOW() - INTERVAL 3 DAY,NOW() - INTERVAL 3 DAY,NOW() - INTERVAL 2 DAY,NOW() - INTERVAL 2 DAY,1),
+  (21,24,'POST'   ,16,'SPAM'         ,'신고 21',  'PENDING' ,NOW() - INTERVAL 4 HOUR,NOW() - INTERVAL 4 HOUR,NOW() - INTERVAL 4 HOUR,NULL,NULL),
+  (22,25,'COMMENT',17,'ABUSE'        ,'신고 22',  'REVIEWED',NOW() - INTERVAL 26 HOUR,NOW() - INTERVAL 26 HOUR,NOW() - INTERVAL 22 HOUR,NOW() - INTERVAL 22 HOUR,1),
+  (23,26,'POST'   ,18,'INAPPROPRIATE','신고 23',  'PENDING' ,NOW() - INTERVAL 5 HOUR,NOW() - INTERVAL 5 HOUR,NOW() - INTERVAL 5 HOUR,NULL,NULL),
+  (24,27,'USER'   ,16,'ETC'          ,'신고 24',  'RESOLVED',NOW() - INTERVAL 4 DAY,NOW() - INTERVAL 4 DAY,NOW() - INTERVAL 3 DAY,NOW() - INTERVAL 3 DAY,1),
+  (25,28,'LECTURE',14,'SPAM'         ,'신고 25',  'PENDING' ,NOW() - INTERVAL 6 HOUR,NOW() - INTERVAL 6 HOUR,NOW() - INTERVAL 6 HOUR,NULL,NULL),
+  (26,29,'POST'   ,19,'ABUSE'        ,'신고 26',  'REJECTED',NOW() - INTERVAL 5 DAY,NOW() - INTERVAL 5 DAY,NOW() - INTERVAL 4 DAY,NOW() - INTERVAL 4 DAY,1),
+  (27,30,'COMMENT',20,'INAPPROPRIATE','신고 27',  'PENDING' ,NOW() - INTERVAL 7 HOUR,NOW() - INTERVAL 7 HOUR,NOW() - INTERVAL 7 HOUR,NULL,NULL),
+  (28,31,'USER'   ,33,'ETC'          ,'신고 28',  'REVIEWED',NOW() - INTERVAL 30 HOUR,NOW() - INTERVAL 30 HOUR,NOW() - INTERVAL 28 HOUR,NOW() - INTERVAL 28 HOUR,1),
+  (29,32,'POST'   ,21,'SPAM'         ,'신고 29',  'PENDING' ,NOW() - INTERVAL 8 HOUR,NOW() - INTERVAL 8 HOUR,NOW() - INTERVAL 8 HOUR,NULL,NULL),
+  (30,33,'COMMENT',22,'ABUSE'        ,'신고 30',  'RESOLVED',NOW() - INTERVAL 6 DAY,NOW() - INTERVAL 6 DAY,NOW() - INTERVAL 5 DAY,NOW() - INTERVAL 5 DAY,1),
+  (31,16,'POST'   ,23,'INAPPROPRIATE','신고 31',  'PENDING' ,NOW() - INTERVAL 9 HOUR,NOW() - INTERVAL 9 HOUR,NOW() - INTERVAL 9 HOUR,NULL,NULL),
+  (32,17,'LECTURE',15,'ETC'          ,'신고 32',  'PENDING' ,NOW() - INTERVAL 11 HOUR,NOW() - INTERVAL 11 HOUR,NOW() - INTERVAL 11 HOUR,NULL,NULL);
+
+-- payment (id 9~28)
+INSERT INTO `payment` (`id`,`user_id`,`amount`,`method`,`paid_at`) VALUES
+  (9,16,19900,'KAKAO',NOW() - INTERVAL 40 DAY),(10,17,29900,'TOSS',NOW() - INTERVAL 38 DAY),
+  (11,18,19900,'CARD',NOW() - INTERVAL 36 DAY),(12,19,9900,'FREE',NOW() - INTERVAL 34 DAY),
+  (13,20,39900,'KAKAO',NOW() - INTERVAL 32 DAY),(14,21,19900,'TOSS',NOW() - INTERVAL 30 DAY),
+  (15,22,19900,'CARD',NOW() - INTERVAL 28 DAY),(16,23,9900,'FREE',NOW() - INTERVAL 26 DAY),
+  (17,24,29900,'KAKAO',NOW() - INTERVAL 24 DAY),(18,25,19900,'TOSS',NOW() - INTERVAL 22 DAY),
+  (19,26,19900,'CARD',NOW() - INTERVAL 20 DAY),(20,27,39900,'KAKAO',NOW() - INTERVAL 18 DAY),
+  (21,28,9900,'FREE',NOW() - INTERVAL 16 DAY),(22,29,19900,'TOSS',NOW() - INTERVAL 14 DAY),
+  (23,30,19900,'CARD',NOW() - INTERVAL 12 DAY),(24,31,29900,'KAKAO',NOW() - INTERVAL 10 DAY),
+  (25,32,19900,'TOSS',NOW() - INTERVAL 8 DAY),(26,33,9900,'FREE',NOW() - INTERVAL 6 DAY),
+  (27,16,19900,'CARD',NOW() - INTERVAL 4 DAY),(28,17,39900,'KAKAO',NOW() - INTERVAL 2 DAY);
+
+-- inquiry (id 9~28)
+INSERT INTO `inquiry` (`id`,`user_id`,`title`,`content`,`answer`,`status`,`created_at`,`answered_at`) VALUES
+  (9,16,'문의 9','내용 9',NULL,'WAITING',NOW() - INTERVAL 5 HOUR,NULL),(10,17,'문의 10','내용 10','답변 10','ANSWERED',NOW() - INTERVAL 2 DAY,NOW() - INTERVAL 1 DAY),
+  (11,18,'문의 11','내용 11',NULL,'WAITING',NOW() - INTERVAL 4 HOUR,NULL),(12,19,'문의 12','내용 12','답변 12','ANSWERED',NOW() - INTERVAL 3 DAY,NOW() - INTERVAL 2 DAY),
+  (13,20,'문의 13','내용 13',NULL,'WAITING',NOW() - INTERVAL 3 HOUR,NULL),(14,21,'문의 14','내용 14','답변 14','CLOSED',NOW() - INTERVAL 4 DAY,NOW() - INTERVAL 3 DAY),
+  (15,22,'문의 15','내용 15',NULL,'WAITING',NOW() - INTERVAL 2 HOUR,NULL),(16,23,'문의 16','내용 16','답변 16','ANSWERED',NOW() - INTERVAL 5 DAY,NOW() - INTERVAL 4 DAY),
+  (17,24,'문의 17','내용 17',NULL,'WAITING',NOW() - INTERVAL 90 MINUTE,NULL),(18,25,'문의 18','내용 18','답변 18','ANSWERED',NOW() - INTERVAL 6 DAY,NOW() - INTERVAL 5 DAY),
+  (19,26,'문의 19','내용 19',NULL,'WAITING',NOW() - INTERVAL 80 MINUTE,NULL),(20,27,'문의 20','내용 20','답변 20','CLOSED',NOW() - INTERVAL 7 DAY,NOW() - INTERVAL 6 DAY),
+  (21,28,'문의 21','내용 21',NULL,'WAITING',NOW() - INTERVAL 70 MINUTE,NULL),(22,29,'문의 22','내용 22','답변 22','ANSWERED',NOW() - INTERVAL 8 DAY,NOW() - INTERVAL 7 DAY),
+  (23,30,'문의 23','내용 23',NULL,'WAITING',NOW() - INTERVAL 60 MINUTE,NULL),(24,31,'문의 24','내용 24','답변 24','ANSWERED',NOW() - INTERVAL 9 DAY,NOW() - INTERVAL 8 DAY),
+  (25,32,'문의 25','내용 25',NULL,'WAITING',NOW() - INTERVAL 50 MINUTE,NULL),(26,33,'문의 26','내용 26','답변 26','CLOSED',NOW() - INTERVAL 10 DAY,NOW() - INTERVAL 9 DAY),
+  (27,16,'문의 27','내용 27',NULL,'WAITING',NOW() - INTERVAL 40 MINUTE,NULL),(28,17,'문의 28','내용 28','답변 28','ANSWERED',NOW() - INTERVAL 11 DAY,NOW() - INTERVAL 10 DAY);
+
+-- error_log (id 13~32)
+INSERT INTO `error_log` (`id`,`level`,`source`,`message`,`occurred_at`,`created_at`,`updated_at`) VALUES
+  (13,'ERROR','API Error','Page error 13',NOW() - INTERVAL 25 MINUTE,NOW() - INTERVAL 25 MINUTE,NOW() - INTERVAL 25 MINUTE),
+  (14,'WARNING','Frontend','Page error 14',NOW() - INTERVAL 35 MINUTE,NOW() - INTERVAL 35 MINUTE,NOW() - INTERVAL 35 MINUTE),
+  (15,'ERROR','Server','Page error 15',NOW() - INTERVAL 55 MINUTE,NOW() - INTERVAL 55 MINUTE,NOW() - INTERVAL 55 MINUTE),
+  (16,'CRITICAL','Database','Page error 16',NOW() - INTERVAL 90 MINUTE,NOW() - INTERVAL 90 MINUTE,NOW() - INTERVAL 90 MINUTE),
+  (17,'WARNING','API Error','Page error 17',NOW() - INTERVAL 4 HOUR,NOW() - INTERVAL 4 HOUR,NOW() - INTERVAL 4 HOUR),
+  (18,'ERROR','Server','Page error 18',NOW() - INTERVAL 6 HOUR,NOW() - INTERVAL 6 HOUR,NOW() - INTERVAL 6 HOUR),
+  (19,'WARNING','Frontend','Page error 19',NOW() - INTERVAL 8 HOUR,NOW() - INTERVAL 8 HOUR,NOW() - INTERVAL 8 HOUR),
+  (20,'CRITICAL','Server','Page error 20',NOW() - INTERVAL 10 HOUR,NOW() - INTERVAL 10 HOUR,NOW() - INTERVAL 10 HOUR),
+  (21,'ERROR','Database','Page error 21',NOW() - INTERVAL 12 HOUR,NOW() - INTERVAL 12 HOUR,NOW() - INTERVAL 12 HOUR),
+  (22,'WARNING','API Error','Page error 22',NOW() - INTERVAL 16 HOUR,NOW() - INTERVAL 16 HOUR,NOW() - INTERVAL 16 HOUR),
+  (23,'ERROR','Server','Page error 23',NOW() - INTERVAL 20 HOUR,NOW() - INTERVAL 20 HOUR,NOW() - INTERVAL 20 HOUR),
+  (24,'WARNING','Frontend','Page error 24',NOW() - INTERVAL 24 HOUR,NOW() - INTERVAL 24 HOUR,NOW() - INTERVAL 24 HOUR),
+  (25,'CRITICAL','Database','Page error 25',NOW() - INTERVAL 28 HOUR,NOW() - INTERVAL 28 HOUR,NOW() - INTERVAL 28 HOUR),
+  (26,'ERROR','API Error','Page error 26',NOW() - INTERVAL 2 DAY,NOW() - INTERVAL 2 DAY,NOW() - INTERVAL 2 DAY),
+  (27,'WARNING','Server','Page error 27',NOW() - INTERVAL 2 DAY - INTERVAL 6 HOUR,NOW() - INTERVAL 2 DAY - INTERVAL 6 HOUR,NOW() - INTERVAL 2 DAY - INTERVAL 6 HOUR),
+  (28,'ERROR','Database','Page error 28',NOW() - INTERVAL 3 DAY,NOW() - INTERVAL 3 DAY,NOW() - INTERVAL 3 DAY),
+  (29,'WARNING','Frontend','Page error 29',NOW() - INTERVAL 3 DAY - INTERVAL 8 HOUR,NOW() - INTERVAL 3 DAY - INTERVAL 8 HOUR,NOW() - INTERVAL 3 DAY - INTERVAL 8 HOUR),
+  (30,'CRITICAL','Server','Page error 30',NOW() - INTERVAL 4 DAY,NOW() - INTERVAL 4 DAY,NOW() - INTERVAL 4 DAY),
+  (31,'ERROR','API Error','Page error 31',NOW() - INTERVAL 5 DAY,NOW() - INTERVAL 5 DAY,NOW() - INTERVAL 5 DAY),
+  (32,'WARNING','Database','Page error 32',NOW() - INTERVAL 6 DAY,NOW() - INTERVAL 6 DAY,NOW() - INTERVAL 6 DAY);
+
 -- =====================================================================
---  END OF SEED  (25 tables + error_log)
+--  END OF SEED  (25 tables + error_log / 기존 236행 + 페이지네이션 +520행)
 -- =====================================================================

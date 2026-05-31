@@ -44,9 +44,11 @@ public class AdminLectureQueryService implements AdminLectureQueryUseCase {
 
         // 도메인 모델을 관리자 목록 응답 DTO로 변환한다.
         List<AdminLectureListItemResponse> content = lecturePage.content().stream()
-                .map(AdminLectureListItemResponse::from)
-                .toList();
-
+                .map(lecture -> AdminLectureListItemResponse.from(
+                        lecture,
+                        0.0,
+                        0
+                )).toList();
         // 페이지 정보와 목록을 함께 반환한다.
         return new AdminLecturePageResponse(
                 content,
@@ -94,9 +96,12 @@ public class AdminLectureQueryService implements AdminLectureQueryUseCase {
         List<LectureChapter> chapters =
                 chapterRepository.findAllByLectureIdOrderByOrderNoAsc(query.lectureId());
 
-        /*
-         * 강의 정보와 챕터 목록을 관리자 상세 응답 DTO로 변환한다.
-         */
-        return AdminLectureDetailResponse.from(lecture, chapters);
+        // 강의 정보와 챕터 목록을 관리자 상세 응답 DTO로 변환
+        return AdminLectureDetailResponse.from(
+                lecture,
+                chapters,
+                0.0,
+                0
+        );
     }
 }

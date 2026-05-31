@@ -87,13 +87,15 @@ public class LearningHistoryJpaEntity extends BaseTimeEntity {
         entity.isCompleted = domain.isCompleted();
         entity.lastPositionSec = domain.getLastPositionSec();
         entity.progressRate = domain.getProgressRate();
+        entity.version = domain.getVersion();
         return entity;
     }
 
     // JpaEntity -> Domain Model 변환 (조회용)
     public LearningHistory toDomain() {
         return LearningHistory.reconstitute(
-                id, userId,lectureId, chapterId, watchedSeconds, isCompleted, lastPositionSec, progressRate
+                id, userId,lectureId, chapterId, watchedSeconds,
+                isCompleted, lastPositionSec, progressRate, version
         );
     }
 

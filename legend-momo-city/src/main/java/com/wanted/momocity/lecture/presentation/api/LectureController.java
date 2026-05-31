@@ -4,15 +4,18 @@ import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationExc
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
 import com.wanted.momocity.lecture.application.query.*;
+import com.wanted.momocity.lecture.application.usecase.AdminLectureCommandUseCase;
 import com.wanted.momocity.lecture.application.usecase.AdminLectureQueryUseCase;
 import com.wanted.momocity.lecture.application.usecase.LectureQueryUseCase;
 import com.wanted.momocity.lecture.domain.model.LectureCategory;
 import com.wanted.momocity.lecture.domain.model.LectureStatus;
+import com.wanted.momocity.lecture.presentation.api.request.AdminChangeLectureStatusRequest;
 import com.wanted.momocity.lecture.presentation.api.response.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
@@ -33,6 +36,8 @@ public class LectureController {
     private final LectureQueryUseCase lectureQueryUseCase;
     // 관리자 강의 조회 UseCase
     private final AdminLectureQueryUseCase adminLectureQueryUseCase;
+    // 관리자 강의 상태 UseCase
+    private final AdminLectureCommandUseCase adminLectureCommandUseCase;
 
     // 강의 목록 조회 API
     @Operation(
@@ -181,6 +186,58 @@ public class LectureController {
         return ResponseEntity.ok(ApiResponse.success(
                 ApiResponseCode.SUCCESS,
                 "강의 상세 조회에 성공했습니다.",
+                response
+        ));
+    }
+
+    /* comment
+     * 관리자 강의 상태 변경 API
+     * ACTIVE = 승인
+     * HOLD = 거절
+     */
+    @Operation(
+            summary = "관리자 강의 상태 변경",
+            description = """
+                관리자가 강의를 승인 또는 거절합니다.
+                lectureStatus가 ACTIVE이면 승인 처리되고,
+                lectureStatus가 HOLD이면 거절 처리됩니다.
+                
+                ACTIVE 승인 시에는 아래 조건을 검증합니다.
+                - 챕터가 최소 1개 이상 있어야 합니다.
+                - 모든 챕터에 동영상이 등록되어 있어야 합니다.
+                - 모든 챕터의 동영상 상태가 READY여야 합니다.
+                """
+    )
+    @PatchMapping("/{lectureId}/status")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<ApiResponse<AdminChangeLectureStatusResponse>> changeLectureStatus(
+            Authentication authentication,
+
+            // 상태를 변경할 강의 ID
+            @PathVariable Long lectureId,
+
+            // 변경할 상태값(ACTIVE 또는 HOLD)
+            @RequestBody AdminChangeLectureStatusRequest request
+    ) {
+        // Authorization 토큰에서 관리자 ID를 꺼냄
+        Long adminId = Long.parseLong(authentication.getName());
+
+        // Request 값을 Application Service가 사용할 Command로 변환
+        var command = request.toCommand(
+                adminId,
+                lectureId
+        );
+
+        // 관리자 강의 상태 변경 UseCase를 실행
+        AdminChangeLectureStatusResponse response =
+                adminLectureCommandUseCase.changeLectureStatus(command);
+
+        /*
+         * 상태 변경 성공 응답을 반환한다.
+         */
+        return ResponseEntity.ok(ApiResponse.success(
+                ApiResponseCode.SUCCESS,
+                "강의 상태가 변경되었습니다.",
                 response
         ));
     }

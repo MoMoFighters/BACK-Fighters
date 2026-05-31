@@ -111,7 +111,7 @@ public class CalendarController {
     })
     @PatchMapping("/todo/{calendarId}")
     public ResponseEntity<ApiResponse<TodoResponse>> updateTodo(
-            @PathVariable Long calendarId,
+            @PathVariable("calendarId") Long calendarId,
             @RequestBody @Valid UpdateTodoRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails
 
@@ -142,7 +142,7 @@ public class CalendarController {
     })
     @DeleteMapping("/todo/{calendarId}")
     public ResponseEntity<ApiResponse<Void>> deleteTodo(
-            @PathVariable Long calendarId,
+            @PathVariable("calendarId") Long calendarId,
             @AuthenticationPrincipal CustomUserDetails userDetails
 
     ) {
@@ -170,7 +170,7 @@ public class CalendarController {
     })
     @PatchMapping("/todo/{calendarId}/check")
     public ResponseEntity<ApiResponse<TodoResponse>> checkTodo(
-            @PathVariable Long calendarId,
+            @PathVariable("calendarId") Long calendarId,
             @RequestBody @Valid CheckTodoRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails
 
@@ -231,7 +231,7 @@ public class CalendarController {
     })
     @PatchMapping("/memo/{calendarId}")
     public ResponseEntity<ApiResponse<MemoResponse>> updateMemo(
-            @PathVariable Long calendarId,
+            @PathVariable("calendarId") Long calendarId,
             @RequestBody @Valid UpdateMemoRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails
 
@@ -262,7 +262,7 @@ public class CalendarController {
     })
     @DeleteMapping("/memo/{calendarId}")
     public ResponseEntity<ApiResponse<Void>> deleteMemo(
-            @PathVariable Long calendarId,
+            @PathVariable("calendarId") Long calendarId,
             @AuthenticationPrincipal CustomUserDetails userDetails
 
     ) {

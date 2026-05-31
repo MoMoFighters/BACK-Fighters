@@ -103,7 +103,12 @@ public class ViewingCommandService implements ViewingCommandUseCase {
         history.updateProgress(command.playbackSeconds(), chapter.getDurationSec());
 
         // 챕터 완료 처리 (도메인 메서드)
-        history.complete(command.playbackSeconds(), chapter.getDurationSec());
+        history.complete(chapter.getDurationSec());
+
+        // lastPositionSec null 여부에 따라 저장 분기
+        if (command.lastPositionSec() != null) {
+            history.saveLastPosition(command.lastPositionSec());
+        }
 
         // 시청 기록 저장
         LearningHistory savedHistory = learningHistoryRepository.save(history);
@@ -143,7 +148,11 @@ public class ViewingCommandService implements ViewingCommandUseCase {
     // enrollment 진척도 재계산 및 저장
     private int calculateTotalProgress(Long userId, Long lectureId) {
 
-        List<Chapter> chapters = chapterPort.findAllByLectureId(lectureId);
+        List<Chapter> chapters = chapterPort.findAllByLectureId(lectureId)
+                .stream()
+                // READY 챕터만 필터링
+                .filter(Chapter::isPlayable)
+                .toList();
         List<LearningHistory> histories = learningHistoryRepository
                 .findByUserIdAndLectureId(userId, lectureId);
 
@@ -156,9 +165,19 @@ public class ViewingCommandService implements ViewingCommandUseCase {
                 .sum();
 
         // 미완료 챕터 watchedSeconds 합산
+        // watchedSeconds 가 durationSec 초과 방지
         int inProgressWatchedSum = histories.stream()
                 .filter(h -> !h.isCompleted())
-                .mapToInt(LearningHistory::getWatchedSeconds)
+                .mapToInt(h ->{
+                    // 해당 챕터의 durationSec 찾기
+                    int durationSec = chapters.stream()
+                            .filter(c -> c.getId().equals(h.getChapterId()))
+                            .findFirst()
+                            .map(Chapter::getDurationSec)
+                            .orElse(0);
+                    // watchedSeconds 가 durationSec 초과 방지
+                    return Math.min(h.getWatchedSeconds(), durationSec);
+                })
                 .sum();
 
         // 전체 durationSec 합산
@@ -177,7 +196,8 @@ public class ViewingCommandService implements ViewingCommandUseCase {
                         "completedDurationSum={}, inProgressWatchedSum={}, totalDurationSum={}, result={}",
                 userId, lectureId, completedDurationSum, inProgressWatchedSum, totalDurationSum, result);
 
-        return result;
+        // 결과값 100 초과 방지
+        return Math.min(result, 100);
     }
 
     // 완료 된 챕터 수 계산 (learning_history 집계)

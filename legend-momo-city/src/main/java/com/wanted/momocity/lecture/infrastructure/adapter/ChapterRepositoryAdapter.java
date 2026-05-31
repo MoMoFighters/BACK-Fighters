@@ -2,10 +2,12 @@ package com.wanted.momocity.lecture.infrastructure.adapter;
 
 import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.model.LectureChapter;
+import com.wanted.momocity.lecture.domain.model.VideoStatus;
 import com.wanted.momocity.lecture.domain.repository.ChapterRepository;
 import com.wanted.momocity.lecture.infrastructure.persistence.ChapterJpaEntity;
 import com.wanted.momocity.lecture.infrastructure.persistence.SpringDataChapterRepository;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -57,6 +59,19 @@ public class ChapterRepositoryAdapter implements ChapterRepository {
                 .stream()
                 .map(ChapterJpaEntity::toDomain)
                 .toList();
+    }
+
+    // 특정 강의의 챕터 중 지정한 영상 상태가 아닌 챕터가 있는지 확인
+    @Override
+    @Transactional(readOnly = true)
+    public boolean existsByLectureIdAndVideoStatusNot(
+            Long lectureId,
+            VideoStatus videoStatus
+    ) {
+        return repository.existsByLectureIdAndVideoStatusNot(
+                lectureId,
+                videoStatus
+        );
     }
     
 }

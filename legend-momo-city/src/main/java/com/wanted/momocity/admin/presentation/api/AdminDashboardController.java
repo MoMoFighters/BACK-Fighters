@@ -1,8 +1,10 @@
 package com.wanted.momocity.admin.presentation.api;
 
 import com.wanted.momocity.admin.application.usecase.AdminDashboardQueryUseCase;
+import com.wanted.momocity.admin.application.usecase.AdminDashboardQueryUseCase.DashboardSummary;
 import com.wanted.momocity.admin.presentation.api.response.DashboardSummaryResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
+import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
@@ -39,25 +41,36 @@ public class AdminDashboardController {
     }
 
     /* comment.
-        실제 구현 시 흐름 (m03 우선순위) :
-        1. DashboardSummary summary = dashboardQueryUseCase.getDashboardSummary();
-        *
-        2. DashboardSummaryResponse response = new DashboardSummaryResponse(
-            summary.memberCount(),
-            summary.memberGrowthRate(),
-            summary.lectureCount(),
-            summary.lectureGrowthRate(),
-            summary.reportCount()
-        );
-        *
-        3. return ResponseEntity.ok(response);
-  */
+        getDashboardSummary 처리 흐름 3단계 :
+        1. UseCase 호출 → 여러 BC 통계를 모은 DashboardSummary(응용 출력) 획득
+        2. 응용 출력(DashboardSummary) → 응답 DTO(DashboardSummaryResponse) 변환 (계층 격리)
+        3. 공통 응답 엔벨로프(ApiResponse) 로 감싸 200 OK 반환 (전 컨트롤러 일관성)
+     */
     @GetMapping("/dashboard/summary")
     @Operation(
             summary = "관리자 대시보드 요약 통계",
             description = "회원 / 신고 / 강의 총 개수를 한 번에 조회한다. FE 대시보드 페이지 진입 시 호출."
     )
     public ResponseEntity<ApiResponse<DashboardSummaryResponse>> getDashboardSummary() {
-        throw new UnsupportedOperationException("TODO: m03 우선순위 - admin 대시보드 요약 통계 컨트롤러 구현");
+        // 1. UseCase 호출 → 응용 출력 획득
+        DashboardSummary summary = dashboardQueryUseCase.getDashboardSummary();
+
+        // 2. 응용 출력 → 응답 DTO 변환
+        DashboardSummaryResponse response = new DashboardSummaryResponse(
+                summary.memberCount(),
+                summary.memberGrowthRate(),
+                summary.lectureCount(),
+                summary.lectureGrowthRate(),
+                summary.reportCount()
+        );
+
+        // 3. 공통 응답 엔벨로프로 감싸 200 OK 반환
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        ApiResponseCode.SUCCESS,
+                        "대시보드 요약 통계 조회 성공",
+                        response
+                )
+        );
     }
 }

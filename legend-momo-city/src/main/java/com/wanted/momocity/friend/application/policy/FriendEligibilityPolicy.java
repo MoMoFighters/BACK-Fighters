@@ -23,10 +23,10 @@ public class FriendEligibilityPolicy {
             throw new FMBusinessRuleViolationException("자기 자신과는 친구 관계를 형성할 수 없습니다.");
         }
 
-        //강사에게는 친구 요청 불가(400)
-        if ("TEACHER".equals(targetRole)) {
+        //강사, 관리자에게는 친구 요청 불가(400)
+        if (!"STUDENT".equals(targetRole)) {
             log.warn("[FriendEligibilityPolicy] 검증 실패 - 대상이 강사(TEACHER)임");
-            throw new FMBusinessRuleViolationException("강사에게는 직접 친구 요청을 보낼 수 없습니다.");
+            throw new FMBusinessRuleViolationException("일반 수강생 사용자에게만 친구 요청을 보낼 수 있습니다.");
         }
 
         //기존에 아무런 관계 데이터가 없다면(Optional.isEmpty) -> 첫 요청이므로 무조건 통과
@@ -40,8 +40,16 @@ public class FriendEligibilityPolicy {
 
         //이미 요청을 보낸 상태인지 확인(409)
         if ("SENT".equals(relation.getStatus())) {
-            log.warn("[FriendEligibilityPolicy] 검증 실패 - 이미 요청을 보낸 대상 (현재 상태: SENT)");
-            throw new FMResourceConflictException("이미 요청을 보낸 대상입니다.");
+            //로그인 유저가 이미 상대방에게 보낸 경우
+            if (relation.getFromUserId().getId().equals(fromUserId)) {
+                log.warn("[FriendEligibilityPolicy] 검증 실패 - 이미 요청을 보낸 대상 (현재 상태: SENT)");
+                throw new FMResourceConflictException("이미 요청을 보낸 대상입니다.");
+            }
+            //상대방이 로그인 유저에게 보낸 경우
+            if (relation.getToUserId().getId().equals(fromUserId)) {
+                log.warn("[FriendEligibilityPolicy] 검증 실패 - 상대방이 로그인 유저에게 이미 요청을 보낸 상태");
+                throw new FMResourceConflictException("상대방이 이미 회원님에게 친구 요청을 보낸 상태입니다.");
+            }
         }
 
         //이미 서로 친구 상태인지 확인(추후 확장 대비)
