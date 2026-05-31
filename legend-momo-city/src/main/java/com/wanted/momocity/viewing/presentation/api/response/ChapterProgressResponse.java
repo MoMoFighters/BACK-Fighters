@@ -34,7 +34,8 @@ public record ChapterProgressResponse(
             int watchedSeconds,
             int durationSec,
             int progressRate,
-            boolean isCompleted
+            boolean isCompleted,
+            boolean isAccessible
     ) {}
 
 }

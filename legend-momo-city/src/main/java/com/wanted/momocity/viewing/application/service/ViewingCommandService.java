@@ -103,7 +103,7 @@ public class ViewingCommandService implements ViewingCommandUseCase {
         history.updateProgress(command.playbackSeconds(), chapter.getDurationSec());
 
         // 챕터 완료 처리 (도메인 메서드)
-        history.complete(command.playbackSeconds(), chapter.getDurationSec());
+        history.complete(chapter.getDurationSec());
 
         // lastPositionSec null 여부에 따라 저장 분기
         if (command.lastPositionSec() != null) {
