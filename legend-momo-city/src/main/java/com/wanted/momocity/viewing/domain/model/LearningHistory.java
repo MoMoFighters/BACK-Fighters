@@ -78,7 +78,7 @@ public class LearningHistory {
     * */
 
     // 챕터 완료처리
-    public void complete (int playbackSeconds, int durationSec) {
+    public void complete (int durationSec) {
         if(!this.isCompleted && watchedSeconds >= durationSec * 0.9) {
             this.isCompleted = true;
             this.progressRate = 100;
