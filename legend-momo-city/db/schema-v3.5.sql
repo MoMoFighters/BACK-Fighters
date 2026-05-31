@@ -445,83 +445,41 @@ CREATE TABLE `refresh_token` (
 -- =====================================================================
 --  FOREIGN KEY CONSTRAINTS (관계선 35개)  [v3.5: report FK 2개로 정리]
 -- =====================================================================
-ALTER TABLE `lecture`
-    ADD CONSTRAINT `fk_lecture_teacher` FOREIGN KEY (`teacher_id`) REFERENCES `user` (`id`);
-
-ALTER TABLE `chapter`
-    ADD CONSTRAINT `fk_chapter_lecture` FOREIGN KEY (`lecture_id`) REFERENCES `lecture` (`id`) ON DELETE CASCADE;
-
-ALTER TABLE `post`
-    ADD CONSTRAINT `fk_post_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`);
-
-ALTER TABLE `comment`
-    ADD CONSTRAINT `fk_comment_post`   FOREIGN KEY (`post_id`)   REFERENCES `post` (`id`) ON DELETE CASCADE,
-    ADD CONSTRAINT `fk_comment_user`   FOREIGN KEY (`user_id`)   REFERENCES `user` (`id`),
-    ADD CONSTRAINT `fk_comment_parent` FOREIGN KEY (`parent_id`) REFERENCES `comment` (`id`) ON DELETE CASCADE;
-
-ALTER TABLE `post_image`
-    ADD CONSTRAINT `fk_post_image_post` FOREIGN KEY (`post_id`) REFERENCES `post` (`id`) ON DELETE CASCADE;
-
-ALTER TABLE `enrollment`
-    ADD CONSTRAINT `fk_enrollment_user`    FOREIGN KEY (`user_id`)    REFERENCES `user` (`id`),
-    ADD CONSTRAINT `fk_enrollment_lecture` FOREIGN KEY (`lecture_id`) REFERENCES `lecture` (`id`) ON DELETE CASCADE;
-
-ALTER TABLE `learning_history`
-    ADD CONSTRAINT `fk_lh_user`    FOREIGN KEY (`user_id`)    REFERENCES `user` (`id`),
-    ADD CONSTRAINT `fk_lh_lecture` FOREIGN KEY (`lecture_id`) REFERENCES `lecture` (`id`) ON DELETE CASCADE,
-    ADD CONSTRAINT `fk_lh_chapter` FOREIGN KEY (`chapter_id`) REFERENCES `chapter` (`id`) ON DELETE CASCADE;
-
-ALTER TABLE `review`
-    ADD CONSTRAINT `fk_review_user`    FOREIGN KEY (`user_id`)    REFERENCES `user` (`id`),
-    ADD CONSTRAINT `fk_review_lecture` FOREIGN KEY (`lecture_id`) REFERENCES `lecture` (`id`) ON DELETE CASCADE;
-
-ALTER TABLE `streak`
-    ADD CONSTRAINT `fk_streak_user`    FOREIGN KEY (`user_id`)    REFERENCES `user` (`id`),
-    ADD CONSTRAINT `fk_streak_chapter` FOREIGN KEY (`chapter_id`) REFERENCES `chapter` (`id`) ON DELETE CASCADE;
-
-ALTER TABLE `building`
-    ADD CONSTRAINT `fk_building_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`);
-
-ALTER TABLE `calendar`
-    ADD CONSTRAINT `fk_calendar_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`);
-
-ALTER TABLE `chat_room_member`
-    ADD CONSTRAINT `fk_crm_room` FOREIGN KEY (`room_id`) REFERENCES `chat_room` (`id`) ON DELETE CASCADE,
-    ADD CONSTRAINT `fk_crm_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`);
-
-ALTER TABLE `message`
-    ADD CONSTRAINT `fk_message_room`   FOREIGN KEY (`room_id`)   REFERENCES `chat_room` (`id`) ON DELETE CASCADE,
-    ADD CONSTRAINT `fk_message_sender` FOREIGN KEY (`sender_id`) REFERENCES `user` (`id`);
-
-ALTER TABLE `friend`
-    ADD CONSTRAINT `fk_friend_from` FOREIGN KEY (`from_user_id`) REFERENCES `user` (`id`),
-    ADD CONSTRAINT `fk_friend_to`   FOREIGN KEY (`to_user_id`)   REFERENCES `user` (`id`);
-
-ALTER TABLE `guestbook`
-    ADD CONSTRAINT `fk_guestbook_writer` FOREIGN KEY (`writer_id`) REFERENCES `user` (`id`),
-    ADD CONSTRAINT `fk_guestbook_owner`  FOREIGN KEY (`owner_id`)  REFERENCES `user` (`id`);
-
-ALTER TABLE `notification`
-    ADD CONSTRAINT `fk_notification_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`);
-
-ALTER TABLE `user_oauth`
-    ADD CONSTRAINT `fk_user_oauth_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE;
-
-ALTER TABLE `verification_code`
-    ADD CONSTRAINT `fk_verification_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE;
-
-ALTER TABLE `access_log`
-    ADD CONSTRAINT `fk_access_log_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE SET NULL;
-
-ALTER TABLE `report`
-    ADD CONSTRAINT `fk_report_reporter` FOREIGN KEY (`reporter_user_id`) REFERENCES `user` (`id`),
-    ADD CONSTRAINT `fk_report_handler`  FOREIGN KEY (`handler_admin_id`) REFERENCES `user` (`id`);
-
-ALTER TABLE `payment`
-    ADD CONSTRAINT `fk_payment_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`);
-
-ALTER TABLE `inquiry`
-    ADD CONSTRAINT `fk_inquiry_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`);
+-- ※ ERDCloud 호환성: FK 1개당 ALTER 1개로 분리(한 ALTER 에 여러 제약 묶으면 일부 관계선 누락됨).
+ALTER TABLE `lecture` ADD CONSTRAINT `fk_lecture_teacher` FOREIGN KEY (`teacher_id`) REFERENCES `user` (`id`);
+ALTER TABLE `chapter` ADD CONSTRAINT `fk_chapter_lecture` FOREIGN KEY (`lecture_id`) REFERENCES `lecture` (`id`) ON DELETE CASCADE;
+ALTER TABLE `post` ADD CONSTRAINT `fk_post_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`);
+ALTER TABLE `comment` ADD CONSTRAINT `fk_comment_post` FOREIGN KEY (`post_id`) REFERENCES `post` (`id`) ON DELETE CASCADE;
+ALTER TABLE `comment` ADD CONSTRAINT `fk_comment_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`);
+ALTER TABLE `comment` ADD CONSTRAINT `fk_comment_parent` FOREIGN KEY (`parent_id`) REFERENCES `comment` (`id`) ON DELETE CASCADE;
+ALTER TABLE `post_image` ADD CONSTRAINT `fk_post_image_post` FOREIGN KEY (`post_id`) REFERENCES `post` (`id`) ON DELETE CASCADE;
+ALTER TABLE `enrollment` ADD CONSTRAINT `fk_enrollment_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`);
+ALTER TABLE `enrollment` ADD CONSTRAINT `fk_enrollment_lecture` FOREIGN KEY (`lecture_id`) REFERENCES `lecture` (`id`) ON DELETE CASCADE;
+ALTER TABLE `learning_history` ADD CONSTRAINT `fk_lh_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`);
+ALTER TABLE `learning_history` ADD CONSTRAINT `fk_lh_lecture` FOREIGN KEY (`lecture_id`) REFERENCES `lecture` (`id`) ON DELETE CASCADE;
+ALTER TABLE `learning_history` ADD CONSTRAINT `fk_lh_chapter` FOREIGN KEY (`chapter_id`) REFERENCES `chapter` (`id`) ON DELETE CASCADE;
+ALTER TABLE `review` ADD CONSTRAINT `fk_review_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`);
+ALTER TABLE `review` ADD CONSTRAINT `fk_review_lecture` FOREIGN KEY (`lecture_id`) REFERENCES `lecture` (`id`) ON DELETE CASCADE;
+ALTER TABLE `streak` ADD CONSTRAINT `fk_streak_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`);
+ALTER TABLE `streak` ADD CONSTRAINT `fk_streak_chapter` FOREIGN KEY (`chapter_id`) REFERENCES `chapter` (`id`) ON DELETE CASCADE;
+ALTER TABLE `building` ADD CONSTRAINT `fk_building_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`);
+ALTER TABLE `calendar` ADD CONSTRAINT `fk_calendar_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`);
+ALTER TABLE `chat_room_member` ADD CONSTRAINT `fk_crm_room` FOREIGN KEY (`room_id`) REFERENCES `chat_room` (`id`) ON DELETE CASCADE;
+ALTER TABLE `chat_room_member` ADD CONSTRAINT `fk_crm_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`);
+ALTER TABLE `message` ADD CONSTRAINT `fk_message_room` FOREIGN KEY (`room_id`) REFERENCES `chat_room` (`id`) ON DELETE CASCADE;
+ALTER TABLE `message` ADD CONSTRAINT `fk_message_sender` FOREIGN KEY (`sender_id`) REFERENCES `user` (`id`);
+ALTER TABLE `friend` ADD CONSTRAINT `fk_friend_from` FOREIGN KEY (`from_user_id`) REFERENCES `user` (`id`);
+ALTER TABLE `friend` ADD CONSTRAINT `fk_friend_to` FOREIGN KEY (`to_user_id`) REFERENCES `user` (`id`);
+ALTER TABLE `guestbook` ADD CONSTRAINT `fk_guestbook_writer` FOREIGN KEY (`writer_id`) REFERENCES `user` (`id`);
+ALTER TABLE `guestbook` ADD CONSTRAINT `fk_guestbook_owner` FOREIGN KEY (`owner_id`) REFERENCES `user` (`id`);
+ALTER TABLE `notification` ADD CONSTRAINT `fk_notification_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`);
+ALTER TABLE `user_oauth` ADD CONSTRAINT `fk_user_oauth_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE;
+ALTER TABLE `verification_code` ADD CONSTRAINT `fk_verification_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE;
+ALTER TABLE `access_log` ADD CONSTRAINT `fk_access_log_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE SET NULL;
+ALTER TABLE `report` ADD CONSTRAINT `fk_report_reporter` FOREIGN KEY (`reporter_user_id`) REFERENCES `user` (`id`);
+ALTER TABLE `report` ADD CONSTRAINT `fk_report_handler` FOREIGN KEY (`handler_admin_id`) REFERENCES `user` (`id`);
+ALTER TABLE `payment` ADD CONSTRAINT `fk_payment_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`);
+ALTER TABLE `inquiry` ADD CONSTRAINT `fk_inquiry_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`);
 
 ALTER TABLE `refresh_token`
     ADD CONSTRAINT `fk_refresh_token_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE;
