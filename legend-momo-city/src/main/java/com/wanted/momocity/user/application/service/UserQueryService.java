@@ -9,6 +9,7 @@ import com.wanted.momocity.user.domain.model.TeacherApplication;
 import com.wanted.momocity.user.domain.model.User;
 import com.wanted.momocity.user.domain.repository.BuildingRepository;
 import com.wanted.momocity.user.domain.repository.UserRepository;
+import com.wanted.momocity.user.presentation.api.response.AdminUserListResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -72,5 +73,36 @@ public class UserQueryService implements UserQueryUsecase {
     public TeacherApplication getApplicationDetail(Long userId) {
         return userRepository.findTeacherApplicationById(userId)
                 .orElseThrow(() -> new DomainRuleViolationException("해당 강사 신청자를 찾을 수 없습니다."));
+    }
+
+    // 관리자 회원관리용 회원 조회
+    @Override
+    public AdminUserListResult getAdminUserList(String role, String status, int page, int size) {
+        // role이랑 status가 컨트롤러에서 String으로 넘어와서 서비스에서 enum 타입으로 변환
+        Role roleEnum = role != null ? Role.valueOf(role) : null;
+        Status statusEnum = status != null ? Status.valueOf(status) : null;
+
+        List<?> list = userRepository.findAllForAdmin(roleEnum, statusEnum, page, size)
+                .stream()
+                .map(user -> {
+                    if (statusEnum == Status.DELETED) {
+                        return new AdminUserListResponse.Deleted(
+                                user.getId(), user.getName(), user.getRole().name(), user.getEmail(), user.getDeletedAt());
+                    } else if (user.getRole() == Role.TEACHER) {
+                        return new AdminUserListResponse.Teacher(
+                                user.getId(), user.getName(), user.getRole().name(), user.getEmail(),
+                                user.getCreatedAt(), user.getStatus().name(), user.getProof());
+                    } else {
+                        return new AdminUserListResponse.Default(
+                                user.getId(), user.getName(), user.getRole().name(), user.getEmail(),
+                                user.getCreatedAt(), user.getStatus().name());
+                    }
+                })
+                .toList();
+
+        long totalElements = userRepository.countForAdmin(roleEnum, statusEnum);
+        int totalPages = (int) Math.ceil((double) totalElements / size);
+
+        return new AdminUserListResult(list, page, size, totalElements, totalPages);
     }
 }

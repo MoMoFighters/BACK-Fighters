@@ -61,4 +61,31 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
 
     // 특정 날짜 이전의 active인 사용자 수 세기
     long countByStatusAndCreatedAtBefore(Status status, LocalDateTime localDateTime);
+
+    // 관리자 회원 목록 조회용
+    /*
+     * status = DELETED  → 탈퇴회원만 조회
+     * status = null     → 탈퇴회원 제외 전체 조회
+     *                     role = null  이면 전체 (STUDENT + TEACHER)
+     *                     role = 값 있으면 해당 role만
+     * */
+    @Query("SELECT u FROM UserUser u WHERE " +
+            "u.role <> 'ADMIN' AND u.status <> 'REJECTED' AND (" +
+            "(:status = 'DELETED' AND u.status = :status) OR " +
+            "(:status IS NULL AND u.status <> 'DELETED' AND (:role IS NULL OR u.role = :role)))")
+    List<UserJpaEntity> findAllForAdmin(
+            @Param("role") Role role,
+            @Param("status") Status status,
+            Pageable pageable
+    );
+
+    // 관리자 회원 목록 전체 개수 조회 (페이지네이션 totalElements 계산용)
+    @Query("SELECT COUNT(u) FROM UserUser u WHERE " +
+            "u.role <> 'ADMIN' AND u.status <> 'REJECTED' AND (" +
+            "(:status = 'DELETED' AND u.status = :status) OR " +
+            "(:status IS NULL AND u.status <> 'DELETED' AND (:role IS NULL OR u.role = :role)))")
+    long countForAdmin(
+            @Param("role") Role role,
+            @Param("status") Status status
+    );
 }

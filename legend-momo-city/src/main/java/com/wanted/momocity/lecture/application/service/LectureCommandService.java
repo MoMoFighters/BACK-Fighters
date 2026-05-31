@@ -87,13 +87,14 @@ public class LectureCommandService implements LectureCommandUseCase {
                 .orElseThrow(() -> new LectureNotFoundException("강의를 찾을 수 없습니다."));
 
         // 본인이 등록한 강의만 상태를 변경할 수 있음.
+        // 즉, 다른 강사가 로그인해서 해당 강사의 강인 승인 요청하는건 오류 뜸
         if (!lecture.isOwnedBy(teacherId)) {
             throw new AccessDeniedException("본인이 등록한 강의만 상태를 변경할 수 있습니다.");
         }
 
         // 강사는 검수 요청 상태인 WAITING으로만 변경
         if (command.lectureStatus() != LectureStatus.WAITING) {
-            throw new DomainRuleViolationException("강사는 강의를 검수 요청 상태로만 변경할 수 있습니다.");
+            throw new DomainRuleViolationException("강의 공개는 관리자만 할 수 있습니다.");
         }
 
         /* comment
@@ -121,14 +122,14 @@ public class LectureCommandService implements LectureCommandUseCase {
         int chapterCount = chapterRepository.countByLectureId(lectureId);
 
         if (chapterCount < 1) {
-            throw new DomainRuleViolationException("강의를 검수 요청하려면 챕터가 최소 1개 이상 필요합니다.");
+            throw new DomainRuleViolationException("강의 등록하려면 챕터가 최소 1개 이상 필요합니다.");
         }
 
         boolean hasChapterWithoutVideo =
                 chapterRepository.existsByLectureIdAndVideoUrlIsNull(lectureId);
 
         if (hasChapterWithoutVideo) {
-            throw new DomainRuleViolationException("강의를 검수 요청하려면 모든 챕터에 동영상이 등록되어야 합니다.");
+            throw new DomainRuleViolationException("강의 등록하려면 모든 챕터에 동영상이 등록되어야 합니다.");
         }
     }
 }

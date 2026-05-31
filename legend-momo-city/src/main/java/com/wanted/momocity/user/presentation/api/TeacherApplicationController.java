@@ -60,7 +60,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/admin")
+@RequestMapping("/api/v1")
 @PreAuthorize("hasRole('ADMIN')")
 @Tag(name = "Teacher - 강사 신청 관리", description = "강사 신청자 조회 및 승인/반려 (MS-3, MS-4, MS-5)")
 public class TeacherApplicationController {
@@ -68,7 +68,7 @@ public class TeacherApplicationController {
     private final UserCommandUsecase userCommandUsecase;
     private final UserQueryUsecase userQueryUsecase;
 
-    @GetMapping("/users/instructor-applications")
+    @GetMapping("/admin/users/instructor-applications")
     @Operation(summary = "강사 신청자 목록 조회 (MS-3)")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "강사 신청자 목록 조회 성공"),
@@ -96,7 +96,7 @@ public class TeacherApplicationController {
         ));
     }
 
-    @GetMapping("/users/instructor-applications/{userId}")
+    @GetMapping("/admin/users/instructor-applications/{userId}")
     @Operation(summary = "강사 신청자 상세 조회 (MS-4)")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "강사 신청자 상세 조회 성공"),

@@ -47,4 +47,15 @@ public interface UserQueryUsecase {
             int totalPages
     ) {
     }
+
+    // 관리자 회원관리용 사용자 조회
+    AdminUserListResult getAdminUserList(String role, String status, int page, int size);
+
+    record AdminUserListResult(
+            List<?> users,
+            int page,
+            int size,
+            long totalElements,
+            int totalPages
+    ) {}
 }

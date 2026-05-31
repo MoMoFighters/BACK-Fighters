@@ -11,20 +11,18 @@ import com.wanted.momocity.user.application.usecase.UserCommandUsecase;
 import com.wanted.momocity.user.application.usecase.UserQueryUsecase;
 import com.wanted.momocity.user.presentation.api.request.NicknameRequest;
 import com.wanted.momocity.user.presentation.api.request.UpdateUserInfoRequest;
-import com.wanted.momocity.user.presentation.api.response.NicknameRegisterResponse;
-import com.wanted.momocity.user.presentation.api.response.UserInfoUpdateResponse;
-import com.wanted.momocity.user.presentation.api.response.UserResponseCode;
-import com.wanted.momocity.user.presentation.api.response.UserResponseMessage;
+import com.wanted.momocity.user.presentation.api.response.*;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
 
 @RestController
 @RequiredArgsConstructor
@@ -144,5 +142,26 @@ public class UserController {
                 ));
     }
 
+    @GetMapping("/users")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+            summary = "관리자 회원 목록 조회",
+            description = "파라미터 없으면 탈퇴회원 제외 전체 조회. role=STUDENT/TEACHER 또는 status=DELETED 로 필터링")
+    public ResponseEntity<ApiResponse<UserQueryUsecase.AdminUserListResult>> getUserList(
+            @Parameter(description = "회원 역할 필터 (STUDENT / TEACHER), 없으면 전체", example = "TEACHER")
+            @RequestParam(required = false) String role,
+            @Parameter(description = "탈퇴회원 조회 시 DELETED 입력", example = "DELETED")
+            @RequestParam(required = false) String status,
+            @Parameter(description = "페이지 번호 (1-base)", example = "1")
+            @RequestParam(defaultValue = "1") int page,
+            @Parameter(description = "페이지 크기", example = "20")
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(
+                UserResponseCode.SUCCESS,
+                UserResponseMessage.VIEW_SUCCESS,
+                userQueryUsecase.getAdminUserList(role, status, page, size)
+        ));
+    }
 
 }

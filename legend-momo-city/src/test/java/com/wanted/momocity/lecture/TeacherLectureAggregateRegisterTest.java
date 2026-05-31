@@ -7,7 +7,7 @@ import com.wanted.momocity.lecture.application.usecase.LectureQueryUseCase;
 import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.model.LectureCategory;
 import com.wanted.momocity.lecture.domain.model.LectureStatus;
-import com.wanted.momocity.lecture.presentation.api.TeacherLectureController;
+import com.wanted.momocity.lecture.presentation.api.LectureController;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * 강사 강의 등록 API Controller 테스트.
  * 실제 S3, DB, JWT 검증은 사용하지 않고 Controller 요청/응답 흐름만 검증한다.
  */
-@WebMvcTest(TeacherLectureController.class)
+@WebMvcTest(LectureController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class TeacherLectureAggregateRegisterTest {
 

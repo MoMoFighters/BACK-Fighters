@@ -127,9 +127,11 @@ public class SecurityConfig {
                         // 메서드 레벨에서 2차 방호벽 구축
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers("/api/v1/admin/**").hasAnyAuthority("ROLE_ADMIN")
+                        .requestMatchers("/api/v1/reports", "/api/v1/reports/**").hasAnyAuthority("ROLE_ADMIN")
+                        .requestMatchers("/api/v1/error-logs").hasAnyAuthority("ROLE_ADMIN")
                         .requestMatchers("/api/v1/teacher/**").hasAnyAuthority("ROLE_TEACHER")
                         .requestMatchers("/api/v1/auth/login/completed").authenticated()
+                        .requestMatchers("/api/v1/auth/newtoken").authenticated()
                         .requestMatchers("/api/v1/auth/logout").authenticated()
                         // 임시 비밀번호 발급도 인증 토큰 필요
                         .requestMatchers("/api/v1/auth/**").permitAll() // 인증 없이 허용
