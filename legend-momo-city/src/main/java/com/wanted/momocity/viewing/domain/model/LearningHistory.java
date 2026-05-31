@@ -82,7 +82,6 @@ public class LearningHistory {
         if(!this.isCompleted && watchedSeconds >= durationSec * 0.9) {
             this.isCompleted = true;
             this.progressRate = 100;
-            this.watchedSeconds = durationSec;
         }
     }
 
@@ -100,9 +99,12 @@ public class LearningHistory {
      *  -> 실제로 본 위치부터 이어보기
      */
     public void saveLastPosition(int lastPositionSec) {
-        if (this.progressRate >= 90) {
+        if (this.isCompleted) {
+            // isCompleted = ture -> 나간 위치 그대로 저장
             this.lastPositionSec = lastPositionSec;
         } else {
+            // isCompleted = false -> watchedSeconds 로 저장
+            // 앞으로 당기거나 뒤로 간 경우 실제 시청 위치로 되돌림
             this.lastPositionSec = this.watchedSeconds;
         }
     }
