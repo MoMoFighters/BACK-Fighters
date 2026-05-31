@@ -67,6 +67,8 @@ public class TeacherLectureController {
          * 잘못된 카테고리 요청이면 여기서 400 응답으로 끝나고, 썸네일 파일은 업로드 X
          */
         request.validateCategory();
+        // 썸네일 크기 검증
+        request.validateThumbnailSize();
 
         String thumbnailUrl = s3UploadPort.upload(request.thumbnail());
 

@@ -24,6 +24,9 @@ public record CreateLectureRequest(
         MultipartFile thumbnail
 ) {
 
+    // 썸네일 크기 최대 5MB
+    private static final long MAX_THUMBNAIL_SIZE_BYTES = 5 * 1024 * 1024;
+
     // 중복 검증 추가
     public CreateLectureCommand toCommand(Long teacherId, String thumbnailUrl) {
         LectureCategory lectureCategory = parseCategory(category);
@@ -50,4 +53,9 @@ public record CreateLectureRequest(
         }
     }
 
+    public void validateThumbnailSize() {
+        if (thumbnail != null && thumbnail.getSize() > MAX_THUMBNAIL_SIZE_BYTES) {
+            throw new DomainRuleViolationException("썸네일 파일 크기는 5MB 이하만 가능합니다.");
+        }
+    }
 }
