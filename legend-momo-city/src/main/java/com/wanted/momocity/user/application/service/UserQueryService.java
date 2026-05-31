@@ -75,7 +75,7 @@ public class UserQueryService implements UserQueryUsecase {
                 .orElseThrow(() -> new DomainRuleViolationException("해당 강사 신청자를 찾을 수 없습니다."));
     }
 
-    // 관리자 회원관리용ㅇ 회원 조회
+    // 관리자 회원관리용 회원 조회
     @Override
     public AdminUserListResult getAdminUserList(String role, String status, int page, int size) {
         // role이랑 status가 컨트롤러에서 String으로 넘어와서 서비스에서 enum 타입으로 변환
