@@ -96,7 +96,9 @@ public class LectureController {
             summary = "강의 등록",
             description = "강사가 강의를 등록합니다. 썸네일 파일을 포함하므로 multipart/form-data로 요청합니다."
     )
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(
+            value = "",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public ResponseEntity<ApiResponse<CreateLectureResponse>> createLecture(
             Authentication authentication,
