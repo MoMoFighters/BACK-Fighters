@@ -70,7 +70,7 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
      *                     role = 값 있으면 해당 role만
      * */
     @Query("SELECT u FROM UserUser u WHERE " +
-            "u.role <> 'ADMIN' AND (" +
+            "u.role <> 'ADMIN' AND u.status <> 'REJECTED' AND (" +
             "(:status = 'DELETED' AND u.status = :status) OR " +
             "(:status IS NULL AND u.status <> 'DELETED' AND (:role IS NULL OR u.role = :role)))")
     List<UserJpaEntity> findAllForAdmin(
@@ -81,7 +81,7 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
 
     // 관리자 회원 목록 전체 개수 조회 (페이지네이션 totalElements 계산용)
     @Query("SELECT COUNT(u) FROM UserUser u WHERE " +
-            "u.role <> 'ADMIN' AND (" +
+            "u.role <> 'ADMIN' AND u.status <> 'REJECTED' AND (" +
             "(:status = 'DELETED' AND u.status = :status) OR " +
             "(:status IS NULL AND u.status <> 'DELETED' AND (:role IS NULL OR u.role = :role)))")
     long countForAdmin(
