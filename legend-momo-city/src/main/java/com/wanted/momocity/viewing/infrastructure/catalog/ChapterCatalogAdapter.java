@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 
 /*
 * comment.
@@ -135,6 +136,16 @@ public class ChapterCatalogAdapter implements ChapterPort {
 
         return chapters;
 
+    }
+
+    @Override
+    public Optional<Chapter> findByLectureIdAndOrderNo(Long lectureId, int orderNo) {
+        return springDataChapterRepository
+                .findAllByLectureIdOrderByOrderNoAsc(lectureId)
+                .stream()
+                .filter(entity -> entity.getOrderNo() == orderNo)
+                .findFirst()
+                .map(this::toChapter);
     }
 
     /*

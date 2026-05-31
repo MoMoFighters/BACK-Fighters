@@ -4,6 +4,7 @@ import com.wanted.momocity.global.presentation.api.common.ApiErrorResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
 import com.wanted.momocity.viewing.domain.exception.ViewingAccessDeniedException;
 import com.wanted.momocity.viewing.domain.exception.ViewingNotFoundException;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 *  global ApiExceptionHandler 를 건드리지 않고 viewing 예외만 독립적으로 처리
 */
 
+@Order(1)
 @RestControllerAdvice
 public class ViewingExceptionHandler {
 

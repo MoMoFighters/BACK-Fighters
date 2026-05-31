@@ -31,7 +31,8 @@ public record LectureMetaResponse(
             int orderNo,
             int durationSec,
             int progressRate,
-            boolean isCompleted
+            boolean isCompleted,
+            boolean isAccessible
     ) {}
 
 }

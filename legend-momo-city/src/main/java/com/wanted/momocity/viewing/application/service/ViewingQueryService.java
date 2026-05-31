@@ -2,6 +2,7 @@ package com.wanted.momocity.viewing.application.service;
 
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.viewing.application.policy.EnrollmentAccessPolicy;
+import com.wanted.momocity.viewing.application.policy.SequentialAccessPolicy;
 import com.wanted.momocity.viewing.application.port.ChapterPort;
 import com.wanted.momocity.viewing.application.port.EnrollmentPort;
 import com.wanted.momocity.viewing.application.port.LecturePort;
@@ -41,6 +42,7 @@ public class ViewingQueryService implements ViewingQueryUseCase {
     private final EnrollmentPort enrollmentPort;
     private final LearningHistoryRepository learningHistoryRepository;
     private final EnrollmentAccessPolicy enrollmentAccessPolicy;
+    private final SequentialAccessPolicy sequentialAccessPolicy;
 
     @Override
     public StreamingUrlResponse getStreamingUrl(Long userId, Long lectureId, Long chapterId) {
@@ -55,6 +57,9 @@ public class ViewingQueryService implements ViewingQueryUseCase {
         if (!chapter.isPlayable()) {
             throw new DomainRuleViolationException("현재 재생할 수 없는 영상입니다.");
         }
+
+        // 순차 시청 제한 (Policy)
+        sequentialAccessPolicy.ensureSequentialAccess(userId, lectureId, chapterId);  // ← 추가
 
         // S3 Presigned URL 발급
         String presignedUrl = s3Port.generatePresignedUrl(chapter.getVideoUrl());
@@ -110,7 +115,9 @@ public class ViewingQueryService implements ViewingQueryUseCase {
                                             chapter.getOrderNo(),
                                             chapter.getDurationSec(),
                                             history.getProgressRate(),
-                                            history.isCompleted()
+                                            history.isCompleted(),
+                                            chapter.getOrderNo() <= currentChapter.getOrderNo()
+                                            || history.isCompleted()
                                     );
                         })
                                 .toList();
@@ -189,6 +196,15 @@ public class ViewingQueryService implements ViewingQueryUseCase {
         List<LearningHistory> histories = learningHistoryRepository
                 .findByUserIdAndLectureId(userId, lectureId);
 
+        // 현재 챕터 조회
+        LearningHistory currentHistory = learningHistoryRepository
+                .findLatestByUserIdAndLectureId(userId, lectureId)
+                .orElse(null);
+
+        int currentOrderNo = currentHistory != null
+                ? chapterPort.findById(currentHistory.getChapterId()).getOrderNo()
+                : 1;  // 시청 기록 없으면 1번 챕터
+
         // 챕터별 전체 진척도 매핑
         List<ChapterProgressResponse.ChapterProgressItem> items = chapters.stream()
                 .map(chapter -> {
@@ -198,10 +214,15 @@ public class ViewingQueryService implements ViewingQueryUseCase {
                             .findFirst()
                             .orElse(LearningHistory.create(userId, lectureId, chapter.getId()));
 
+                    // isAccessible 계산
+                    boolean isAccessible = chapter.getOrderNo() <= currentOrderNo
+                            || history.isCompleted();
+
                     return new ChapterProgressResponse.ChapterProgressItem(
                             chapter.getId(), chapter.getTitle(), chapter.getOrderNo(),
                             Math.min(history.getWatchedSeconds(), chapter.getDurationSec()), chapter.getDurationSec(),
-                            history.getProgressRate(), history.isCompleted()
+                            history.getProgressRate(), history.isCompleted(),
+                            isAccessible
                     );
                 })
                 .toList();
@@ -242,6 +263,8 @@ public class ViewingQueryService implements ViewingQueryUseCase {
         // MyLecturesResponse 로 래핑하여 반환
         return new MyLecturesResponse(lectures);
     }
+
+
 
     // private 메서드 (내부 로직)
     // enrollment 진척도 재계산 및 저장

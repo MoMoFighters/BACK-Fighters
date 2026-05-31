@@ -3,6 +3,7 @@ package com.wanted.momocity.viewing.application.port;
 import com.wanted.momocity.viewing.domain.model.Chapter;
 
 import java.util.List;
+import java.util.Optional;
 
 /*
 * comment.
@@ -19,5 +20,8 @@ public interface ChapterPort {
     // 강의의 전체 챕터 조회 목록
     // totalProgress 계산 시 durationSec 합산에 사용
     List<Chapter> findAllByLectureId (Long lectureId);
+
+    // 이전 챕터 조회용
+    Optional<Chapter> findByLectureIdAndOrderNo(Long lectureId, int orderNo);
 
 }
