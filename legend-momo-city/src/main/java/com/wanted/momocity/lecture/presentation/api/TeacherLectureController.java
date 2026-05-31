@@ -156,17 +156,18 @@ public class TeacherLectureController {
                 ));
     }
 
-    // 강의 상태 변경 API
+    // 강사 강의 상태 WAITING 요청 API
     @Operation(
-            summary = "강의 상태 변경",
+            summary = "강사 강의 등록 시 강의 상태 WAITING 상태 변경",
             description = """
-                관리자는 강사가 등록한 강의의 상태를 변경합니다.
-                ACTIVE 상태로 변경하려면 챕터가 최소 1개 이상 있어야 하고,
+                관리자만 강사가 등록한 강의의 상태를 변경합니다.
+                강사는 강의 등록 성공 시 강의 상태가 WAITING으로 변경됩니다.
+                WAITING이 되려면 탭터가 1개 이상 있어야 하고,
                 모든 챕터에 동영상이 등록되어 있어야 합니다.
                 """
     )
     @PatchMapping("/{lectureId}/status")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
     public ResponseEntity<ApiResponse<ChangeLectureStatusResponse>> changeLectureStatus(
             Authentication authentication,
             @PathVariable Long lectureId,
