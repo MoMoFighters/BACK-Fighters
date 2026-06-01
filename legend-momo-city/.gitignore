@@ -18,7 +18,7 @@ bin/
 !**/src/test/**/bin/
 
 ### IntelliJ IDEA ###
-.idea
+.idea/
 *.iws
 *.iml
 *.ipr
@@ -37,5 +37,5 @@ out/
 .vscode/
 
 ### Yaml (환경별 비밀값 박힌 파일만 무시) ###
-application-local.yaml
-application-prod.yaml
+application.yaml
+application-dev.yaml

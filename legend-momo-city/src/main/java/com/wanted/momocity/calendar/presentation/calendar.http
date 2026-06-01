@@ -1,0 +1,356 @@
+### ==========================================
+### Calendar API 전체 테스트
+### ==========================================
+@token = eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxIiwicm9sZXMiOiJST0xFX1NUVURFTlQiLCJpYXQiOjE3Nzk5Nzc3MDksImV4cCI6MTc3OTk4MTMwOX0.n85VC_QqrRnrMAEx3RZIzDa90hYc-hz1QYilaLHlsK2ZYe63WOMdrtbovdLMxij94uSU7xAn7MeQoC4GfqBwrw
+
+###
+
+### ==========================================
+### 정상 케이스
+### ==========================================
+
+### 1. 날짜별 캘린더 조회 - 정상
+GET http://localhost:8080/api/v1/calendar/monthly?month=2026-05-01
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+###
+
+### 2. Todo 등록 - 정상
+POST http://localhost:8080/api/v1/calendar/todo
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "모모파이터즈 화이팅",
+  "start": "2026-05-27"
+}
+
+###
+
+### 3. Todo 수정 - 정상 (2번 실행 후 calendarId 확인 후 수정)
+PATCH http://localhost:8080/api/v1/calendar/todo/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "수정된 내용",
+  "start": "2026-05-28"
+}
+
+###
+
+### 4. Todo 체크 상태 변경 - 정상 (완료 처리)
+PATCH http://localhost:8080/api/v1/calendar/todo/1/check
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "isCompleted": true
+}
+
+###
+
+### 5. Todo 체크 상태 변경 - 정상 (미완료 처리)
+PATCH http://localhost:8080/api/v1/calendar/todo/1/check
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "isCompleted": false
+}
+
+###
+
+### 6. Todo 삭제 - 정상
+DELETE http://localhost:8080/api/v1/calendar/todo/1
+Authorization: Bearer {{token}}
+
+###
+
+### 7. Memo 등록 - 정상 (end 있는 경우)
+POST http://localhost:8080/api/v1/calendar/memo
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "생일",
+  "start": "2026-05-27",
+  "end": "2026-05-28"
+}
+
+###
+
+### 8. Memo 등록 - 정상 (end 없는 경우)
+POST http://localhost:8080/api/v1/calendar/memo
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "생일",
+  "start": "2026-05-27"
+}
+
+###
+
+### 9. Memo 수정 - 정상
+PATCH http://localhost:8080/api/v1/calendar/memo/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "수정된 메모",
+  "start": "2026-05-27",
+  "end": "2026-05-29"
+}
+
+###
+
+### 10. Memo 삭제 - 정상
+DELETE http://localhost:8080/api/v1/calendar/memo/1
+Authorization: Bearer {{token}}
+
+###
+
+### ==========================================
+### 400 Bad Request 케이스
+### ==========================================
+
+### 11. Todo 등록 - title 없음 (400 예상)
+POST http://localhost:8080/api/v1/calendar/todo
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "start": "2026-05-27"
+}
+
+###
+
+### 12. Todo 등록 - start 없음 (400 예상)
+POST http://localhost:8080/api/v1/calendar/todo
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "모모파이터즈 화이팅"
+}
+
+###
+
+### 13. Todo 등록 - 전체 빈값 (400 예상)
+POST http://localhost:8080/api/v1/calendar/todo
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{}
+
+###
+
+### 14. Memo 등록 - title 없음 (400 예상)
+POST http://localhost:8080/api/v1/calendar/memo
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "start": "2026-05-27",
+  "end": "2026-05-28"
+}
+
+###
+
+### 15. Memo 등록 - start 없음 (400 예상)
+POST http://localhost:8080/api/v1/calendar/memo
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "생일",
+  "end": "2026-05-28"
+}
+
+###
+
+### 16. Memo 등록 - end < start (400 예상)
+POST http://localhost:8080/api/v1/calendar/memo
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "생일",
+  "start": "2026-05-27",
+  "end": "2026-05-20"
+}
+
+###
+
+### 17. Memo 수정 - end < start (400 예상)
+PATCH http://localhost:8080/api/v1/calendar/memo/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "수정된 메모",
+  "start": "2026-05-27",
+  "end": "2026-05-20"
+}
+
+###
+
+### 18. Todo 체크 - isCompleted 없음 (400 예상)
+PATCH http://localhost:8080/api/v1/calendar/todo/1/check
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{}
+
+###
+
+### 19. 날짜 파라미터 없음 (400 예상)
+GET http://localhost:8080/api/v1/calendar/daily
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+###
+
+### ==========================================
+### 401 Unauthorized 케이스
+### ==========================================
+
+### 20. 토큰 없이 Todo 등록 (401 예상)
+POST http://localhost:8080/api/v1/calendar/todo
+Content-Type: application/json
+
+{
+  "title": "모모파이터즈 화이팅",
+  "start": "2026-05-27"
+}
+
+###
+
+### 21. 토큰 없이 날짜별 조회 (401 예상)
+GET http://localhost:8080/api/v1/calendar/daily?date=2026-05-27
+Content-Type: application/json
+
+###
+
+### 22. 잘못된 토큰 (401 예상)
+POST http://localhost:8080/api/v1/calendar/todo
+Content-Type: application/json
+Authorization: Bearer wrong_token
+
+{
+  "title": "모모파이터즈 화이팅",
+  "start": "2026-05-27"
+}
+
+###
+
+### ==========================================
+### 404 Not Found 케이스
+### ==========================================
+
+### 23. 없는 Todo 수정 (404 예상)
+PATCH http://localhost:8080/api/v1/calendar/todo/9999
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "수정된 내용",
+  "start": "2026-05-27"
+}
+
+###
+
+### 24. 없는 Todo 삭제 (404 예상)
+DELETE http://localhost:8080/api/v1/calendar/todo/9999
+Authorization: Bearer {{token}}
+
+###
+
+### 25. 없는 Todo 체크 (404 예상)
+PATCH http://localhost:8080/api/v1/calendar/todo/9999/check
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "isCompleted": true
+}
+
+###
+
+### 26. 없는 Memo 수정 (404 예상)
+PATCH http://localhost:8080/api/v1/calendar/memo/9999
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "수정된 메모",
+  "start": "2026-05-27",
+  "end": "2026-05-29"
+}
+
+###
+
+### 27. 없는 Memo 삭제 (404 예상)
+DELETE http://localhost:8080/api/v1/calendar/memo/9999
+Authorization: Bearer {{token}}
+
+###
+
+### ==========================================
+### 403 Forbidden 케이스
+### (userId 가 다른 유저 데이터 접근 시)
+### JWT 완성 후 테스트 가능
+### ==========================================
+
+### 28. 다른 유저의 Todo 수정 (403 예상)
+### userId = 2L 토큰으로 userId = 1L 데이터 접근
+PATCH http://localhost:8080/api/v1/calendar/todo/1
+Content-Type: application/json
+Authorization: Bearer {{other_user_token}}
+
+{
+  "title": "수정된 내용",
+  "start": "2026-05-27"
+}
+
+###
+
+### 29. 다른 유저의 Todo 삭제 (403 예상)
+DELETE http://localhost:8080/api/v1/calendar/todo/1
+Authorization: Bearer {{other_user_token}}
+
+###
+
+### 30. 다른 유저의 Memo 수정 (403 예상)
+PATCH http://localhost:8080/api/v1/calendar/memo/1
+Content-Type: application/json
+Authorization: Bearer {{other_user_token}}
+
+{
+  "title": "수정된 메모",
+  "start": "2026-05-27"
+}
+
+###
+
+### 31. 다른 유저의 Memo 삭제 (403 예상)
+DELETE http://localhost:8080/api/v1/calendar/memo/1
+Authorization: Bearer {{other_user_token}}
+
+###
+
+### ==========================================
+### 도메인 규칙 위반 케이스
+### ==========================================
+
+### 32. Memo 에 check 요청 (400 예상)
+### Memo calendarId 로 요청해야 함
+PATCH http://localhost:8080/api/v1/calendar/todo/2/check
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "isCompleted": true
+}

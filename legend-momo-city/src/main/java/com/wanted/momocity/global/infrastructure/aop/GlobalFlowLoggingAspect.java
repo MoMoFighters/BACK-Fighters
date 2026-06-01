@@ -43,10 +43,11 @@ public class GlobalFlowLoggingAspect {
     private static final String TRACE_ID_KEY = "momoTraceId";
 
     @Around("""
-            execution(* com.wanted.momocity..presentation..*(..)) ||
-            execution(* com.wanted.momocity..application..*(..)) ||
-            execution(* com.wanted.momocity..infrastructure..*(..))
-            """)
+        (execution(* com.wanted.momocity..presentation..*(..)) ||
+        execution(* com.wanted.momocity..application..*(..)) ||
+        execution(* com.wanted.momocity..infrastructure..*(..)))
+        && !within(com.wanted.momocity..global..*)
+        """)
     public Object traceGlobalFlow(ProceedingJoinPoint joinPoint) throws Throwable {
         boolean rootTrace = ensureTraceId();
         String layer = resolveLayer(joinPoint);
@@ -55,17 +56,19 @@ public class GlobalFlowLoggingAspect {
         String traceId = MDC.get(TRACE_ID_KEY);
         long startedAt = System.currentTimeMillis();
 
-        log.info("[momocity-흐름][{}] 진입 | 컨텍스트={} | 계층={} | 메서드={}",
+        // 팀원과 협의 완료 (log.info -> log.debug)
+        log.debug("[momocity-흐름][{}] 진입 | 컨텍스트={} | 계층={} | 메서드={}",
                 traceId, context, layer, method);
 
         try {
             Object result = joinPoint.proceed();
             long elapsedMs = System.currentTimeMillis() - startedAt;
-            log.info("[momocity-흐름][{}] 종료 | 컨텍스트={} | 계층={} | 메서드={} | 소요시간={}ms",
+            log.debug("[momocity-흐름][{}] 종료 | 컨텍스트={} | 계층={} | 메서드={} | 소요시간={}ms",
                     traceId, context, layer, method, elapsedMs);
             return result;
         } catch (Throwable throwable) {
             long elapsedMs = System.currentTimeMillis() - startedAt;
+            // 예외는 항상 있어야하기 때문에 유지
             log.warn(
                     "[momocity-흐름][{}] 예외 발생 | 컨텍스트={} | 계층={} | 메서드={} | 소요시간={}ms | 예외메시지={}",
                     traceId, context, layer, method, elapsedMs,
@@ -77,6 +80,43 @@ public class GlobalFlowLoggingAspect {
                 MDC.remove(TRACE_ID_KEY);
             }
         }
+    }
+
+        /* comment.
+            서비스 계층의 입출력 추적 어드바이스
+            그룹화 및 TRACE_ID_KEY 상수를 공유하기 때문에 동일한 클래스에서 진행 / 추후 어드바이스가 늘어난다면 분리 예정
+            흐름 추적 어드바이스는 DEBUG 로 강등되었기 때문에 발표할 때는 주석 또는 나오지 않게 처리
+         */
+
+    @Around("execution(* com.wanted.momocity..application.service..*(..))")
+    public Object logServiceIo(ProceedingJoinPoint joinPoint) throws Throwable {
+        String traceId = MDC.get(TRACE_ID_KEY);
+        String method = joinPoint.getSignature().toShortString();
+        Object[] args = joinPoint.getArgs();
+
+        log.info("[momocity-서비스][{}] 입력 | 메서드={} | 인자={}",
+                traceId, method, formatArgs(args));
+
+        Object result = joinPoint.proceed();
+
+        log.info("[momocity-서비스][{}] 출력 | 메서드={} | 반환={}",
+                traceId, method, formatResult(result));
+
+        return result;
+    }
+
+    private String formatArgs(Object[] args) {
+        if (args == null || args.length == 0) {
+            return "(없음)";
+        }
+        return java.util.Arrays.toString(args);
+    }
+
+    private String formatResult(Object result) {
+        if (result == null) {
+            return "(반환값 없음)";
+        }
+        return result.toString();
     }
 
     private boolean ensureTraceId() {
@@ -142,4 +182,5 @@ public class GlobalFlowLoggingAspect {
         }
         return message;
     }
+
 }
