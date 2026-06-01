@@ -21,8 +21,6 @@ public class SignupPolicy {
             throw new DomainRuleViolationException("이미 가입된 이메일입니다.");
         }
 
-        // 강사 파일 검증
-
         // 이메일 인증 여부 확인
         if (!emailCodePort.isVerified(email)) {
             throw new EmailNotVerifiedException("이메일 인증이 필요합니다.");
