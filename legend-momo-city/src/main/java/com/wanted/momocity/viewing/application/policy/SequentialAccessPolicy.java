@@ -7,6 +7,8 @@ import com.wanted.momocity.viewing.domain.model.Chapter;
 import com.wanted.momocity.viewing.domain.model.LearningHistory;
 import com.wanted.momocity.viewing.domain.repository.LearningHistoryRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 /*
@@ -27,6 +29,15 @@ public class SequentialAccessPolicy {
     private final LearningHistoryRepository learningHistoryRepository;
 
     public void ensureSequentialAccess(Long userId, Long lectureId, Long chapterId) {
+
+        // 관리자/강사는 순차 시청 제한 없음
+        Authentication auth = SecurityContextHolder
+                .getContext().getAuthentication();
+        if (auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")
+                        || a.getAuthority().equals("ROLE_INSTRUCTOR"))) {
+            return;
+        }
 
         Chapter chapter = chapterPort.findById(chapterId);
 
