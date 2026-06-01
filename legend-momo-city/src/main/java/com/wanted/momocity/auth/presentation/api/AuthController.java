@@ -2,6 +2,7 @@ package com.wanted.momocity.auth.presentation.api;
 
 import com.wanted.momocity.auth.application.command.*;
 import com.wanted.momocity.auth.application.port.TokenProviderPort;
+import com.wanted.momocity.auth.domain.exception.MissingProofException;
 import com.wanted.momocity.auth.domain.exception.MissingTokenException;
 import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.global.application.s3.S3UploadPort;
@@ -71,6 +72,10 @@ public class AuthController {
     })
     public ResponseEntity<ApiResponse<Void>> teacherSignup (
             @Valid @ModelAttribute TeacherSignupRequest request){
+
+        if (request.proof() == null || request.proof().isEmpty()) {
+            throw new MissingProofException("증빙 자료는 필수 제출입니다.");
+        }
 
         String proofUrl = s3UploadPort.upload(request.proof());  // 여기서 선언하고 값 넣어줌
 
