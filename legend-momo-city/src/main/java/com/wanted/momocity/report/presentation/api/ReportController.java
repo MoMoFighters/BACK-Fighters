@@ -1,5 +1,6 @@
 package com.wanted.momocity.report.presentation.api;
 
+import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
 import com.wanted.momocity.report.application.command.SubmitReportCommand;
@@ -14,7 +15,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -54,6 +56,7 @@ public class ReportController {
     private final ReportCommandUseCase reportCommandUseCase;
 
     @PostMapping
+    @PreAuthorize("isAuthenticated()") // 신고는 로그인 회원이면 누구나 (직군 제한 없음) — 인가를 어노테이션으로 명시
     @Operation(
             summary = "신고 접수",
             description = "로그인한 회원이 게시글/댓글/회원/강의를 신고한다."
@@ -67,14 +70,14 @@ public class ReportController {
                     responseCode = "401", description = "인증 토큰 누락 또는 만료")
     })
     public ResponseEntity<ApiResponse<SubmitReportResponse>> submitReport(
-            Authentication authentication,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody SubmitReportRequest request
     ) {
-        // 1. Authentication 에서 신고자 email 추출
-        String reporterEmail = authentication.getName();
+        // 1. 인증 principal 에서 신고자 userId 추출 (FriendController 와 동일 방식)
+        Long reporterUserId = userDetails.getUserId();
 
         // 2. Request → Command 변환 (Request 의 toCommand 메서드 활용)
-        SubmitReportCommand command = request.toCommand(reporterEmail);
+        SubmitReportCommand command = request.toCommand(reporterUserId);
 
         // 3. UseCase 호출 → 도메인 객체 반환
         Report report = reportCommandUseCase.submitReport(command);
