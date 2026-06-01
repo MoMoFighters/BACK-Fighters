@@ -72,7 +72,8 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
     @Query("SELECT u FROM UserUser u WHERE " +
             "u.role <> 'ADMIN' AND u.status <> 'REJECTED' AND (" +
             "(:status = 'DELETED' AND u.status = :status) OR " +
-            "(:status IS NULL AND u.status <> 'DELETED' AND (:role IS NULL OR u.role = :role)))")
+            "(:status IS NULL AND u.status <> 'DELETED' AND (:role IS NULL OR u.role = :role))) " +
+            "ORDER BY u.createdAt DESC")
     List<UserJpaEntity> findAllForAdmin(
             @Param("role") Role role,
             @Param("status") Status status,
@@ -83,7 +84,8 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
     @Query("SELECT COUNT(u) FROM UserUser u WHERE " +
             "u.role <> 'ADMIN' AND u.status <> 'REJECTED' AND (" +
             "(:status = 'DELETED' AND u.status = :status) OR " +
-            "(:status IS NULL AND u.status <> 'DELETED' AND (:role IS NULL OR u.role = :role)))")
+            "(:status IS NULL AND u.status <> 'DELETED' AND (:role IS NULL OR u.role = :role))) " +
+            "ORDER BY u.createdAt DESC")
     long countForAdmin(
             @Param("role") Role role,
             @Param("status") Status status
