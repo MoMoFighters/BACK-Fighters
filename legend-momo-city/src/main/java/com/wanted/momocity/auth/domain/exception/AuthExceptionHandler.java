@@ -170,4 +170,15 @@ public class AuthExceptionHandler {
                 ));
     }
 
+    // 강사 증빙자료 누락
+    @ExceptionHandler(MissingProofException.class)
+    public ResponseEntity<ApiErrorResponse> handleMissingProof(MissingProofException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiErrorResponse.of(
+                        HttpStatus.BAD_REQUEST.value(),
+                        "MISSING_PROOF",
+                        e.getMessage()
+                ));
+    }
+
 }
