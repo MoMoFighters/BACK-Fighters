@@ -109,6 +109,24 @@ public class ViewingQueryService implements ViewingQueryUseCase {
                                     .findFirst()
                                     .orElse(LearningHistory.create(userId, lectureId, chapter.getId()));
 
+                            // isAccessible 계산
+                            // 1. 첫 번째 챕터는 무조건 접근 가능
+                            // 2. 본인 챕터가 완료됐으면 접근 가능
+                            // 3. 이전 챕터가 완료됐으면 접근 가능
+                            boolean isAccessible =
+                                    // 첫 챕터는 무조건
+                                    chapter.getOrderNo() == 1
+                                            // 본인이 완료한 챕터
+                                            || history.isCompleted()
+                                            // 이전 챕터가 완료된 경우
+                                            || chapters.stream()
+                                            .filter(c -> c.getOrderNo() == chapter.getOrderNo() - 1)
+                                            .findFirst()
+                                            .map(prevChapter -> histories.stream()
+                                                    .anyMatch(h -> h.getChapterId().equals(prevChapter.getId())
+                                                            && h.isCompleted()))
+                                            .orElse(false);
+
                                     return new LectureMetaResponse.ChapterItem(
                                             chapter.getId(),
                                             chapter.getTitle(),
@@ -116,8 +134,7 @@ public class ViewingQueryService implements ViewingQueryUseCase {
                                             chapter.getDurationSec(),
                                             history.getProgressRate(),
                                             history.isCompleted(),
-                                            chapter.getOrderNo() <= currentChapter.getOrderNo()
-                                            || history.isCompleted()
+                                            isAccessible
                                     );
                         })
                                 .toList();
@@ -215,8 +232,22 @@ public class ViewingQueryService implements ViewingQueryUseCase {
                             .orElse(LearningHistory.create(userId, lectureId, chapter.getId()));
 
                     // isAccessible 계산
-                    boolean isAccessible = chapter.getOrderNo() <= currentOrderNo
-                            || history.isCompleted();
+                    // 1. 첫 번째 챕터는 무조건 접근 가능
+                    // 2. 본인 챕터가 완료됐으면 접근 가능
+                    // 3. 이전 챕터가 완료됐으면 접근 가능
+                    boolean isAccessible =
+                            // 첫 챕터는 무조건
+                            chapter.getOrderNo() == 1
+                                    // 본인이 완료한 챕터
+                                    || history.isCompleted()
+                                    // 이전 챕터가 완료된 경우
+                                    || chapters.stream()
+                                    .filter(c -> c.getOrderNo() == chapter.getOrderNo() - 1)
+                                    .findFirst()
+                                    .map(prevChapter -> histories.stream()
+                                            .anyMatch(h -> h.getChapterId().equals(prevChapter.getId())
+                                                    && h.isCompleted()))
+                                    .orElse(false);
 
                     return new ChapterProgressResponse.ChapterProgressItem(
                             chapter.getId(), chapter.getTitle(), chapter.getOrderNo(),

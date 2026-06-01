@@ -126,7 +126,7 @@ public class LectureChapter {
                 videoUrl,
                 videoSizeBytes,
                 durationSec,
-                VideoStatus.UPLOADING,
+                VideoStatus.READY,
                 originalFilename,
                 createdAt,
                 updatedAt
