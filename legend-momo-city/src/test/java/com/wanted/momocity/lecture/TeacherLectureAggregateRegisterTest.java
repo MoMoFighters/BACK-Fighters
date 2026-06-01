@@ -1,12 +1,16 @@
-﻿package com.wanted.momocity.lecture;
+package com.wanted.momocity.lecture;
 
 import com.wanted.momocity.global.application.s3.S3UploadPort;
+import com.wanted.momocity.lecture.application.usecase.AdminLectureCommandUseCase;
+import com.wanted.momocity.lecture.application.usecase.AdminLectureQueryUseCase;
 import com.wanted.momocity.lecture.application.usecase.ChapterCommandUseCase;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCase;
 import com.wanted.momocity.lecture.application.usecase.LectureQueryUseCase;
 import com.wanted.momocity.lecture.domain.model.LectureAggregate;
+import com.wanted.momocity.lecture.domain.model.LectureChapter;
 import com.wanted.momocity.lecture.domain.model.LectureCategory;
 import com.wanted.momocity.lecture.domain.model.LectureStatus;
+import com.wanted.momocity.lecture.domain.model.VideoStatus;
 import com.wanted.momocity.lecture.presentation.api.LectureController;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -38,7 +42,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc(addFilters = false)
 class TeacherLectureAggregateRegisterTest {
 
-    private static final String CREATE_LECTURE_URL = "/api/v1/teacher/lectures";
+    private static final String CREATE_LECTURE_URL = "/api/v1/lectures";
 
     @Autowired
     private MockMvc mockMvc;
@@ -54,6 +58,12 @@ class TeacherLectureAggregateRegisterTest {
     // TeacherLectureController 생성자 의존성 때문에 필요하다.
     @MockitoBean
     private LectureQueryUseCase lectureQueryUseCase;
+
+    @MockitoBean
+    private AdminLectureQueryUseCase adminLectureQueryUseCase;
+
+    @MockitoBean
+    private AdminLectureCommandUseCase adminLectureCommandUseCase;
 
     // 실제 S3 업로드 대신 URL만 반환하도록 Mock 처리한다.
     @MockitoBean
@@ -117,6 +127,58 @@ class TeacherLectureAggregateRegisterTest {
 
         verify(s3UploadPort).upload(any());
         verify(lectureCommandUseCase).createLecture(any());
+    }
+
+    @Test
+    @DisplayName("강사가 챕터 동영상을 등록하면 업로드 UseCase로 파일을 전달한다")
+    void registerChapterVideoSuccess() throws Exception {
+        LocalDateTime now = LocalDateTime.of(2026, 5, 19, 11, 0);
+        String videoUrl = "https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/video.mp4";
+
+        LectureChapter chapter = LectureChapter.restore(
+                20L,
+                10L,
+                "1강. OT",
+                1,
+                videoUrl,
+                10L,
+                120,
+                VideoStatus.UPLOADING,
+                "lesson.mp4",
+                now,
+                now
+        );
+
+        when(chapterCommandUseCase.registerChapterVideo(any()))
+                .thenReturn(chapter);
+
+        MockMultipartFile video = new MockMultipartFile(
+                "video",
+                "lesson.mp4",
+                "video/mp4",
+                "fake-video".getBytes()
+        );
+
+        mockMvc.perform(multipart("/api/v1/lectures/{lectureId}/chapters/{chapterId}/video", 10L, 20L)
+                        .file(video)
+                        .param("durationSec", "120")
+                        .principal(teacherAuthentication())
+                        .with(request -> {
+                            request.setMethod("PATCH");
+                            return request;
+                        }))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(200))
+                .andExpect(jsonPath("$.code").value("COMMON-SUCCESS"))
+                .andExpect(jsonPath("$.data.chapterId").value(20))
+                .andExpect(jsonPath("$.data.lectureId").value(10))
+                .andExpect(jsonPath("$.data.videoUrl").value(videoUrl))
+                .andExpect(jsonPath("$.data.videoSizeBytes").value(10))
+                .andExpect(jsonPath("$.data.durationSec").value(120))
+                .andExpect(jsonPath("$.data.videoStatus").value("UPLOADING"))
+                .andExpect(jsonPath("$.data.originalFilename").value("lesson.mp4"));
+
+        verify(chapterCommandUseCase).registerChapterVideo(any());
     }
 
     @Test
