@@ -14,14 +14,14 @@ import com.wanted.momocity.report.domain.model.ReportTargetType;
        → Command : 응용 계층
        → 두 계층을 분리하면 HTTP 구조 바뀌어도 Command 는 안바뀐다.
     5. 필드 5개 의미
-       - reporterEmail : 신고자의 로그인 email
+       - reporterUserId : 신고자의 userId (인증 principal 에서 추출)
        - targetType : 신고 대상 종류
        - targetId : 신고 대상 ID
        - reason : 신고 사유 ENUM
        - detail : 자유 설명
  */
 public record SubmitReportCommand(
-        String reporterEmail,
+        Long reporterUserId,
         ReportTargetType targetType,
         Long targetId,
         ReportReason reason,

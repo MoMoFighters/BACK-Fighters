@@ -51,9 +51,9 @@ public record SubmitReportRequest(
         String detail
 ) {
 
-    public SubmitReportCommand toCommand(String reporterEmail) {
+    public SubmitReportCommand toCommand(Long reporterUserId) {
         return new SubmitReportCommand(
-                reporterEmail,
+                reporterUserId,
                 targetType,
                 targetId,
                 reason,
