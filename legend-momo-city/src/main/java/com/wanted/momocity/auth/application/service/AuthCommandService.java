@@ -94,6 +94,10 @@ public class AuthCommandService implements AuthCommandUsecase {
 
         // 정책 확인
         signupPolicy.ensureEligible(command.email());
+        // 강사 증빙자료 누락 방지
+        if (command.proof() == null || command.proof().isEmpty()) {
+            throw new IllegalArgumentException("증빙 자료는 필수 제출입니다.");
+        }
 
         // 이메일(id), 비밀번호, 이름, 카테고리, 증빙자료 url 넘겨서 새로운 강사 자바 객체 생성
         User user = userRepository.register(User.teacherRegister(command.email(), passwordEncoder.encode(command.password()), command.name(), command.category(),command.proof()));

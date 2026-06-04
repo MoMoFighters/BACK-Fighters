@@ -486,7 +486,7 @@ public class LectureController {
     private String getRole(Authentication authentication) {
         return authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
-                .filter(authority -> authority.startsWith("ROLE_"))
+//                .filter(authority -> authority.startsWith("ROLE_"))
                 .findFirst()
                 .orElseThrow(() -> new DomainRuleViolationException("사용자 권한 정보가 없습니다."));
     }
