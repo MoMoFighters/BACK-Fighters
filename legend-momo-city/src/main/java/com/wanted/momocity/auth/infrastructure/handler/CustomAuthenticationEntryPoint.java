@@ -19,12 +19,9 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
 
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
         response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write("""
-                {
-                    "success": false,
-                    "message": "다시 로그인 해주세요."
-                }
-                """);
+        response.getWriter().write(
+                "{\"timestamp\": \"" + java.time.LocalDateTime.now() + "\", \"status\": 401, \"code\": \"UNAUTHORIZED\", \"message\": \"다시 로그인 해주세요.\"}"
+        );
     }
 
 
