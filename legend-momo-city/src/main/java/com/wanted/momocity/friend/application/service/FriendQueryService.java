@@ -15,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 //포트가 만든 문을 통해 기능 처리
 @Service
@@ -27,8 +29,9 @@ public class FriendQueryService implements FriendQueryUseCase {
     //충돌 회피로 친구 기능 관련 수강 테이블 인테페이스 저장소
     private final FriendSideEnrollmentRepository friendSideEnrollmentRepository;
 
+    //친구 목록 조회
     @Override
-    public List<FriendView> handle(Long userId) {
+    public List<FriendView> getFriendQueryHandle(Long userId) {
         log.info("[FriendQueryService] 친구 목록 조회 요청 진입 - 조회 요청 유저ID: {}", userId);
 
         //어댑터와 타 영역 저장소로부터 날 것의 데이터 로드
@@ -83,5 +86,207 @@ public class FriendQueryService implements FriendQueryUseCase {
         //가공이 끝나고 최종 리턴하기 직전 기록
         log.info("[FriendQueryService]최종 친구 목록 가공 완료 - 반환할 DTO 개수: {}개", result.size());
         return result;
+    }
+
+    //사용자 검색
+    @Override
+    public List<FindView> findUserQueryHandle(Long userId, String findNickname) {
+        log.info("[FindUserQueryService] 사용자 검색 시작 - 요청자ID: {}, 검색 키워드: '{}'", userId, findNickname);
+
+        //어댑터들로부터 가공되지 않은 순수 데이터 로드
+        List<UserWithFMJpaEntity> foundUsers = friendRepository.findUsersByNicknameKeyword(findNickname);
+        List<FriendJpaEntity> myRelations = friendRepository.findAllMyRelations(userId);
+        List<EnrollmentWithFMJpaEntity> myEnrollments = friendSideEnrollmentRepository.findByUserId_Id(userId);
+
+        log.info("[FindUserQueryService] 원본 데이터 로드 완료 - 검색된 총 유저: {}명, 나와 엮인 전체 관계: {}건", foundUsers.size(), myRelations.size());
+
+        //로그인한 유저의 친구 관계들을 상대방 유저ID를 key로하는 Map으로 변환(매칭 속도 향상)
+        Map<Long, FriendJpaEntity> relationMap = myRelations.stream()
+                .collect(Collectors.toMap(
+                        relation -> relation.getFromUserId().getId().equals(userId) ? relation.getToUserId().getId() : relation.getFromUserId().getId(),
+                        relation -> relation,
+                        (existing, replacement) -> existing //혹시 모를 중복 데이터 방어
+                ));
+
+        List<FindView> result = new ArrayList<>();
+
+        //검색된 전체 사용자를 기준으로 한번 루프 돌기(친구가 아니어도 나옴)
+        for (UserWithFMJpaEntity targetUser : foundUsers) {
+
+            //로그인한 유저 본인은 제외
+            if (targetUser.getId().equals(userId)) continue;
+
+            //관리자 역할은 검색 결과에서 제외
+            if ("ADMIN".equals(targetUser.getRole())) {
+                log.info("[FindUserQueryService] 보안 정첵(ADMIN)에 따른 유저 노출 제외 - 대상 유저 ID: {}", targetUser.getId());
+                continue;
+            }
+
+            //친구 상태 알아내기 (없으면 none으로 가공)
+            String status = "none";
+            if (relationMap.containsKey(targetUser.getId())) {
+                status = relationMap.get(targetUser.getId()).getStatus();
+            }
+
+            //차단 상태인 유저는 노출 안됨
+            if ("BLOCK".equals(status)) {
+                log.info("[FindUserQueryService] 기획 정책(차단)에 따른 유저 노출 제외 - 대상 유저ID: {}", targetUser.getId());
+                continue;
+            }
+
+            String originalNickname = targetUser.getNickname();
+
+            //강사 쪽에는 강의명
+            List<String> lectureTitleList = new ArrayList<>();
+            if ("ACTIVE".equals(targetUser.getStatus()) && "TEACHER".equals(targetUser.getRole()) && "FRIEND".equals(status)) {
+                for (EnrollmentWithFMJpaEntity enrollment : myEnrollments) {
+                    LectureWithFMJpaEntity lecture = enrollment.getLectureId();
+
+                    //로그인한 유저와 친구인 강사와 연결된 수강 강의명
+                    if (lecture.getTeacherId().getId().equals(targetUser.getId())) {
+                        lectureTitleList.add(lecture.getTitle());
+                    }
+                }
+            }
+
+            //내부 전용 주머니(FinView)에 결과 담기
+            result.add(new FindView(
+                    targetUser.getId(),
+                    targetUser.getName(),
+                    originalNickname,
+                    status,
+                    targetUser.getRole(),
+                    !"ACTIVE".equals(targetUser.getStatus()), //비활성 여부
+                    lectureTitleList,
+                    targetUser.getProfileImageUrl()
+            ));
+        }
+
+        log.info("[FindUserQueryService] 사용자 검색 가공 완료 - 최종 반환 결과: {}개", result.size());
+        return result;
+    }
+
+    //보낸 친구 요청 목록
+    @Override
+    public List<SentRequestView> getSentRequestFriendQueryHandle(Long userId) {
+        log.info("[GetSentRequestFriendQueryService] 보낸 친구 요청 목록 조회 요청 진입 - 조회 요청 유저ID: {}", userId);
+
+        //로그인한 유저가 보낸 SENT 행
+        List<FriendJpaEntity> friends = friendRepository.findSentRequestsByFromUserId(userId, "SENT");
+        log.info("[GetSentRequestFriendQueryService] DB 보낸 친구 요청 데이터 로드 완료 - 찾아낸 행 수: {}개", friends.size());
+
+        List<SentRequestView> result = new ArrayList<>();
+
+        for (FriendJpaEntity friend : friends) {
+            //SENT가 아니면 넘어가기
+            if (!"SENT".equals(friend.getStatus())) {
+                continue;
+            }
+
+            //상대방 유저 객체는 toUserId
+            UserWithFMJpaEntity targetUser = friend.getToUserId();
+
+            //강사는 보낸 친구 요청 목록에 뜨면 안됨
+            if ("TEACHER".equals(targetUser.getRole())) {
+                log.info("[GetSentRequestFriendQueryService] TEACHER 역할 유저 필터링 - 강사ID: {}", targetUser.getId());
+                continue;
+            }
+
+            //결과 리스트에 담기
+            result.add(new SentRequestView(
+                    targetUser.getId(),
+                    targetUser.getNickname(),
+                    targetUser.getRole(),
+                    friend.getStatus(),
+                    !"ACTIVE".equals(targetUser.getStatus()),
+                    targetUser.getProfileImageUrl()
+            ));
+        }
+
+        log.info("[GetSentRequestFriendQueryService] 최종 보낸 친구 요청 목록 가공 완료 - 반환할 개수: {}개", result.size());
+        return result;
+    }
+
+    //받은 친구 요청 목록
+    @Override
+    public List<ReceivedRequestView> getReceivedRequestFriendQueryHandle(Long userId) {
+        log.info("[GetReceivedRequestFriendQueryService] 받은 친구 요청 목록 조회 시작 - 수신자(로그인 유저): {}", userId);
+
+        //toUserId가 로그인 유저이면서 SENT인 데이터만 가져옴
+        List<FriendJpaEntity> requests = friendRepository.findReceivedRequestsByToUserId(userId, "SENT");
+        log.info("[GetReceivedRequestFriendQueryService] DB 받은 친구 요청 데이터 로드 완료 - 찾아낸 행 수: {}", requests.size());
+
+        //결과 담을 곳
+        List<ReceivedRequestView> result = new ArrayList<>();
+
+        //하나씩 add
+        for (FriendJpaEntity request : requests) {
+            //SENT가 아니면 넘어감
+            if (!"SENT".equals(request.getStatus())) {
+                continue;
+            }
+
+            //요청 보낸 사람 추출
+            UserWithFMJpaEntity fromUser = request.getFromUserId();
+
+            result.add(new ReceivedRequestView(
+                    fromUser.getId(),
+                    fromUser.getNickname(),
+                    fromUser.getRole(),
+                    request.getStatus(),
+                    !"ACTIVE".equals(fromUser.getStatus()), //활성 유저 아니면 true
+                    fromUser.getProfileImageUrl()
+            ));
+        }
+
+        log.info("[GetReceivedRequestFriendQueryService] 최종 받은 친구 요청 목록 가공 완료 - 반환할 개수: {}개", result.size());
+
+        //요청 보낸 사람 정보 담기
+        return result;
+    }
+
+    //친구 차단 목록
+    @Override
+    public List<BlockedView> getBlockedFriendQueryHandle(Long userId) {
+        log.info("[GetBlockedFriendQueryService] 내가 차단한 유저 목록 조회 시작 - 유저ID: {}", userId);
+
+        //로그인 유저와 연관된 모든 관계 행 가져오기
+        List<FriendJpaEntity> allRelations = friendRepository.findAllMyRelations(userId);
+        List<BlockedView> blockedViews = new ArrayList<>();
+
+        for (FriendJpaEntity relation : allRelations) {
+            //BLOCK 상태만 가져오기
+            if (!"BLOCK".equals(relation.getStatus())) {
+                continue;
+            }
+
+            //방어막(로그인 유저가 toUser인 상태에서 BLOCK일 때만 띄움)
+            if (relation.getToUserId().getId().equals(userId)) {
+                log.info("[GetBlockedFriendQueryService] 상대방이 나를 차단한 행이므로 노출 제외 - 관계ID: {}", relation.getId());
+                continue;
+            }
+
+            //로그인한 유저가 차단한 상대방 누구인지.
+            UserWithFMJpaEntity targetUser;
+
+            //로그인 유저가 From이면 상대는 To, 로그인 유저가 To면 상대가 From
+            if (relation.getFromUserId().getId().equals(userId)) {
+                targetUser = relation.getToUserId();
+            } else {
+                targetUser = relation.getFromUserId();
+            }
+
+            blockedViews.add(new BlockedView(
+                    targetUser.getId(),
+                    targetUser.getNickname(),
+                    targetUser.getRole(),
+                    relation.getStatus(),
+                    !"ACTIVE".equals(targetUser.getStatus()),
+                    targetUser.getProfileImageUrl()
+            ));
+        }
+
+        log.info("[GetBlockedFriendQueryService] 내가 차단한 유저 목록 조회 완료 - 총 {}명", blockedViews.size());
+        return blockedViews;
     }
 }

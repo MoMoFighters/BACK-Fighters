@@ -1,6 +1,6 @@
 package com.wanted.momocity.friend.presentation.api.response;
 
-import com.wanted.momocity.friend.application.usecase.BlockFriendCommandUseCase.BlockView;
+import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase.BlockView;
 
 public record BlockFriendResponse(
         Long userId,

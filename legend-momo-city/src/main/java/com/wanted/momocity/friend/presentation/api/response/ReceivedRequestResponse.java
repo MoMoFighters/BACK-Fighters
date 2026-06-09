@@ -1,6 +1,6 @@
 package com.wanted.momocity.friend.presentation.api.response;
 
-import com.wanted.momocity.friend.application.usecase.GetReceivedRequestFriendQueryUseCase.ReceivedRequestView;
+import com.wanted.momocity.friend.application.usecase.FriendQueryUseCase.ReceivedRequestView;
 
 public record ReceivedRequestResponse(
         Long userId,
