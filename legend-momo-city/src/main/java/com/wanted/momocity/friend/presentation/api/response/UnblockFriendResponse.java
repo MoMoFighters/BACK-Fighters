@@ -1,6 +1,6 @@
 package com.wanted.momocity.friend.presentation.api.response;
 
-import com.wanted.momocity.friend.application.usecase.UnblockFriendCommandUseCase.UnblockView;
+import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase.UnblockView;
 
 public record UnblockFriendResponse(
         Long userId,

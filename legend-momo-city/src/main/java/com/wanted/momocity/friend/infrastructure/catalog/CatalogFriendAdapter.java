@@ -1,8 +1,6 @@
 package com.wanted.momocity.friend.infrastructure.catalog;
 
 
-import com.wanted.momocity.friend.application.usecase.FindUserQueryUseCase.FindView;
-import com.wanted.momocity.friend.application.usecase.FriendQueryUseCase.FriendView;
 import com.wanted.momocity.friend.domain.repository.FriendRepository;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendSideEnrollmentRepository;

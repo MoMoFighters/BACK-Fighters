@@ -1,6 +1,6 @@
 package com.wanted.momocity.friend.presentation.api.response;
 
-import com.wanted.momocity.friend.application.usecase.GetBlockedFriendQueryUseCase.BlockedView;
+import com.wanted.momocity.friend.application.usecase.FriendQueryUseCase.BlockedView;
 
 public record BlockedFriendResponse(
         Long userId,

@@ -1,7 +1,7 @@
 package com.wanted.momocity.message.presentation.api.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.wanted.momocity.message.application.usecase.FindChatRoomQueryUseCase.ChatRoomView;
+import com.wanted.momocity.message.application.usecase.MessageQueryUseCase.ChatRoomView;
 
 import java.time.LocalDateTime;
 import java.util.List;

@@ -3,18 +3,18 @@ package com.wanted.momocity.friend.presentation.api;
 import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.friend.application.command.*;
 import com.wanted.momocity.friend.application.usecase.*;
-import com.wanted.momocity.friend.application.usecase.CancelRequestFriendCommandUseCase.CancelRequestFriendView;
-import com.wanted.momocity.friend.application.usecase.FindUserQueryUseCase.FindView;
+import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase.CancelRequestFriendView;
+import com.wanted.momocity.friend.application.usecase.FriendQueryUseCase.FindView;
 import com.wanted.momocity.friend.application.usecase.FriendQueryUseCase.FriendView;
-import com.wanted.momocity.friend.application.usecase.GetSentRequestFriendQueryUseCase.SentRequestView;
-import com.wanted.momocity.friend.application.usecase.RequestFriendCommandUseCase.RequestFriendView;
-import com.wanted.momocity.friend.application.usecase.AcceptRequestFriendCommandUseCase.AcceptView;
-import com.wanted.momocity.friend.application.usecase.RejectRequestFriendCommandUseCase.RejectView;
-import com.wanted.momocity.friend.application.usecase.GetReceivedRequestFriendQueryUseCase.ReceivedRequestView;
-import com.wanted.momocity.friend.application.usecase.BlockFriendCommandUseCase.BlockView;
-import com.wanted.momocity.friend.application.usecase.GetBlockedFriendQueryUseCase.BlockedView;
-import com.wanted.momocity.friend.application.usecase.UnblockFriendCommandUseCase.UnblockView;
-import com.wanted.momocity.friend.application.usecase.DeleteFriendCommandUseCase.DeleteView;
+import com.wanted.momocity.friend.application.usecase.FriendQueryUseCase.SentRequestView;
+import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase.RequestFriendView;
+import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase.AcceptView;
+import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase.RejectView;
+import com.wanted.momocity.friend.application.usecase.FriendQueryUseCase.ReceivedRequestView;
+import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase.BlockView;
+import com.wanted.momocity.friend.application.usecase.FriendQueryUseCase.BlockedView;
+import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase.UnblockView;
+import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase.DeleteView;
 import com.wanted.momocity.friend.presentation.api.response.*;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -30,30 +30,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FriendController {
 
-    //내 친구 조회
+    //쿼리(내 친구 목록, 사용자 검색, 보낸 요청 목록, 받은 요청 목록, 차단 목록)
     private final FriendQueryUseCase friendQueryUseCase;
-    //사용자 검색
-    private final FindUserQueryUseCase findUserQueryUseCase;
-    //친구 요청
-    private final RequestFriendCommandUseCase requestFriendCommandUseCase;
-    //친구 요청 철회
-    private final CancelRequestFriendCommandUseCase cancelRequestFriendCommandUseCase;
-    //보낸 요청 목록
-    private final GetSentRequestFriendQueryUseCase getSentRequestFriendQueryUseCase;
-    //친구 요청 수락
-    private final AcceptRequestFriendCommandUseCase acceptRequestFriendCommandUseCase;
-    //친구 요청 거절
-    private final RejectRequestFriendCommandUseCase rejectRequestFriendCommandUseCase;
-    //받은 친구 요청 목록
-    private final GetReceivedRequestFriendQueryUseCase getReceivedRequestFriendQueryUseCase;
-    //친구 차단
-    private final BlockFriendCommandUseCase blockFriendCommandUseCase;
-    //친구 차단 목록 조회
-    private final GetBlockedFriendQueryUseCase getBlockedFriendQueryUseCase;
-    //친구 차단 해제
-    private final UnblockFriendCommandUseCase unblockFriendCommandUseCase;
-    //친구 삭제
-    private final DeleteFriendCommandUseCase deleteFriendCommandUseCase;
+
+    //커맨드(친구 요청, 친구 요청 철회, 친구 요청 수락, 친구 요청 거절, 친구 차단, 친구 차단 해제, 친구 삭제)
+    private final FriendCommandUseCase friendCommandUseCase;
 
     @GetMapping
     @Operation(
@@ -65,7 +46,7 @@ public class FriendController {
         Long userId = userDetails.getUserId();
 
         //서비스를 통해 가공된 친구 목록 받아오기
-        List<FriendView> friends = friendQueryUseCase.handle(userId);
+        List<FriendView> friends = friendQueryUseCase.getFriendQueryHandle(userId);
 
         //빈 배열일 때
         if (friends.isEmpty()) {
@@ -94,7 +75,7 @@ public class FriendController {
         Long userId = userDetails.getUserId();
 
         //순수한 검색 결과를 내부 주머니로 받아옴(FindView)
-        List<FindView> findResults = findUserQueryUseCase.handle(userId, findNickname);
+        List<FindView> findResults = friendQueryUseCase.findUserQueryHandle(userId, findNickname);
 
         //검색 결과가 없을 때
         if (findResults.isEmpty()) {
@@ -127,7 +108,7 @@ public class FriendController {
         RequestFriendCommand command = new RequestFriendCommand(userId, targetUserId);
 
         //서비스를 실행하고 결과 주머니(View) 받아오기
-        RequestFriendView view = requestFriendCommandUseCase.handle(command);
+        RequestFriendView view = friendCommandUseCase.requestFriendCommandHandle(command);
 
         //주머니(View)를 최종 응답 레코드로 변환
         RequestFriendResponse responseData = RequestFriendResponse.from(view);
@@ -153,7 +134,7 @@ public class FriendController {
         CancelRequestFriendCommand command = new CancelRequestFriendCommand(userId, targetUserId);
 
         //유스케이스 핸들러 실행(비즈니스 로직, 이벤트 발행 유도)
-        CancelRequestFriendView view = cancelRequestFriendCommandUseCase.handle(command);
+        CancelRequestFriendView view = friendCommandUseCase.cancelRequestFriendCommandHandle(command);
 
         //최종 응답 객체로 변환
         CancelRequestFriendResponse responseData = CancelRequestFriendResponse.from(view);
@@ -175,7 +156,7 @@ public class FriendController {
         Long userId = userDetails.getUserId();
 
         //유스케이스 레이어 호출하여 데이터 도출
-        List<SentRequestView> sentRequests = getSentRequestFriendQueryUseCase.handle(userId);
+        List<SentRequestView> sentRequests = friendQueryUseCase.getSentRequestFriendQueryHandle(userId);
 
         //보낸 친구 요청이 아예 없을 때(200)
         if (sentRequests.isEmpty()) {
@@ -208,7 +189,7 @@ public class FriendController {
         AcceptRequestFriendCommand command = new AcceptRequestFriendCommand(userId, fromUserId);
 
         //수락 유스케이스 실행
-        AcceptView view = acceptRequestFriendCommandUseCase.handle(command);
+        AcceptView view = friendCommandUseCase.acceptRequestFriendCommandHandle(command);
 
         //응답 DTO 변환
         AcceptRequestFriendResponse responseData = AcceptRequestFriendResponse.from(view);
@@ -233,7 +214,7 @@ public class FriendController {
         RejectRequestFriendCommand command = new RejectRequestFriendCommand(userId, fromUserId);
 
         //유스케이스 핸들러 전송
-        RejectView view = rejectRequestFriendCommandUseCase.handle(command);
+        RejectView view = friendCommandUseCase.rejectRequestFriendCommandHandle(command);
 
         //응답 템플릿
         RejectRequestFriendResponse responseData = RejectRequestFriendResponse.from(view);
@@ -255,7 +236,7 @@ public class FriendController {
         Long userId = userDetails.getUserId();
 
         //유스케이스 view 도출
-        List<ReceivedRequestView> receivedRequests = getReceivedRequestFriendQueryUseCase.handle(userId);
+        List<ReceivedRequestView> receivedRequests = friendQueryUseCase.getReceivedRequestFriendQueryHandle(userId);
 
         //받은 요청이 없을 때
         if (receivedRequests.isEmpty()) {
@@ -288,7 +269,7 @@ public class FriendController {
         BlockFriendCommand command = new BlockFriendCommand(userId, targetUserId);
 
         //유스 케이스 레이어
-        BlockView view = blockFriendCommandUseCase.handle(command);
+        BlockView view = friendCommandUseCase.blockFriendCommandHandle(command);
 
         //응답 가공
         BlockFriendResponse responseData = BlockFriendResponse.from(view);
@@ -309,7 +290,7 @@ public class FriendController {
         Long userId = userDetails.getUserId();
 
         //차단 뷰 목록 획득
-        List<BlockedView> blockedViews = getBlockedFriendQueryUseCase.handle(userId);
+        List<BlockedView> blockedViews = friendQueryUseCase.getBlockedFriendQueryHandle(userId);
 
         //차단한 목록이 없을 때
         if (blockedViews.isEmpty()) {
@@ -342,7 +323,7 @@ public class FriendController {
         UnblockFriendCommand command = new UnblockFriendCommand(userId, targetUserId);
 
         //서비스 핸들러 작동
-        UnblockView view = unblockFriendCommandUseCase.handle(command);
+        UnblockView view = friendCommandUseCase.unblockFriendCommandHandle(command);
 
         //응답 가공
         UnblockFriendResponse responseData = UnblockFriendResponse.from(view);
@@ -367,7 +348,7 @@ public class FriendController {
         DeleteFriendCommand command = new DeleteFriendCommand(userId, targetUserId);
 
         //유스케이스 레이어 핸들러 호출
-        DeleteView view = deleteFriendCommandUseCase.handle(command);
+        DeleteView view = friendCommandUseCase.deleteFriendCommandHandle(command);
 
         //응답 가공
         DeleteFriendResponse responseData = DeleteFriendResponse.from(view);

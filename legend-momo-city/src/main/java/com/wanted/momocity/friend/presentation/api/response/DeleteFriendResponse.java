@@ -1,6 +1,6 @@
 package com.wanted.momocity.friend.presentation.api.response;
 
-import com.wanted.momocity.friend.application.usecase.DeleteFriendCommandUseCase.DeleteView;
+import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase.DeleteView;
 
 public record DeleteFriendResponse(
         Long userId,

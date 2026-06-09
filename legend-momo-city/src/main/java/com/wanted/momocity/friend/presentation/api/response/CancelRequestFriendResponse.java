@@ -1,6 +1,6 @@
 package com.wanted.momocity.friend.presentation.api.response;
 
-import com.wanted.momocity.friend.application.usecase.CancelRequestFriendCommandUseCase.CancelRequestFriendView;
+import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase.CancelRequestFriendView;
 
 public record CancelRequestFriendResponse(
         Long userId,

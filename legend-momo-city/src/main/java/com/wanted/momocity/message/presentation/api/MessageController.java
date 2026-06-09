@@ -4,12 +4,12 @@ import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.message.application.command.CreateChatRoomCommand;
 import com.wanted.momocity.message.application.usecase.*;
-import com.wanted.momocity.message.application.usecase.CreateChatRoomCommandUseCase.CreateRoomView;
-import com.wanted.momocity.message.application.usecase.FindChatRoomQueryUseCase.ChatRoomView;
-import com.wanted.momocity.message.application.usecase.ReadMessageCommandUseCase.ReadView;
-import com.wanted.momocity.message.application.usecase.SendMessageCommandUseCase.SendView;
-import com.wanted.momocity.message.application.usecase.GetMessageHistoryQueryUseCase.MessageHistoryView;
-import com.wanted.momocity.message.application.usecase.LeaveChatRoomCommandUseCase.LeaveChatRoomView;
+import com.wanted.momocity.message.application.usecase.MessageCommandUseCase.CreateRoomView;
+import com.wanted.momocity.message.application.usecase.MessageQueryUseCase.ChatRoomView;
+import com.wanted.momocity.message.application.usecase.MessageCommandUseCase.ReadView;
+import com.wanted.momocity.message.application.usecase.MessageCommandUseCase.SendView;
+import com.wanted.momocity.message.application.usecase.MessageQueryUseCase.MessageHistoryView;
+import com.wanted.momocity.message.application.usecase.MessageCommandUseCase.LeaveChatRoomView;
 import com.wanted.momocity.message.presentation.api.request.SendMessageRequest;
 import com.wanted.momocity.message.presentation.api.response.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,12 +27,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MessageController {
 
-    private final FindChatRoomQueryUseCase findChatRoomQueryUseCase;
-    private final CreateChatRoomCommandUseCase createChatRoomCommandUseCase;
-    private final SendMessageCommandUseCase sendMessageCommandUseCase;
-    private final ReadMessageCommandUseCase readMessageCommandUseCase;
-    private final GetMessageHistoryQueryUseCase getMessageHistoryQueryUseCase;
-    private final LeaveChatRoomCommandUseCase leaveChatRoomCommandUseCase;
+    //쿼리(채팅 목록, 메시지 내역)
+    private final MessageQueryUseCase messageQueryUseCase;
+    //커맨드(채팅방 개설, 메시지 전송, 메시지 읽음, 채팅방 나가기)
+    private final MessageCommandUseCase messageCommandUseCase;
 
     @GetMapping("/rooms")
     @Operation(summary = "채팅방 목록", description = "로그인 유저가 존재하는 모든 채팅방을 조회한다.")
@@ -40,7 +38,7 @@ public class MessageController {
 
         Long userId = userDetails.getUserId();
 
-        List<ChatRoomView> view = findChatRoomQueryUseCase.handle(userId);
+        List<ChatRoomView> view = messageQueryUseCase.getChatRoomQueryHandle(userId);
 
         //채팅방이 한개도 없을 때
         if (view.isEmpty()) {
@@ -70,7 +68,7 @@ public class MessageController {
         Long userId = userDetails.getUserId();
 
         //커맨드 조립해서 유스케이스 발송
-        CreateRoomView view = createChatRoomCommandUseCase.handle(userId, targetUserId);
+        CreateRoomView view = messageCommandUseCase.createChatRoomCommandHandle(userId, targetUserId);
 
         //공통 응답 데이터 그릇
         CreateChatRoomResponse responseData = new CreateChatRoomResponse(
@@ -106,7 +104,7 @@ public class MessageController {
                                                                         @Valid @RequestBody SendMessageRequest request) {
         Long userId = userDetails.getUserId();
 
-        SendView view = sendMessageCommandUseCase.handle(userId, roomId, request.content());
+        SendView view = messageCommandUseCase.sendMessageCommandHandle(userId, roomId, request.content());
 
         SendMessageResponse responseData = new SendMessageResponse(
                 view.roomId(),
@@ -133,7 +131,7 @@ public class MessageController {
 
         Long userId = userDetails.getUserId();
 
-        ReadView view = readMessageCommandUseCase.handle(roomId, userId);
+        ReadView view = messageCommandUseCase.readMessageCommandHandle(roomId, userId);
 
         ReadMessageResponse responseData = new ReadMessageResponse(
                 view.roomId(),
@@ -155,26 +153,26 @@ public class MessageController {
 
     @GetMapping("/history/{roomId}")
     @Operation(summary = "메시지 내역 조회", description = "메시지 내역을 최신 20개씩 보내고 최상단 스크롤하면 마지막 메시지 아이디 기준으로 최신순 보여준다.")
-    public ResponseEntity<ApiResponse<List<GetMessageHistoryResponse>>> getMessageHistory(@AuthenticationPrincipal CustomUserDetails userDetails,
+    public ResponseEntity<ApiResponse<GetMessageHistoryResponse>> getMessageHistory(@AuthenticationPrincipal CustomUserDetails userDetails,
                                                                  @PathVariable("roomId") Long roomId,
                                                                  @RequestParam(value = "lastMessageId", required = false) Long lastMessgeId) {
         Long userId = userDetails.getUserId();
 
-        List<MessageHistoryView> viewList = getMessageHistoryQueryUseCase.handle(roomId, userId, lastMessgeId);
+        List<MessageHistoryView> viewList = messageQueryUseCase.getMessageHistoryQueryHandle(roomId, userId, lastMessgeId);
 
+        boolean isNoHistory = !viewList.isEmpty() && viewList.get(0).messageId() == null;
         //채팅 내역이 없을 때
-        if (viewList.isEmpty() && lastMessgeId == null) {
+        if (isNoHistory && lastMessgeId == null) {
+            GetMessageHistoryResponse responseRoomInfo = GetMessageHistoryResponse.of(roomId, viewList);
             return ResponseEntity.ok(ApiResponse.success(
                     "SUCCESS",
                     "아직 대화 기록이 없습니다. 첫 메시지를 보내보세요!",
-                    List.of()
+                    responseRoomInfo
             ));
         }
 
         //채팅 내역 있을 때
-        List<GetMessageHistoryResponse> responseData = viewList.stream()
-                .map(GetMessageHistoryResponse::from)
-                .toList();
+        GetMessageHistoryResponse responseData = GetMessageHistoryResponse.of(roomId, viewList);
 
         return ResponseEntity.ok(ApiResponse.success(
                 "SUCCESS",
@@ -189,7 +187,7 @@ public class MessageController {
 
         Long userId = userDetails.getUserId();
 
-        LeaveChatRoomView view = leaveChatRoomCommandUseCase.handle(roomId, userId);
+        LeaveChatRoomView view = messageCommandUseCase.leaveChatRoomCommandHandle(roomId, userId);
 
         //채팅방에 마지막 남은 사용자일 때
         if (view.isLastMember()) {

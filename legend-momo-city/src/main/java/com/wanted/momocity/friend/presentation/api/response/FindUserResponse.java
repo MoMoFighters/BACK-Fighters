@@ -1,7 +1,7 @@
 package com.wanted.momocity.friend.presentation.api.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.wanted.momocity.friend.application.usecase.FindUserQueryUseCase.FindView;
+import com.wanted.momocity.friend.application.usecase.FriendQueryUseCase.FindView;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;

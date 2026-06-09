@@ -1,6 +1,6 @@
 package com.wanted.momocity.friend.presentation.api.response;
 
-import com.wanted.momocity.friend.application.usecase.AcceptRequestFriendCommandUseCase.AcceptView;
+import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase.AcceptView;
 
 public record AcceptRequestFriendResponse(
         Long userId,
