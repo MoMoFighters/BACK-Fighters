@@ -31,7 +31,7 @@ body:
   - type: textarea
     id: scope
     attributes:
-      label: 영향 범위
+      label: 기타
       description: API 스펙 변경 / 클라이언트 영향 / DB 영향 등
 
   - type: dropdown
