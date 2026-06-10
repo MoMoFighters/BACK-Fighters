@@ -204,7 +204,7 @@ public class MessageCommandService implements MessageCommandUseCase {
         messageRepository.saveMessage(newMessage);
 
         //실시간 웹소켓 전송(프론트엔트가 구독 중인 주소로 메시지 주머니 투척)
-        SendMessageCommandService.WebSocketMessageDto wsPayload = new SendMessageCommandService.WebSocketMessageDto(
+        MessageCommandService.WebSocketMessageDto wsPayload = new MessageCommandService.WebSocketMessageDto(
                 newMessage.getId(),
                 senderId,
                 sender.getNickname(),
