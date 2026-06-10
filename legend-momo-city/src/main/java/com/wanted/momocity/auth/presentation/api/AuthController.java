@@ -77,9 +77,9 @@ public class AuthController {
             throw new MissingProofException("증빙 자료는 필수 제출입니다.");
         }
 
-        String proofUrl = s3UploadPort.upload(request.proof());  // 여기서 선언하고 값 넣어줌
+        String proofKey = s3UploadPort.upload(request.proof(),"teacher_proof");  // 여기서 선언하고 값 넣어줌
 
-        authCommandUsecase.signup(new TeacherSignupCommand(request.email(),request.password(),request.name(),request.category(),proofUrl));
+        authCommandUsecase.signup(new TeacherSignupCommand(request.email(),request.password(),request.name(),request.category(),proofKey));
 
         return ResponseEntity.status(HttpStatus.CREATED) //201
                 .body(ApiResponse.created(
