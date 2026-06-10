@@ -1,11 +1,8 @@
 package com.wanted.momocity.lecture;
 
 import com.wanted.momocity.global.application.s3.S3UploadPort;
-import com.wanted.momocity.lecture.application.usecase.AdminLectureCommandUseCase;
-import com.wanted.momocity.lecture.application.usecase.AdminLectureQueryUseCase;
-import com.wanted.momocity.lecture.application.usecase.ChapterCommandUseCase;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCase;
-import com.wanted.momocity.lecture.application.usecase.LectureQueryUseCase;
+import com.wanted.momocity.lecture.application.usecase.LectureQueryUseCases;
 import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.model.LectureChapter;
 import com.wanted.momocity.lecture.domain.model.LectureCategory;
@@ -57,7 +54,7 @@ class TeacherLectureAggregateRegisterTest {
 
     // TeacherLectureController 생성자 의존성 때문에 필요하다.
     @MockitoBean
-    private LectureQueryUseCase lectureQueryUseCase;
+    private LectureQueryUseCases lectureQueryUseCase;
 
     @MockitoBean
     private AdminLectureQueryUseCase adminLectureQueryUseCase;
