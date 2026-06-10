@@ -6,6 +6,7 @@ import com.wanted.momocity.auth.application.port.*;
 import com.wanted.momocity.auth.application.usecase.AuthCommandUsecase;
 import com.wanted.momocity.auth.domain.event.SignupCompletedEvent;
 import com.wanted.momocity.auth.domain.exception.*;
+import com.wanted.momocity.auth.domain.model.Provider;
 import com.wanted.momocity.auth.domain.model.Status;
 import com.wanted.momocity.auth.domain.model.User;
 import com.wanted.momocity.auth.domain.model.UserOauth;
@@ -50,7 +51,7 @@ public class AuthCommandService implements AuthCommandUsecase {
     private final EmailCodePort emailCodePort;
     private final EmailSendPort emailSendPort;
 
-    private final Map<String, OAuthClientPort> oAuthClientPorts;
+    private final Map<Provider, OAuthClientPort> oAuthClientPorts;
 
     private final UpdatePasswordPort updatePasswordPort;
     private final PasswordEncodePort passwordEncodePort;
@@ -59,10 +60,10 @@ public class AuthCommandService implements AuthCommandUsecase {
 
 
     public AuthCommandService(
-            LoadUserPort loadUserPort, SignupPolicy signupPolicy, @Qualifier("kakaoOAuthClient")
-            OAuthClientPort kakaoOAuthClientPort,
-            @Qualifier("googleOAuthClient")
-            OAuthClientPort googleOAuthClientPort,
+            LoadUserPort loadUserPort, SignupPolicy signupPolicy,
+            @Qualifier("kakaoOAuthClient") OAuthClientPort kakaoOAuthClientPort,
+            @Qualifier("googleOAuthClient") OAuthClientPort googleOAuthClientPort,
+            @Qualifier("naverOAuthClient") OAuthClientPort naverOAuthClientPort,
             UserRepository userRepository,
             UserOauthRepository userOauthRepository, PasswordEncoder passwordEncoder, BlacklistPort blacklistPort, AuthenticationManager authenticationManager,
             TokenProviderPort tokenProviderPort, ApplicationEventPublisher eventPublisher, RedisRefreshTokenPort redisRefreshTokenPort, EmailCodePort emailCodePort, EmailSendPort emailSendPort, UpdatePasswordPort updatePasswordPort, PasswordEncodePort passwordEncodePort
@@ -79,8 +80,9 @@ public class AuthCommandService implements AuthCommandUsecase {
         this.updatePasswordPort = updatePasswordPort;
         this.passwordEncodePort = passwordEncodePort;
         this.oAuthClientPorts = Map.of(
-                "KAKAO", kakaoOAuthClientPort,
-                "GOOGLE", googleOAuthClientPort
+                Provider.KAKAO, kakaoOAuthClientPort,
+                Provider.GOOGLE, googleOAuthClientPort,
+                Provider.NAVER, naverOAuthClientPort
         );
         this.userRepository = userRepository;
         this.userOauthRepository = userOauthRepository;
@@ -205,6 +207,7 @@ public class AuthCommandService implements AuthCommandUsecase {
     public LoginResponse socialLogin(SocialLoginCommand command) {
         // provider가 카카오면 kakaoOAuthClientPort
         // provider가 구글이면 googleOAuthClientPort
+        // provider가 네이버면 naverOAuthClientPort
         OAuthClientPort oAuthClientPort = oAuthClientPorts.get(command.provider());
         // 거기서 api에 요청 두번 보내서 access 토큰 요청 + 유저 정보 요청하고 사용자 정도 담음
         OAuthUserInfoCommand oAuthUserInfo = oAuthClientPort.getUserInfo(command.code());
@@ -239,7 +242,7 @@ public class AuthCommandService implements AuthCommandUsecase {
     }
 
     // 새로운 유저 db에 등록
-    private User registerNewUser(String provider, OAuthUserInfoCommand oAuthUserInfoCommand) {
+    private User registerNewUser(Provider provider, OAuthUserInfoCommand oAuthUserInfoCommand) {
         try {
             User newUser = userRepository.register(
                     User.oAuthRegister(oAuthUserInfoCommand.email(), oAuthUserInfoCommand.name())
