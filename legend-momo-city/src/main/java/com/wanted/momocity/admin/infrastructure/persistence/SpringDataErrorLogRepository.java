@@ -24,4 +24,5 @@ public interface SpringDataErrorLogRepository extends JpaRepository<ErrorLogJpaE
 
     // 특정 레벨의 최근 N개 (occurredAt DESC)
     List<ErrorLogJpaEntity> findAllByLevelOrderByOccurredAtDesc(String level, Pageable pageable);
+
 }

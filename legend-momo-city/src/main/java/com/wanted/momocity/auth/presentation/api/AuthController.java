@@ -4,6 +4,7 @@ import com.wanted.momocity.auth.application.command.*;
 import com.wanted.momocity.auth.application.port.TokenProviderPort;
 import com.wanted.momocity.auth.domain.exception.MissingProofException;
 import com.wanted.momocity.auth.domain.exception.MissingTokenException;
+import com.wanted.momocity.auth.domain.model.Provider;
 import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.auth.application.usecase.*;
@@ -77,9 +78,9 @@ public class AuthController {
             throw new MissingProofException("증빙 자료는 필수 제출입니다.");
         }
 
-        String proofUrl = s3UploadPort.upload(request.proof());  // 여기서 선언하고 값 넣어줌
+        String proofKey = s3UploadPort.upload(request.proof(),"teacher_proof");  // 여기서 선언하고 값 넣어줌
 
-        authCommandUsecase.signup(new TeacherSignupCommand(request.email(),request.password(),request.name(),request.category(),proofUrl));
+        authCommandUsecase.signup(new TeacherSignupCommand(request.email(),request.password(),request.name(),request.category(),proofKey));
 
         return ResponseEntity.status(HttpStatus.CREATED) //201
                 .body(ApiResponse.created(
@@ -221,7 +222,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<LoginResponse>> kakaoLogin(
             @Valid @RequestBody SocialLoginRequest request){
 
-        LoginResponse result = authCommandUsecase.socialLogin(new SocialLoginCommand("KAKAO",request.code()));
+        LoginResponse result = authCommandUsecase.socialLogin(new SocialLoginCommand(Provider.KAKAO,request.code()));
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(
@@ -242,7 +243,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<LoginResponse>> googleLogin(
             @Valid @RequestBody SocialLoginRequest request){
 
-        LoginResponse result = authCommandUsecase.socialLogin(new SocialLoginCommand("GOOGLE",request.code()));
+        LoginResponse result = authCommandUsecase.socialLogin(new SocialLoginCommand(Provider.GOOGLE,request.code()));
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(
@@ -251,6 +252,29 @@ public class AuthController {
                         new LoginResponse(result.accessToken(), result.refreshToken(),result.status() ,result.expiresIn())
                 ));
     }
+
+
+    @PostMapping("/naverlogin")
+    @Operation(summary = "네이버 로그인을 위한 api")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "네이버 로그인 성공 및 토큰 발급"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "유효하지 않은 인가 코드"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "네이버 인증 실패")
+    })
+    public ResponseEntity<ApiResponse<LoginResponse>> naverLogin(
+            @Valid @RequestBody SocialLoginRequest request){
+
+        LoginResponse result = authCommandUsecase.socialLogin(new SocialLoginCommand(Provider.NAVER,request.code()));
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        AuthResponseCode.SUCCESS,
+                        AuthResponseMessage.LOGIN_SUCCESS,
+                        new LoginResponse(result.accessToken(), result.refreshToken(),result.status() ,result.expiresIn())
+                ));
+    }
+
+
 
 
     @PostMapping("/logout")
