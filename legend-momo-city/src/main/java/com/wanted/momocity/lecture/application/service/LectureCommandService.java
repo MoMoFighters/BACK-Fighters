@@ -196,7 +196,11 @@ public class LectureCommandService implements
             throw new DomainRuleViolationException("동영상 파일 크기는 500MB 이하만 가능합니다.");
         }
 
-        String videoUrl = s3UploadPort.upload(command.video());
+        // S3 파일 구조에 맞게 수정
+        // EX) Lecutures/1/chapters/1
+        String videoUrl = s3UploadPort.upload(
+                command.video(),
+                "lectures/" + command.lectureId() + "/chapters/" + command.chapterId());
 
         LectureChapter updatedChapter = chapter.registerVideo(
                 videoUrl,
