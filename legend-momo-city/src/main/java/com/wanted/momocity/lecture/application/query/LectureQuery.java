@@ -54,7 +54,6 @@ public final class LectureQuery {
     public record GetLecturesQuery(
             Long userId,
             LectureCategory category,
-            Boolean enrolled,
             String keyword,
             int page,
             int size

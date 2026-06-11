@@ -235,14 +235,13 @@ public class LectureController {
     public ResponseEntity<ApiResponse<?>> getLectures(
             Authentication authentication,
             @RequestParam(required = false) String category,
-            @RequestParam(required = false) Boolean enrolled,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        String role = getRole(authentication);
-        Long userId = Long.parseLong(authentication.getName());
+        String role = getRoleOrAnonymous(authentication);
+        Long userId = getUserIdOrNull(authentication);
 
         if ("ROLE_ADMIN".equals(role)) {
             GetAdminLecturesQuery query = new GetAdminLecturesQuery(
@@ -281,10 +280,10 @@ public class LectureController {
             ));
         }
 
+        // 토큰 없음 또는 학생
         GetLecturesQuery query = new GetLecturesQuery(
                 userId,
                 parseCategory(category),
-                enrolled,
                 keyword,
                 page,
                 size
@@ -524,4 +523,29 @@ public class LectureController {
             throw new DomainRuleViolationException("허용되지 않은 강의 카테고리입니다.");
         }
     }
+
+    private String getRoleOrAnonymous(Authentication authentication) {
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || "anonymousUser".equals(authentication.getPrincipal())) {
+            return "ANONYMOUS";
+        }
+
+        return authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .findFirst()
+                .orElse("ANONYMOUS");
+    }
+
+    private Long getUserIdOrNull(Authentication authentication) {
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || "anonymousUser".equals(authentication.getPrincipal())) {
+            return null;
+        }
+
+        return Long.parseLong(authentication.getName());
+    }
+
+
 }

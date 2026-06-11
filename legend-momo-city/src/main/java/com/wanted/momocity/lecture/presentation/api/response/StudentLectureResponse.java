@@ -146,7 +146,6 @@ public class StudentLectureResponse {
             int completedUserCount,      // 수강 완료 인원
             double averageRating,        // 평균 평점
             int reviewCount,             // 수강평 개수
-            boolean isEnrolled,          // 현재 로그인한 학생의 수강 여부
             LocalDateTime createdAt      // 강의 생성일
     ) {
         /* comment
@@ -157,8 +156,7 @@ public class StudentLectureResponse {
                 LectureAggregate lecture,
                 String teacherName,
                 double averageRating,
-                int reviewCount,
-                boolean isEnrolled
+                int reviewCount
         ) {
             return new StudentLectureListItemResponse(
                     lecture.getId(),
@@ -172,7 +170,6 @@ public class StudentLectureResponse {
                     lecture.getCompletedUserCount(),
                     averageRating,
                     reviewCount,
-                    isEnrolled,
                     lecture.getCreatedAt()
             );
         }
