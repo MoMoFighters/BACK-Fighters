@@ -10,8 +10,8 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL) //null일 때 json 미출력
 public record FindUserResponse(
         @Schema(description = "유저 ID", example = "3")Long userId,
-        String nickname,
         String name,
+        String nickname,
         String status,
         String role,
         String lectureTitle,
