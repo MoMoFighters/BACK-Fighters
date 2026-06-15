@@ -59,7 +59,7 @@ public class ViewingQueryService implements ViewingQueryUseCase {
         }
 
         // 순차 시청 제한 (Policy)
-        sequentialAccessPolicy.ensureSequentialAccess(userId, lectureId, chapterId);  // ← 추가
+        sequentialAccessPolicy.ensureSequentialAccess(userId, lectureId, chapterId);
 
         // S3 Presigned URL 발급
         String presignedUrl = s3Port.generatePresignedUrl(chapter.getVideoUrl());

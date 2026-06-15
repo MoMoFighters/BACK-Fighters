@@ -6,17 +6,6 @@ import lombok.Getter;
 
 import java.io.Serializable;
 
-/*
-* Unrecognized field "playable"
-→ Chapter 에 isPlayable() 메서드가 있는데
-→ Jackson 이 getter 로 인식해서
-  "playable" 필드로 직렬화
-→ 역직렬화 시 "playable" 필드 없어서 오류
-
-isPlayable() → @Getter 때문에
-Jackson 이 playable 이라는 프로퍼티로 인식
-* */
-
 @Getter
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)

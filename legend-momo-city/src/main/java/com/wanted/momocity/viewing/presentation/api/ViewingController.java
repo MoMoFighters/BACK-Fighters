@@ -51,7 +51,6 @@ public class ViewingController {
 
     ) {
 
-//        Long userId = 1L;
         Long userId = userDetails.getUserId();
 
         return ResponseEntity.ok(ApiResponse.success(
@@ -78,7 +77,6 @@ public class ViewingController {
 
     ) {
 
-//        Long userId = 1L;
         Long userId = userDetails.getUserId();
 
         return ResponseEntity.ok(ApiResponse.success(
@@ -108,7 +106,6 @@ public class ViewingController {
 
     ) {
 
-//        Long userId = 1L;
         Long userId = userDetails.getUserId();
 
         return ResponseEntity.ok(ApiResponse.success(
@@ -161,7 +158,6 @@ public class ViewingController {
 
     ) {
 
-//        Long userId = 1L;
         Long userId = userDetails.getUserId();
 
         return ResponseEntity.ok(ApiResponse.success(
@@ -188,7 +184,6 @@ public class ViewingController {
 
     ) {
 
-//        Long userId = 1L;
         Long userId = userDetails.getUserId();
 
         return ResponseEntity.ok(ApiResponse.success(
@@ -214,7 +209,6 @@ public class ViewingController {
 
     ) {
 
-//        Long userId = 1L;
         Long userId = userDetails.getUserId();
 
         return ResponseEntity.ok(ApiResponse.success(
@@ -238,7 +232,6 @@ public class ViewingController {
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
 
-//        Long userId = 1L;
         Long userId = userDetails.getUserId();
 
         return ResponseEntity.ok(ApiResponse.success(

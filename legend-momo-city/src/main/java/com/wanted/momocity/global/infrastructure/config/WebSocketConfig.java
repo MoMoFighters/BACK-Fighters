@@ -1,5 +1,6 @@
 package com.wanted.momocity.global.infrastructure.config;
 
+import com.wanted.momocity.viewing.infrastructure.stomp.ViewingProgressChannelInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.ChannelRegistration;
@@ -14,6 +15,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final TopicSubscriptionInterceptor subscriptionInterceptor;
+    private final ViewingProgressChannelInterceptor viewingProgressChannelInterceptor;
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
@@ -34,6 +36,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
         //프론트에서 들어오는 신호 길목에 인터셉터 장착
-        registration.interceptors(subscriptionInterceptor);
+        registration.interceptors(
+                subscriptionInterceptor,
+                // 수강 페이지 STOMP JWT 검증 인터셉터
+                viewingProgressChannelInterceptor
+        );
     }
 }

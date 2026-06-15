@@ -1,4 +1,4 @@
-package com.wanted.momocity.viewing.infrastructure.adapter;
+package com.wanted.momocity.global.infrastructure.s3;
 
 import com.wanted.momocity.viewing.application.port.S3Port;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +24,7 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public class S3PresignedUrlAdapter implements S3Port {
 
-    // S3Presigner: AWS SDK 가 제공하는 Presigned URL 생성 전용 객체
+    // S3Presigned: AWS SDK 가 제공하는 Presigned URL 생성 전용 객체
     // S3Config 에서 Bean 으로 등록해둔 것을 주입받음
     private final S3Presigner s3Presigner;
 

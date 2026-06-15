@@ -96,7 +96,7 @@ public class ViewingCommandService implements ViewingCommandUseCase {
                 ));
 
         // 완료 전 상태 저장
-        // → 이미 완료된 챕터 재시청 시 이벤트 중복 발행 방지
+        // -> 이미 완료된 챕터 재시청 시 이벤트 중복 발행 방지
         boolean wasCompleted = history.isCompleted();
 
         // 진척도 업데이트 (도메인 메서드)
@@ -114,7 +114,7 @@ public class ViewingCommandService implements ViewingCommandUseCase {
         LearningHistory savedHistory = learningHistoryRepository.save(history);
 
         // 챕터 완료 시 이벤트 발행
-        // wasCompleted = false → isCompleted = true 일 때만 발행
+        // wasCompleted = false -> isCompleted = true 일 때만 발행
         if (!wasCompleted && savedHistory.isCompleted()) {
             eventPublisher.publishEvent(new ChapterCompletedEvent(
                     command.userId(),

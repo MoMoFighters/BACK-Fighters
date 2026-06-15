@@ -98,6 +98,7 @@ public class LearningHistory {
      *  -> 앞으로 당겨서 나간 것으로 판단
      *  -> 실제로 본 위치부터 이어보기
      */
+
     public void saveLastPosition(int lastPositionSec) {
         if (this.isCompleted) {
             // isCompleted = ture -> 나간 위치 그대로 저장
