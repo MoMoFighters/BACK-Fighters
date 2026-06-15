@@ -58,7 +58,7 @@ public record GetMessageHistoryResponse(
         }
         if (!"me".equals(view.status()) && !view.isMine()) {
             //내가 쓴 글이나 나와의 채팅이 아닌, 상대방 메시지 가공
-            if (!view.isNotActive() && (!"FRIEND".equals(view.status()) || displayNickname.isEmpty() || view.isLeftRoom())) {
+            if (!view.isNotActive() && (view.shouldMasked() || displayNickname.isEmpty() || view.isLeftRoom())) {
                 // ACTIVE가 아니거나 차단, 친구 삭제(none) 상태일 때 "(알 수 없음)" 결합
                 // v2-> ACTIVE이면서 친구가 아니거나 채팅방 나간 경우 가공
                 if (displayNickname.isEmpty()) {

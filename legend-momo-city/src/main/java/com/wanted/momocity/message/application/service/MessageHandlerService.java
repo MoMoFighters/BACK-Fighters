@@ -27,6 +27,7 @@ public class MessageHandlerService {
     private final SpringDataMessageRepository springDataMessageRepository;
 
     //회원가입 성공 후 날라온 이벤트로 나와의 채팅방 최초 1회 생성
+    //v2 -> 결제 완료 시 나와의 채팅방 생성으로 변경?
     public void createSelfChatRoom(Long userId) {
         log.info("[MessageHandlerService] 나와의 채팅방 개설 시작 - 대상 유저ID: {}", userId);
 

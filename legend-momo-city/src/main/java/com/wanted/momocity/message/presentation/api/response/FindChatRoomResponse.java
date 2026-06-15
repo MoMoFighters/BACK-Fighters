@@ -32,17 +32,17 @@ public record FindChatRoomResponse(
             displayNickname = "나와의 채팅" + "(" + displayNickname + ")";
             //ACTIVE이면서 친구가 아닌 경우
         }
-//         else if (!view.isNotActive() && !"FRIEND".equals(view.status())) {
-//            //나간 채팅방 처리
-//            //원래 닉네임이 있었다면 "홍길동(알 수 없음)", null이었다면 그냥 "(알 수 없음)"이 됩니다!
-//            if (displayNickname.isEmpty()) {
-//                displayNickname = "(알 수 없음)";
-//            } else {
-//                //ACTIVE가 아니거나 차단 혹은 친구 삭제 상태일 때
-//                //->v2 변경: ACTIVE이면서 친구가 아닐 때
-//                displayNickname += "(알 수 없음)";
-//            }
-//        }
+         else if (!view.isNotActive() && (view.shouldMasked() || displayNickname.isEmpty() || view.isLeftRoom())) {
+            //나간 채팅방 처리
+            //원래 닉네임이 있었다면 "홍길동(알 수 없음)", null이었다면 그냥 "(알 수 없음)"이 됩니다!
+            if (displayNickname.isEmpty()) {
+                displayNickname = "(알 수 없음)";
+            } else {
+                //ACTIVE가 아니거나 차단 혹은 친구 삭제 상태일 때
+                //->v2 변경: ACTIVE이면서 친구가 아닐 때
+                displayNickname += "(알 수 없음)";
+            }
+        }
         //채팅방 목록 조회에선 memberInfo에 가공없이 그대로의 상태를 전달해야 하므로 닉네임 가공 로직 주석 처리
 
         List<String> lectureTitle = view.lectureTitle();
