@@ -13,6 +13,11 @@ services:
       MYSQL_DATABASE: momo
     volumes:
       - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p1234" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
   # Loki 설정
   loki:
     image: grafana/loki:latest
@@ -44,8 +49,22 @@ services:
       - ./docker/grafana/provisioning:/etc/grafana/provisioning
     depends_on:
       - loki
+  # Prometheus 설정
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: momo-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
 volumes:
   mysql_data:
   grafana_data:
+  prometheus_data:
+
+
 

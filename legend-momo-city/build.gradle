@@ -63,6 +63,10 @@ dependencies {
 
     /* 설명. 성능 측정용 */
     runtimeOnly 'com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.9.0'
+
+    /* 설명. 모니터링 - Actuator + Prometheus 메트릭 노출 */
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
 }
 
 tasks.named('test') {
