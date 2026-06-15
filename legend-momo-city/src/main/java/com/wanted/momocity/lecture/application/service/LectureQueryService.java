@@ -67,28 +67,45 @@ public class LectureQueryService implements
     // 강사 이름, 프로필 이미지 조회를 위한 auth 포트
     private final LoadUserPort loadUserPort;
 
-    // 학생 기준 강의 목록 조회.
+    // 학생/비로그인 기준 강의 목록 조회.
     @Override
     public StudentLecturePageResponse getLectures(GetLecturesQuery query) {
-        Long studentId = studentAccountPort.getStudentId(query.userId());
 
-        List<Long> enrolledLectureIds =
-                lectureEnrollmentQueryPort.findLectureIdsByUserId(studentId);
+        // userId가 있으면 로그인 학생의 "내 수강 강의" 조회
+        // userId가 없으면 비로그인 공개 강의 조회
+        boolean enrolledOnly = query.userId() != null;
+
+        List<Long> enrolledLectureId = List.of();
+
+        if (enrolledOnly) {
+            Long studentId = studentAccountPort.getStudentId(query.userId());
+
+            enrolledLectureId =
+                    lectureEnrollmentQueryPort.findLectureIdsByUserId(studentId);
+
+            // 로그인 학생인데 수강 중인 강의가 없으면 빈 페이지 반환
+            if (enrolledLectureId.isEmpty()) {
+                return new StudentLecturePageResponse(
+                        List.of(),
+                        query.page(),
+                        query.size(),
+                        0,
+                        0
+                );
+            }
+        }
 
         var lecturePage = lectureRepository.findLectures(
                 query.category(),
                 query.keyword(),
-                query.enrolled(),
-                enrolledLectureIds,
+                enrolledOnly,
+                enrolledLectureId,
                 query.page(),
                 query.size()
         );
 
         List<StudentLectureListItemResponse> content = lecturePage.content().stream()
-                .map(lecture -> toStudentListItemResponse(
-                        lecture,
-                        enrolledLectureIds.contains(lecture.getId())
-                ))
+                .map(this::toStudentListItemResponse)
                 .toList();
 
         return new StudentLecturePageResponse(
@@ -255,23 +272,17 @@ public class LectureQueryService implements
 
     // 학생 강의 목록용 응답 객체로 변환
     private StudentLectureListItemResponse toStudentListItemResponse(
-            LectureAggregate lecture,
-            boolean enrolled
+            LectureAggregate lecture
     ) {
-        return new StudentLectureListItemResponse(
-                lecture.getId(),
-                lecture.getTeacherId(),
-                null,
-                lecture.getTitle(),
-                lecture.getDescription(),
-                lecture.getThumbnailUrl(),
-                lecture.getCategory().name(),
-                lecture.getStatus().name(),
-                lecture.getCompletedUserCount(),
-                0.0,
-                0,
-                enrolled,
-                lecture.getCreatedAt()
+        String teacherName = null;
+        double averageRating = 0.0;
+        int reviewCount = 0;
+
+        return StudentLectureListItemResponse.from(
+                lecture,
+                teacherName,
+                averageRating,
+                reviewCount
         );
     }
 }
