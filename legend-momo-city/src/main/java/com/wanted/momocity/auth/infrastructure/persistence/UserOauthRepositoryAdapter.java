@@ -1,5 +1,6 @@
 package com.wanted.momocity.auth.infrastructure.persistence;
 
+import com.wanted.momocity.auth.domain.model.Provider;
 import com.wanted.momocity.auth.domain.model.User;
 import com.wanted.momocity.auth.domain.model.UserOauth;
 import com.wanted.momocity.auth.domain.repository.UserOauthRepository;
@@ -34,7 +35,7 @@ public class UserOauthRepositoryAdapter implements UserOauthRepository {
     }
 
     @Override
-    public Optional<UserOauth> findByProviderAndProviderId(String provider, String providerId) {
+    public Optional<UserOauth> findByProviderAndProviderId(Provider provider, String providerId) {
         return springDataUserOauthRepository.findByProviderAndProviderId(provider, providerId)
                 .map(this::toDomain);
     }

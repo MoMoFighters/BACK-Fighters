@@ -1,7 +1,7 @@
 package com.wanted.momocity.lecture.domain.model;
 
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
-import com.wanted.momocity.lecture.presentation.api.response.AdminLectureListItemResponse;
+import com.wanted.momocity.lecture.presentation.api.response.AdminLectureResponse.AdminLectureListItemResponse;
 
 import java.time.LocalDateTime;
 

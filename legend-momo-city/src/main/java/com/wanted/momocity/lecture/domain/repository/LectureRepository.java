@@ -25,7 +25,7 @@ public interface LectureRepository {
     LecturePage findLectures(
             LectureCategory category,
             String keyword,
-            Boolean enrolled,
+            boolean enrolledOnly,
             List<Long> enrolledLectureIds,
             int page,
             int size
