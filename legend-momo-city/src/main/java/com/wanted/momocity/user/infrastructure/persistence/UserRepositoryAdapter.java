@@ -115,7 +115,7 @@ public class UserRepositoryAdapter implements UserRepository {
         springDataUserRepository.setAlarm(userId);
         return springDataUserRepository.findById(userId)
                 .map(UserJpaEntity::isDoNotDisturb)
-                .orElse(false);
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
     }
 
 
