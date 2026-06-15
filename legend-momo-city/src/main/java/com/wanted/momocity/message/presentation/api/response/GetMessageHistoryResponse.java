@@ -107,6 +107,7 @@ public record GetMessageHistoryResponse(
             MessageHistoryView ref = views.get(0); // 데이터 파이프라인에서 추출
             targetRole = ref.role();
             targetProfileImageUrl = ref.profileImageUrl();
+            isLeftRoom = ref.isLeftRoom(); // view에서 isLeftRoom 추출
 
             if ("TEACHER".equals(ref.role())) {
                 targetName = ref.name();

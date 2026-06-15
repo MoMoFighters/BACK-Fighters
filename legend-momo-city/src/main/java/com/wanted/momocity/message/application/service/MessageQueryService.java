@@ -370,8 +370,8 @@ public class MessageQueryService implements MessageQueryUseCase {
                     null,                                          // createdAt -> null
                     true,
                     false,
-                    true, //채팅방 나감 여부
-                    false,
+                    isLeftRoom, //채팅방 나감 여부
+                    shouldMasked,
                     targetUser != null ? targetUser.getProfileImageUrl() : loginUser.getProfileImageUrl()
             ));
         } else {
