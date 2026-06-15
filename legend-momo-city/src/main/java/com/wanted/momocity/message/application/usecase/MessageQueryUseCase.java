@@ -39,6 +39,7 @@ public interface MessageQueryUseCase {
             LocalDateTime createdAt,
             boolean isRead,
             boolean isMine,
+            boolean isLeftRoom,
             String profileImageUrl
     ) {}
 }

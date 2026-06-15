@@ -373,6 +373,7 @@ public class MessageQueryService implements MessageQueryUseCase {
                     null,                                          // createdAt -> null
                     true,
                     false,
+                    true, //채팅방 나감 여부
                     targetUser != null ? targetUser.getProfileImageUrl() : loginUser.getProfileImageUrl()
             ));
         } else {
@@ -391,6 +392,7 @@ public class MessageQueryService implements MessageQueryUseCase {
                         msg.getCreatedAt(),
                         true, // 과거 내역은 무조건 다 읽음 처리
                         isMine,
+                        isLeftRoom,
                         targetUser != null ? targetUser.getProfileImageUrl() : loginUser.getProfileImageUrl()
                 ));
             }

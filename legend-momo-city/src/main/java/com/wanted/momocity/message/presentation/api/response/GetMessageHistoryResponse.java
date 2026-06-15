@@ -10,22 +10,6 @@ import java.util.List;
 public record GetMessageHistoryResponse(
         RoomInfo roomInfo,
         List<MessageDetail> messages
-//        Long messageId,
-//        Long senderId,
-//        String name,
-//        String nickname,
-//        String lectureTitle,
-//        String role,
-//        String status,
-//        String content,
-//        LocalDateTime createdAt,
-//        boolean isRead,
-//        boolean isMine,
-//        String profileImageUrl,
-//        String notMeTargetName,
-//        String notMeNickname,
-//        String notMeRole,
-//        String notMeLectureTitle
 ) {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public record RoomInfo(
@@ -34,7 +18,8 @@ public record GetMessageHistoryResponse(
             String targetRole,
             String targetName,
             String targetLectureTitle,
-            String targetProfileImageUrl
+            String targetProfileImageUrl,
+            boolean isLeftRoom
     ) {}
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -50,6 +35,7 @@ public record GetMessageHistoryResponse(
             LocalDateTime createdAt,
             boolean isRead,
             boolean isMine,
+            boolean isLeftRoom,
             String profileImageUrl
     ) {}
 
@@ -64,13 +50,25 @@ public record GetMessageHistoryResponse(
 
         // 상대방이 보낸 말풍선 가공 규칙 적용
         if ("me".equals(view.status())) {
-            displayNickname = "나와의 채팅" + "(" + displayNickname + ")";
+//            displayNickname = "나와의 채팅" + "(" + displayNickname + ")";
+            //v2 -> 채팅방 이름을 띄울 것이므로 나와의 채팅 가공 필요 없음
         } else if (view.isMine()) {
             // 내가 보낸 메시지인 경우 마스킹 정책에서 제외하고 내 닉네임 그대로 유지
             displayNickname = view.nickname();
-        } else if (view.isNotActive()) {
+        }
+        if (!"me".equals(view.status()) && !view.isMine()) {
+            //내가 쓴 글이나 나와의 채팅이 아닌, 상대방 메시지 가공
+            if (!view.isNotActive() && (!"FRIEND".equals(view.status()) || displayNickname.isEmpty() || view.isLeftRoom())) {
                 // ACTIVE가 아니거나 차단, 친구 삭제(none) 상태일 때 "(알 수 없음)" 결합
-                displayNickname += "(알 수 없음)";
+                // v2-> ACTIVE이면서 친구가 아니거나 채팅방 나간 경우 가공
+                if (displayNickname.isEmpty()) {
+                    //상대 식별 불가면 (알 수 없음)
+                    displayNickname = "(알 수 없음)";
+                } else {
+                    //상대 식별 가능하면 닉네임(알 수 없음)
+                    displayNickname += "(알 수 없음)";
+                }
+            }
         }
 
 
@@ -79,27 +77,6 @@ public record GetMessageHistoryResponse(
         if (lectureTitle != null && !lectureTitle.isEmpty()) {
             finalLectureTitle = "(" + String.join(", ", lectureTitle) + ")";
         }
-
-//        String responseNotMeTargetName = null;
-//        String responseNotMeNickname = null;
-//        String responseNotMeRole = null;
-//        String responseNotMeLectureTitle= null;
-
-//        if (view.isMine()) {
-//            responseNotMeRole = view.notMeRole(); // 상대방의 Role (STUDENT or TEACHER)
-//
-//            // 💡 [정책 분기] 상대방이 강사(TEACHER)인 경우: 이름과 닉네임 둘 다 노출
-//            if ("TEACHER".equals(view.notMeRole())) {
-//                responseNotMeTargetName = view.notMeTargetName(); // 강사 실제 성함
-//                responseNotMeNickname = view.notMeNickname();     // 강사 닉네임
-//                responseNotMeLectureTitle = finalLectureTitle;
-//            }
-//            // 💡 [정책 분기] 상대방이 학생(STUDENT)인 경우: 이름 노출 차단(null), 닉네임만 노출
-//            else if ("STUDENT".equals(view.notMeRole())) {
-//                responseNotMeTargetName = null;                   // 학생 이름은 프라이버시로 인해 절대 숨김!
-//                responseNotMeNickname = view.notMeNickname();     // 학생 닉네임만 허용
-//            }
-//        }
 
         return new MessageDetail(
                 view.messageId(),
@@ -113,6 +90,7 @@ public record GetMessageHistoryResponse(
                 view.createdAt(), // T 문자열 그대로 노출
                 view.isRead(),    // true
                 view.isMine(),
+                view.isLeftRoom(),
                 view.profileImageUrl()
         );
     }).toList();
@@ -123,6 +101,7 @@ public record GetMessageHistoryResponse(
         String targetName = null;
         String targetLectureTitle = null;
         String targetProfileImageUrl = null;
+        boolean isLeftRoom = false;
 
         if (!views.isEmpty()) {
             MessageHistoryView ref = views.get(0); // 데이터 파이프라인에서 추출
@@ -142,7 +121,7 @@ public record GetMessageHistoryResponse(
             }
         }
 
-        RoomInfo roomInfo = new RoomInfo(roomId, targetNickname, targetRole, targetName, targetLectureTitle, targetProfileImageUrl);
+        RoomInfo roomInfo = new RoomInfo(roomId, targetNickname, targetRole, targetName, targetLectureTitle, targetProfileImageUrl, isLeftRoom);
         return new GetMessageHistoryResponse(roomInfo, detailList);
     }
 }
