@@ -1,0 +1,51 @@
+include:
+  - src/main/resources/docker-compose.yml
+
+services:
+  # MySQL 설정
+  mysql:
+    image: mysql:8.0
+    container_name: momo-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234
+      MYSQL_DATABASE: momo
+    volumes:
+      - mysql_data:/var/lib/mysql
+  # Loki 설정
+  loki:
+    image: grafana/loki:latest
+    container_name: momo-loki
+    ports:
+      - "3100:3100"
+  # Promtail 설정
+  promtail:
+    image: grafana/promtail:latest
+    container_name: momo-promtail
+    ports:
+      - "9080:9080"
+    volumes:
+      - ./docker/promtail/promtail-config.yml:/etc/promtail/config.yml
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+  # Grafana 설정
+  grafana:
+    image: grafana/grafana:latest
+    container_name: momo-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - loki
+
+volumes:
+  mysql_data:
+  grafana_data:
+
