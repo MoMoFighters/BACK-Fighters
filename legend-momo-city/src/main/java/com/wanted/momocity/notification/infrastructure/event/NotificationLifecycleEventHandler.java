@@ -27,9 +27,9 @@ public class NotificationLifecycleEventHandler {
         log.info("[NotificationLifeCycleEventHandler] 친구 요청 이벤트 수신 -> 서비스로 이동");
         //서비스로 던기지
         notificationHandlerService.createAndSaveFriendRequestNotification(
-                event.toUserId(),
+                event.toUserId(), //userId에 넣기(알림 받는 사람)
                 event.fromUserNickname(),
-                event.friendId() //ref_id 용도
+                event.fromUserId() //ref_id 용도(알림 발생시킨 사람)
         );
     }
 
@@ -40,7 +40,10 @@ public class NotificationLifecycleEventHandler {
         log.info("[NotificationLifecycleEventHandler] 친구 요청 철회 이벤트 수신 -> 알림 서비스로 이동");
 
         //주입받은 알림 서비스로 토스
-        notificationHandlerService.deleteRequestFriendNotification(event.friendId());
+        notificationHandlerService.deleteRequestFriendNotification(
+                event.fromUserId(), //refId 요청자
+                event.toUserId() //userId 대상자
+        );
     }
 
     //친구 요청 수락 완료 후 발행된 이벤트 처리 (요청한 사람에게 친구 완료 알림 저장)
@@ -50,9 +53,9 @@ public class NotificationLifecycleEventHandler {
         log.info("[NotificationLifecycleEventHandler] 친구 요청 수락 이벤트 수신 -> 알림 서비스로 이동");
 
         notificationHandlerService.createAndSaveFriendAcceptNotification(
-                event.triggerUserId(), //알림을 일으킨 사람
+                event.acceptorUserId(), //수락한 사람
                 event.acceptorNickname(), //문구에 들어갈 수락자 닉네임
-                event.friendId() //refId용
+                event.fromUserId() //refId용
         );
 
     }
