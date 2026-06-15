@@ -47,12 +47,26 @@ public class ViewingStompController {
         // STOMP 연결마다 고유한 세션 ID -> 연결 끊김 이벤트에서 세션 정보 꺼낼 때 사용
         String sessionId = headerAccessor.getSessionId();
 
-        // userId
-        // STOMP CONNECT 시점에 JWT 검증 후 세션에 저장한 값 -> HeadAccessor 로 꺼냄
-        Long userId = (Long) headerAccessor.getSessionAttributes().get("userId");
+        // sessionAttributes null 체크 -> getSessionAttributes() 자체가 null 이면 NPE 발생
+        // -> STOMP 세션이 정상적으로 맺어지지 않은 경우 방어
+        if (headerAccessor.getSessionAttributes() == null) {
+            log.warn("[Viewing] STOMP 메시지 수신 실패 - sessionAttributes 없음 | sessionId={}", sessionId);
+            return;
+        }
 
-        if (userId == null) {
-            log.warn("[Viewing] STOMP 메시지 수신 실패 - userId 없음 | sessionId={}", sessionId);
+        // userId 타입 안전하게 추출 -> instanceof 패턴 매칭으러 타입 불일치 방어
+        // -> null 이거나 Long 이 아니면 경고 로그 후 종료
+        Object rawUserId = headerAccessor.getSessionAttributes().get("userId");
+        if (!(rawUserId instanceof Long userId)) {
+            log.warn("[Viewing] STOMP 메시지 수신 실패 - userId 없음/타입 불일치 | sessionId={}", sessionId);
+            return;
+        }
+
+        // payload 검증 -> lectureId, chapterId null 체크
+        // -> playbackSeconds 음수 방어 -> 잘못된 데이터가 저장 경로로 넘어가지 않도록 차단
+        if (message.lectureId() == null || message.chapterId() == null || message.playbackSeconds() < 0) {
+            log.warn("[Viewing] STOMP 메시지 수신 실패 - 잘못된 payload | sessionId={}, lectureId={}, chapterId={}, playbackSeconds={}",
+                    sessionId, message.lectureId(), message.chapterId(), message.playbackSeconds());
             return;
         }
 

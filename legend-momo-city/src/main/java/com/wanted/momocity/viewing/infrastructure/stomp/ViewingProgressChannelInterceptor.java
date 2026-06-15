@@ -48,35 +48,32 @@ public class ViewingProgressChannelInterceptor implements ChannelInterceptor {
             return message;
         }
 
-        /*
-        * CONNECT 명령일 때만 JWT 검증
-        * 최초 연결 시 한 번만 검증 -> 이후 메세지는 세션에서 userId 꺼내서 사용
-        * */
 
+        // CONNECT 명령일 때만 JWT 검증
+        // 최초 연결 시 한 번만 검증 -> 이후 메세지는 세션에서 userId 꺼내서 사용
         if (StompCommand.CONNECT.equals(accessor.getCommand())) {
 
-            /*
-            * Authorization 헤더에서 JWT 추출
-            * 프론트가 STOMP CONNECT 시 헤더에 포함해서 전송 -> "Bearer {token}" 형태
-            * */
-
+            // Authorization 헤더에서 JWT 추출
+            // 프론트가 STOMP CONNECT 시 헤더에 포함해서 전송 -> "Bearer {token}" 형태
             String authHeader = accessor.getFirstNativeHeader("Authorization");
 
-            if (authHeader == null || !authHeader.startsWith("Bearer")) {
-                log.warn("[Viewing] STOMP CONNECT 실패 - Authorization 헤더 없음");
+            // "Bearer " (공백 포함) 로 시작하는지 정확히 검증
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 throw new IllegalArgumentException("Authorization 헤더가 없습니다.");
             }
 
-            String token = authHeader.substring(7);
+            // "Bearer " 이후 토큰 추출
+            // -> "Bearer " 이후 토큰 추출 -> trim() 으로 공백 제거 -> 빈 토큰 여부 추가 검증
+            String token = authHeader.substring("Bearer ".length()).trim();
+            if (token.isEmpty()) {
+                throw new IllegalArgumentException("JWT 토큰이 비어 있습니다.");
+            }
 
             // JWT 검증 -> 유효하지 않으면 예외 발생 -> 연결 거부
             jwtTokenProvider.validateToken(token);
 
-            /*
-            * userId 세션에 저장 -> getAuthentication() 으로 CustomUSerDetails 추출
-            * -> userId 를 세션 attributes 에 저장 -> 이후 @MessageMApping 에서 꺼내서 사용
-            * */
-
+            // userId 세션에 저장 -> getAuthentication() 으로 CustomUSerDetails 추출
+            // -> userId 를 세션 attributes 에 저장 -> 이후 @MessageMApping 에서 꺼내서 사용
             Authentication authentication = jwtTokenProvider.getAuthentication(token);
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
             Long userId = userDetails.getUserId();

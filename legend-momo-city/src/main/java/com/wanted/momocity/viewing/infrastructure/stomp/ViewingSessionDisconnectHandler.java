@@ -36,12 +36,9 @@ public class ViewingSessionDisconnectHandler {
 
         try {
 
-            /*
-            * lastPositionSec 저장
-            * 마지막으로 받은 playbackSeconds 를 lastPositionSec 으로 전달
-            * ViewingCommandService 내부에서 isCompleted 여부에 따라 저장 분기 처리
-            * */
-
+            // lastPositionSec 저장
+            // 마지막으로 받은 playbackSeconds 를 lastPositionSec 으로 전달
+            // ViewingCommandService 내부에서 isCompleted 여부에 따라 저장 분기 처리
             viewingCommandUseCase.handle(
                     new SaveProgressCommand(
                     info.userId(),
@@ -58,12 +55,9 @@ public class ViewingSessionDisconnectHandler {
 
         } catch (Exception e) {
 
-            /*
-            * 연결 끊김 시 저장 실패는 치명적이지 않음
-            * -> 예외 발생해도 서버 장애로 이어지지 않도록 catch
-            * -> 로그만 남기고 계속 진행
-            * */
-
+            // 연결 끊김 시 저장 실패는 치명적이지 않음
+            // -> 예외 발생해도 서버 장애로 이어지지 않도록 catch
+            // -> 로그만 남기고 계속 진행
             log.warn("[Viewing] lastPositionSec 저장 실패 | userId={}, chapterId={} | 예외={}",
                     info.userId(), info.chapterId(), e.getMessage());
         }
