@@ -142,6 +142,30 @@ public class UserController {
                 ));
     }
 
+
+    @PatchMapping("/settings/alarm")
+    @Operation(summary = "알림 설정",
+                description = "do_not_disturb 칼럼 활용해서 기존에 true명 false로, false면 true로 변경한다,")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "알림 설정 변경 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
+    })
+    public ResponseEntity<ApiResponse<AlarmSetResponse>> setAlarm(
+            @AuthenticationPrincipal CustomUserDetails userDetails){
+
+        boolean do_not_disturb = userCommandUsecase.setAlarm(userDetails.getUserId());
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        UserResponseCode.SUCCESS,
+                        UserResponseMessage.USER_INFO_UPDATE_SUCCESS,
+                        new AlarmSetResponse(do_not_disturb)
+                ));
+    }
+
+
+
     @GetMapping("/list")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(

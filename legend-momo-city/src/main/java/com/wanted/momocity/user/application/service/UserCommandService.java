@@ -95,4 +95,11 @@ public class UserCommandService implements UserCommandUsecase {
         log.info("[teacher] 강사 반려 처리 | userId={} | reason={}", command.userId(), command.reason());
         return new TeacherActionResult(command.userId(), "REJECTED", command.reason(), LocalDateTime.now());
     }
+
+
+    // 밤티 알림 설정
+    @Override
+    public boolean setAlarm(Long userId) {
+       return userRepository.setAlarm(userId);
+    }
 }

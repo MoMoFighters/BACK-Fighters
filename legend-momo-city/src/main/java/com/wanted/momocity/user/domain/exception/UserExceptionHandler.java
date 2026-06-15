@@ -52,4 +52,15 @@ public class UserExceptionHandler {
                 ));
     }
 
+    // 사용자를 찾지 못했을 때
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleUserNotFoundException(UserNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiErrorResponse.of(
+                        HttpStatus.NOT_FOUND.value(),
+                        "USER_NOT_FOUND",
+                        e.getMessage()
+                ));
+    }
+
 }
