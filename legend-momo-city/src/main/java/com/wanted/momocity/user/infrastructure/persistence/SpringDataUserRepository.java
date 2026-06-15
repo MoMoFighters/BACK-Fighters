@@ -94,7 +94,7 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
     // 밤티 알림 설정
     // 기존에 true 이면 false로
     // 기존에 false면 true로
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE UserUser u SET u.doNotDisturb = CASE " +
             "WHEN u.doNotDisturb = true " +
             "THEN false " +
