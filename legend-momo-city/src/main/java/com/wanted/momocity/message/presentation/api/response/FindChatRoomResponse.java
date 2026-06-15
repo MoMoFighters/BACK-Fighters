@@ -23,6 +23,7 @@ public record FindChatRoomResponse(
 ) {
     public static FindChatRoomResponse from(ChatRoomView view) {
         //🚨다대다에서 roomInfo, memberInfo로 줄 땐 닉네임 가공X(메시지 내역에서 가공)
+        //v2 -> 일대일의 경우도 있으므로 가공해야함
         //ACTIVE아니면 (알 수 없음) 가공
         String displayNickname = (view.nickname() != null) ? view.nickname() : "";
         String finalLectureTitle = null;
@@ -43,7 +44,6 @@ public record FindChatRoomResponse(
                 displayNickname += "(알 수 없음)";
             }
         }
-        //채팅방 목록 조회에선 memberInfo에 가공없이 그대로의 상태를 전달해야 하므로 닉네임 가공 로직 주석 처리
 
         List<String> lectureTitle = view.lectureTitle();
         if (lectureTitle != null && !lectureTitle.isEmpty()) {

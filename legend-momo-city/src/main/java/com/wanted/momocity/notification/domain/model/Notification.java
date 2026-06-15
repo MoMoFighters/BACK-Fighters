@@ -26,9 +26,9 @@ public class Notification {
     public static Notification createFriendAccept(Long acceptorUserId, String message, Long fromUserId) {
         return new Notification(
                 null,
-                acceptorUserId,
-                "FRIEND_REQUEST",
                 fromUserId,
+                "FRIEND_REQUEST",
+                acceptorUserId,
                 message);
     }
 

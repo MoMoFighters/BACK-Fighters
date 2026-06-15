@@ -43,11 +43,11 @@ public class CatalogNotificationRepositoryAdapter implements NotificationReposit
     //친구 요청 철회
     @Override
     @Transactional
-    public void deleteByRefIdAndType(Long refId, String type) {
+    public void deleteByRefIdAndUserId_IdAndType(Long refId, Long userId, String type) {
         log.info("[CatalogNotificationRepositoryAdapter] notification 테이블 행 영구 삭제 시도 - refId: {}, type: {}",
                 refId, type);
 
-        springDataNotificationRepository.deleteByRefIdAndType(refId, type);
+        springDataNotificationRepository.deleteByRefIdAndUserId_IdAndType(refId, userId, type);
 
         log.info("[CatalogNotificationRepositoryAdapter] notification 테이블 행 삭제 완료");
     }
