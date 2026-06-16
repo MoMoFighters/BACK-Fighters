@@ -1,6 +1,5 @@
 package com.wanted.momocity.viewing.application.service;
 
-import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.viewing.application.policy.EnrollmentAccessPolicy;
 import com.wanted.momocity.viewing.application.policy.SequentialAccessPolicy;
 import com.wanted.momocity.viewing.application.port.ChapterPort;
@@ -53,11 +52,6 @@ public class ViewingQueryService implements ViewingQueryUseCase {
         // 챕터 정보 조회
         Chapter chapter = chapterPort.findById(chapterId);
 
-        // 재생 가능 여부 확인 (도메인 메서드)
-        if (!chapter.isPlayable()) {
-            throw new DomainRuleViolationException("현재 재생할 수 없는 영상입니다.");
-        }
-
         // 순차 시청 제한 (Policy)
         sequentialAccessPolicy.ensureSequentialAccess(userId, lectureId, chapterId);
 
@@ -85,7 +79,6 @@ public class ViewingQueryService implements ViewingQueryUseCase {
         // 전체 챕터 수 조회
         List<Chapter> chapters = chapterPort.findAllByLectureId(lectureId)
                 .stream()
-                .filter(Chapter::isPlayable)
                 .toList();
 
         // 시청 기록 전체 조회
@@ -182,7 +175,6 @@ public class ViewingQueryService implements ViewingQueryUseCase {
         // 전체 챕터 수 조회
         List<Chapter> chapters = chapterPort.findAllByLectureId(lectureId)
                 .stream()
-                .filter(Chapter::isPlayable)
                 .toList();
 
         // 진척도 계산 (learning_history 집계)
@@ -206,7 +198,6 @@ public class ViewingQueryService implements ViewingQueryUseCase {
         // 전체 챕터 목록 조회
         List<Chapter> chapters = chapterPort.findAllByLectureId(lectureId)
                 .stream()
-                .filter(Chapter::isPlayable)
                 .toList();
 
         // 시청 기록 전체 조회
@@ -303,8 +294,6 @@ public class ViewingQueryService implements ViewingQueryUseCase {
 
         List<Chapter> chapters = chapterPort.findAllByLectureId(lectureId)
                 .stream()
-                // READY 챕터만 필터링
-                .filter(Chapter::isPlayable)
                 .toList();
         List<LearningHistory> histories = learningHistoryRepository
                 .findByUserIdAndLectureId(userId, lectureId);

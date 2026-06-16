@@ -3,7 +3,6 @@ package com.wanted.momocity.viewing.infrastructure.catalog;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
-import com.wanted.momocity.lecture.domain.model.VideoStatus;
 import com.wanted.momocity.lecture.infrastructure.persistence.ChapterJpaEntity;
 import com.wanted.momocity.lecture.infrastructure.persistence.SpringDataChapterRepository;
 import com.wanted.momocity.viewing.application.port.ChapterPort;
@@ -184,27 +183,8 @@ public class ChapterCatalogAdapter implements ChapterPort {
                 entity.getOrderNo(),
                 entity.getVideoUrl(),
                 // durationSec null 가능 → 0 처리
-                entity.getDurationSec() != null ? entity.getDurationSec() : 0,
-                // VideoStatus -> Chapter.VideoStatus 변환
-                toVideoStatus(entity.getVideoStatus())
+                entity.getDurationSec() != null ? entity.getDurationSec() : 0
         );
-    }
-
-    /*
-     * toVideoStatus
-     * VideoStatus → Chapter.VideoStatus 변환
-     * -> 두 enum 값 동일하지만 패키지가 달라서 직접 변환 필요
-     */
-    private Chapter.VideoStatus toVideoStatus(
-            VideoStatus videoStatus
-    ) {
-        return switch (videoStatus) {
-            case UPLOADING -> Chapter.VideoStatus.UPLOADING;
-            case ENCODING -> Chapter.VideoStatus.ENCODING;
-            case READY -> Chapter.VideoStatus.READY;
-            case FAILED -> Chapter.VideoStatus.FAILED;
-        };
-
     }
 
 }

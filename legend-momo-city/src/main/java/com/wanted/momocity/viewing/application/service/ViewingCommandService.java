@@ -150,8 +150,6 @@ public class ViewingCommandService implements ViewingCommandUseCase {
 
         List<Chapter> chapters = chapterPort.findAllByLectureId(lectureId)
                 .stream()
-                // READY 챕터만 필터링
-                .filter(Chapter::isPlayable)
                 .toList();
         List<LearningHistory> histories = learningHistoryRepository
                 .findByUserIdAndLectureId(userId, lectureId);
