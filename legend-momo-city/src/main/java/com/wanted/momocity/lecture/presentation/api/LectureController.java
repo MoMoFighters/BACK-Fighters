@@ -111,7 +111,7 @@ public class LectureController {
         request.validateCategory();
         request.validateThumbnailSize();
 
-        String thumbnailUrl = s3UploadPort.upload(request.thumbnail(), "lectuers/");
+        String thumbnailUrl = s3UploadPort.upload(request.thumbnail(), "lectuers");
 
         LectureAggregate lecture = lectureCommandUseCase.createLecture(
                 request.toCommand(teacherId, thumbnailUrl)
