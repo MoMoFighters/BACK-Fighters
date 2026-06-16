@@ -22,6 +22,7 @@ public final class TeacherResponseMessage {
 
     private TeacherResponseMessage() {
     }
+    public static final String TEACHER_APPLIED = "강사 신청이 완료되었습니다. 강사로 승인된 후 로그인 하실 수 있습니다.";
 
     public static final String APPLICATION_LIST_FETCHED = "강사 신청자 목록 조회 완료";
     public static final String APPLICATION_DETAIL_FETCHED = "강사 신청자 상세 조회 완료";

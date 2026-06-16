@@ -1,10 +1,7 @@
 package com.wanted.momocity.user.domain.repository;
 
 import com.wanted.momocity.user.application.command.UpdateUserInfoCommand;
-import com.wanted.momocity.user.domain.model.Role;
-import com.wanted.momocity.user.domain.model.Status;
-import com.wanted.momocity.user.domain.model.TeacherApplication;
-import com.wanted.momocity.user.domain.model.User;
+import com.wanted.momocity.user.domain.model.*;
 
 import java.util.List;
 import java.util.Optional;
@@ -51,4 +48,10 @@ public interface UserRepository {
 
     // 밤티 알림 설정
     boolean setAlarm(Long userId);
+
+    // 강사 신청
+    void teacherApply(Long userId,String nickname, Category category, String proof);
+
+    // 강사 중복 신청 확인용
+    boolean existsByIdAndRoleAndStatus(Long userId, Role role, Status status);
 }

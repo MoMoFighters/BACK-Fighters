@@ -5,7 +5,6 @@ public final class AuthResponseMessage {
    private AuthResponseMessage(){}
 
     public static final String STUDENT_CREATED = "회원가입이 완료되었습니다.";
-    public static final String TEACHER_CREATED = "회원가입이 완료되었습니다. 강사로 승인된 후 로그인 하실 수 있습니다.";
 
     public static final String LOGIN_SUCCESS = "로그인 성공하였습니다.";
     public static final String LOGIN_COMPLETED = "사용자 정보가 성공적으로 조회되었습니다.";

@@ -62,8 +62,8 @@ public class User {
 
 
 
-    // 학생 생성
-    public static User studentRegister(String email, String password, String name ) {
+    // 회원가입
+    public static User signup(String email, String password, String name ) {
         return new User(
                 null,           // id,
                 email, password, name,
@@ -84,28 +84,6 @@ public class User {
         );
     }
 
-
-    // 강사 생성
-    public static User teacherRegister(String email, String password, String name, Category category, String proof ) {
-        return new User(
-                null,           // id,
-                email, password, name,
-                null,           // nickname
-                null,           // birth
-                "https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png", // profileImageUrl
-                Role.TEACHER,
-                Status.PENDING,      // 가입 시 기본값
-                category,           // category (학생은 null)
-                proof,           // proof
-                0L,              // point
-                false,          // isPaid
-                false,          // doNotDisturb
-                LocalDateTime.now(),    // createdAt
-                LocalDateTime.now(),    // updatedAt
-                null,           // deletedAt
-                false           // isTempPwd
-        );
-    }
 
     public Long getUserId() {
         return id;
