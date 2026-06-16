@@ -1,6 +1,7 @@
 package com.wanted.momocity.user.infrastructure.persistence;
 
 import com.wanted.momocity.user.application.command.UpdateUserInfoCommand;
+import com.wanted.momocity.user.domain.exception.UserNotFoundException;
 import com.wanted.momocity.user.domain.model.Role;
 import com.wanted.momocity.user.domain.model.Status;
 import com.wanted.momocity.user.domain.model.TeacherApplication;
@@ -107,6 +108,15 @@ public class UserRepositoryAdapter implements UserRepository {
         return springDataUserRepository.countForAdmin(role, status);
     }
 
+
+    // 밤티 알림 설정
+    @Override
+    public boolean setAlarm(Long userId) {
+        springDataUserRepository.setAlarm(userId);
+        return springDataUserRepository.findById(userId)
+                .map(UserJpaEntity::isDoNotDisturb)
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
+    }
 
 
     // 마이페이지 내 정보 조회용

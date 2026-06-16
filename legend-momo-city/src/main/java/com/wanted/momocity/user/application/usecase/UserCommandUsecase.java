@@ -19,6 +19,9 @@ public interface UserCommandUsecase {
     // 강사 거절 처리
     TeacherActionResult reject(RejectTeacherCommand command);
 
+    // 밤티 알림 설정
+    boolean setAlarm(Long userId);
+
     /**
      * 승인/반려 처리 결과.
      * status: ACTIVE (승인) 또는 REJECTED (반려)

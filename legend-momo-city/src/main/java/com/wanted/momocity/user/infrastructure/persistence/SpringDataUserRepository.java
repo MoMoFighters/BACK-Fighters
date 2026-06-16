@@ -90,4 +90,15 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
             @Param("role") Role role,
             @Param("status") Status status
     );
+
+    // 밤티 알림 설정
+    // 기존에 true 이면 false로
+    // 기존에 false면 true로
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE UserUser u SET u.doNotDisturb = CASE " +
+            "WHEN u.doNotDisturb = true " +
+            "THEN false " +
+            "ELSE true END WHERE u.id = :userId")
+    void setAlarm(@Param("userId") Long userId);
+
 }

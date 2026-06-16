@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1")
+@RequestMapping("/api/v1/user")
 @Tag(name="User - 사용자 정보 관리", description = "user 정보를 다루기 위한 User api 관련 컨트롤러")
 public class UserController {
 
@@ -38,7 +38,7 @@ public class UserController {
     private final RedisRefreshTokenPort redisRefreshTokenPort;
 
 
-    @GetMapping("/user/detail")
+    @GetMapping("/detail")
     @Operation(
             summary = "회원 1명의 정보 조회",
             description = "마이페이지에서 사용자에게 제시될 정보 조회"
@@ -59,7 +59,7 @@ public class UserController {
     }
 
 
-    @PatchMapping("/user/register/nickname")
+    @PatchMapping("/register/nickname")
     @Operation(summary = "사용자의 닉네임 등록을 위한 api")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "닉네임 등록 성공"),
@@ -82,7 +82,7 @@ public class UserController {
     }
 
 
-    @PatchMapping("/user/update")
+    @PatchMapping("/update")
     @Operation(summary = "사용자 정보 수정",
             description = "프로필 이미지(모듈4부터), 닉네임, 비밀번호 변경 가능")
     @ApiResponses({
@@ -122,7 +122,7 @@ public class UserController {
                 ));
     }
 
-    @PostMapping("/user/nickname/check")
+    @PostMapping("/nickname/check")
     @Operation(summary = "닉네임 중복 확인")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "사용 가능한 닉네임"),
@@ -142,7 +142,31 @@ public class UserController {
                 ));
     }
 
-    @GetMapping("/users")
+
+    @PatchMapping("/settings/alarm")
+    @Operation(summary = "알림 설정",
+                description = "do_not_disturb 칼럼 활용해서 기존에 true명 false로, false면 true로 변경한다,")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "알림 설정 변경 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
+    })
+    public ResponseEntity<ApiResponse<AlarmSetResponse>> setAlarm(
+            @AuthenticationPrincipal CustomUserDetails userDetails){
+
+        boolean do_not_disturb = userCommandUsecase.setAlarm(userDetails.getUserId());
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        UserResponseCode.SUCCESS,
+                        UserResponseMessage.USER_INFO_UPDATE_SUCCESS,
+                        new AlarmSetResponse(do_not_disturb)
+                ));
+    }
+
+
+
+    @GetMapping("/list")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(
             summary = "관리자 회원 목록 조회",

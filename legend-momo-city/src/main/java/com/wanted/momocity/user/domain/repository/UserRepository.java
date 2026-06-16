@@ -49,4 +49,6 @@ public interface UserRepository {
 
     long countForAdmin(Role role, Status status);
 
+    // 밤티 알림 설정
+    boolean setAlarm(Long userId);
 }
