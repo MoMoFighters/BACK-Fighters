@@ -34,58 +34,27 @@ public class AuthController {
     private final NewTokenUsecase newTokenUsecase;
 
     private final TokenProviderPort tokenProviderPort;
-    private final S3UploadPort s3UploadPort;
 
-
-    @PostMapping("/signup/student")
+    @PostMapping("/signup")
     @Operation(
-            summary = "학생 자체 회원가입",
-            description = "해당 api를 통해 회원가입 한 사람의 role을 STUDENT로 하여 user테이블에 추가하는 메서드"
+            summary = "학생/강사 자체 회원가입",
+            description = "해당 api를 통해 회원가입 한 사람의 role을 STUDENT로 하여 user테이블에 추가하는 메서드이다." +
+                    "학생/강사 모두 우선 학생으로 STUDENT로 가입하고 강사는 추후 강사신청 과정을 거쳐 TEACHER 로 변경된다."
     )
     @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "학생 회원가입 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "회원가입 성공"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "유효하지 않은 요청 값 (@Valid 실패)"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "이메일 중복")
     })
-    public ResponseEntity<ApiResponse<Void>> studentSignup (
-            @Valid @RequestBody StudentSignupRequest request){
+    public ResponseEntity<ApiResponse<Void>> signup (
+            @Valid @RequestBody SignupRequest request){
 
-        authCommandUsecase.signup(new StudentSignupCommand(request.email(),request.password(),request.name()));
+        authCommandUsecase.signup(new SignupCommand(request.email(),request.password(),request.name()));
 
         return ResponseEntity.status(HttpStatus.CREATED) //201
                 .body(ApiResponse.created(
                         AuthResponseCode.CREATED,
                         AuthResponseMessage.STUDENT_CREATED,
-                        null
-                ));
-    }
-
-
-    @PostMapping("/signup/teacher")
-    @Operation(
-            summary = "강사 자체 회원가입",
-            description = "해당 api를 통해 회원가입 한 사람의 role을 TEACHER로, status는 PENDING으로 하여 user테이블에 추가하는 메서드"
-    )
-    @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "강사 회원가입 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "유효하지 않은 요청 값 (@Valid 실패)"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "이메일 중복")
-    })
-    public ResponseEntity<ApiResponse<Void>> teacherSignup (
-            @Valid @ModelAttribute TeacherSignupRequest request){
-
-        if (request.proof() == null || request.proof().isEmpty()) {
-            throw new MissingProofException("증빙 자료는 필수 제출입니다.");
-        }
-
-        String proofKey = s3UploadPort.upload(request.proof(),"teacher_proof");  // 여기서 선언하고 값 넣어줌
-
-        authCommandUsecase.signup(new TeacherSignupCommand(request.email(),request.password(),request.name(),request.category(),proofKey));
-
-        return ResponseEntity.status(HttpStatus.CREATED) //201
-                .body(ApiResponse.created(
-                        AuthResponseCode.CREATED,
-                        AuthResponseMessage.TEACHER_CREATED,
                         null
                 ));
     }

@@ -1,5 +1,10 @@
 package com.wanted.momocity.user.presentation.api;
 
+import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
+import com.wanted.momocity.user.application.command.TeacherApplyCommand;
+import com.wanted.momocity.auth.domain.exception.MissingProofException;
+import com.wanted.momocity.user.presentation.api.request.TeacherApplyRequest;
+import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.user.application.command.ApproveTeacherCommand;
 import com.wanted.momocity.user.application.command.RejectTeacherCommand;
@@ -17,19 +22,14 @@ import com.wanted.momocity.user.presentation.api.response.TeacherApplicationList
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
 
 /* comment.
     TeacherApplicationController 정리
@@ -61,14 +61,50 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1")
-@PreAuthorize("hasRole('ADMIN')")
 @Tag(name = "Teacher - 강사 신청 관리", description = "강사 신청자 조회 및 승인/반려 (MS-3, MS-4, MS-5)")
 public class TeacherApplicationController {
 
     private final UserCommandUsecase userCommandUsecase;
     private final UserQueryUsecase userQueryUsecase;
 
+    private final S3UploadPort s3UploadPort;
+
+
+
+    @PostMapping("/teacherApply")
+    @Operation(
+            summary = "강사 신청",
+            description = "강사는 해당 api를 통해 강사 증빙자료를 제출하고 강사 신청을 진행한다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "강사 신청 완료"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "유효하지 않은 요청 값 (@Valid 실패)"),
+//            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "이메일 중복")
+    })
+    public ResponseEntity<ApiResponse<Void>> teacherApply(
+            @Valid @ModelAttribute TeacherApplyRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails){
+
+        // 증빙자료 제출 여부 확인
+        if (request.proof() == null || request.proof().isEmpty()) {
+            throw new MissingProofException("증빙 자료는 필수 제출입니다.");
+        }
+
+//        String proofKey = s3UploadPort.upload(request.proof(),"teacher_proof");
+        String proofKey = s3UploadPort.upload(request.proof());
+
+        userCommandUsecase.teacherApply(new TeacherApplyCommand(userDetails.getUserId(),request.nickname(),request.category(),proofKey));
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        TeacherResponseCode.SUCCESS,
+                        TeacherResponseMessage.TEACHER_APPLIED,
+                        null
+                ));
+    }
+
     @GetMapping("/admin/users/instructor-applications")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "강사 신청자 목록 조회 (MS-3)")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "강사 신청자 목록 조회 성공"),
@@ -97,6 +133,7 @@ public class TeacherApplicationController {
     }
 
     @GetMapping("/admin/users/instructor-applications/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "강사 신청자 상세 조회 (MS-4)")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "강사 신청자 상세 조회 성공"),
@@ -118,6 +155,7 @@ public class TeacherApplicationController {
     }
 
     @PatchMapping("/users/{userId}/role")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "강사 승인/반려 (MS-5)",
             description = "action=APPROVE 시 강사 승인, action=REJECT 시 반려. REJECT 는 reason 최소 10자.")
     @ApiResponses({

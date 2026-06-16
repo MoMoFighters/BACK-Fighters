@@ -5,8 +5,8 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 
-@Schema(description = "학생 수강 신청 요청")
-public record StudentSignupRequest(
+@Schema(description = "신청 요청")
+public record SignupRequest(
 
     @Schema(description = "회원가입 할 사용자 이메일 - 로그인 시 id로 사용")
     @NotBlank(message = "이메일을 입력해주세요.")

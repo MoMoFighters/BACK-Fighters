@@ -1,9 +1,6 @@
 package com.wanted.momocity.user.application.usecase;
 
-import com.wanted.momocity.user.application.command.ApproveTeacherCommand;
-import com.wanted.momocity.user.application.command.RejectTeacherCommand;
-import com.wanted.momocity.user.application.command.NicknameRegisterCommand;
-import com.wanted.momocity.user.application.command.UpdateUserInfoCommand;
+import com.wanted.momocity.user.application.command.*;
 
 import java.time.LocalDateTime;
 
@@ -12,6 +9,9 @@ public interface UserCommandUsecase {
     String registerNickname(NicknameRegisterCommand command);
 
     void updateUserInfo(UpdateUserInfoCommand command);
+
+    // 강사 신청
+    void teacherApply(TeacherApplyCommand command);
 
     // 강사 승인 처리
     TeacherActionResult approve(ApproveTeacherCommand command);

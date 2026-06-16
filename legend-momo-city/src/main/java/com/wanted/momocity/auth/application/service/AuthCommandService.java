@@ -90,40 +90,22 @@ public class AuthCommandService implements AuthCommandUsecase {
     }
 
 
-    // 강사 회원가입
+    // 회원가입
     @Override
-    public void signup(TeacherSignupCommand command) {
-
-        // 정책 확인
-        signupPolicy.ensureEligible(command.email());
-
-        // 이메일(id), 비밀번호, 이름, 카테고리, 증빙자료 url 넘겨서 새로운 강사 자바 객체 생성
-        User user = userRepository.register(User.teacherRegister(command.email(), passwordEncoder.encode(command.password()), command.name(), command.category(),command.proof()));
-
-        // 이메일 인증 하고서 인증됨 의 상태를 지움
-        emailCodePort.deleteVerified(command.email());
-
-        // 회원가입 하고서 이벤트 발행 - 나와의 채팅 생성용
-        eventPublisher.publishEvent(new SignupCompletedEvent(user.getId()));
-
-        log.info("[signup] 회원가입 완료 | email={} | role=TEACHER", command.email());
-    }
-
-    // 학생 회원가입
-    @Override
-    public void signup(StudentSignupCommand command) {
+    public void signup(SignupCommand command) {
 
         // 정책 확인
         signupPolicy.ensureEligible(command.email());
 
         // 이메일(id), 비밀번호, 이름 넘겨서 새로운 학생 자바 객체 생성
-        User user = userRepository.register(User.studentRegister(command.email(), passwordEncoder.encode(command.password()), command.name()));
+        userRepository.register(User.signup(command.email(), passwordEncoder.encode(command.password()), command.name()));
 
         // 이메일 인증 하고서 인증됨 의 상태를 지움
         emailCodePort.deleteVerified(command.email());
 
         // 회원가입 하고서 이벤트 발행 - 나와의 채팅 생성용
-        eventPublisher.publishEvent(new SignupCompletedEvent(user.getId()));
+        // 추후 결제 완료 후 해당 이벤트 발행
+//        eventPublisher.publishEvent(new SignupCompletedEvent(user.getId()));
 
         log.info("[signup] 회원가입 완료 | email={} | role=STUDENT", command.email());
 
