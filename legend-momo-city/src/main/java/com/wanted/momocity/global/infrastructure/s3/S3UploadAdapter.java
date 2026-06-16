@@ -24,10 +24,8 @@ public class S3UploadAdapter implements S3UploadPort {
     private String region;
 
     @Override
-//    public String upload(MultipartFile file, String folder) {
-    public String upload(MultipartFile file) {
-//        String key = folder + "/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
-        String key = "/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
+    public String upload(MultipartFile file, String folder) {
+        String key = folder + "/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
 
         try {
             s3Client.putObject(
