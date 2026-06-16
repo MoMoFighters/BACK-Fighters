@@ -23,12 +23,12 @@ public class Notification {
     }
 
     //친구 요청 수락
-    public static Notification createFriendAccept(Long triggerUserId, String message, Long friendId) {
+    public static Notification createFriendAccept(Long acceptorUserId, String message, Long fromUserId) {
         return new Notification(
                 null,
-                triggerUserId,
+                fromUserId,
                 "FRIEND_REQUEST",
-                friendId,
+                acceptorUserId,
                 message);
     }
 

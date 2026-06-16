@@ -10,8 +10,8 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL) //null일 때 json 미출력
 public record FindUserResponse(
         @Schema(description = "유저 ID", example = "3")Long userId,
-        String nickname,
         String name,
+        String nickname,
         String status,
         String role,
         String lectureTitle,
@@ -21,9 +21,10 @@ public record FindUserResponse(
     public static FindUserResponse from(FindView view) {
         //비활성 유저 닉네임 가공
         String displayNickname = view.nickname();
-        if (view.isNotActive()) {
+        if (!view.isNotActive() && !"FRIEND".equals(view.status())) {
             displayNickname += "(알 수 없음)";
         }
+        //user 담당자가 ACTIVE가 아닌 건 알 수 없음 가공 처리하기 때문에 ACTIVE이면서 친구가 아닌 경우에 알 수 없음 가공
 
         //강의명 가공
         String finalLectureTitle = null;

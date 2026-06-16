@@ -12,9 +12,10 @@ public record BlockedFriendResponse(
     public static BlockedFriendResponse from(BlockedView view) {
         //ACTIVE가 아니면 (알 수 없음)
         String displayNickname = view.nickname();
-        if (view.isNotActive()) {
-            displayNickname += "(알 수 없음)";
-        }
+//        if (view.isNotActive()) {
+//            displayNickname += "(알 수 없음)";
+//        }
+        //user 담당자가 알 수 없음 가공해서 주기 때문에 주석처리
 
         return new BlockedFriendResponse(
                 view.userId(),

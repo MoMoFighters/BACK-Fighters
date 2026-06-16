@@ -15,6 +15,8 @@ public interface MessageQueryUseCase {
             String role,
             String status, //친구 상태
             Boolean isNotActive, //ACTIVE아닌 것
+            boolean shouldMasked,
+            boolean isLeftRoom,
             Long roomId, //채팅방 번호
             String content, //마지막 채팅 내역
             LocalDateTime createdAt, //마지막 채팅 시각
@@ -39,6 +41,8 @@ public interface MessageQueryUseCase {
             LocalDateTime createdAt,
             boolean isRead,
             boolean isMine,
+            boolean isLeftRoom,
+            boolean shouldMasked,
             String profileImageUrl
     ) {}
 }

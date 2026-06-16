@@ -66,10 +66,9 @@ public class FriendCommandService implements FriendCommandUseCase {
 
         //알림 도메인을 위한 이벤트 발행
         eventPublisher.publishEvent(new RequestFriendPublishedEvent(
-                loginUser.getId(),
+                loginUser.getId(), //refId 용도
                 loginUser.getNickname(),
-                targetUser.getId(),
-                savedRelation.getId() //ref_id 용도로 friend_id 추가
+                targetUser.getId() //userId에 해당
         ));
         log.info("[RequestFriendCommandService] friend 행 추가 완료 및 비동기 알림 유도 이벤트 발행 성공(ref_id: {})", savedRelation.getId());
 
@@ -123,7 +122,10 @@ public class FriendCommandService implements FriendCommandUseCase {
 
         //notification에 들어간 행 삭제를 위한 이벤트 발행
         UserWithFMJpaEntity loginUser = friendRepository.findUserById(command.userId()).orElseThrow();
-        eventPublisher.publishEvent(new CancelRequestFriendPublishedEvent(relation.getId()));
+        eventPublisher.publishEvent(new CancelRequestFriendPublishedEvent(
+                loginUser.getId(), //refId가 로그인 유저
+                targetUser.getId() //userId가 상대방(요청 받는 사람)
+        ));
 
         //응답 주머니 조립하여 컨트롤러로 반환
         return new CancelRequestFriendView(
@@ -168,9 +170,9 @@ public class FriendCommandService implements FriendCommandUseCase {
 
         //이벤트 발행
         eventPublisher.publishEvent(new AcceptRequestFriendPublishedEvent(
-                loginUser.getId(),
-                loginUser.getNickname(),
-                relation.getId() //알림 내역 추적용
+                loginUser.getId(), //수락한 사람
+                loginUser.getNickname(), //수락한 사람
+                fromUser.getId() //알림 내역 추적용(먼저 요청 보낸 사람)
         ));
         log.info("[AcceptRequestFriendCommandService] 친구 수락 알림 유도 이벤트 발행 성공 - 수신 대상 유저ID: {}", fromUser.getId());
 

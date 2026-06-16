@@ -135,14 +135,13 @@ public class MessageQueryService implements MessageQueryUseCase {
 
             //만약 진짜 나와의 채팅이 아닌데 targetUser가 loginUser라면
             //상대방이 나간 방이므료 무조건 (알 수 없음) 처리하기
-            boolean isNotActive;
-            if (isLeftRoom) {
-                isNotActive = true; //상대방이 나갔으므로 (알 수 없음) 띄우기 위함
-            } else {
+            //🚨 v2 -> 일대일 채팅의 경우를 고려해 memberInfo에 데이터 가공 필요.
+            boolean shouldMasked = false;
+            if (targetUser != null){
                 //BLOCK 상태이면 BLOCK으로 넘기되 (알 수 없음)으로 가공하기 위해 연동 준비
                 //서비스 레이어는 비활성화 상태 여부만 체크
                 //정책 클래스에 위임
-                isNotActive = messageEligibilityPolicy.determineNotActive(targetUser, friendStatus,userId);
+                shouldMasked = messageEligibilityPolicy.determineNotActive(targetUser, friendStatus,userId);
             }
 
             //강의명 추출 (나와의 채팅이 아닐 때만)
@@ -193,7 +192,9 @@ public class MessageQueryService implements MessageQueryUseCase {
                     targetUser != null ? targetUser.getNickname() : null, // ◀️ null로 들어감
                     targetUser != null ? targetUser.getRole() : "STUDENT",
                     friendStatus,
-                    isNotActive, //비활성 여부(user 테이블)
+                    targetUser != null && !"ACTIVE".equals(targetUser.getStatus()), //비활성 여부(user 테이블)
+                    shouldMasked,
+                    isLeftRoom,
                     roomId,
                     lastContent,
                     lastChattedAt,
@@ -311,13 +312,9 @@ public class MessageQueryService implements MessageQueryUseCase {
         }
 
         // 4. 활성화 여부 정책 판별
-        boolean isNotActive;
-        if (isLeftRoom) {
-            isNotActive = true;
-        } else if (targetUser != null) {
-            isNotActive = messageEligibilityPolicy.determineNotActive(targetUser, friendStatus, userId);
-        } else {
-            isNotActive = false;
+        boolean shouldMasked = false;
+        if (targetUser != null) {
+            shouldMasked = messageEligibilityPolicy.determineNotActive(targetUser, friendStatus, userId);
         }
 
         // 5. 강의명 리스트 추출
@@ -367,12 +364,14 @@ public class MessageQueryService implements MessageQueryUseCase {
                     targetUser != null ? targetUser.getNickname() : loginUser.getNickname(),
                     targetUser != null ? targetUser.getRole() : loginUser.getRole(),
                     friendStatus,
-                    isNotActive,
+                    targetUser != null && !"ACTIVE".equals(targetUser.getStatus()),
                     lectureTitleList,
                     null,                                          // content -> null
                     null,                                          // createdAt -> null
                     true,
                     false,
+                    isLeftRoom, //채팅방 나감 여부
+                    shouldMasked,
                     targetUser != null ? targetUser.getProfileImageUrl() : loginUser.getProfileImageUrl()
             ));
         } else {
@@ -385,12 +384,14 @@ public class MessageQueryService implements MessageQueryUseCase {
                         msg.getSenderId().getNickname(),
                         msg.getSenderId().getRole(), //역할
                         friendStatus, //친구 상태
-                        isNotActive,
+                        targetUser != null && !"ACTIVE".equals(targetUser.getStatus()),
                         lectureTitleList,
                         msg.getContent(), // 🎯 빠져있던 본문 추가!
                         msg.getCreatedAt(),
                         true, // 과거 내역은 무조건 다 읽음 처리
                         isMine,
+                        isLeftRoom,
+                        shouldMasked,
                         targetUser != null ? targetUser.getProfileImageUrl() : loginUser.getProfileImageUrl()
                 ));
             }

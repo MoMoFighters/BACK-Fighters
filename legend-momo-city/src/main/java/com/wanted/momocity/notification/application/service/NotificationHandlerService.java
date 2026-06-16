@@ -24,14 +24,14 @@ public class NotificationHandlerService {
     /**
      * 친구 요청 알림 생성 및 저장 비즈니스 로직
      */
-    public void createAndSaveFriendRequestNotification(Long toUserId, String fromUserNickname, Long friendId) {
+    public void createAndSaveFriendRequestNotification(Long toUserId, String fromUserNickname, Long fromUserId) {
         log.info("[NotificationHandlerService] 알림 비즈니스 로직 시작 - 대상자 ID: {}", toUserId);
 
         //알림 메시지 조립
         String message = String.format("%s님이 친구 요청을 보냈습니다.", fromUserNickname);
 
         //순수한 도메인 모델 직접 탄생시킴
-        Notification newNotification = Notification.createFriendRequest(toUserId, message, friendId);
+        Notification newNotification = Notification.createFriendRequest(toUserId, message, fromUserId);
 
         //도메인 규격 리포지토리를 통해 저장 수행
         Notification saved = notificationRepository.save(newNotification);
@@ -39,22 +39,22 @@ public class NotificationHandlerService {
     }
 
     //친구 요청 철회 시 친구 요청으로 들어간 notification 행 삭제
-    public void deleteRequestFriendNotification(Long refId) {
-        log.info("[NotificationHandlerService] 친구 요청 철회로 인한 알림 삭제 시도 - refId: {}", refId);
+    public void deleteRequestFriendNotification(Long fromUserId, Long toUserId) {
+        log.info("[NotificationHandlerService] 친구 요청 철회로 인한 알림 삭제 시도 - 철회 요청자: {}", fromUserId);
 
         //"FRIEND_REQUEST" 타입이면서 refId가 일치하면 삭제
-        notificationRepository.deleteByRefIdAndType(refId, "FRIEND_REQUEST");
+        notificationRepository.deleteByRefIdAndUserId_IdAndType(fromUserId, toUserId, "FRIEND_REQUEST");
     }
 
     //친구 요청 수락(상태 변경 SENT -> FRIEND)
-    public void createAndSaveFriendAcceptNotification(Long triggerUserId, String acceptorNickname, Long friendId) {
-        log.info("[NotificationHandlerService] 친구 수락 알림 처리 시작 - 행위 유발자ID: {}, 연결고리friendId: {}", triggerUserId, friendId);
+    public void createAndSaveFriendAcceptNotification(Long acceptorUserId, String acceptorNickname, Long fromUserId) {
+        log.info("[NotificationHandlerService] 친구 수락 알림 처리 시작 - 행위 유발자ID: {}, 요청자ID: {}", acceptorUserId, fromUserId);
 
         //메시지 조립
         String message = String.format("%s님과 친구가 되었습니다. 교류를 시작해보세요!", acceptorNickname);
 
         //순수한 도메인 모델 생성
-        Notification newNotification = Notification.createFriendAccept(triggerUserId, message, friendId);
+        Notification newNotification = Notification.createFriendAccept(acceptorUserId, message, fromUserId);
 
         //레포지토리를 통해 알림 저장
         Notification saved = notificationRepository.save(newNotification);

@@ -27,20 +27,20 @@ public class MessageEligibilityPolicy {
 
     //유저 상태, 친구 상태, 역할을 종합하여 (알 수 없음) 가공 여부를 판별하는 규칙
     public boolean determineNotActive(UserWithFMJpaEntity targetUser, String friendStatus, Long loginUserId) {
-        //나와의 채팅인 경우 무조건 ACTIVE
+        //나와의 채팅인 경우 무조건 가공 대상 아님
         if (targetUser.getId().equals(loginUserId)) {
             return false;
         }
 
         //상대방이 강사인 경우: user 테이블의 ACTIVE 확인
+        //v2 -> 강사인 경우 친구 관계 변동 없으므로 가공 대상 아님
         if ("TEACHER".equals(targetUser.getRole())) {
-            return !"ACTIVE".equals(targetUser.getStatus());
+            return false;
         }
 
         //상대방이 학생인 경우: user 테이블의 ACTIVE 확인, friend 테이블의 status(BLOCK, none) 확인
-        return !"ACTIVE".equals(targetUser.getStatus())
-                || "BLOCK".equals(friendStatus)
-                || "none".equals(friendStatus);
+        //v2 -> 비활성 여부에 대한 가공은 user담당자가 처리하므로 친구 여부만 검증
+        return "BLOCK".equals(friendStatus) || "none".equals(friendStatus);
     }
 
 

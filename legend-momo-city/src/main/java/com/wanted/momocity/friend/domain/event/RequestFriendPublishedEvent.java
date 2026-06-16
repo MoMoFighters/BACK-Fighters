@@ -1,9 +1,8 @@
 package com.wanted.momocity.friend.domain.event;
 
 public record RequestFriendPublishedEvent(
-        Long fromUserId,
+        Long fromUserId, //notification 테이블의 refId
         String fromUserNickname,
-        Long toUserId,
-        Long friendId //알림 테이블의 ref_id로 매핑될 고유 ID
+        Long toUserId //notification 테이블의 userId
 ) {
 }

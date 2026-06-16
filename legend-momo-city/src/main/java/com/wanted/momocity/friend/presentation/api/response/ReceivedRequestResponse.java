@@ -12,9 +12,10 @@ public record ReceivedRequestResponse(
     public static ReceivedRequestResponse from(ReceivedRequestView view) {
         //비활성 유저 닉네임 가공
         String displayNickname = view.nickname();
-        if (view.isNotActive()) {
-            displayNickname += "(알 수 없음)";
-        }
+//        if (view.isNotActive()) {
+//            displayNickname += "(알 수 없음)";
+//        }
+        //user 담당자가 가공해서 주석처리함
 
         return new ReceivedRequestResponse(
                 view.userId(),
