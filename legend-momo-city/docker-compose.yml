@@ -7,10 +7,10 @@ services:
     image: mysql:8.0
     container_name: momo-mysql
     ports:
-      - "3306:3306"
+      - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: 1234
-      MYSQL_DATABASE: momo
+      MYSQL_DATABASE: legend_momocity
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
@@ -41,7 +41,7 @@ services:
     image: grafana/grafana:latest
     container_name: momo-grafana
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       GF_SECURITY_ADMIN_PASSWORD: admin
     volumes:
