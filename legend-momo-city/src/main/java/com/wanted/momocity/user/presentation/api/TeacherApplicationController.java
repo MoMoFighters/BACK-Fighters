@@ -90,8 +90,7 @@ public class TeacherApplicationController {
             throw new MissingProofException("증빙 자료는 필수 제출입니다.");
         }
 
-//        String proofKey = s3UploadPort.upload(request.proof(),"teacher_proof");
-        String proofKey = s3UploadPort.upload(request.proof());
+        String proofKey = s3UploadPort.upload(request.proof(),"teacher_proof");
 
         userCommandUsecase.teacherApply(new TeacherApplyCommand(userDetails.getUserId(),request.nickname(),request.category(),proofKey));
 
