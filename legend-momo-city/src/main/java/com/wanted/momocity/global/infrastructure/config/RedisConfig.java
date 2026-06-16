@@ -25,20 +25,20 @@ import java.util.Map;
  *  -> @Cacheable, @CacheEvict 등 캐시 어노테이션 활성화
  *  -
  *  [캐시 전략]
- *  chapter  : TTL 1시간 → 챕터 정보는 자주 바뀌지 않음
- *  chapters : TTL 1시간 → 강의 전체 챕터 목록
- *  lecture  : TTL 1시간 → 강의 정보는 자주 바뀌지 않음
+ *  chapter  : TTL 1시간 -> 챕터 정보는 자주 바뀌지 않음
+ *  chapters : TTL 1시간 -> 강의 전체 챕터 목록
+ *  lecture  : TTL 1시간 -> 강의 정보는 자주 바뀌지 않음
  *  -
  *  [왜 캐싱이 필요한가]
  *  saveProgress() 가 5~10초 주기로 호출될 때마다
- *  -> ChapterPort.findById() → DB 조회
- *  -> ChapterPort.findAllByLectureId() → DB 조회
- *  -> LecturePort.findById() → DB 조회
+ *  -> ChapterPort.findById() -> DB 조회
+ *  -> ChapterPort.findAllByLectureId() -> DB 조회
+ *  -> LecturePort.findById() -> DB 조회
  *  -> Redis 캐싱으로 DB 부하 감소
  *  -
  *  [직렬화 설정]
- *  Key   : StringRedisSerializer → 사람이 읽을 수 있는 문자열
- *  Value : GenericJackson2JsonRedisSerializer → JSON 형태로 저장
+ *  Key : StringRedisSerializer -> 사람이 읽을 수 있는 문자열
+ *  Value : GenericJackson2JsonRedisSerializer -> JSON 형태로 저장
  */
 
 // Spring 에서 캐싱 기능 활성화시키는 어노테이션
@@ -49,7 +49,7 @@ public class RedisConfig {
     /*
     * comment.
     *  RedisCacheManager : @Cacheable, @CacheEvict 등 어노테이션이 실제로 Redis 에 저장/조회/삭제하도록 연결해주는 관리자
-    *  → Spring 이 캐시 작업 시 이 Bean 을 찾아서 실행
+    *  -> Spring 이 캐시 작업 시 이 Bean 을 찾아서 실행
     * */
 
     @Bean
@@ -57,13 +57,13 @@ public class RedisConfig {
 
         /*
         * comment.
-        *  serializer : Java 객체 ↔ JSON 변환 담당
+        *  serializer : Java 객체 <-> JSON 변환 담당
         *  -> Redis 는 바이트 데이터만 저장 가능
         *  -> Java 객체를 JSON 으로 변환해서 저장, 꺼낼 때 JSON 을 Java 객체로 복원
         *  -
         *  redisObjectMapper() : activateDefaultTyping 이 설정된 ObjectMapper 사용
         *  -> 타입 정보(@class) 포함해서 저장
-        *  ->d 역직렬화 시 정확한 타입으로 복원 가능
+        *  -> 역직렬화 시 정확한 타입으로 복원 가능
         * */
 
         GenericJackson2JsonRedisSerializer serializer =

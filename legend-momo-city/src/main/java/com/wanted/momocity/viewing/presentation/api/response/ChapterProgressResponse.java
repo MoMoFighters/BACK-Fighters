@@ -21,7 +21,7 @@ public record ChapterProgressResponse(
      *  -> 실제로 본 최대 위치
      *  -> 뒤로 감기 시 감소 없음
      *  -> 앞으로 당기기 10초 초과 시 반영 안 함
-     *  ->durationSec 초과 불가 (Math.min 처리)
+     *  -> durationSec 초과 불가 (Math.min 처리)
      *  -
      *  progressRate:
      *  -> watchedSeconds / durationSec * 100
