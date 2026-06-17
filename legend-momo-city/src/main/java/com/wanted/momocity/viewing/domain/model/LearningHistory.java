@@ -2,6 +2,8 @@ package com.wanted.momocity.viewing.domain.model;
 
 import lombok.Getter;
 
+import java.time.LocalDateTime;
+
 @Getter
 public class LearningHistory {
 
@@ -18,6 +20,7 @@ public class LearningHistory {
     private int progressRate;
     // createdAt, updateAt 은 JPA 에서 관리
     private Long version;
+    private LocalDateTime lastWatchedAt;
 
     // 신규 생성용
     public static LearningHistory create(
@@ -32,6 +35,7 @@ public class LearningHistory {
         history.lastPositionSec = 0;
         history.progressRate = 0;
         // version = null -> 신규 INSERT 시 DB 가 0 으로 세팅
+        history.lastWatchedAt = LocalDateTime.now();
         return history;
     }
 
@@ -68,6 +72,8 @@ public class LearningHistory {
         if (this.progressRate >= 100) {
             this.progressRate = 100;
         }
+        // saveProgress() 호출마다 last_watched_at 갱신
+        this.lastWatchedAt = LocalDateTime.now();
     }
 
     /*
@@ -114,7 +120,7 @@ public class LearningHistory {
     // create() 는 신규 생성, reconstitute() 는 DB 복원
     public static LearningHistory reconstitute(
             Long id, Long userId, Long lectureId, Long chapterId, int watchedSeconds, boolean isCompleted,
-            int lastPositionSec, int progressRate, Long version
+            int lastPositionSec, int progressRate, Long version, LocalDateTime lastWatchedAt
     ) {
         LearningHistory history = new LearningHistory();
         history.id = id;
@@ -126,6 +132,7 @@ public class LearningHistory {
         history.lastPositionSec = lastPositionSec;
         history.progressRate = progressRate;
         history.version = version;
+        history.lastWatchedAt = lastWatchedAt;
         return history;
     }
 

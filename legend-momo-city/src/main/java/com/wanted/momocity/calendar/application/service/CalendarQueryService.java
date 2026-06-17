@@ -1,5 +1,7 @@
 package com.wanted.momocity.calendar.application.service;
 
+import com.wanted.momocity.calendar.application.port.TodayChapterInfo;
+import com.wanted.momocity.calendar.application.port.TodayChapterPort;
 import com.wanted.momocity.calendar.application.usecase.CalendarQueryUseCase;
 import com.wanted.momocity.calendar.domain.model.Calendar;
 import com.wanted.momocity.calendar.domain.repository.CalendarRepository;
@@ -31,6 +33,7 @@ import java.util.List;
 public class CalendarQueryService implements CalendarQueryUseCase {
 
     private final CalendarRepository calendarRepository;
+    private final TodayChapterPort todayChapterPort;
 
     @Override
     public MonthlyCalendarResponse handle(Long userId, LocalDate startDate, LocalDate endDate) {
@@ -56,10 +59,13 @@ public class CalendarQueryService implements CalendarQueryUseCase {
                 ))
                 .toList();
 
-        log.info("[Calendar] 월별 조회 완료 | userId={}, startDate={}, endDate={}, todoCount={}, memoCount={}",
-                userId, startDate, endDate, todos.size(), memos.size());
+        List<TodayChapterInfo> todayChapters =
+                todayChapterPort.findTodayChapters(userId, LocalDate.now());
 
-        return new MonthlyCalendarResponse(startDate, endDate, todos, memos);
+        log.info("[Calendar] 월별 조회 완료 | userId={}, startDate={}, endDate={}, todoCount={}, memoCount={}",
+                userId, startDate, endDate, todos.size(), memos.size(), todayChapters.size());
+
+        return new MonthlyCalendarResponse(startDate, endDate, todos, memos, todayChapters);
     }
 
 }

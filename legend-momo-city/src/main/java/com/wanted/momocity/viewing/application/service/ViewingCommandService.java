@@ -120,6 +120,7 @@ public class ViewingCommandService implements ViewingCommandUseCase {
                     command.userId(),
                     command.lectureId(),
                     command.chapterId(),
+                    savedHistory.getWatchedSeconds(),
                     Instant.now()
             ));
             log.info("[Viewing] ChapterCompletedEvent 발행 | userId={}, lectureId={}, chapterId={}",

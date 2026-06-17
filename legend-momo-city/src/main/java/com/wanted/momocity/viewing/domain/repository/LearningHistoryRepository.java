@@ -2,6 +2,7 @@ package com.wanted.momocity.viewing.domain.repository;
 
 import com.wanted.momocity.viewing.domain.model.LearningHistory;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,5 +25,8 @@ public interface LearningHistoryRepository {
     Optional<LearningHistory> findLatestByUserIdAndLectureId (
             Long userId, Long lectureId
     );
+
+    // 오늘 수강한 챕터 목록 조회
+    List<LearningHistory> findByUserIdAndDate(Long userId, LocalDate date);
 
 }
