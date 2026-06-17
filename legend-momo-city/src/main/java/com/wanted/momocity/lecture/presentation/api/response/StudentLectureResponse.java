@@ -146,6 +146,19 @@ public class StudentLectureResponse {
             int completedUserCount,      // 수강 완료 인원
             double averageRating,        // 평균 평점
             int reviewCount,             // 수강평 개수
+            /* comment
+            *   로그인한 학생이 해당 강의 수강 중이면 enrollment 진행률을 내려준다.(강의 총 진척도)
+            *   비로그인 또는 미수강 강의면 0으로 내려준다
+            * */
+            int totalProgress,
+
+            /* comment
+            *   로그인 한 학생이 해당 강의를 완료했는지 여부 확인
+            *   비로그인 또는 미수강이면 false 값
+            * */
+            boolean isCompleted,
+
+            int chapterCount,            // 해당 강의 전체 챕터 수
             LocalDateTime createdAt      // 강의 생성일
     ) {
         /* comment
@@ -156,7 +169,10 @@ public class StudentLectureResponse {
                 LectureAggregate lecture,
                 String teacherName,
                 double averageRating,
-                int reviewCount
+                int reviewCount,
+                int totalProgress,
+                boolean isCompleted,
+                int chapterCount
         ) {
             return new StudentLectureListItemResponse(
                     lecture.getId(),
@@ -170,6 +186,9 @@ public class StudentLectureResponse {
                     lecture.getCompletedUserCount(),
                     averageRating,
                     reviewCount,
+                    totalProgress,
+                    isCompleted,
+                    chapterCount,
                     lecture.getCreatedAt()
             );
         }
