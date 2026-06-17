@@ -149,7 +149,7 @@ public class StudentLectureResponse {
             *   로그인한 학생이 해당 강의 수강 중이면 enrollment 진행률을 내려준다.(강의 총 진척도)
             *   비로그인 또는 미수강 강의면 0으로 내려준다
             * */
-            Integer totalProgress,
+            Integer lectureProgress,
 
             /* comment
             *   로그인 한 학생이 해당 강의를 완료했는지 여부 확인
@@ -168,7 +168,7 @@ public class StudentLectureResponse {
                 LectureAggregate lecture,
                 double averageRating,
                 int reviewCount,
-                Integer totalProgress,
+                Integer lectureProgress,
                 Boolean isCompleted,
                 int chapterCount
         ) {
@@ -181,7 +181,7 @@ public class StudentLectureResponse {
                     lecture.getStatus().name(),
                     averageRating,
                     reviewCount,
-                    totalProgress,
+                    lectureProgress,
                     isCompleted,
                     chapterCount,
                     lecture.getCreatedAt()

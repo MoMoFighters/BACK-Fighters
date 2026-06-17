@@ -70,23 +70,41 @@ public class LectureQueryService implements
     @Override
     public StudentLecturePageResponse getLectures(GetLecturesQuery query) {
 
-        /* comment
-        *   학생 강의 목록은 비로그인/로그인 모두 ACTIVE 강의 전체 조회
-        *   로그인한 학생 정보는 목록 필터링에서 사용하지 않고, 진행률 표시용으로만 사용한다.
-        * */
+        /*
+         * comment
+         * 비회원은 전체 ACTIVE 강의 목록을 조회한다.
+         * 학생 회원은 본인이 수강 신청한 ACTIVE 강의 목록만 조회한다.
+         * category, keyword, page, size 조건은 두 경우 모두 동일하게 적용된다.
+         */
+        boolean enrolledOnly = query.userId() != null;
         Long studentId = null;
+        List<Long> enrolledLectureIds = List.of();
 
-        if (query.userId() != null) {
+        if (enrolledOnly) {
             studentId = studentAccountPort.getStudentId(query.userId());
+
+            enrolledLectureIds = lectureEnrollmentQueryPort.findLectureIdsByUserId(studentId);
+
+            /*
+             * comment
+             * 로그인한 학생이 수강 신청한 강의가 없으면 빈 페이지를 반환한다.
+             */
+            if (enrolledLectureIds.isEmpty()) {
+                return new StudentLecturePageResponse(
+                        List.of(),
+                        query.page(),
+                        query.size(),
+                        0,
+                        0
+                );
+            }
         }
 
         var lecturePage = lectureRepository.findLectures(
                 query.category(),
                 query.keyword(),
-
-                // 전체 조회 API 이므로 수강 여부로 강의 목록을 필터링 X
-                false,
-                List.of(),
+                enrolledOnly,
+                enrolledLectureIds,
                 query.page(),
                 query.size()
         );
@@ -260,6 +278,7 @@ public class LectureQueryService implements
     }
 
     // 학생 강의 목록용 응답 객체로 변환
+    // 학생 강의 목록용 응답 객체로 변환
     private StudentLectureListItemResponse toStudentListItemResponse(
             LectureAggregate lecture,
             Long studentId
@@ -270,17 +289,20 @@ public class LectureQueryService implements
         // 현재 강의의 전체 챕터 수를 조회
         int chapterCount = chapterRepository.countByLectureId(lecture.getId());
 
-        Integer totalProgress = null;
+        /*
+         * comment
+         * 비회원 또는 미수강 강의는 진행 정보가 없으므로 null로 둔다.
+         * @JsonInclude(JsonInclude.Include.NON_NULL)에 의해 JSON 응답에서 제외된다.
+         */
+        Integer lectureProgress = null;
         Boolean isCompleted = null;
 
         var progress = studentId == null
                 ? java.util.Optional.<LectureEnrollmentQueryPort.EnrollmentProgress>empty()
-                // 수강 중인지 확인하고 수강 중이면 진행률을 가지고 와라
                 : lectureEnrollmentQueryPort.findByUserIdAndLectureId(studentId, lecture.getId());
 
-        // 수강 정보가 있으면 실행
         if (progress.isPresent()) {
-            totalProgress = progress.get().totalProgress();
+            lectureProgress = progress.get().totalProgress();
 
             // 완료 여부는 전체 챕터 수와 완료 챕터 수를 기준으로 판단
             isCompleted = chapterCount > 0 && progress.get().completedCount() >= chapterCount;
@@ -290,7 +312,7 @@ public class LectureQueryService implements
                 lecture,
                 averageRating,
                 reviewCount,
-                totalProgress,
+                lectureProgress,
                 isCompleted,
                 chapterCount
         );
