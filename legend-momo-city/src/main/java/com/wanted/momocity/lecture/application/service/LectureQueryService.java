@@ -294,7 +294,7 @@ public class LectureQueryService implements
          * 비회원 또는 미수강 강의는 진행 정보가 없으므로 null로 둔다.
          * @JsonInclude(JsonInclude.Include.NON_NULL)에 의해 JSON 응답에서 제외된다.
          */
-        Integer totalProgress = null;
+        Integer lectureProgress = null;
         Boolean isCompleted = null;
 
         var progress = studentId == null
@@ -302,7 +302,7 @@ public class LectureQueryService implements
                 : lectureEnrollmentQueryPort.findByUserIdAndLectureId(studentId, lecture.getId());
 
         if (progress.isPresent()) {
-            totalProgress = progress.get().totalProgress();
+            lectureProgress = progress.get().totalProgress();
 
             // 완료 여부는 전체 챕터 수와 완료 챕터 수를 기준으로 판단
             isCompleted = chapterCount > 0 && progress.get().completedCount() >= chapterCount;
@@ -312,7 +312,7 @@ public class LectureQueryService implements
                 lecture,
                 averageRating,
                 reviewCount,
-                totalProgress,
+                lectureProgress,
                 isCompleted,
                 chapterCount
         );
