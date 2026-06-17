@@ -1,11 +1,10 @@
 package com.wanted.momocity.user.application.service;
 
 import com.wanted.momocity.auth.application.port.PasswordEncodePort;
+import com.wanted.momocity.user.domain.exception.UserNotFoundException;
+import com.wanted.momocity.user.domain.model.User;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
-import com.wanted.momocity.user.application.command.ApproveTeacherCommand;
-import com.wanted.momocity.user.application.command.NicknameRegisterCommand;
-import com.wanted.momocity.user.application.command.RejectTeacherCommand;
-import com.wanted.momocity.user.application.command.UpdateUserInfoCommand;
+import com.wanted.momocity.user.application.command.*;
 import com.wanted.momocity.user.application.policy.UserPolicy;
 import com.wanted.momocity.user.application.port.UserEmailSendPort;
 import com.wanted.momocity.user.application.usecase.UserCommandUsecase;
@@ -64,6 +63,26 @@ public class UserCommandService implements UserCommandUsecase {
         ));
     }
 
+    // 강사 신청
+    @Override
+    public void teacherApply(TeacherApplyCommand command) {
+
+        userRepository.findById(command.userId())
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
+
+        if (userRepository.existsByIdAndRoleAndStatus(command.userId(), Role.TEACHER, Status.PENDING)) {
+            throw new DomainRuleViolationException("이미 강사 신청 중입니다.");
+        }
+
+        // 닉네임 중복 확인
+        userPolicy.nicknamePolicy(command.nickname());
+
+        userRepository.teacherApply(command.userId(),command.nickname(),command.category(),command.proof());
+
+        log.info("[teacherApply] 강사 신청 완료 | userId={} | role=TEACHER", command.userId());
+
+    }
+
     // 강사승인
     @Override
     public TeacherActionResult approve(ApproveTeacherCommand command) {
@@ -94,5 +113,12 @@ public class UserCommandService implements UserCommandUsecase {
         userEmailSendPort.sendTeacherResult(email, "REJECTED", command.reason());
         log.info("[teacher] 강사 반려 처리 | userId={} | reason={}", command.userId(), command.reason());
         return new TeacherActionResult(command.userId(), "REJECTED", command.reason(), LocalDateTime.now());
+    }
+
+
+    // 밤티 알림 설정
+    @Override
+    public boolean setAlarm(Long userId) {
+       return userRepository.setAlarm(userId);
     }
 }

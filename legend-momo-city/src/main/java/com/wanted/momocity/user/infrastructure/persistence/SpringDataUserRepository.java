@@ -1,6 +1,7 @@
 package com.wanted.momocity.user.infrastructure.persistence;
 
 
+import com.wanted.momocity.user.domain.model.Category;
 import com.wanted.momocity.user.domain.model.Role;
 import com.wanted.momocity.user.domain.model.Status;
 import org.springframework.data.domain.Pageable;
@@ -40,6 +41,23 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
     List<UserJpaEntity> findByRoleAndStatus(@Param("role") Role role, @Param("status") Status status, Pageable pageable);
 
     long countByRoleAndStatus(Role role, Status status);
+
+
+    // 강사 신청
+    // role : STUDENT -> TEACHER
+    // status : ACTIVE -> PENDING
+    // proof : null -> S3 url
+    @Modifying
+    @Transactional
+    @Query("UPDATE UserUser u SET u.role = 'TEACHER', u.status = 'PENDING', u.category = :category, u.proof = :proof, u.nickname = :nickname " +
+            "WHERE u.id = :userId")
+    void teacherApply(@Param("userId") Long userId,
+                      @Param("nickname") String nickname,
+                      @Param("category") Category category,
+                      @Param("proof") String proof);
+
+    // 강사 중복 신청 방지용
+    boolean existsByIdAndRoleAndStatus(Long userId, Role role, Status status);
 
     // 강사 승인 여부에 따른 status 변환
     @Modifying
@@ -90,4 +108,15 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
             @Param("role") Role role,
             @Param("status") Status status
     );
+
+    // 밤티 알림 설정
+    // 기존에 true 이면 false로
+    // 기존에 false면 true로
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE UserUser u SET u.doNotDisturb = CASE " +
+            "WHEN u.doNotDisturb = true " +
+            "THEN false " +
+            "ELSE true END WHERE u.id = :userId")
+    void setAlarm(@Param("userId") Long userId);
+
 }

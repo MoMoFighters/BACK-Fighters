@@ -21,6 +21,7 @@ public final class TeacherResponseCode {
     private TeacherResponseCode() {
     }
 
+    public static final String SUCCESS = "SUCCESS";
     public static final String APPLICATION_LIST_FETCHED = "TEACHER-001";
     public static final String APPLICATION_DETAIL_FETCHED = "TEACHER-002";
     public static final String APPROVED = "TEACHER-003";

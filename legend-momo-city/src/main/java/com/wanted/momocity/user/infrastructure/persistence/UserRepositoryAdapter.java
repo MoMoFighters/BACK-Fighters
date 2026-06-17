@@ -1,10 +1,8 @@
 package com.wanted.momocity.user.infrastructure.persistence;
 
 import com.wanted.momocity.user.application.command.UpdateUserInfoCommand;
-import com.wanted.momocity.user.domain.model.Role;
-import com.wanted.momocity.user.domain.model.Status;
-import com.wanted.momocity.user.domain.model.TeacherApplication;
-import com.wanted.momocity.user.domain.model.User;
+import com.wanted.momocity.user.domain.exception.UserNotFoundException;
+import com.wanted.momocity.user.domain.model.*;
 import com.wanted.momocity.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -107,6 +105,26 @@ public class UserRepositoryAdapter implements UserRepository {
         return springDataUserRepository.countForAdmin(role, status);
     }
 
+
+    // 밤티 알림 설정
+    @Override
+    public boolean setAlarm(Long userId) {
+        springDataUserRepository.setAlarm(userId);
+        return springDataUserRepository.findById(userId)
+                .map(UserJpaEntity::isDoNotDisturb)
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
+    }
+
+    @Override
+    public void teacherApply(Long userId,String nickname , Category category, String proof) {
+        springDataUserRepository.teacherApply(userId,nickname,category,proof);
+    }
+
+    // 강사 중복 신청 확인용
+    @Override
+    public boolean existsByIdAndRoleAndStatus(Long userId, Role role, Status status) {
+        return springDataUserRepository.existsByIdAndRoleAndStatus(userId, role, status);
+    }
 
 
     // 마이페이지 내 정보 조회용

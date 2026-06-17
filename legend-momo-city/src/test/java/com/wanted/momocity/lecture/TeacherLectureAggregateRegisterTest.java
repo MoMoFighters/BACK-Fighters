@@ -1,11 +1,9 @@
 package com.wanted.momocity.lecture;
 
 import com.wanted.momocity.global.application.s3.S3UploadPort;
-import com.wanted.momocity.lecture.application.usecase.AdminLectureCommandUseCase;
-import com.wanted.momocity.lecture.application.usecase.AdminLectureQueryUseCase;
-import com.wanted.momocity.lecture.application.usecase.ChapterCommandUseCase;
-import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCase;
-import com.wanted.momocity.lecture.application.usecase.LectureQueryUseCase;
+
+import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCases;
+import com.wanted.momocity.lecture.application.usecase.LectureQueryUseCases;
 import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.model.LectureChapter;
 import com.wanted.momocity.lecture.domain.model.LectureCategory;
@@ -49,21 +47,21 @@ class TeacherLectureAggregateRegisterTest {
 
     // 강의 등록 UseCase를 Mock으로 대체한다.
     @MockitoBean
-    private LectureCommandUseCase lectureCommandUseCase;
+    private LectureCommandUseCases.LectureCommandUseCase lectureCommandUseCase;
 
     // TeacherLectureController 생성자 의존성 때문에 필요하다.
     @MockitoBean
-    private ChapterCommandUseCase chapterCommandUseCase;
+    private LectureCommandUseCases.ChapterCommandUseCase chapterCommandUseCase;
 
     // TeacherLectureController 생성자 의존성 때문에 필요하다.
     @MockitoBean
-    private LectureQueryUseCase lectureQueryUseCase;
+    private LectureQueryUseCases lectureQueryUseCase;
 
     @MockitoBean
-    private AdminLectureQueryUseCase adminLectureQueryUseCase;
+    private LectureQueryUseCases.AdminLectureQueryUseCase adminLectureQueryUseCase;
 
     @MockitoBean
-    private AdminLectureCommandUseCase adminLectureCommandUseCase;
+    private LectureCommandUseCases.AdminLectureCommandUseCase adminLectureCommandUseCase;
 
     // 실제 S3 업로드 대신 URL만 반환하도록 Mock 처리한다.
     @MockitoBean
@@ -76,7 +74,7 @@ class TeacherLectureAggregateRegisterTest {
         String thumbnailUrl = "https://example.com/images/spring-boot.png";
 
         // S3 업로드 성공 시 썸네일 URL이 반환된다고 가정한다.
-        when(s3UploadPort.upload(any()))
+        when(s3UploadPort.upload(any(), any()))
                 .thenReturn(thumbnailUrl);
 
         // 강의 등록 UseCase가 반환할 도메인 객체를 준비한다.
@@ -125,7 +123,7 @@ class TeacherLectureAggregateRegisterTest {
                 .andExpect(jsonPath("$.data.createdAt").exists())
                 .andExpect(jsonPath("$.data.updatedAt").exists());
 
-        verify(s3UploadPort).upload(any());
+        verify(s3UploadPort).upload(any(), any());
         verify(lectureCommandUseCase).createLecture(any());
     }
 
@@ -200,7 +198,7 @@ class TeacherLectureAggregateRegisterTest {
                 .andExpect(status().isBadRequest());
 
         // 입력값 검증에서 막혀야 하므로 S3 업로드와 UseCase 호출은 발생하면 안 된다.
-        verify(s3UploadPort, never()).upload(any());
+        verify(s3UploadPort, never()).upload(any(), any());
         verify(lectureCommandUseCase, never()).createLecture(any());
     }
 
@@ -226,7 +224,7 @@ class TeacherLectureAggregateRegisterTest {
                 .andExpect(jsonPath("$.message").exists());
 
         // category 검증은 S3 업로드보다 먼저 수행되어야 한다.
-        verify(s3UploadPort, never()).upload(any());
+        verify(s3UploadPort, never()).upload(any(), any());
         verify(lectureCommandUseCase, never()).createLecture(any());
     }
 
@@ -241,7 +239,7 @@ class TeacherLectureAggregateRegisterTest {
                 .andExpect(status().isBadRequest());
 
         // 썸네일이 없으면 S3 업로드와 UseCase 호출이 발생하면 안 된다.
-        verify(s3UploadPort, never()).upload(any());
+        verify(s3UploadPort, never()).upload(any(), any());
         verify(lectureCommandUseCase, never()).createLecture(any());
     }
 

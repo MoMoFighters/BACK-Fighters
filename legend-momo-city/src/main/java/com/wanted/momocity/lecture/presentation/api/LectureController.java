@@ -4,41 +4,42 @@ import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
-import com.wanted.momocity.lecture.application.command.ChangeChapterVideoStatusCommand;
-import com.wanted.momocity.lecture.application.command.ChangeLectureStatusCommand;
-import com.wanted.momocity.lecture.application.command.RegisterChapterVideoCommand;
-import com.wanted.momocity.lecture.application.query.GetAdminLectureDetailQuery;
-import com.wanted.momocity.lecture.application.query.GetAdminLecturesQuery;
-import com.wanted.momocity.lecture.application.query.GetLecturesQuery;
-import com.wanted.momocity.lecture.application.query.GetStudentLectureDetailQuery;
-import com.wanted.momocity.lecture.application.query.GetTeacherLectureDetailQuery;
-import com.wanted.momocity.lecture.application.query.GetTeacherLecturesQuery;
-import com.wanted.momocity.lecture.application.usecase.AdminLectureCommandUseCase;
-import com.wanted.momocity.lecture.application.usecase.AdminLectureQueryUseCase;
-import com.wanted.momocity.lecture.application.usecase.ChapterCommandUseCase;
-import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCase;
-import com.wanted.momocity.lecture.application.usecase.LectureQueryUseCase;
+import com.wanted.momocity.lecture.application.command.LectureCommand.ChangeChapterVideoStatusCommand;
+import com.wanted.momocity.lecture.application.command.LectureCommand.ChangeLectureStatusCommand;
+import com.wanted.momocity.lecture.application.command.LectureCommand.RegisterChapterVideoCommand;
+import com.wanted.momocity.lecture.application.query.LectureQuery.GetAdminLectureDetailQuery;
+import com.wanted.momocity.lecture.application.query.LectureQuery.GetAdminLecturesQuery;
+import com.wanted.momocity.lecture.application.query.LectureQuery.GetLecturesQuery;
+import com.wanted.momocity.lecture.application.query.LectureQuery.GetStudentLectureDetailQuery;
+import com.wanted.momocity.lecture.application.query.LectureQuery.GetTeacherLectureDetailQuery;
+import com.wanted.momocity.lecture.application.query.LectureQuery.GetTeacherLecturesQuery;
+import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCases.AdminLectureCommandUseCase;
+import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCases.ChapterCommandUseCase;
+import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCases.LectureCommandUseCase;
+import com.wanted.momocity.lecture.application.usecase.LectureQueryUseCases.AdminLectureQueryUseCase;
+import com.wanted.momocity.lecture.application.usecase.LectureQueryUseCases.LectureQueryUseCase;
 import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.model.LectureCategory;
 import com.wanted.momocity.lecture.domain.model.LectureChapter;
 import com.wanted.momocity.lecture.domain.model.LectureStatus;
-import com.wanted.momocity.lecture.presentation.api.request.AdminChangeLectureStatusRequest;
-import com.wanted.momocity.lecture.presentation.api.request.ChangeChapterVideoStatusRequest;
-import com.wanted.momocity.lecture.presentation.api.request.ChangeLectureStatusRequest;
-import com.wanted.momocity.lecture.presentation.api.request.CreateChapterRequest;
-import com.wanted.momocity.lecture.presentation.api.request.CreateLectureRequest;
-import com.wanted.momocity.lecture.presentation.api.request.RegisterChapterVideoRequest;
-import com.wanted.momocity.lecture.presentation.api.response.AdminChangeLectureStatusResponse;
-import com.wanted.momocity.lecture.presentation.api.response.AdminLectureDetailResponse;
-import com.wanted.momocity.lecture.presentation.api.response.AdminLecturePageResponse;
-import com.wanted.momocity.lecture.presentation.api.response.ChangeLectureStatusResponse;
-import com.wanted.momocity.lecture.presentation.api.response.CreateChapterResponse;
-import com.wanted.momocity.lecture.presentation.api.response.CreateLectureResponse;
-import com.wanted.momocity.lecture.presentation.api.response.RegisterChapterVideoResponse;
-import com.wanted.momocity.lecture.presentation.api.response.StudentLectureDetailResponse;
-import com.wanted.momocity.lecture.presentation.api.response.StudentLecturePageResponse;
-import com.wanted.momocity.lecture.presentation.api.response.TeacherLectureDetailResponse;
-import com.wanted.momocity.lecture.presentation.api.response.TeacherLecturePageResponse;
+import com.wanted.momocity.lecture.presentation.api.request.LectureRequest;
+import com.wanted.momocity.lecture.presentation.api.request.LectureRequest.AdminChangeLectureStatusRequest;
+import com.wanted.momocity.lecture.presentation.api.request.LectureRequest.ChangeChapterVideoStatusRequest;
+import com.wanted.momocity.lecture.presentation.api.request.LectureRequest.ChangeLectureStatusRequest;
+import com.wanted.momocity.lecture.presentation.api.request.LectureRequest.CreateChapterRequest;
+import com.wanted.momocity.lecture.presentation.api.request.LectureRequest.CreateLectureRequest;
+import com.wanted.momocity.lecture.presentation.api.request.LectureRequest.RegisterChapterVideoRequest;
+import com.wanted.momocity.lecture.presentation.api.response.AdminLectureResponse.AdminChangeLectureStatusResponse;
+import com.wanted.momocity.lecture.presentation.api.response.AdminLectureResponse.AdminLectureDetailResponse;
+import com.wanted.momocity.lecture.presentation.api.response.AdminLectureResponse.AdminLecturePageResponse;
+import com.wanted.momocity.lecture.presentation.api.response.LectureResponse.ChangeLectureStatusResponse;
+import com.wanted.momocity.lecture.presentation.api.response.LectureResponse.CreateChapterResponse;
+import com.wanted.momocity.lecture.presentation.api.response.LectureResponse.CreateLectureResponse;
+import com.wanted.momocity.lecture.presentation.api.response.LectureResponse.RegisterChapterVideoResponse;
+import com.wanted.momocity.lecture.presentation.api.response.StudentLectureResponse.StudentLectureDetailResponse;
+import com.wanted.momocity.lecture.presentation.api.response.StudentLectureResponse.StudentLecturePageResponse;
+import com.wanted.momocity.lecture.presentation.api.response.TeacherLectureResponse.TeacherLectureDetailResponse;
+import com.wanted.momocity.lecture.presentation.api.response.TeacherLectureResponse.TeacherLecturePageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -110,7 +111,7 @@ public class LectureController {
         request.validateCategory();
         request.validateThumbnailSize();
 
-        String thumbnailUrl = s3UploadPort.upload(request.thumbnail());
+        String thumbnailUrl = s3UploadPort.upload(request.thumbnail(), "lectuers");
 
         LectureAggregate lecture = lectureCommandUseCase.createLecture(
                 request.toCommand(teacherId, thumbnailUrl)
@@ -234,14 +235,13 @@ public class LectureController {
     public ResponseEntity<ApiResponse<?>> getLectures(
             Authentication authentication,
             @RequestParam(required = false) String category,
-            @RequestParam(required = false) Boolean enrolled,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        String role = getRole(authentication);
-        Long userId = Long.parseLong(authentication.getName());
+        String role = getRoleOrAnonymous(authentication);
+        Long userId = getUserIdOrNull(authentication);
 
         if ("ROLE_ADMIN".equals(role)) {
             GetAdminLecturesQuery query = new GetAdminLecturesQuery(
@@ -280,10 +280,10 @@ public class LectureController {
             ));
         }
 
+        // 토큰 없음 또는 학생
         GetLecturesQuery query = new GetLecturesQuery(
                 userId,
                 parseCategory(category),
-                enrolled,
                 keyword,
                 page,
                 size
@@ -523,4 +523,29 @@ public class LectureController {
             throw new DomainRuleViolationException("허용되지 않은 강의 카테고리입니다.");
         }
     }
+
+    private String getRoleOrAnonymous(Authentication authentication) {
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || "anonymousUser".equals(authentication.getPrincipal())) {
+            return "ANONYMOUS";
+        }
+
+        return authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .findFirst()
+                .orElse("ANONYMOUS");
+    }
+
+    private Long getUserIdOrNull(Authentication authentication) {
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || "anonymousUser".equals(authentication.getPrincipal())) {
+            return null;
+        }
+
+        return Long.parseLong(authentication.getName());
+    }
+
+
 }

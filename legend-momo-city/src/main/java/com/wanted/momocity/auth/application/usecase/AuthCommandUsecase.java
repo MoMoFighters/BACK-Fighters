@@ -6,11 +6,8 @@ import com.wanted.momocity.auth.presentation.api.response.LoginResponse;
 
 public interface AuthCommandUsecase {
 
-    // 강사 회원가입
-    void signup(TeacherSignupCommand command);
-
-    // 학생 회원가입
-    void signup(StudentSignupCommand command);
+    // 회원가입
+    void signup(SignupCommand command);
 
     // 로그인
     LoginResponse login(LoginCommand command);

@@ -4,6 +4,7 @@ import com.wanted.momocity.auth.application.command.*;
 import com.wanted.momocity.auth.application.port.TokenProviderPort;
 import com.wanted.momocity.auth.domain.exception.MissingProofException;
 import com.wanted.momocity.auth.domain.exception.MissingTokenException;
+import com.wanted.momocity.auth.domain.model.Provider;
 import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.auth.application.usecase.*;
@@ -33,58 +34,27 @@ public class AuthController {
     private final NewTokenUsecase newTokenUsecase;
 
     private final TokenProviderPort tokenProviderPort;
-    private final S3UploadPort s3UploadPort;
 
-
-    @PostMapping("/signup/student")
+    @PostMapping("/signup")
     @Operation(
-            summary = "학생 자체 회원가입",
-            description = "해당 api를 통해 회원가입 한 사람의 role을 STUDENT로 하여 user테이블에 추가하는 메서드"
+            summary = "학생/강사 자체 회원가입",
+            description = "해당 api를 통해 회원가입 한 사람의 role을 STUDENT로 하여 user테이블에 추가하는 메서드이다." +
+                    "학생/강사 모두 우선 학생으로 STUDENT로 가입하고 강사는 추후 강사신청 과정을 거쳐 TEACHER 로 변경된다."
     )
     @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "학생 회원가입 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "회원가입 성공"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "유효하지 않은 요청 값 (@Valid 실패)"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "이메일 중복")
     })
-    public ResponseEntity<ApiResponse<Void>> studentSignup (
-            @Valid @RequestBody StudentSignupRequest request){
+    public ResponseEntity<ApiResponse<Void>> signup (
+            @Valid @RequestBody SignupRequest request){
 
-        authCommandUsecase.signup(new StudentSignupCommand(request.email(),request.password(),request.name()));
+        authCommandUsecase.signup(new SignupCommand(request.email(),request.password(),request.name()));
 
         return ResponseEntity.status(HttpStatus.CREATED) //201
                 .body(ApiResponse.created(
                         AuthResponseCode.CREATED,
                         AuthResponseMessage.STUDENT_CREATED,
-                        null
-                ));
-    }
-
-
-    @PostMapping("/signup/teacher")
-    @Operation(
-            summary = "강사 자체 회원가입",
-            description = "해당 api를 통해 회원가입 한 사람의 role을 TEACHER로, status는 PENDING으로 하여 user테이블에 추가하는 메서드"
-    )
-    @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "강사 회원가입 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "유효하지 않은 요청 값 (@Valid 실패)"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "이메일 중복")
-    })
-    public ResponseEntity<ApiResponse<Void>> teacherSignup (
-            @Valid @ModelAttribute TeacherSignupRequest request){
-
-        if (request.proof() == null || request.proof().isEmpty()) {
-            throw new MissingProofException("증빙 자료는 필수 제출입니다.");
-        }
-
-        String proofUrl = s3UploadPort.upload(request.proof());  // 여기서 선언하고 값 넣어줌
-
-        authCommandUsecase.signup(new TeacherSignupCommand(request.email(),request.password(),request.name(),request.category(),proofUrl));
-
-        return ResponseEntity.status(HttpStatus.CREATED) //201
-                .body(ApiResponse.created(
-                        AuthResponseCode.CREATED,
-                        AuthResponseMessage.TEACHER_CREATED,
                         null
                 ));
     }
@@ -221,7 +191,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<LoginResponse>> kakaoLogin(
             @Valid @RequestBody SocialLoginRequest request){
 
-        LoginResponse result = authCommandUsecase.socialLogin(new SocialLoginCommand("KAKAO",request.code()));
+        LoginResponse result = authCommandUsecase.socialLogin(new SocialLoginCommand(Provider.KAKAO,request.code()));
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(
@@ -242,7 +212,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<LoginResponse>> googleLogin(
             @Valid @RequestBody SocialLoginRequest request){
 
-        LoginResponse result = authCommandUsecase.socialLogin(new SocialLoginCommand("GOOGLE",request.code()));
+        LoginResponse result = authCommandUsecase.socialLogin(new SocialLoginCommand(Provider.GOOGLE,request.code()));
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(
@@ -251,6 +221,29 @@ public class AuthController {
                         new LoginResponse(result.accessToken(), result.refreshToken(),result.status() ,result.expiresIn())
                 ));
     }
+
+
+    @PostMapping("/naverlogin")
+    @Operation(summary = "네이버 로그인을 위한 api")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "네이버 로그인 성공 및 토큰 발급"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "유효하지 않은 인가 코드"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "네이버 인증 실패")
+    })
+    public ResponseEntity<ApiResponse<LoginResponse>> naverLogin(
+            @Valid @RequestBody SocialLoginRequest request){
+
+        LoginResponse result = authCommandUsecase.socialLogin(new SocialLoginCommand(Provider.NAVER,request.code()));
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        AuthResponseCode.SUCCESS,
+                        AuthResponseMessage.LOGIN_SUCCESS,
+                        new LoginResponse(result.accessToken(), result.refreshToken(),result.status() ,result.expiresIn())
+                ));
+    }
+
+
 
 
     @PostMapping("/logout")

@@ -3,15 +3,13 @@ package com.wanted.momocity.viewing.infrastructure.catalog;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
-import com.wanted.momocity.lecture.domain.model.VideoStatus;
 import com.wanted.momocity.lecture.infrastructure.persistence.ChapterJpaEntity;
 import com.wanted.momocity.lecture.infrastructure.persistence.SpringDataChapterRepository;
 import com.wanted.momocity.viewing.application.port.ChapterPort;
 import com.wanted.momocity.viewing.domain.model.Chapter;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
@@ -26,7 +24,7 @@ import java.util.Optional;
 *  -
 *  [Redis 캐싱 전략]
  * @Cacheable("chapter")  → chapterId 기준 단건 캐싱
- * @Cacheable("chapters") → lectureId 기준 전체 챕터 목록 캐싱
+ * findAllByLectureId()   → StringRedisTemplate 직접 사용
  * -
  * 왜 캐싱이 필요한가:
  * -> saveProgress() 5~10초 주기 호출 시
@@ -43,24 +41,45 @@ import java.util.Optional;
 * [변환이 필요한 이유]
 * - ChapterJpaEntity.toDomain() → LectureChapter 반환
 * - Viewing 은 Chapter 도메인 사용
-* → 두 도메인이 다르므로 직접 변환 필요 (toChapter()로 변환)
+* -> 두 도메인이 다르므로 직접 변환 필요 (toChapter()로 변환)
 *
 * [VideoStatus 변환]
 * 팀원: com.wanted.momocity.lecture.domain.model.VideoStatus
-* 누님: Chapter.VideoStatus (내부 enum)
-* → toVideoStatus() 로 변환
+* -> Chapter.VideoStatus (내부 enum)
+* -> toVideoStatus() 로 변환
 * */
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class ChapterCatalogAdapter implements ChapterPort {
 
     // SpringDataChapterRepository 주입
-    // → JpaRepository 상속받아 findById, findAllByLectureIdOrderByOrderNoAsc 등 제공
+    // -> JpaRepository 상속받아 findById, findAllByLectureIdOrderByOrderNoAsc 등 제공
     private final SpringDataChapterRepository springDataChapterRepository;
-    private final RedisTemplate<String, Object> redisTemplate;
-    private final ObjectMapper objectMapper;
+    /*
+     * StringRedisTemplate
+     * -> String 타입 전용 RedisTemplate
+     * -> 저장/조회 시 raw JSON 문자열 그대로 처리
+     * -> GenericJackson2JsonRedisSerializer 를 거치지 않아 @class 타입 정보 충돌 문제 없음
+     */
+    private final StringRedisTemplate stringRedisTemplate;
+    /*
+     * plainObjectMapper
+     * -> @class 타입 정보 없이 순수 JSON 으로 직렬화/역직렬화
+     * -> activateDefaultTyping 비활성화 상태
+     * -> Chapter.java 의 @JsonTypeInfo 제거와 함께 사용
+     * -> HTTP 응답 직렬화에도 영향 없음 (Spring 기본 ObjectMapper 와 별개)
+     */
+    private final ObjectMapper plainObjectMapper = new ObjectMapper()
+            .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+
+    public ChapterCatalogAdapter(
+            SpringDataChapterRepository springDataChapterRepository,
+            StringRedisTemplate stringRedisTemplate
+    ) {
+        this.springDataChapterRepository = springDataChapterRepository;
+        this.stringRedisTemplate = stringRedisTemplate;
+    }
 
     /*
      * comment.
@@ -88,14 +107,15 @@ public class ChapterCatalogAdapter implements ChapterPort {
     /*
      * comment.
      *  강의 전체 챕터 목록 조회
-     *  @Cacheable("chapters")
-     *  -> 처음 호출 시 강의 전체 챕터 목록 DB 조회 후 Redis 에 저장
-     *  -> 이후 호출 시 Redis 에서 반환
-     *  -> key = "chapters::1", "chapters::2" 형태로 저장
+     *  StringRedisTemplate 직접 사용
+     *  -> @Cacheable 은 List<Chapter> 역직렬화 시 GenericJackson2JsonRedisSerializer 의 @class 타입 정보와 충돌 발생
+     *  -> StringRedisTemplate 으로 raw JSON 문자열 직접 저장/조회
+     *  -> plainObjectMapper 로 순수 JSON 직렬화/역직렬화
      *  -
-     *  - RedisTemplate 직접 사용
-     *  -> List<Chapter> 역직렬화 문제 해결
-     *  -> TypeReference 로 정확한 타입 지정
+     *  - 저장 형태
+     *  -> key   : "chapters::6"
+     *  -> value : [{"id":6,"lectureId":6,"title":"변수와 타입",...}, ...]
+     *  -> TTL   : 1시간
      */
     @Override
     public List<Chapter> findAllByLectureId(Long lectureId) {
@@ -103,19 +123,20 @@ public class ChapterCatalogAdapter implements ChapterPort {
         String cacheKey = "chapters::" + lectureId;
 
         try {
-            // Redis 에서 캐시 조회
-            Object cached = redisTemplate.opsForValue().get(cacheKey);
-            if (cached != null) {
-                // TypeReference 로 List<Chapter> 정확히 변환
-                List<Chapter> chapters = objectMapper.convertValue(
-                        cached,
+            // StringRedisTemplate 으로 raw JSON 문자열 조회
+            String json = stringRedisTemplate.opsForValue().get(cacheKey);
+            if (json != null) {
+                // plainObjectMapper 로 List<Chapter> 역직렬화
+                List<Chapter> chapters = plainObjectMapper.readValue(
+                        json,
                         new TypeReference<List<Chapter>>() {}
                 );
                 log.debug("[Viewing] chapters 캐시 히트 | lectureId={}", lectureId);
                 return chapters;
             }
         } catch (Exception e) {
-            log.warn("[Viewing] chapters 캐시 조회 실패, DB 조회로 fallback | lectureId={}", lectureId);
+            log.warn("[Viewing] chapters 캐시 조회 실패, DB 조회로 fallback | lectureId={} | 예외={}",
+                    lectureId, e.getMessage());
         }
 
         // findAllByLectureIdOrderByOrderNoAsc: lectureId 기준 챕터 목록 orderNo 오름차순 조회
@@ -126,9 +147,10 @@ public class ChapterCatalogAdapter implements ChapterPort {
                 .map(this::toChapter)
                 .toList();
 
-        // Redis 에 저장 (TTL 1시간)
+        // plainObjectMapper 로 순수 JSON 직렬화 후 StringRedisTemplate 으로 저장
         try {
-            redisTemplate.opsForValue().set(cacheKey, chapters, Duration.ofHours(1));
+            String json = plainObjectMapper.writeValueAsString(chapters);
+            stringRedisTemplate.opsForValue().set(cacheKey, json, Duration.ofHours(1));
             log.debug("[Viewing] chapters 캐시 저장 | lectureId={}", lectureId);
         } catch (Exception e) {
             log.warn("[Viewing] chapters 캐시 저장 실패 | lectureId={}", lectureId);
@@ -150,7 +172,7 @@ public class ChapterCatalogAdapter implements ChapterPort {
 
     /*
      * toChapter
-     * ChapterJpaEntity → Chapter 도메인 변환
+     * ChapterJpaEntity -> Chapter 도메인 변환
      * durationSec null 가능 → 0 처리
      */
     private Chapter toChapter(ChapterJpaEntity entity) {
@@ -161,27 +183,8 @@ public class ChapterCatalogAdapter implements ChapterPort {
                 entity.getOrderNo(),
                 entity.getVideoUrl(),
                 // durationSec null 가능 → 0 처리
-                entity.getDurationSec() != null ? entity.getDurationSec() : 0,
-                // VideoStatus → Chapter.VideoStatus 변환
-                toVideoStatus(entity.getVideoStatus())
+                entity.getDurationSec() != null ? entity.getDurationSec() : 0
         );
-    }
-
-    /*
-     * toVideoStatus
-     * VideoStatus → Chapter.VideoStatus 변환
-     * → 두 enum 값 동일하지만 패키지가 달라서 직접 변환 필요
-     */
-    private Chapter.VideoStatus toVideoStatus(
-            VideoStatus videoStatus
-    ) {
-        return switch (videoStatus) {
-            case UPLOADING -> Chapter.VideoStatus.UPLOADING;
-            case ENCODING -> Chapter.VideoStatus.ENCODING;
-            case READY -> Chapter.VideoStatus.READY;
-            case FAILED -> Chapter.VideoStatus.FAILED;
-        };
-
     }
 
 }

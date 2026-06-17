@@ -73,7 +73,7 @@ public class LectureRepositoryAdapter implements LectureRepository {
     public LecturePage findLectures(
             LectureCategory category,
             String keyword,
-            Boolean enrolled,
+            boolean enrolledOnly,
             List<Long> enrolledLectureIds,
             int page,
             int size
@@ -85,7 +85,7 @@ public class LectureRepositoryAdapter implements LectureRepository {
         Page<LectureJpaEntity> lecturePage = findLecturePage(
                 category,
                 normalizedKeyword,
-                enrolled,
+                enrolledOnly,
                 enrolledLectureIds,
                 pageable
         );

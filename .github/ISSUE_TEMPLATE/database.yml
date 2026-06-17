@@ -44,22 +44,6 @@ body:
     attributes:
       label: 변경 사유
 
-  - type: dropdown
-    id: migration
-    attributes:
-      label: 마이그레이션 필요 여부
-      options:
-        - "Yes"
-        - "No"
-    validations:
-      required: true
-
-  - type: textarea
-    id: rollback
-    attributes:
-      label: 롤백 계획
-      description: 문제 발생 시 롤백할 수 있는 방법을 작성해주세요.
-
   - type: textarea
     id: impact
     attributes:

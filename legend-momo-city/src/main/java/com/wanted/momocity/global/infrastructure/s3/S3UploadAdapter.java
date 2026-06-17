@@ -24,8 +24,8 @@ public class S3UploadAdapter implements S3UploadPort {
     private String region;
 
     @Override
-    public String upload(MultipartFile file) {
-        String key = UUID.randomUUID() + "_" + file.getOriginalFilename();
+    public String upload(MultipartFile file, String folder) {
+        String key = folder + "/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
 
         try {
             s3Client.putObject(
@@ -40,6 +40,6 @@ public class S3UploadAdapter implements S3UploadPort {
             throw new RuntimeException("파일 업로드 실패");
         }
 
-        return "https://" + bucket + ".s3." + region + ".amazonaws.com/" + key;
+        return key;
     }
 }

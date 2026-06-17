@@ -6,6 +6,7 @@ import com.wanted.momocity.auth.application.port.*;
 import com.wanted.momocity.auth.application.usecase.AuthCommandUsecase;
 import com.wanted.momocity.auth.domain.event.SignupCompletedEvent;
 import com.wanted.momocity.auth.domain.exception.*;
+import com.wanted.momocity.auth.domain.model.Provider;
 import com.wanted.momocity.auth.domain.model.Status;
 import com.wanted.momocity.auth.domain.model.User;
 import com.wanted.momocity.auth.domain.model.UserOauth;
@@ -50,7 +51,7 @@ public class AuthCommandService implements AuthCommandUsecase {
     private final EmailCodePort emailCodePort;
     private final EmailSendPort emailSendPort;
 
-    private final Map<String, OAuthClientPort> oAuthClientPorts;
+    private final Map<Provider, OAuthClientPort> oAuthClientPorts;
 
     private final UpdatePasswordPort updatePasswordPort;
     private final PasswordEncodePort passwordEncodePort;
@@ -59,10 +60,10 @@ public class AuthCommandService implements AuthCommandUsecase {
 
 
     public AuthCommandService(
-            LoadUserPort loadUserPort, SignupPolicy signupPolicy, @Qualifier("kakaoOAuthClient")
-            OAuthClientPort kakaoOAuthClientPort,
-            @Qualifier("googleOAuthClient")
-            OAuthClientPort googleOAuthClientPort,
+            LoadUserPort loadUserPort, SignupPolicy signupPolicy,
+            @Qualifier("kakaoOAuthClient") OAuthClientPort kakaoOAuthClientPort,
+            @Qualifier("googleOAuthClient") OAuthClientPort googleOAuthClientPort,
+            @Qualifier("naverOAuthClient") OAuthClientPort naverOAuthClientPort,
             UserRepository userRepository,
             UserOauthRepository userOauthRepository, PasswordEncoder passwordEncoder, BlacklistPort blacklistPort, AuthenticationManager authenticationManager,
             TokenProviderPort tokenProviderPort, ApplicationEventPublisher eventPublisher, RedisRefreshTokenPort redisRefreshTokenPort, EmailCodePort emailCodePort, EmailSendPort emailSendPort, UpdatePasswordPort updatePasswordPort, PasswordEncodePort passwordEncodePort
@@ -79,8 +80,9 @@ public class AuthCommandService implements AuthCommandUsecase {
         this.updatePasswordPort = updatePasswordPort;
         this.passwordEncodePort = passwordEncodePort;
         this.oAuthClientPorts = Map.of(
-                "KAKAO", kakaoOAuthClientPort,
-                "GOOGLE", googleOAuthClientPort
+                Provider.KAKAO, kakaoOAuthClientPort,
+                Provider.GOOGLE, googleOAuthClientPort,
+                Provider.NAVER, naverOAuthClientPort
         );
         this.userRepository = userRepository;
         this.userOauthRepository = userOauthRepository;
@@ -88,40 +90,22 @@ public class AuthCommandService implements AuthCommandUsecase {
     }
 
 
-    // 강사 회원가입
+    // 회원가입
     @Override
-    public void signup(TeacherSignupCommand command) {
-
-        // 정책 확인
-        signupPolicy.ensureEligible(command.email());
-
-        // 이메일(id), 비밀번호, 이름, 카테고리, 증빙자료 url 넘겨서 새로운 강사 자바 객체 생성
-        User user = userRepository.register(User.teacherRegister(command.email(), passwordEncoder.encode(command.password()), command.name(), command.category(),command.proof()));
-
-        // 이메일 인증 하고서 인증됨 의 상태를 지움
-        emailCodePort.deleteVerified(command.email());
-
-        // 회원가입 하고서 이벤트 발행 - 나와의 채팅 생성용
-        eventPublisher.publishEvent(new SignupCompletedEvent(user.getId()));
-
-        log.info("[signup] 회원가입 완료 | email={} | role=TEACHER", command.email());
-    }
-
-    // 학생 회원가입
-    @Override
-    public void signup(StudentSignupCommand command) {
+    public void signup(SignupCommand command) {
 
         // 정책 확인
         signupPolicy.ensureEligible(command.email());
 
         // 이메일(id), 비밀번호, 이름 넘겨서 새로운 학생 자바 객체 생성
-        User user = userRepository.register(User.studentRegister(command.email(), passwordEncoder.encode(command.password()), command.name()));
+        userRepository.register(User.signup(command.email(), passwordEncoder.encode(command.password()), command.name()));
 
         // 이메일 인증 하고서 인증됨 의 상태를 지움
         emailCodePort.deleteVerified(command.email());
 
         // 회원가입 하고서 이벤트 발행 - 나와의 채팅 생성용
-        eventPublisher.publishEvent(new SignupCompletedEvent(user.getId()));
+        // 추후 결제 완료 후 해당 이벤트 발행
+//        eventPublisher.publishEvent(new SignupCompletedEvent(user.getId()));
 
         log.info("[signup] 회원가입 완료 | email={} | role=STUDENT", command.email());
 
@@ -205,6 +189,7 @@ public class AuthCommandService implements AuthCommandUsecase {
     public LoginResponse socialLogin(SocialLoginCommand command) {
         // provider가 카카오면 kakaoOAuthClientPort
         // provider가 구글이면 googleOAuthClientPort
+        // provider가 네이버면 naverOAuthClientPort
         OAuthClientPort oAuthClientPort = oAuthClientPorts.get(command.provider());
         // 거기서 api에 요청 두번 보내서 access 토큰 요청 + 유저 정보 요청하고 사용자 정도 담음
         OAuthUserInfoCommand oAuthUserInfo = oAuthClientPort.getUserInfo(command.code());
@@ -239,7 +224,7 @@ public class AuthCommandService implements AuthCommandUsecase {
     }
 
     // 새로운 유저 db에 등록
-    private User registerNewUser(String provider, OAuthUserInfoCommand oAuthUserInfoCommand) {
+    private User registerNewUser(Provider provider, OAuthUserInfoCommand oAuthUserInfoCommand) {
         try {
             User newUser = userRepository.register(
                     User.oAuthRegister(oAuthUserInfoCommand.email(), oAuthUserInfoCommand.name())

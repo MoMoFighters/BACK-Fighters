@@ -1,5 +1,6 @@
 package com.wanted.momocity.auth.infrastructure.persistence;
 
+import com.wanted.momocity.auth.domain.model.Provider;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
@@ -17,7 +18,7 @@ public class UserOauthJpaEntity {
     private UserJpaEntity user;
 
     @Column(nullable = false)
-    private String provider;
+    private Provider provider;
 
     @Column(name = "provider_id", nullable = false)
     private String providerId;
@@ -27,7 +28,7 @@ public class UserOauthJpaEntity {
 
     protected UserOauthJpaEntity() {}
 
-    public UserOauthJpaEntity(UserJpaEntity user, String provider, String providerId, LocalDateTime createdAt) {
+    public UserOauthJpaEntity(UserJpaEntity user, Provider provider, String providerId, LocalDateTime createdAt) {
         this.user = user;
         this.provider = provider;
         this.providerId = providerId;
@@ -36,7 +37,7 @@ public class UserOauthJpaEntity {
 
     public Long getId() { return id; }
     public UserJpaEntity getUser() { return user; }
-    public String getProvider() { return provider; }
+    public Provider getProvider() { return provider; }
     public String getProviderId() { return providerId; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 }
