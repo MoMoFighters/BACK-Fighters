@@ -68,8 +68,6 @@ public class LectureQueryService implements
     // 강사 이름, 프로필 이미지 조회를 위한 auth 포트
     private final LoadUserPort loadUserPort;
 
-    private final ProgressPort progressPort;
-
     // 학생/비로그인 기준 강의 목록 조회.
     @Override
     public StudentLecturePageResponse getLectures(GetLecturesQuery query) {
@@ -276,15 +274,6 @@ public class LectureQueryService implements
 
         int totalProgress = 0;
         boolean isCompleted = false;
-
-//        /* comment
-//        *   로그인한 학생이면 해당 강의의 수강 진행 정보를 조회
-//        *   비로그인 사용자는 진행 정보 없이 기본값으로 응답
-//        * */
-//        if (studentId  != null) {
-//            lectureEnrollmentQueryPort.findByUserIdAndLectureId(studentId, lecture.getId())
-//                    .isPresent(progress -> {});
-//        }
 
         var progress = studentId == null
                 ? java.util.Optional.<LectureEnrollmentQueryPort.EnrollmentProgress>empty()
