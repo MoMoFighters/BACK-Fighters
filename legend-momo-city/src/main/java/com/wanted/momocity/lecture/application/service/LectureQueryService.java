@@ -2,7 +2,6 @@ package com.wanted.momocity.lecture.application.service;
 
 import com.wanted.momocity.auth.application.port.LoadUserPort;
 import com.wanted.momocity.auth.domain.model.User;
-import com.wanted.momocity.enrollment.application.port.ProgressPort;
 import com.wanted.momocity.enrollment.application.port.StudentAccountPort;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.lecture.application.port.LectureEnrollmentQueryPort;
@@ -39,7 +38,6 @@ import java.util.List;
 
 /**
  * 강의 조회 기능을 처리하는 Application Service.
- *
  * 기존 LectureQueryService와 AdminLectureQueryService를 하나로 합친 형태.
  * 학생, 강사, 관리자 강의 조회 기능을 모두 담당한다.
  */
@@ -272,8 +270,8 @@ public class LectureQueryService implements
         // 현재 강의의 전체 챕터 수를 조회
         int chapterCount = chapterRepository.countByLectureId(lecture.getId());
 
-        int totalProgress = 0;
-        boolean isCompleted = false;
+        Integer totalProgress = null;
+        Boolean isCompleted = null;
 
         var progress = studentId == null
                 ? java.util.Optional.<LectureEnrollmentQueryPort.EnrollmentProgress>empty()
@@ -288,11 +286,8 @@ public class LectureQueryService implements
             isCompleted = chapterCount > 0 && progress.get().completedCount() >= chapterCount;
         }
 
-        String teacherName = null;
-
         return StudentLectureListItemResponse.from(
                 lecture,
-                teacherName,
                 averageRating,
                 reviewCount,
                 totalProgress,
