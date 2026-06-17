@@ -32,7 +32,8 @@ public class MessageController {
     //커맨드(채팅방 개설, 메시지 전송, 메시지 읽음, 채팅방 나가기)
     private final MessageCommandUseCase messageCommandUseCase;
 
-    @GetMapping("/rooms")
+    //v2 -> 채팅방 정보(채팅방 이름), 멤버 정보를 넘긴다.(안읽은 메시지 개수도 변경)
+    @GetMapping("/api/v2/messages/chatrooms")
     @Operation(summary = "채팅방 목록", description = "로그인 유저가 존재하는 모든 채팅방을 조회한다.")
     public ResponseEntity<ApiResponse<List<FindChatRoomResponse>>> getChatRooms(@AuthenticationPrincipal CustomUserDetails userDetails) {
 

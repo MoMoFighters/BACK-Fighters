@@ -3,10 +3,12 @@ package com.wanted.momocity.notification.infrastructure.event;
 import com.wanted.momocity.friend.domain.event.AcceptRequestFriendPublishedEvent;
 import com.wanted.momocity.friend.domain.event.CancelRequestFriendPublishedEvent;
 import com.wanted.momocity.friend.domain.event.RequestFriendPublishedEvent;
+import com.wanted.momocity.friend.domain.event.TeacherStudentAutoFriendPublishedEvent;
 import com.wanted.momocity.message.domain.event.SendMessagePublishedEvent;
 import com.wanted.momocity.notification.application.service.NotificationHandlerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
@@ -73,6 +75,19 @@ public class NotificationLifecycleEventHandler {
                 event.receiverId(),
                 event.createdAt() //날짜 업데이트용
         );
+    }
 
+    //강사-학생 자동 친구 학생 쪽 알림 행 추가
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleAutoFriend(TeacherStudentAutoFriendPublishedEvent event) {
+        log.info("[NotificationLifecycleEventHandler] 강사-학생 자동 친구 행 추가 이벤트 수신 -> 알림 서비스로 이동");
+
+        notificationHandlerService.autoFriendNotification(
+                event.fromUserId(), //학생 아이디(notification 테이블의 userId: 알림 받을 사람)
+                event.toUserId(), //강사 아이디(refId)
+                event.teacherName(), //강사 이름
+                event.teacherNickname() //강사 닉네임
+        );
     }
 }

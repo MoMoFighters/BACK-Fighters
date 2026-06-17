@@ -22,8 +22,8 @@ public interface SpringDataMessageRepository extends JpaRepository<MessageJpaEnt
     //상대방이 보낸 내역 있는 채팅방 여부
     boolean existsByRoomId_IdAndSenderId_Id(Long roomId, Long senderId);
 
-    //메시지 읽음 처리
-    List<MessageJpaEntity> findByRoomId_IdAndSenderId_IdAndIsReadFalse(Long roomId, Long id);
+//    //메시지 읽음 처리
+//    List<MessageJpaEntity> findByRoomId_IdAndSenderId_IdAndIsReadFalse(Long roomId, Long id);
 
     //메시지 내역 조회
     //lastMessageId 없을 때(최조 진입)

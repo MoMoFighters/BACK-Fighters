@@ -17,8 +17,14 @@ public class ChatRoomJpaEntity {
     @Column(name = "id")
     private Long id;
 
+    @Column(name = "title")
+    private String roomTitle;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     //채팅방 신설 시 생성 시간 주입
     public void changeCreatedAt(LocalDateTime createdAt) {

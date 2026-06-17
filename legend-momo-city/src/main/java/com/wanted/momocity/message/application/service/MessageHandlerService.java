@@ -2,11 +2,13 @@ package com.wanted.momocity.message.application.service;
 
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import com.wanted.momocity.message.application.policy.MessageEligibilityPolicy;
+import com.wanted.momocity.message.domain.event.LeftRoomPublishedEvent;
 import com.wanted.momocity.message.domain.repository.MessageRepository;
 import com.wanted.momocity.message.infrastructure.persistence.*;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,7 @@ public class MessageHandlerService {
     private final SpringDataChatRoomRepository springDataChatRoomRepository;
     private final SpringDataChatRoomMemberRepository springDataChatRoomMemberRepository;
     private final SpringDataMessageRepository springDataMessageRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     //회원가입 성공 후 날라온 이벤트로 나와의 채팅방 최초 1회 생성
     //v2 -> 결제 완료 시 나와의 채팅방 생성으로 변경?
@@ -120,5 +123,15 @@ public class MessageHandlerService {
         // 튕겨나가고 상대방 유저 상태에 따라 (알 수 없음) 가공 처리가 유기적으로 발동합니다!
         log.info("[MessageHandlerService] 상대방이 존재함 -> 삭제자 멤버 데이터만 제거. 방ID: {}", foundRoomId);
         springDataChatRoomMemberRepository.delete(myMembership);
+
+        UserWithFMJpaEntity loginUser = myMembership.getUserId();
+
+        //채팅방 나갔다는 안내 문구 message_announce 테이블에 행추가
+        eventPublisher.publishEvent(new LeftRoomPublishedEvent(
+                foundRoomId,
+                userId,
+                loginUser.getNickname()
+        ));
+        log.info("[MessageHandlerService] 친구 삭제로 채팅방 나가기 이벤트 발행 -> message_announce 테이블에 안내 문구 추가. 방ID: {}", foundRoomId);
     }
 }

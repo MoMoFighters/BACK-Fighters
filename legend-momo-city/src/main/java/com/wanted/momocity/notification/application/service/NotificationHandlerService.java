@@ -23,6 +23,7 @@ public class NotificationHandlerService {
 
     /**
      * 친구 요청 알림 생성 및 저장 비즈니스 로직
+     * 수신자: userId(알림 받을 사람)
      */
     public void createAndSaveFriendRequestNotification(Long toUserId, String fromUserNickname, Long fromUserId) {
         log.info("[NotificationHandlerService] 알림 비즈니스 로직 시작 - 대상자 ID: {}", toUserId);
@@ -86,9 +87,9 @@ public class NotificationHandlerService {
                     existingNotification.getUserId(), // receiverId가 유지됨
                     existingNotification.getType(),
                     existingNotification.getRefId(),
-                    message
+                    message,
                     //추후 isRead 생기면 주석 해제
-//                    false
+                    null //notification 관련 알림은 message_read에서 처리하므로 null 처리
             );
 
             notificationRepository.save(updatedNotification);
@@ -106,5 +107,26 @@ public class NotificationHandlerService {
         );
 
         notificationRepository.save(newNotification);
+    }
+
+    //강사-학생 자동 친구 행 추가 시 학생 쪽 알림
+    public void autoFriendNotification(Long fromUserId, Long toUserId, String teacherName, String teacherNickname) {
+        log.info("[NotificationHandlerService] 친구 수락 알림 처리 시작 - 행위 유발자ID: {}", fromUserId);
+
+        String message;
+        //강사 닉네임이 없는 경우 확인
+        if (teacherNickname == null || teacherNickname.isEmpty()) {
+            //메시지 조립
+            message = String.format("%s강사님과 자동으로 친구가 되었습니다. 질문을 시작해보세요!", teacherName);
+        } else {
+            message = String.format("%s강사님과 자동으로 친구가 되었습니다. 질문을 시작해보세요!", teacherNickname + "(" + teacherName + ")");
+        }
+
+        //순수한 도메인 모델 생성
+        Notification newNotification = Notification.createAutoFriend(fromUserId, message, toUserId);
+
+        //레포지토리를 통해 알림 저장
+        Notification saved = notificationRepository.save(newNotification);
+        log.info("[NotificationHandlerService] 자동 친구 알림 생성 완료 - 생성된 알림ID: {}", saved.getId());
     }
 }

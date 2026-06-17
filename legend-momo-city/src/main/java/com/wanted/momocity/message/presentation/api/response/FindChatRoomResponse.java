@@ -7,20 +7,32 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 //채팅방 목록
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public record FindChatRoomResponse(
+        RoomInfo roomInfo
+
+) {
+    public record RoomInfo(
+            Long roomId,
+            String roomTitle,
+            int inMemberCount,
+            String content,
+            LocalDateTime createdAt,
+            int unreadCount,
+            List<MemberInfo> memberInfo
+    ) {}
+
+    public record MemberInfo(
         Long userId,
         String name,
         String nickname,
         String lectureTitle,
         String role,
         String status,
-        Long roomId,
-        String content,
-        LocalDateTime createdAt,
-        Long unreadCount,
-        String profileImageUrl
-) {
+        String profileImageUrl,
+        boolean isLeftRoom
+    ) {}
+
+
     public static FindChatRoomResponse from(ChatRoomView view) {
         //🚨다대다에서 roomInfo, memberInfo로 줄 땐 닉네임 가공X(메시지 내역에서 가공)
         //v2 -> 일대일의 경우도 있으므로 가공해야함
@@ -50,18 +62,27 @@ public record FindChatRoomResponse(
             finalLectureTitle = "(" + String.join(", ", lectureTitle) + ")";
         }
 
-        return new FindChatRoomResponse(
+        MemberInfo member = new MemberInfo(
                 view.userId(),
                 "TEACHER".equals(view.role()) ? view.name() : null,
                 displayNickname,
                 finalLectureTitle,
                 view.role(),
                 view.status(),
+                view.profileImageUrl(),
+                view.isLeftRoom()
+        );
+
+        RoomInfo room = new RoomInfo(
                 view.roomId(),
+                view.roomTitle(),
+                view.inMemberCount(),
                 view.content(),
                 view.createdAt(),
                 view.unreadCount(),
-                view.profileImageUrl()
+                List.of(member)
         );
+
+        return new FindChatRoomResponse(room);
     }
 }

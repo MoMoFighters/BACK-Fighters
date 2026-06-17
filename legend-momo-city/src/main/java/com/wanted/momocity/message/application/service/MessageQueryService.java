@@ -37,6 +37,8 @@ public class MessageQueryService implements MessageQueryUseCase {
     private final MessageEligibilityPolicy messageEligibilityPolicy;
     private final SpringDataMessageRepository springDataMessageRepository;
     private final SpringDataChatRoomRepository springDataChatRoomRepository;
+    private final SpringDataMessageReadRepository springDataMessageReadRepository;
+    private final SpringDataMessageAnnounceRepository springDataMessageAnnounceRepository;
 
 
     //메시지 채팅 목록
@@ -67,6 +69,9 @@ public class MessageQueryService implements MessageQueryUseCase {
 
             //상대방 유저 찾기
             List<ChatRoomMemberJpaEntity> allMembers = springDataChatRoomMemberRepository.findByRoomId_Id(roomId);
+            //채팅방 멤버 수(로그인 유저 포함)
+            int inMemberCount = allMembers.size();
+
             UserWithFMJpaEntity targetUser = null;
 
             //로그인한 유저가 아닌 멤버를 상대방으로 인식(targetUser)
@@ -174,6 +179,8 @@ public class MessageQueryService implements MessageQueryUseCase {
             //마지막 채팅 내역, 마지막 채팅 시간
             String lastContent = (pro.lastMessage() != null) ? pro.lastMessage().getContent() : "";
             LocalDateTime lastChattedAt = (pro.lastMessage() != null) ? pro.lastMessage().getCreatedAt() : null;
+
+            //안내 문구 시간 정렬 기준 추가
 
             //채팅방별 안읽은 메시지
             Long unreadCount = 0L;

@@ -8,6 +8,7 @@ import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import com.wanted.momocity.message.application.manager.ChatRoomSessionManager;
 import com.wanted.momocity.message.application.policy.MessageEligibilityPolicy;
 import com.wanted.momocity.message.application.usecase.MessageCommandUseCase;
+import com.wanted.momocity.message.domain.event.LeftRoomPublishedEvent;
 import com.wanted.momocity.message.domain.event.SendMessagePublishedEvent;
 import com.wanted.momocity.message.domain.repository.MessageRepository;
 import com.wanted.momocity.message.infrastructure.persistence.*;
@@ -42,6 +43,7 @@ public class MessageCommandService implements MessageCommandUseCase {
     private final SpringDataChatRoomMemberRepository chatRoomMemberRepository;
     private final SpringDataChatRoomRepository springDataChatRoomRepository;
 
+    private final SpringDataMessageReadRepository springDataMessageReadRepository;
 
     //채팅방 조회 및 개설
     @Override
@@ -276,16 +278,18 @@ public class MessageCommandService implements MessageCommandUseCase {
                 .orElse(members.get(0).getUserId()); //나와의 채팅방 대비
 
         //이 채팅방에서 상대방이 보낸 메시지 중 안읽은 메시지 뽑기
-        List<MessageJpaEntity> unreadMessages = springDataMessageRepository.findByRoomId_IdAndSenderId_IdAndIsReadFalse(roomId, targetUser.getId());
+        //v2->읽음 테이블에서 userId가 로그인 유저이면서 메시지 안읽음 여부 확인(메시지 안읽고 알림만 읽은 경우 고려)
+        List<MessageReadJpaEntity> unreadMessages = springDataMessageReadRepository.findByRoomId_IdAndUserId_IdAndIsMsgReadFalse(roomId, userId);
 
         //안읽은 메시지 리스트가 비어있는지 체크
         boolean hasUnread = !unreadMessages.isEmpty();
 
         //반복문 돌면서 상태를 true로 변경
         if (hasUnread) {
-            for (MessageJpaEntity message : unreadMessages) {
-                message.changeIsRead(true);
-            } log.info("[ReadMessageCommandService] 상대방 메시지 {}건 읽음 처리 완료", unreadMessages.size());
+            for (MessageReadJpaEntity message : unreadMessages) {
+                message.changeIsMsgRead(true); //메시지 읽음 처리
+                message.changeIsNotiRead(true); //알림 읽음 처리
+            } log.info("[ReadMessageCommandService] 상대방 메시지 {}건의 메시지 및 알림 읽음 통합 처리 완료", unreadMessages.size());
         } else {
             log.info("[ReadMessageCommandService] 읽을 메시지가 존재하지 않아 기존 상태 유지");
         }
@@ -364,6 +368,14 @@ public class MessageCommandService implements MessageCommandUseCase {
         if (relationOpt.isPresent()) {
             friendStatus = relationOpt.get().getStatus();
         }
+
+        UserWithFMJpaEntity loginUser = myMembership.getUserId();
+
+        eventPublisher.publishEvent(new LeftRoomPublishedEvent(
+                roomId,
+                userId,
+                loginUser.getNickname()
+        ));
 
         return new LeaveChatRoomView(
                 false,

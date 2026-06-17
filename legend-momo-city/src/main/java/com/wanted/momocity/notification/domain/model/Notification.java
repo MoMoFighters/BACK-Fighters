@@ -14,12 +14,13 @@ public class Notification {
     private final Long refId;
     private final String message;
     //추후
-//    private final boolean isRead;
+    //v2
+    private final Boolean isRead;
 
     //친구 요청
     //순수한 도메인 모델 안에서 알림 객체 생성 비즈니스를 정의
     public static Notification createFriendRequest(Long userId, String message, Long refId) {
-        return new Notification(null, userId, "FRIEND_REQUEST", refId, message);
+        return new Notification(null, userId, "FRIEND_REQUEST", refId, message, false);
     }
 
     //친구 요청 수락
@@ -29,7 +30,9 @@ public class Notification {
                 fromUserId,
                 "FRIEND_REQUEST",
                 acceptorUserId,
-                message);
+                message,
+                false
+        );
     }
 
     //메시지 전송
@@ -39,9 +42,21 @@ public class Notification {
                 senderId,
                 type,
                 roomId,
-                message
+                message,
                 //isRead 생기면 주석 해제
-//                false
+                null
+        );
+    }
+
+    //강사-학생 자동 친구 알림 행 생성(알림 받을 사람 userId: 학생, refId: 강사)
+    public static Notification createAutoFriend(Long fromUserId, String message, Long toUserId) {
+        return new Notification(
+                null,
+                fromUserId,
+                "FRIEND_REQUEST",
+                toUserId,
+                message,
+                false
         );
     }
 }
