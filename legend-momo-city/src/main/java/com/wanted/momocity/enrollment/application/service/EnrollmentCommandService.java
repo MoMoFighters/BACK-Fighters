@@ -9,6 +9,8 @@ import com.wanted.momocity.enrollment.domain.exception.DuplicateEnrollmentExcept
 import com.wanted.momocity.enrollment.domain.exception.InvalidEnrollmentLectureStatusException;
 import com.wanted.momocity.enrollment.domain.model.Enrollment;
 import com.wanted.momocity.enrollment.domain.repository.EnrollmentRepository;
+import com.wanted.momocity.enrollment.infrastructure.metrics.BuildingMetrics;
+import com.wanted.momocity.enrollment.infrastructure.metrics.EnrollmentMetrics;
 import com.wanted.momocity.lecture.domain.model.LectureStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +24,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 @Slf4j
 public class EnrollmentCommandService implements EnrollmentCommandUseCase {
+
+    private final EnrollmentMetrics enrollmentMetrics;
+    private final BuildingMetrics buildingMetrics;
 
     // 수강신청 저장소
     private final EnrollmentRepository enrollmentRepository;
@@ -67,6 +72,11 @@ public class EnrollmentCommandService implements EnrollmentCommandUseCase {
 
         // 수강신청 정보를 저장
         Enrollment savedEnrollment = enrollmentRepository.save(enrollment);
+
+        // 강의별 수강 신청 누적 횟수 기록 -> actuator(인기강의용)
+        enrollmentMetrics.recordEnrollmentCreated(command.lectureId());
+        // 건물 획득 누적
+        buildingMetrics.recordBuildingAcquired();
 
         // 수강신청 완료 후 강사 자동 친구 추가를 위해 이벤트를 발행
         eventPublisher.publishEvent(new EnrollmentCompletedEvent(
