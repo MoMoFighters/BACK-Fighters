@@ -12,6 +12,6 @@ public record ChapterResumeResponse(
         String chapterTitle,
         int lastPositionSec,
         int durationSec,
-        int totalProgress
+        int lectureProgress
 ) {
 }

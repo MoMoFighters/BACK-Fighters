@@ -33,7 +33,7 @@ public record ChapterProgressResponse(
             int orderNo,
             int watchedSeconds,
             int durationSec,
-            int progressRate,
+            int chapterProgress,
             boolean isCompleted,
             boolean isAccessible
     ) {}

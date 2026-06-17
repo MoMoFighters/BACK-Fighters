@@ -52,6 +52,11 @@ public class ViewingQueryService implements ViewingQueryUseCase {
         // 챕터 정보 조회
         Chapter chapter = chapterPort.findById(chapterId);
 
+        // lastPositionSec 조회 추가
+        LearningHistory history = learningHistoryRepository
+                .findByUserIdAndChapterId(userId, chapterId)
+                        .orElse(LearningHistory.create(userId, lectureId, chapterId));
+
         // 순차 시청 제한 (Policy)
         sequentialAccessPolicy.ensureSequentialAccess(userId, lectureId, chapterId);
 
@@ -62,8 +67,9 @@ public class ViewingQueryService implements ViewingQueryUseCase {
                 userId, lectureId, chapterId);
 
         return new StreamingUrlResponse(
-                chapter.getId(), presignedUrl, 3600,
-                chapter.getTitle(), chapter.getDurationSec()
+                presignedUrl,
+                3600,
+                history.getLastPositionSec()
         );
     }
 
@@ -122,9 +128,12 @@ public class ViewingQueryService implements ViewingQueryUseCase {
 
                                     return new LectureMetaResponse.ChapterItem(
                                             chapter.getId(),
+                                            // chapterThumbnailUrl 추후 추가시 코드 반영 후 수정
+                                            null,
                                             chapter.getTitle(),
                                             chapter.getOrderNo(),
                                             chapter.getDurationSec(),
+                                            // chapterProgress
                                             history.getProgressRate(),
                                             history.isCompleted(),
                                             isAccessible
@@ -136,8 +145,8 @@ public class ViewingQueryService implements ViewingQueryUseCase {
                 userId, lectureId);
 
         return new LectureMetaResponse(
-                lecture.getId(), lecture.getTitle(), lecture.getThumbnailUrl(),
-                chapters.size(), currentChapter.getId(), currentChapter.getOrderNo(), currentChapter.getTitle(), chaptersItem
+                lecture.getId(), lecture.getTitle(), chapters.size(), currentChapter.getId(),
+                currentChapter.getOrderNo(), currentChapter.getTitle(), chaptersItem
         );
     }
 
@@ -243,6 +252,7 @@ public class ViewingQueryService implements ViewingQueryUseCase {
                     return new ChapterProgressResponse.ChapterProgressItem(
                             chapter.getId(), chapter.getTitle(), chapter.getOrderNo(),
                             Math.min(history.getWatchedSeconds(), chapter.getDurationSec()), chapter.getDurationSec(),
+                            // chapterProgress
                             history.getProgressRate(), history.isCompleted(),
                             isAccessible
                     );
