@@ -38,7 +38,6 @@ import java.util.List;
 
 /**
  * 강의 조회 기능을 처리하는 Application Service.
- *
  * 기존 LectureQueryService와 AdminLectureQueryService를 하나로 합친 형태.
  * 학생, 강사, 관리자 강의 조회 기능을 모두 담당한다.
  */
@@ -71,41 +70,31 @@ public class LectureQueryService implements
     @Override
     public StudentLecturePageResponse getLectures(GetLecturesQuery query) {
 
-        // userId가 있으면 로그인 학생의 "내 수강 강의" 조회
-        // userId가 없으면 비로그인 공개 강의 조회
-        boolean enrolledOnly = query.userId() != null;
+        /* comment
+        *   학생 강의 목록은 비로그인/로그인 모두 ACTIVE 강의 전체 조회
+        *   로그인한 학생 정보는 목록 필터링에서 사용하지 않고, 진행률 표시용으로만 사용한다.
+        * */
+        Long studentId = null;
 
-        List<Long> enrolledLectureId = List.of();
-
-        if (enrolledOnly) {
-            Long studentId = studentAccountPort.getStudentId(query.userId());
-
-            enrolledLectureId =
-                    lectureEnrollmentQueryPort.findLectureIdsByUserId(studentId);
-
-            // 로그인 학생인데 수강 중인 강의가 없으면 빈 페이지 반환
-            if (enrolledLectureId.isEmpty()) {
-                return new StudentLecturePageResponse(
-                        List.of(),
-                        query.page(),
-                        query.size(),
-                        0,
-                        0
-                );
-            }
+        if (query.userId() != null) {
+            studentId = studentAccountPort.getStudentId(query.userId());
         }
 
         var lecturePage = lectureRepository.findLectures(
                 query.category(),
                 query.keyword(),
-                enrolledOnly,
-                enrolledLectureId,
+
+                // 전체 조회 API 이므로 수강 여부로 강의 목록을 필터링 X
+                false,
+                List.of(),
                 query.page(),
                 query.size()
         );
 
+        Long finalStudentId = studentId;
+
         List<StudentLectureListItemResponse> content = lecturePage.content().stream()
-                .map(this::toStudentListItemResponse)
+                .map(lecture -> toStudentListItemResponse(lecture, finalStudentId))
                 .toList();
 
         return new StudentLecturePageResponse(
@@ -272,17 +261,39 @@ public class LectureQueryService implements
 
     // 학생 강의 목록용 응답 객체로 변환
     private StudentLectureListItemResponse toStudentListItemResponse(
-            LectureAggregate lecture
+            LectureAggregate lecture,
+            Long studentId
     ) {
-        String teacherName = null;
         double averageRating = 0.0;
         int reviewCount = 0;
 
+        // 현재 강의의 전체 챕터 수를 조회
+        int chapterCount = chapterRepository.countByLectureId(lecture.getId());
+
+        Integer totalProgress = null;
+        Boolean isCompleted = null;
+
+        var progress = studentId == null
+                ? java.util.Optional.<LectureEnrollmentQueryPort.EnrollmentProgress>empty()
+                // 수강 중인지 확인하고 수강 중이면 진행률을 가지고 와라
+                : lectureEnrollmentQueryPort.findByUserIdAndLectureId(studentId, lecture.getId());
+
+        // 수강 정보가 있으면 실행
+        if (progress.isPresent()) {
+            totalProgress = progress.get().totalProgress();
+
+            // 완료 여부는 전체 챕터 수와 완료 챕터 수를 기준으로 판단
+            isCompleted = chapterCount > 0 && progress.get().completedCount() >= chapterCount;
+        }
+
         return StudentLectureListItemResponse.from(
                 lecture,
-                teacherName,
                 averageRating,
-                reviewCount
+                reviewCount,
+                totalProgress,
+                isCompleted,
+                chapterCount
         );
     }
+
 }
