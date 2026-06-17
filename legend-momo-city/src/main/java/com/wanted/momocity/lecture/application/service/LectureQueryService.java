@@ -277,7 +277,10 @@ public class LectureQueryService implements
 
         var progress = studentId == null
                 ? java.util.Optional.<LectureEnrollmentQueryPort.EnrollmentProgress>empty()
+                // 수강 중인지 확인하고 수강 중이면 진행률을 가지고 와라
                 : lectureEnrollmentQueryPort.findByUserIdAndLectureId(studentId, lecture.getId());
+
+        // 수강 정보가 있으면 실행
         if (progress.isPresent()) {
             totalProgress = progress.get().totalProgress();
 
