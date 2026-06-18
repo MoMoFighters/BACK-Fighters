@@ -13,8 +13,8 @@ import java.util.List;
 * */
 
 public record StreakMonthlyResponse(
-        LocalDate startDate,
-        LocalDate endDate,
+        int year,
+        int month,
         List<StreakResponse> streaks
 ) {
 }

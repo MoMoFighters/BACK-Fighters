@@ -5,6 +5,7 @@ import com.wanted.momocity.calendar.application.port.TodayChapterPort;
 import com.wanted.momocity.calendar.application.usecase.CalendarQueryUseCase;
 import com.wanted.momocity.calendar.domain.model.Calendar;
 import com.wanted.momocity.calendar.domain.repository.CalendarRepository;
+import com.wanted.momocity.calendar.presentation.api.response.DailyCalendarResponse;
 import com.wanted.momocity.calendar.presentation.api.response.MemoResponse;
 import com.wanted.momocity.calendar.presentation.api.response.MonthlyCalendarResponse;
 import com.wanted.momocity.calendar.presentation.api.response.TodoResponse;
@@ -38,18 +39,10 @@ public class CalendarQueryService implements CalendarQueryUseCase {
     @Override
     public MonthlyCalendarResponse handle(Long userId, LocalDate startDate, LocalDate endDate) {
 
-        // 해당 월 전체 조회 (Todo + Memo)
+        // 해당 월 전체 조회 (Memo)
         List<Calendar> calendars = calendarRepository
                 .findByUserIdAndDateBetween(userId, startDate, endDate);
 
-        // Todo 분리
-        List<TodoResponse> todos = calendars.stream()
-                .filter(c -> c.getCategory() == Calendar.Category.TODO)
-                .map(c -> new TodoResponse(
-                        c.getId(), c.getTitle(),
-                        c.getCategory(), c.getStart(), c.isCompleted()
-                ))
-                .toList();
         // Memo 분리
         List<MemoResponse> memos = calendars.stream()
                 .filter(c -> c.getCategory() == Calendar.Category.MEMO)
@@ -59,13 +52,34 @@ public class CalendarQueryService implements CalendarQueryUseCase {
                 ))
                 .toList();
 
-        List<TodayChapterInfo> todayChapters =
-                todayChapterPort.findTodayChapters(userId, LocalDate.now());
+        log.info("[Calendar] 월별 조회 완료 | userId={}, startDate={}, endDate={}, memoCount={}",
+                userId, startDate, endDate, memos.size());
 
-        log.info("[Calendar] 월별 조회 완료 | userId={}, startDate={}, endDate={}, todoCount={}, memoCount={}, todayChapterCount={}",
-                userId, startDate, endDate, todos.size(), memos.size(), todayChapters.size());
-
-        return new MonthlyCalendarResponse(startDate, endDate, todos, memos, todayChapters);
+        return new MonthlyCalendarResponse(startDate, endDate, memos);
     }
 
+    @Override
+    public DailyCalendarResponse handleDaily(Long userId, LocalDate date) {
+
+        List<Calendar> calendars = calendarRepository
+                .findByUserIdAndDateBetween(userId, date, date);
+
+        // Todo 분리
+        List<TodoResponse> todos = calendars.stream()
+                .filter(c -> c.getCategory() == Calendar.Category.TODO)
+                .map(c -> new TodoResponse(
+                        c.getId(), c.getTitle(),
+                        c.getCategory(), c.getStart(), c.isCompleted()
+                ))
+                .toList();
+
+                List<TodayChapterInfo> todayChapters =
+                todayChapterPort.findTodayChapters(userId, date);
+
+        log.info("[Calendar] 일별 조회 완료 | userId={}, date={}, todoCount={}, todayChapterCount={}",
+                userId, date, todos.size(), todayChapters.size());
+
+        return new DailyCalendarResponse(date, todos, todayChapters);
+
+    }
 }

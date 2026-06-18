@@ -36,7 +36,6 @@ public class StreakQueryService implements StreakQueryUseCase {
         List<StreakResponse> streakResponses = streaks.stream()
                 .map(streak -> new StreakResponse(
                         streak.getStreakDate(),
-                        streak.getDailyWatchedSeconds(),
                         streak.getLevel()
                 ))
                 .toList();
@@ -44,6 +43,6 @@ public class StreakQueryService implements StreakQueryUseCase {
         log.info("[Streak] 월간 잔디 조회 완료 | userId={}, startDate={}, endDate={}, count={}",
                 userId, startDate, endDate, streakResponses.size());
 
-        return new StreakMonthlyResponse(startDate, endDate, streakResponses);
+        return new StreakMonthlyResponse(startDate.getYear(), startDate.getMonthValue(), streakResponses);
     }
 }
