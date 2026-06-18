@@ -21,9 +21,10 @@ import java.time.LocalDateTime;
        → created_at / updated_at 자동 채움 (@CreatedDate / @LastModifiedDate)
        → reportedAt 과는 의미 분리 (도메인 의도 vs DB row 메타)
     5. WHY enum → String 매핑
-       → targetType / reason / status 는 도메인에서 enum, 여기선 String
+       → targetType / reason 은 도메인에서 enum, 여기선 String
        → Adapter 가 enum.name() ↔ Enum.valueOf() 변환
        → member / lecture 와 동일 정책 (일관성)
+       → isRead 는 도메인과 동일하게 boolean 그대로 저장 (변환 불필요)
  */
 @Entity
 @Table(name = "report")
@@ -49,8 +50,8 @@ public class ReportJpaEntity extends BaseTimeEntity {
     @Column(name = "detail", length = 1000)
     private String detail;
 
-    @Column(name = "status", nullable = false, length = 20)
-    private String status;
+    @Column(name = "is_read", nullable = false)
+    private boolean isRead;
 
     @Column(name = "reported_at", nullable = false)
     private LocalDateTime reportedAt;
@@ -67,7 +68,7 @@ public class ReportJpaEntity extends BaseTimeEntity {
 
     // Adapter 의 toEntity() 가 호출하는 전체 필드 생성자
     public ReportJpaEntity(Long id, Long reporterUserId, String targetType, Long targetId,
-                           String reason, String detail, String status,
+                           String reason, String detail, boolean isRead,
                            LocalDateTime reportedAt, LocalDateTime handledAt, Long handlerAdminId) {
         this.id = id;
         this.reporterUserId = reporterUserId;
@@ -75,16 +76,16 @@ public class ReportJpaEntity extends BaseTimeEntity {
         this.targetId = targetId;
         this.reason = reason;
         this.detail = detail;
-        this.status = status;
+        this.isRead = isRead;
         this.reportedAt = reportedAt;
         this.handledAt = handledAt;
         this.handlerAdminId = handlerAdminId;
     }
 
     // 영속화 모델 메서드 (도메인 행위 아님)
-    // 도메인 검증/규칙은 Report.review / confirm / reject 가 담당, 여기는 단순 필드 변경만
-    public void changeStatus(String status) {
-        this.status = status;
+    // 도메인 검증/규칙은 Report.markAsRead 가 담당, 여기는 단순 필드 변경만
+    public void markAsRead() {
+        this.isRead = true;
     }
 
     public void markHandled(LocalDateTime handledAt, Long handlerAdminId) {
@@ -98,7 +99,7 @@ public class ReportJpaEntity extends BaseTimeEntity {
     public Long getTargetId() { return targetId; }
     public String getReason() { return reason; }
     public String getDetail() { return detail; }
-    public String getStatus() { return status; }
+    public boolean isRead() { return isRead; }
     public LocalDateTime getReportedAt() { return reportedAt; }
     public LocalDateTime getHandledAt() { return handledAt; }
     public Long getHandlerAdminId() { return handlerAdminId; }

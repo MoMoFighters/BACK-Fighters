@@ -36,9 +36,10 @@ public record ReportListResponse(
     /* comment.
         Item 정리
         1. 역할 : 신고 1건의 응답 형태이며 목록 안에 여러 개가 들어가게 된다.
-        2. WHY enum 을 String 으로 변환 (targetType, reason, status)
+        2. WHY enum 을 String 으로 변환 (targetType, reason)
            → 표현 계층은 enum 타입이 직접 노출되지 않는다.
            → JSON 직렬화 시 FE 호환성이 높아진다.
+           → isRead 는 boolean 그대로 노출 (변환 불필요)
         3. 필드 8개 의미
         reportId : 신고 식별자
         reporterUserId : 신고자 ID
@@ -46,7 +47,7 @@ public record ReportListResponse(
         targetId : 신고 대상 ID
         reason : 신고 사유
         detail : 자유 설명 (nullable)
-        status : 신고 처리 상태
+        isRead : 읽음 여부 (false=미읽음, true=읽음)
         reportedAt : 접수 시각
      */
     public record Item(
@@ -56,7 +57,7 @@ public record ReportListResponse(
             Long targetId,
             String reason,
             String detail,
-            String status,
+            boolean isRead,
             LocalDateTime reportedAt
     ) {
 
@@ -68,7 +69,7 @@ public record ReportListResponse(
                     report.getTargetId(),
                     report.getReason().name(),
                     report.getDetail(),
-                    report.getStatus().name(),
+                    report.isRead(),
                     report.getReportedAt()
             );
         }

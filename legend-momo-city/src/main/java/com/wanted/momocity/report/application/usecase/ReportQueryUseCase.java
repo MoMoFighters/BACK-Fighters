@@ -1,8 +1,6 @@
 package com.wanted.momocity.report.application.usecase;
 
 import com.wanted.momocity.report.domain.model.Report;
-import com.wanted.momocity.report.domain.model.ReportStatus;
-
 import java.util.List;
 
 /* comment.
@@ -13,9 +11,9 @@ import java.util.List;
         Query: 데이터 조회 → 읽기 전용 트랜잭션 (@Transactional(readOnly = true))
         Command: 데이터 변경 → 쓰기 트랜잭션
         CQRS 경량 적용 → 책임/트랜잭션 정책 분리
-    4. WHY 메서드 2개 (getRecent + getByStatus)
-        getRecent : 전체 최근 N개 (status 필터 없음)
-        getByStatus : 특정 상태(예: PENDING) 의 최근 N개
+    4. WHY 메서드 2개 (getRecent + getByIsRead)
+        getRecent : 전체 최근 N개 (읽음 여부 필터 없음)
+        getByIsRead : 읽음 여부 기준 최근 N개 (false=미읽음, true=읽음)
     5. WHY ReportList record 를 내부에 두는가
         UseCase 의 출력 계약을 같은 파일에 두면 한눈에 파악
         ErrorLogQueryUseCase 의 ErrorLogList 와 동일 패턴
@@ -28,7 +26,7 @@ public interface ReportQueryUseCase {
 
     ReportList getRecent(int limit);
 
-    ReportList getByStatus(ReportStatus status, int limit);
+    ReportList getByIsRead(boolean isRead, int limit);
 
     /* comment.
         ReportList 정리

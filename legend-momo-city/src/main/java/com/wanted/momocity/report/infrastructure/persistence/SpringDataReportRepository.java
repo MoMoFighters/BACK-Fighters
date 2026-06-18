@@ -22,6 +22,6 @@ public interface SpringDataReportRepository extends JpaRepository<ReportJpaEntit
     // 최근 N개 (reportedAt DESC) - Adapter 에서 PageRequest.of(0, limit) 으로 호출
     List<ReportJpaEntity> findAllByOrderByReportedAtDesc(Pageable pageable);
 
-    // 특정 상태의 최근 N개 (reportedAt DESC)
-    List<ReportJpaEntity> findAllByStatusOrderByReportedAtDesc(String status, Pageable pageable);
+    // 읽음 여부 기준 최근 N개 (reportedAt DESC)
+    List<ReportJpaEntity> findAllByIsReadOrderByReportedAtDesc(boolean isRead, Pageable pageable);
 }
