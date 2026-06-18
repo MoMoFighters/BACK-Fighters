@@ -2,44 +2,58 @@ package com.wanted.momocity.enrollment.infrastructure.metrics;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Timer;
 import org.springframework.stereotype.Component;
+
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class EnrollmentMetrics {
 
+    private final ConcurrentHashMap<Long, Counter> enrollmentCounterCache = new ConcurrentHashMap<>();
     private final MeterRegistry meterRegistry;
 
-    private final Timer enrollmentTimer;
+    // Counter: 건물 획득 누적 횟수
+    // 수강 신청 완료 기반 — 서비스 활성도 측정
+    private final Counter buildingAcquiredCounter;
+
+    // Counter: 건물 레벨업 누적 횟수
+    // 강의 수강 완료 기반 — 장기 학습 지속성 측정
+    private final Counter buildingLevelUpCounter;
 
     public EnrollmentMetrics(MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;
 
-        // Timer: 수강 신청 소요 시간
-        this.enrollmentTimer = Timer.builder("momocity.enrollment.duration")
-                .description("수강 신청 소요 시간")
+        // Counter: 건물 획득 누적 횟수
+        // 수강 신청 완료 기반 — 서비스 활성도 측정
+        this.buildingAcquiredCounter = Counter.builder("momocity.building.acquired")
+                .description("건물 획득 누적 횟수 - 수강 신청 완료 기반 활성 사용자 지표")
+                .register(meterRegistry);
+
+        // Counter: 건물 레벨업 누적 횟수
+        // 강의 수강 완료 기반 — 장기 학습 지속성 측정
+        this.buildingLevelUpCounter = Counter.builder("momocity.building.levelup")
+                .description("건물 레벨업 누적 횟수 - 스트릭 달성 기반 학습 지속성 지표")
                 .register(meterRegistry);
     }
 
-    // 작업 시작 시점의 시간을 기억
-    // 실제 Timer는 작업이 끝난 뒤 sample.stop(timer)를 호출할 때 결정된다.
-    // try-finally로 감싸서 성공/실패 여부와 관계없이 시간을 기록할 수 있다.
-    public Timer.Sample startTimer() {
-        return Timer.start(meterRegistry);
+
+
+    public void recordBuildingAcquired() {
+        buildingAcquiredCounter.increment();
     }
 
-    // 수강 신청 소요 시간 기록
-    public void stopEnrollmentTimer(Timer.Sample sample) {
-        sample.stop(enrollmentTimer);
+    public void recordBuildingLevelUp() {
+        buildingLevelUpCounter.increment();
     }
 
     // 개별 강의의 수강 신청 누적 횟수를 기록
     // 이 지표를 통해 인기 강의는 무엇인지 파악 - 그라파나에서 순위처럼 볼거임
     public void recordEnrollmentCreated(Long lectureId) {
-        Counter.builder("momocity.enrollment.created")
-                .description("강의별 수강 신청 누적 횟수 - 인기 강의 파악")
-                .tag("lectureId", String.valueOf(lectureId))
-                .register(meterRegistry)
-                .increment();
+        enrollmentCounterCache.computeIfAbsent(lectureId, id ->
+                Counter.builder("momocity.enrollment.created")
+                        .description("강의별 수강 신청 누적 횟수 - 인기 강의 파악")
+                        .tag("lectureId", String.valueOf(id))
+                        .register(meterRegistry)
+        ).increment();
     }
 }

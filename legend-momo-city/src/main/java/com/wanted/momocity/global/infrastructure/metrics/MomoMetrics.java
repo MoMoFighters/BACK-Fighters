@@ -13,9 +13,16 @@ public class MomoMetrics {
     // ===== Timer =====
     private final Timer s3UploadTimer;
     private final Timer blacklistCheckTimer;
+    private final Timer enrollmentTimer;
+    private final Timer friendListTimer;
+    private final Timer messageHistoryTimer;
+    private final Timer chatRoomListTimer;
+    private final Timer lectureUploadTimer;
+    private final Timer lectureListTimer;
 
     // ===== Counter =====
     private final Counter s3UploadFailCounter;
+
 
     public MomoMetrics(MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;
@@ -29,6 +36,41 @@ public class MomoMetrics {
         // 모든 API 요청마다 실행 — S3 presigned URL 발급 시 135ms 소요 확인됨
         this.blacklistCheckTimer = Timer.builder("momocity.blacklist.check.duration")
                 .description("요청마다 실행되는 블랙리스트 Redis 조회 소요 시간")
+                .register(meterRegistry);
+
+
+        // Timer: 수강 신청 소요 시간
+        this.enrollmentTimer = Timer.builder("momocity.enrollment.duration")
+                .description("수강 신청 소요 시간")
+                .register(meterRegistry);
+
+        // Timer: 친구 목록 조회 소요 시간
+        // 93ms, SQL 10개, N+1 발생 확인됨 — 최적화 전후 비교용
+        this.friendListTimer = Timer.builder("momocity.friend.list.duration")
+                .description("친구 목록 조회 소요 시간 - N+1 최적화 전후 비교")
+                .register(meterRegistry);
+
+        // Timer: 메시지 내역 조회 소요 시간
+        // 171ms, SQL 14개, N+1 발생 확인됨 — 최적화 before/after 비교용
+        this.messageHistoryTimer = Timer.builder("momocity.message.history.duration")
+                .description("메시지 내역 조회 소요 시간 - N+1 최적화 전후 비교")
+                .register(meterRegistry);
+
+        // Timer: 채팅방 목록 조회 소요 시간
+        // 137ms, SQL 14개 확인됨
+        this.chatRoomListTimer = Timer.builder("momocity.chatroom.list.duration")
+                .description("채팅방 목록 조회 소요 시간")
+                .register(meterRegistry);
+
+        // Timer: 강의 등록 소요 시간
+        // 트래픽 몰림, 영상 길이에 따른 S3 업로드 포함 전체 시간 측정
+        this.lectureUploadTimer = Timer.builder("momocity.lecture.upload.duration")
+                .description("강의 등록 소요 시간 - S3 업로드 포함")
+                .register(meterRegistry);
+
+        // Timer: 강의 목록 조회 소요 시간
+        this.lectureListTimer = Timer.builder("momocity.lecture.list.duration")
+                .description("강의 목록 조회 소요 시간")
                 .register(meterRegistry);
 
         // Counter: S3 업로드 실패 횟수
@@ -60,5 +102,36 @@ public class MomoMetrics {
     public void stopBlacklistCheckTimer(Timer.Sample sample) {
         sample.stop(blacklistCheckTimer);
     }
+
+    // 수강 신청 소요 시간 기록
+    public void stopEnrollmentTimer(Timer.Sample sample) {
+        sample.stop(enrollmentTimer);
+    }
+
+    // 친구 목록 조회 소요 시간 기록
+    public void stopFriendListTimer(Timer.Sample sample) {
+        sample.stop(friendListTimer);
+    }
+
+    // 메시지 내역 조회 소요 시간 기록
+    public void stopMessageHistoryTimer(Timer.Sample sample) {
+        sample.stop(messageHistoryTimer);
+    }
+
+    // 채팅방 목록 조회 소요 시간 기록
+    public void stopChatRoomListTimer(Timer.Sample sample) {
+        sample.stop(chatRoomListTimer);
+    }
+
+    // 강의 등록 소요 시간 기록
+    public void stopLectureUploadTimer(Timer.Sample sample) {
+        sample.stop(lectureUploadTimer);
+    }
+
+    // 강의 목록 조회 소요 시간 기록
+    public void stopLectureListTimer(Timer.Sample sample) {
+        sample.stop(lectureListTimer);
+    }
+
 
 }

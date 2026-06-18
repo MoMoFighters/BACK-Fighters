@@ -1,9 +1,5 @@
 package com.wanted.momocity.global.infrastructure.metrics;
 
-import com.wanted.momocity.enrollment.infrastructure.metrics.EnrollmentMetrics;
-import com.wanted.momocity.friend.infrastructure.metrics.FriendMetrics;
-import com.wanted.momocity.lecture.infrastructure.metrics.LectureMetrics;
-import com.wanted.momocity.message.infrastructure.metrics.MessageMetrics;
 import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -17,10 +13,6 @@ import org.springframework.stereotype.Component;
 public class MetricsAop {
 
     private final MomoMetrics momoMetrics;
-    private final EnrollmentMetrics enrollmentMetrics;
-    private final MessageMetrics messageMetrics;
-    private final FriendMetrics friendMetrics;
-    private final LectureMetrics lectureMetrics;
 
     // S3 업로드 소요 시간 측정
     // 업로드 실패 횟수도 함께 기록
@@ -53,11 +45,11 @@ public class MetricsAop {
     // 기존 : 171ms, SQL 14개, N+1 확인
     @Around("execution(* com.wanted.momocity.message.application.service.MessageQueryService.getMessageHistoryQueryHandle(..))")
     public Object measureMessageHistory(ProceedingJoinPoint joinPoint) throws Throwable {
-        Timer.Sample sample = messageMetrics.startTimer();
+        Timer.Sample sample = momoMetrics.startTimer();
         try {
             return joinPoint.proceed();
         } finally {
-            messageMetrics.stopMessageHistoryTimer(sample);
+            momoMetrics.stopMessageHistoryTimer(sample);
         }
     }
 
@@ -65,11 +57,11 @@ public class MetricsAop {
     // 기존 : 137ms, SQL 14개
     @Around("execution(* com.wanted.momocity.message.application.service.MessageQueryService.getChatRoomQueryHandle(..))")
     public Object measureChatRoomList(ProceedingJoinPoint joinPoint) throws Throwable {
-        Timer.Sample sample = messageMetrics.startTimer();
+        Timer.Sample sample = momoMetrics.startTimer();
         try {
             return joinPoint.proceed();
         } finally {
-            messageMetrics.stopChatRoomListTimer(sample);
+            momoMetrics.stopChatRoomListTimer(sample);
         }
     }
 
@@ -77,44 +69,44 @@ public class MetricsAop {
     // 기존 : 93ms, SQL 10개, N+1 확인
     @Around("execution(* com.wanted.momocity.friend.application.service.FriendQueryService.getFriendQueryHandle(..))")
     public Object measureFriendList(ProceedingJoinPoint joinPoint) throws Throwable {
-        Timer.Sample sample = friendMetrics.startTimer();
+        Timer.Sample sample = momoMetrics.startTimer();
         try {
             return joinPoint.proceed();
         } finally {
-            friendMetrics.stopFriendListTimer(sample);
+            momoMetrics.stopFriendListTimer(sample);
         }
     }
 
     // 강의 등록 소요 시간 측정
     @Around("execution(* com.wanted.momocity.lecture.application.service.LectureCommandService.createLecture(..))")
     public Object measureLectureUpload(ProceedingJoinPoint joinPoint) throws Throwable {
-        Timer.Sample sample = lectureMetrics.startTimer();
+        Timer.Sample sample = momoMetrics.startTimer();
         try {
             return joinPoint.proceed();
         } finally {
-            lectureMetrics.stopLectureUploadTimer(sample);
+            momoMetrics.stopLectureUploadTimer(sample);
         }
     }
 
     // 강의 목록 조회 소요 시간 측정
     @Around("execution(* com.wanted.momocity.lecture.application.service.LectureQueryService.getLectures(..))")
     public Object measureLectureList(ProceedingJoinPoint joinPoint) throws Throwable {
-        Timer.Sample sample = lectureMetrics.startTimer();
+        Timer.Sample sample = momoMetrics.startTimer();
         try {
             return joinPoint.proceed();
         } finally {
-            lectureMetrics.stopLectureListTimer(sample);
+            momoMetrics.stopLectureListTimer(sample);
         }
     }
 
     // 수강 신청 소요 시간 측정
     @Around("execution(* com.wanted.momocity.enrollment.application.service.EnrollmentCommandService.createEnrollment(..))")
     public Object measureEnrollment(ProceedingJoinPoint joinPoint) throws Throwable {
-        Timer.Sample sample = enrollmentMetrics.startTimer();
+        Timer.Sample sample = momoMetrics.startTimer();
         try {
             return joinPoint.proceed();
         } finally {
-            enrollmentMetrics.stopEnrollmentTimer(sample);
+            momoMetrics.stopEnrollmentTimer(sample);
         }
     }
 
