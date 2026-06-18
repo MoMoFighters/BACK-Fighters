@@ -69,7 +69,7 @@ public class AdminReportController {
     public ResponseEntity<ApiResponse<ReportListResponse>> getReports(
             @Parameter(description = "조회할 최대 개수", example = "10")
             @RequestParam(defaultValue = "10") int limit,
-            @Parameter(description = "읽음 여부 필터 (선택, false=미읽음, true=읽음", example = "false")
+            @Parameter(description = "읽음 여부 필터 (선택, false=미읽음, true=읽음)", example = "false")
             @RequestParam(required = false) Boolean isRead
     ) {
         // 1. isRead 유무에 따라 UseCase 메서드 선택
