@@ -30,7 +30,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional(readOnly = true)
-public class ViewingQueryService implements ViewingQueryUseCase, CategoryProgressPort {
+public class ViewingQueryService implements ViewingQueryUseCase {
 
     private final S3Port s3Port;
     private final ChapterPort chapterPort;
@@ -39,7 +39,6 @@ public class ViewingQueryService implements ViewingQueryUseCase, CategoryProgres
     private final LearningHistoryRepository learningHistoryRepository;
     private final EnrollmentAccessPolicy enrollmentAccessPolicy;
     private final SequentialAccessPolicy sequentialAccessPolicy;
-    private final CategoryProgressPort categoryProgressPort;
 
     @Override
     public StreamingUrlResponse getStreamingUrl(Long userId, Long lectureId, Long chapterId) {
@@ -294,7 +293,6 @@ public class ViewingQueryService implements ViewingQueryUseCase, CategoryProgres
         return new MyLecturesResponse(lectures);
     }
 
-    @Override
     public CategoryProgressInfo getCategoryProgress(Long userId, String category) {
 
         // 수강 신청한 전체 강의 목록 조회

@@ -8,9 +8,12 @@ import com.wanted.momocity.streak.presentation.api.response.StreakMonthlyRespons
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -22,6 +25,7 @@ import java.time.LocalDate;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v2")
+@Validated
 public class StreakController {
 
     private final StreakQueryUseCase streakQueryUseCase;
@@ -34,8 +38,8 @@ public class StreakController {
     })
     @GetMapping("/streak")
     public ResponseEntity<ApiResponse<StreakMonthlyResponse>> getMonthlyStreak(
-            @RequestParam int year,
-            @RequestParam int month,
+            @RequestParam @Min(2000) @Max(2100) int year,
+            @RequestParam @Min(1) @Max(12) int month,
             @AuthenticationPrincipal CustomUserDetails userDetails
             ) {
 
