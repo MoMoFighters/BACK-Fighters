@@ -45,7 +45,7 @@ public class MessageQueryService implements MessageQueryUseCase {
     //메시지 채팅 목록
     @Override
     public List<ChatRoomView> getChatRoomQueryHandle(FindChatRoomQuery query) {
-        log.info("[FindChatRoomQueryService] 채팅방 목록 조회 비즈니스 가공 시작 - 조회 요청 유저ID: {}", userId);
+        log.info("[FindChatRoomQueryService] 채팅방 목록 조회 비즈니스 가공 시작 - 조회 요청 유저ID: {}", query.userId());
 
         //현재 로그인한 유저 정보 확인(학생/강사 판별)
         UserWithFMJpaEntity loginUser = messageSideUserRepository.findById(query.userId())
@@ -54,7 +54,7 @@ public class MessageQueryService implements MessageQueryUseCase {
 
         //채팅방 리스트 및 수강신청 전체 내역 로드
         List<ChatRoomQueryProjection> pros = messageRepository.findChatRoomByUserId(query.userId());
-        List<EnrollmentWithFMJpaEntity> myEnrollments = messageSideEnrollmentRepository.findByUserId_Id(userId);
+        List<EnrollmentWithFMJpaEntity> myEnrollments = messageSideEnrollmentRepository.findByUserId_Id(query.userId());
 
         //로그인 유저가 참여중인 방ID만 모아서 가장 작은 ID(제일 먼저 만든 방) 찾기(나와의 채팅방)
         Long firstRoomId = pros.stream()
