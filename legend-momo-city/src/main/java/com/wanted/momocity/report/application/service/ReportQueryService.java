@@ -1,7 +1,6 @@
 package com.wanted.momocity.report.application.service;
 
 import com.wanted.momocity.report.application.usecase.ReportQueryUseCase;
-import com.wanted.momocity.report.domain.model.ReportStatus;
 import com.wanted.momocity.report.domain.repository.ReportRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
        - 트랜잭션 : Command 는 쓰기(@Transactional), Query 는 읽기(@Transactional(readOnly = true))
     6. 메서드 2개 처리 흐름
        a) getRecent(limit) : repository.findRecent(limit) 호출 → List<Report> 받음 → ReportList 로 감싸 반환
-       b) getByStatus(status, limit) : repository.findByStatus(status, limit) 호출 → 동일하게 감싸 반환
+       b) getByIsRead(isRead, limit) : repository.findByIsRead(isRead, limit) 호출 → 동일하게 감싸 반환
  */
 @Service
 @RequiredArgsConstructor
@@ -37,7 +36,7 @@ public class ReportQueryService implements ReportQueryUseCase {
     }
 
     @Override
-    public ReportList getByStatus(ReportStatus status, int limit) {
-        return new ReportList(reportRepository.findByStatus(status, limit));
+    public ReportList getByIsRead(boolean isRead, int limit) {
+        return new ReportList(reportRepository.findByIsRead(isRead, limit));
     }
 }
