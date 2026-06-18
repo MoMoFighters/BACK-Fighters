@@ -75,4 +75,18 @@ public class LearningHistoryRepositoryAdapter implements LearningHistoryReposito
                 .map(LearningHistoryJpaEntity::toDomain)
                 .toList();
     }
+
+    @Override
+    public Optional<LearningHistory> findLatestByUserId(Long userId) {
+        return jpaRepository
+                .findTopByUserIdOrderByUpdatedAtDesc(userId)
+                .map(LearningHistoryJpaEntity::toDomain);
+    }
+
+    @Override
+    public Optional<LearningHistory> findLatestByUserIdAndLectureIds(Long userId, List<Long> lectureIds) {
+        return jpaRepository
+                .findTopByUserIdAndLectureIdInOrderByUpdatedAtDesc(userId, lectureIds)
+                .map(LearningHistoryJpaEntity::toDomain);
+    }
 }

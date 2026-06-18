@@ -36,6 +36,8 @@ public class Streak {
 
     // daily_watched_seconds 누적 -> level 재계산
     public void accumulate(int watchedSeconds) {
+        // 음수 방어
+        if (watchedSeconds <= 0) return;
         this.dailyWatchedSeconds += watchedSeconds;
         this.level = calculateLevel(this.dailyWatchedSeconds);
     }

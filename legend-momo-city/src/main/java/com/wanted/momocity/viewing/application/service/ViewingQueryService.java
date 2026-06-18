@@ -2,10 +2,7 @@ package com.wanted.momocity.viewing.application.service;
 
 import com.wanted.momocity.viewing.application.policy.EnrollmentAccessPolicy;
 import com.wanted.momocity.viewing.application.policy.SequentialAccessPolicy;
-import com.wanted.momocity.viewing.application.port.ChapterPort;
-import com.wanted.momocity.viewing.application.port.EnrollmentPort;
-import com.wanted.momocity.viewing.application.port.LecturePort;
-import com.wanted.momocity.viewing.application.port.S3Port;
+import com.wanted.momocity.viewing.application.port.*;
 import com.wanted.momocity.viewing.application.usecase.ViewingQueryUseCase;
 import com.wanted.momocity.viewing.domain.model.Chapter;
 import com.wanted.momocity.viewing.domain.model.LearningHistory;
@@ -33,7 +30,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional(readOnly = true)
-public class ViewingQueryService implements ViewingQueryUseCase {
+public class ViewingQueryService implements ViewingQueryUseCase, CategoryProgressPort {
 
     private final S3Port s3Port;
     private final ChapterPort chapterPort;
@@ -42,6 +39,7 @@ public class ViewingQueryService implements ViewingQueryUseCase {
     private final LearningHistoryRepository learningHistoryRepository;
     private final EnrollmentAccessPolicy enrollmentAccessPolicy;
     private final SequentialAccessPolicy sequentialAccessPolicy;
+    private final CategoryProgressPort categoryProgressPort;
 
     @Override
     public StreamingUrlResponse getStreamingUrl(Long userId, Long lectureId, Long chapterId) {
@@ -296,7 +294,61 @@ public class ViewingQueryService implements ViewingQueryUseCase {
         return new MyLecturesResponse(lectures);
     }
 
+    @Override
+    public CategoryProgressInfo getCategoryProgress(Long userId, String category) {
 
+        // 수강 신청한 전체 강의 목록 조회
+        List<Long> enrolledLectureIds = enrollmentPort.findAllByUserId(userId)
+                .stream()
+                .map(EnrollmentPort.EnrollmentInfo::lectureId)
+                .toList();
+
+        // 카테고리 필터링
+        List<Long> targetLectureIds = category == null
+                ? enrolledLectureIds
+                : lecturePort.findAllByCategory(category)
+                  .stream()
+                  .map(Lecture::getId)
+                  .filter(enrolledLectureIds::contains)
+                  .toList();
+
+        if(targetLectureIds.isEmpty()) {
+            return new CategoryProgressInfo(0, null, null, null, null, 0);
+        }
+
+        // 전체 진척도 계산 -> 대상 강의들의 진척도 평균
+        int myTotalProgress = (int) Math.round(
+                targetLectureIds.stream()
+                        .mapToInt(lectureId -> calculateTotalProgress(userId, lectureId))
+                        .average()
+                        .orElse(0)
+        );
+
+        // 최근 이어보기 조회 -> 대상 강의들 중 updated_at 기준 가장 최근 시청 목록
+        LearningHistory latestHistory = learningHistoryRepository
+                .findLatestByUserIdAndLectureIds(userId, targetLectureIds)
+                .orElse(null);
+
+        if (latestHistory == null) {
+            return new CategoryProgressInfo(myTotalProgress, null, null, null, null, 0);
+        }
+
+        Lecture lecture = lecturePort.findById(latestHistory.getLectureId());
+        Chapter chapter = chapterPort.findById(latestHistory.getChapterId());
+
+        log.info("[Viewing] 카테고리별 진척도 조회 완료 | userId={}, category={}, myTotalProgress={}",
+                userId, category, myTotalProgress);
+
+        return new CategoryProgressInfo(
+                myTotalProgress,
+                lecture.getId(),
+                lecture.getTitle(),
+                chapter.getId(),
+                chapter.getTitle(),
+                latestHistory.getProgressRate()
+        );
+
+    }
 
     // private 메서드 (내부 로직)
     // enrollment 진척도 재계산 및 저장

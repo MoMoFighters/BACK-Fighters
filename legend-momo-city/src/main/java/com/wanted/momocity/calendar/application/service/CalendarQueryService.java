@@ -62,7 +62,7 @@ public class CalendarQueryService implements CalendarQueryUseCase {
         List<TodayChapterInfo> todayChapters =
                 todayChapterPort.findTodayChapters(userId, LocalDate.now());
 
-        log.info("[Calendar] 월별 조회 완료 | userId={}, startDate={}, endDate={}, todoCount={}, memoCount={}",
+        log.info("[Calendar] 월별 조회 완료 | userId={}, startDate={}, endDate={}, todoCount={}, memoCount={}, todayChapterCount={}",
                 userId, startDate, endDate, todos.size(), memos.size(), todayChapters.size());
 
         return new MonthlyCalendarResponse(startDate, endDate, todos, memos, todayChapters);

@@ -43,12 +43,12 @@ public class TodayChapterAdapter implements TodayChapterPort {
                 .map(history -> {
 
                     // 챕터 제목 조회
-                    // ChapterPort.findById() 로 조회 -> 없으면 "알 수 없는 챕터" 반환
+                    // ChapterPort.findById() 로 조회 -> 없으면 DomainRuleViolationException 발생
                     String chapterTitle = chapterPort.findById(history.getChapterId())
                             .getTitle();
 
                     // 강의 제목 조회
-                    // LecturePort.findById() 로 조회 -> 없으면 "알 수 없는 강의" 반환
+                    // LecturePort.findById() 로 조회 -> 없으면 DomainRuleViolationException 발생
                     String lectureTitle = lecturePort.findById(history.getLectureId())
                             .getTitle();
 

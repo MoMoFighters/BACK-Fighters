@@ -8,10 +8,15 @@ package com.wanted.momocity.viewing.application.port;
 
 import com.wanted.momocity.viewing.domain.model.Lecture;
 
+import java.util.List;
+
 public interface LecturePort {
 
     // 강의 단건 조회
     // 강의 메타데이터, 내 수강 목록에서 사용
     Lecture findById(Long lectureId);
+
+    // 카테고리별 강의 목록 조회
+    List<Lecture> findAllByCategory(String category);
 
 }

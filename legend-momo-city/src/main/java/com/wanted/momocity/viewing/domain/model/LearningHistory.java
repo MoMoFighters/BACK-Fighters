@@ -55,14 +55,19 @@ public class LearningHistory {
     *  progressRate = watchedSeconds / durationSec * 100
     * */
 
-    public void updateProgress (
-            // 현재 재생 위치
+    public void updateProgress(
             int playbackSeconds, int durationSec
     ) {
-        // watchedSeconds 업데이트
-        if (playbackSeconds > this.watchedSeconds
-                && playbackSeconds - this.watchedSeconds <= 10) {
+
+        // 실제 진척이 있을 때만 watchedSeconds, lastWatchedAt 갱신
+        // -> 뒤로 감기 / 앞으로 당기기(10초 초과) 시 갱신 안 함
+        boolean hasMeaningfulProgress = playbackSeconds > this.watchedSeconds
+                && playbackSeconds - this.watchedSeconds <= 10;
+
+        if (hasMeaningfulProgress) {
             this.watchedSeconds = playbackSeconds;
+            // 실제 진척 있을 때만 갱신
+            this.lastWatchedAt = LocalDateTime.now();
         }
 
         // progressRate = watchedSeconds 기준
@@ -72,8 +77,6 @@ public class LearningHistory {
         if (this.progressRate >= 100) {
             this.progressRate = 100;
         }
-        // saveProgress() 호출마다 last_watched_at 갱신
-        this.lastWatchedAt = LocalDateTime.now();
     }
 
     /*

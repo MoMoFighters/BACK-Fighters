@@ -1,12 +1,12 @@
 package com.wanted.momocity.streak.infrastructure.persistence;
 
+import com.wanted.momocity.global.infrastructure.persistence.BaseTimeEntity;
 import com.wanted.momocity.streak.domain.model.Streak;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 /*
 * comment.
@@ -27,7 +27,7 @@ import java.time.LocalDateTime;
 )
 
 @NoArgsConstructor
-public class StreakJpaEntity {
+public class StreakJpaEntity extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,9 +45,6 @@ public class StreakJpaEntity {
     @Column(name = "level", nullable = false)
     private int level;
 
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
-
     // from() : Domain Model -> JpaEntity 변환 (저장용)
     public static StreakJpaEntity from(Streak domain) {
         StreakJpaEntity entity = new StreakJpaEntity();
@@ -55,8 +52,7 @@ public class StreakJpaEntity {
         entity.userId = domain.getUserId();
         entity.streakDate = domain.getStreakDate();
         entity.dailyWatchedSeconds = domain.getDailyWatchedSeconds();
-        entity.level = domain.getLevel();
-        entity.createdAt = LocalDateTime.now();
+        entity.level = domain.getLevel();;
         return entity;
     }
 
