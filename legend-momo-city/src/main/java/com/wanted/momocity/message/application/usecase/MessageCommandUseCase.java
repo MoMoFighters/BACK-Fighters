@@ -1,16 +1,28 @@
 package com.wanted.momocity.message.application.usecase;
 
+import com.wanted.momocity.message.application.command.CreateChatRoomCommand;
+
 import java.time.LocalDateTime;
+import java.util.List;
 
 public interface MessageCommandUseCase {
 
     //채팅방 조회 및 개설
-    CreateRoomView createChatRoomCommandHandle(Long userId, Long targetUserId);
+    CreateRoomView createChatRoomCommandHandle(CreateChatRoomCommand command);
 
     record CreateRoomView(
             boolean isExisting, //기존 방 존재 여부
+            RoomInfo roomInfo,
+            List<MemberInfo> memberInfo
+    ) {}
+    record RoomInfo(
             Long roomId,
-            Long targetUserId,
+            String roomTitle,
+            Long inMemberCount
+    ) {}
+    record MemberInfo(
+            Long userId,
+            String name,
             String nickname,
             String role,
             String status

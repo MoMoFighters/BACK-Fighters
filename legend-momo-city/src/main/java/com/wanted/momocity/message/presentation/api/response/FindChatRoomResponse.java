@@ -14,10 +14,10 @@ public record FindChatRoomResponse(
     public record RoomInfo(
             Long roomId,
             String roomTitle,
-            int inMemberCount,
-            String content,
-            LocalDateTime createdAt,
-            int unreadCount,
+            Long inMemberCount,
+            String content, //마지막 메시지
+            LocalDateTime createdAt, //메시지 시간, 안내 문구 시간, 둘다 없으면 개설 시간
+            Long unreadCount,
             List<MemberInfo> memberInfo
     ) {}
 

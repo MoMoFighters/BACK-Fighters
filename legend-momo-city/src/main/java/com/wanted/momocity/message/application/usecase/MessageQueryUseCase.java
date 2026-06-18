@@ -18,8 +18,11 @@ public interface MessageQueryUseCase {
             boolean shouldMasked,
             boolean isLeftRoom,
             Long roomId, //채팅방 번호
+            String roomTitle,
+            Long inMemberCount,
             String content, //마지막 채팅 내역
             LocalDateTime createdAt, //마지막 채팅 시각
+            LocalDateTime lastestOrderTime, //채팅방 목록 정령을 위함
             Long unreadCount, //읽지 않은 메시지 수
             List<String> lectureTitle, //가공된 강의명 묶음
             String profileImageUrl

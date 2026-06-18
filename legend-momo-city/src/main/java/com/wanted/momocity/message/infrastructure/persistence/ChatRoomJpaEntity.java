@@ -31,4 +31,8 @@ public class ChatRoomJpaEntity {
         this.createdAt = createdAt;
     }
 
+    //채팅방 이름 등록
+    public void registRoomTitle(String roomTitle) {
+        this.roomTitle = roomTitle;
+    }
 }

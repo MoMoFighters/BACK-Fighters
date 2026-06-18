@@ -70,7 +70,7 @@ public class MessageQueryService implements MessageQueryUseCase {
             //상대방 유저 찾기
             List<ChatRoomMemberJpaEntity> allMembers = springDataChatRoomMemberRepository.findByRoomId_Id(roomId);
             //채팅방 멤버 수(로그인 유저 포함)
-            int inMemberCount = allMembers.size();
+            Long inMemberCount = (long) allMembers.size();
 
             UserWithFMJpaEntity targetUser = null;
 
@@ -142,11 +142,11 @@ public class MessageQueryService implements MessageQueryUseCase {
             //상대방이 나간 방이므료 무조건 (알 수 없음) 처리하기
             //🚨 v2 -> 일대일 채팅의 경우를 고려해 memberInfo에 데이터 가공 필요.
             boolean shouldMasked = false;
-            if (targetUser != null){
+            if (targetUser != null) {
                 //BLOCK 상태이면 BLOCK으로 넘기되 (알 수 없음)으로 가공하기 위해 연동 준비
                 //서비스 레이어는 비활성화 상태 여부만 체크
                 //정책 클래스에 위임
-                shouldMasked = messageEligibilityPolicy.determineNotActive(targetUser, friendStatus,userId);
+                shouldMasked = messageEligibilityPolicy.determineNotActive(targetUser, friendStatus, userId);
             }
 
             //강의명 추출 (나와의 채팅이 아닐 때만)
@@ -181,6 +181,22 @@ public class MessageQueryService implements MessageQueryUseCase {
             LocalDateTime lastChattedAt = (pro.lastMessage() != null) ? pro.lastMessage().getCreatedAt() : null;
 
             //안내 문구 시간 정렬 기준 추가
+            LocalDateTime lastAnnounceAt = springDataMessageAnnounceRepository.findFirstByRoomId_IdOrderByCreatedAtDesc(roomId)
+                    .map(announce -> announce.getCreatedAt())
+                    .orElse(null);
+
+            //실제 정렬 기준이 될 시간 계산(메시지 시간, 안내 문구 시간)
+            LocalDateTime lastestOrderTime = lastAnnounceAt;
+            if (lastestOrderTime == null) {
+                lastestOrderTime = lastChattedAt;
+            } else if (lastestOrderTime.isAfter(lastChattedAt)) {
+                lastestOrderTime = lastAnnounceAt;
+            }
+
+            //메시지, 안내 문구 둘다 없다면(개설 초반)
+            if (lastestOrderTime == null) {
+                lastestOrderTime = pro.roomCreatedAt();
+            }
 
             //채팅방별 안읽은 메시지
             Long unreadCount = 0L;
@@ -189,7 +205,7 @@ public class MessageQueryService implements MessageQueryUseCase {
                 unreadCount = 0L;
             } else {
                 //일반 채팅방만 안읽은 메시지 카운트
-                unreadCount = messageRepository.countUnreadMessage(roomId, userId);
+                unreadCount = springDataMessageReadRepository.countByRoomId_IdAndUserId_IdAndIsMsgReadFalse(roomId, userId);
             }
 
 
@@ -203,13 +219,32 @@ public class MessageQueryService implements MessageQueryUseCase {
                     shouldMasked,
                     isLeftRoom,
                     roomId,
+                    pro.roomTitle(),
+                    inMemberCount,
                     lastContent,
                     lastChattedAt,
+                    lastestOrderTime,
                     unreadCount,
                     lectureTitleList,
                     targetUser != null ? targetUser.getProfileImageUrl() : null
             ));
         }
+
+        //람다식으로 정렬하기: o1, o2의 원소를 무작위로 꺼내서 계속 비교해줌
+        //음수: 위로 올림. 양수: 아래로 내림. 0: 그대로
+        //채팅방 목록 메시지 or 안내 문구 최신순으로 정렬(최신이 최상단)
+        result.sort((o1,o2) -> {
+            boolean isO1Me = "me".equals(o1.status());
+            boolean isO2Me = "me".equals(o2.status());
+
+            //나와의 채팅방은 최상단 고정
+            if (isO1Me && !isO2Me) return -1; //나와의 채팅을 위로 올림
+            if (!isO1Me && isO2Me) return 1; //나와의 채팅을 위로 올림
+            if (isO1Me && isO2Me) return 0;
+
+            //일반 채팅방은 lastestOrderTime 기준 내림차순(최신순)
+            return o2.lastestOrderTime().compareTo(o1.lastestOrderTime());
+        });
 
         log.info("[FindChatRoomQueryService] 채팅 목록 최종 가공 완료. 노출할 채팅방 수: {}개", result.size());
         return result;

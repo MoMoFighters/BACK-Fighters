@@ -5,6 +5,7 @@ import com.wanted.momocity.friend.fmexception.FMResourceAccessDeniedException;
 import com.wanted.momocity.friend.fmexception.FMResourceNotFoundException;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
+import com.wanted.momocity.message.application.command.CreateChatRoomCommand;
 import com.wanted.momocity.message.application.manager.ChatRoomSessionManager;
 import com.wanted.momocity.message.application.policy.MessageEligibilityPolicy;
 import com.wanted.momocity.message.application.usecase.MessageCommandUseCase;
@@ -19,6 +20,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -47,110 +49,165 @@ public class MessageCommandService implements MessageCommandUseCase {
 
     //채팅방 조회 및 개설
     @Override
-    public CreateRoomView createChatRoomCommandHandle(Long userId, Long targetUserId) {
-        log.info("[CreateChatRoomCommandService] 채팅방 조회 및 개설 비즈니스 시작 - 요청자: {}, 대상자: {}", userId, targetUserId);
+    public CreateRoomView createChatRoomCommandHandle(CreateChatRoomCommand command) {
+        log.info("[CreateChatRoomCommandService] 채팅방 조회 및 개설 비즈니스 시작 - 요청자: {}, 방제목:{}, 초대멤버수: {}",
+                command.userId(), command.roomTitle(), command.chatMembers().size());
 
-        //404(사용자 없음)
-        UserWithFMJpaEntity targetUser = messageSideUserRepository.findById(targetUserId)
-                .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 사용자와의 대화창을 개설할 수 없습니다."));
+        //리스트에서 상대방 아이디 하나씩 빼기
+        List<UserWithFMJpaEntity> targetUsers = new ArrayList<>();
+        List<String> friendStatuses = new ArrayList<>();
 
-        //두 사람 사이의 관계 양방향 조회
-        String friendStatus = "none";
-        Optional<FriendJpaEntity> relationOpt = messageSideFriendRepository.findByFromUserId_IdAndToUserId_Id(userId, targetUserId);
-        if (relationOpt.isEmpty()) {
-            relationOpt = messageSideFriendRepository.findByFromUserId_IdAndToUserId_Id(targetUserId, userId);
+        for (Long memberId : command.chatMembers()) {
+            //초대할 멤버가 존재하지 않는 경우 404
+            UserWithFMJpaEntity targetUser = (UserWithFMJpaEntity) messageSideUserRepository.findUserById(memberId)
+                    .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 사용자의 대화창을 개설할 수 없습니다."));
+            targetUsers.add(targetUser);
+
+            //양방향 친구 관계 조회
+            //두 사람 사이의 관계 양방향 조회
+            String friendStatus = "none";
+            Optional<FriendJpaEntity> relationOpt = messageSideFriendRepository.findByFromUserId_IdAndToUserId_Id(command.userId(), memberId);
+            if (relationOpt.isEmpty()) {
+                relationOpt = messageSideFriendRepository.findByFromUserId_IdAndToUserId_Id(memberId, command.userId());
+            }
+            if (relationOpt.isPresent()) {
+                friendStatus = relationOpt.get().getStatus();
+            }
+            friendStatuses.add(friendStatus);
         }
-        if (relationOpt.isPresent()) {
-            friendStatus = relationOpt.get().getStatus();
-        }
 
-        //나와의 채팅 차단, 친구 상태 검증 위임(409)
-        messageEligibilityPolicy.validateCreate(userId, targetUserId,friendStatus);
+        //나와의 채팅 차단, 친구 상태 검증 위임(409), 다대다 규칙
+        messageEligibilityPolicy.validateCreate(command.userId(), command.roomTitle(), targetUsers,friendStatuses);
 
+        Long inMemberCount = (long) command.chatMembers().size();
+
+        //다대다 채팅인지 확인
+        boolean isOneToOne = (command.roomTitle() == null || command.roomTitle().isEmpty()) && command.chatMembers().size() == 1;
         Long finalRoomId = null;
+        UserWithFMJpaEntity singleTargetUser = isOneToOne ? targetUsers.get(0) : null;
 
-        //1차 검증: 두 유저가 채팅방 멤버에 같이 있는 채팅방이 있는지 조회
-        //어댑터 포트를 통해 두 유저가 있는 기존 채팅방이 존재하는지 검증
-        Optional<Long> existingRoomIdOpt = messageRepository.findExistingRoom(userId, targetUserId);
-        if (existingRoomIdOpt.isPresent()) {
-            log.info("[CreateChatRoomCommandService] 1차 멤버 검증 성공 - 양방향 활성화된 채팅방 발견. 기존 방ID: {}", existingRoomIdOpt.get());
-            finalRoomId = existingRoomIdOpt.get();
-        } else {
-            //2차 검증: 로그인한 사용자가 나갔을 때 혼자 남은 방 중 과거 대화 역추적
-            log.info("[CreateChatRoomCommandService] 1차 검증 실패(나간 유저 존재) -> 2차 메시지 교차 검증 역추적 시작...");
+        //일대일의 경우만 기존 방 조회 및 멤버 복구
+        if (isOneToOne) {
+            Long targetUserId = singleTargetUser.getId();
 
-            //상대방이 참여 중인 모든 멤버 다져옴
-            List<ChatRoomMemberJpaEntity> targetMemberships = springDataChatRoomMemberRepository.findByUserId_Id(targetUserId);
+            //1차 검증: 두 유저가 채팅방 멤버에 같이 있는 채팅방이 있는지 조회
+            //어댑터 포트를 통해 두 유저가 있는 기존 채팅방이 존재하는지 검증
+            Optional<Long> existingRoomIdOpt = messageRepository.findExistingRoom(command.userId(), targetUserId);
+            if (existingRoomIdOpt.isPresent()) {
+                log.info("[CreateChatRoomCommandService] 1차 멤버 검증 성공 - 양방향 활성화된 채팅방 발견. 기존 방ID: {}", existingRoomIdOpt.get());
+                finalRoomId = existingRoomIdOpt.get();
+            } else {
+                //2차 검증: 로그인한 사용자가 나갔을 때 혼자 남은 방 중 과거 대화 역추적
+                log.info("[CreateChatRoomCommandService] 1차 검증 실패(나간 유저 존재) -> 2차 메시지 교차 검증 역추적 시작...");
 
-            for (ChatRoomMemberJpaEntity membership : targetMemberships) {
-                //내가 나간 방일 가능성 있는 후보방
-                Long candidateRoomId = membership.getRoomId().getId();
+                //상대방이 참여 중인 모든 멤버 다져옴
+                List<ChatRoomMemberJpaEntity> targetMemberships = springDataChatRoomMemberRepository.findByUserId_Id(targetUserId);
 
-                //상대방이 참여 중인 그 방의 인원이 혼자인지 확인
-                List<ChatRoomMemberJpaEntity> roomMembers = springDataChatRoomMemberRepository.findByRoomId_Id(candidateRoomId);
+                for (ChatRoomMemberJpaEntity membership : targetMemberships) {
+                    //내가 나간 방일 가능성 있는 후보방
+                    Long candidateRoomId = membership.getRoomId().getId();
 
-                if (roomMembers.size() == 1) {
-                    //상대방이 혼자 남은 방에 로그인 유저가 보낸 메시지가 1개라도 존재하는 지 확인
-                    //로그인 유저가 보낸 메시지가 있다면 로그인 유저가 나간 방
-                    boolean hasMyPastMessage = springDataMessageRepository.existsByRoomId_IdAndSenderId_Id(candidateRoomId, userId);
+                    //상대방이 참여 중인 그 방의 인원이 혼자인지 확인
+                    List<ChatRoomMemberJpaEntity> roomMembers = springDataChatRoomMemberRepository.findByRoomId_Id(candidateRoomId);
 
-                    if (hasMyPastMessage) {
-                        finalRoomId = candidateRoomId;
-                        log.info("[CreatChatRoomCommandService] 2차 교차 검증 성공 - 로그인 유저가 나갔던 과거 채팅방 발견: {}", finalRoomId);
+                    if (roomMembers.size() == 1) {
+                        //상대방이 혼자 남은 방에 로그인 유저가 보낸 메시지가 1개라도 존재하는 지 확인
+                        //로그인 유저가 보낸 메시지가 있다면 로그인 유저가 나간 방
+                        boolean hasMyPastMessage = springDataMessageRepository.existsByRoomId_IdAndSenderId_Id(candidateRoomId, command.userId());
 
-                        //로그인 유저가 나갔던 방이므로 해당 채팅방 멤버로 복구
-                        UserWithFMJpaEntity loginUser = messageSideUserRepository.getReferenceById(userId);
-                        ChatRoomJpaEntity existingRoom = messageRepository.findChatRoomById(finalRoomId)
-                                .orElseThrow(() -> new FMBusinessRuleViolationException("존재하지 않는 채팅방입니다."));
+                        if (hasMyPastMessage) {
+                            finalRoomId = candidateRoomId;
+                            log.info("[CreatChatRoomCommandService] 2차 교차 검증 성공 - 로그인 유저가 나갔던 과거 채팅방 발견: {}", finalRoomId);
 
-                        ChatRoomMemberJpaEntity myNewMembership = ChatRoomMemberJpaEntity.createMembership(existingRoom, loginUser);
-                        messageRepository.saveChatRoomMember(myNewMembership);
-                        log.info("[CreateChatRoomCommandService] 나갔던 로그인 유저(ID: {})를 기존 방(ID: {})의 멤버로 복구 완료", userId, finalRoomId);
+                            //로그인 유저가 나갔던 방이므로 해당 채팅방 멤버로 복구
+                            UserWithFMJpaEntity loginUser = messageSideUserRepository.getReferenceById(command.userId());
+                            ChatRoomJpaEntity existingRoom = messageRepository.findChatRoomById(finalRoomId)
+                                    .orElseThrow(() -> new FMBusinessRuleViolationException("존재하지 않는 채팅방입니다."));
 
-                        break;
+                            ChatRoomMemberJpaEntity myNewMembership = ChatRoomMemberJpaEntity.createMembership(existingRoom, loginUser);
+                            messageRepository.saveChatRoomMember(myNewMembership);
+                            log.info("[CreateChatRoomCommandService] 나갔던 로그인 유저(ID: {})를 기존 방(ID: {})의 멤버로 복구 완료", command.userId(), finalRoomId);
+
+                            break;
+                        }
                     }
                 }
             }
+            //기존 방 찾았다면 리턴
+            if (finalRoomId != null) {
+                List<MemberInfo> existingMembers = new ArrayList<>();
+                existingMembers.add(new MemberInfo(
+                        singleTargetUser.getId(),
+                        "TEACHER".equals(singleTargetUser.getRole()) ? singleTargetUser.getName() : null,
+                        singleTargetUser.getNickname(),
+                        singleTargetUser.getRole(),
+                        friendStatuses.get(0)
+                ));
+
+                RoomInfo existingRoomInfo = new RoomInfo(
+                        finalRoomId,
+                        command.roomTitle(),
+                        inMemberCount + 1
+                );
+
+                return new CreateRoomView(
+                        true,
+                        existingRoomInfo,
+                        existingMembers
+                );
+            }
         }
 
-        //기존 방 찾았다면 리턴
-        if (finalRoomId != null) {
-            return new CreateRoomView(
-                    true,
-                    finalRoomId,
-                    targetUser.getId(),
-                    targetUser.getNickname(),
-                    targetUser.getRole(),
-                    "FRIEND"
-            );
-        }
-
+        //다대다이거나 기존방 없을 때
         //기존 채팅방 없으면 신규 개설
         ChatRoomJpaEntity newRoom = new ChatRoomJpaEntity();
+        newRoom.registRoomTitle(isOneToOne ? null : command.roomTitle());//일대일은 null, 다대다는 입력된 제목 지정
         messageRepository.saveChatRoom(newRoom);
 
         log.info("[CreateChatRoomCommandService] 신규 채팅방 멤버 저장 시작 - 방ID: {}, 요청자: {}, 대상자: {}",
-                newRoom.getId(), userId, targetUserId);
+                newRoom.getId(), command.userId(), command.chatMembers());
 
         //로그인 유저 jpaEntity로 담기
-        UserWithFMJpaEntity loginUser = messageSideUserRepository.getReferenceById(userId);
+        UserWithFMJpaEntity loginUser = messageSideUserRepository.getReferenceById(command.userId());
 
         //로그인 유저 멤버 저장
         ChatRoomMemberJpaEntity myMembership = ChatRoomMemberJpaEntity.createMembership(newRoom, loginUser);
         messageRepository.saveChatRoomMember(myMembership);
+
         //상대방 멤버 저장
-        ChatRoomMemberJpaEntity targetMembership = ChatRoomMemberJpaEntity.createMembership(newRoom, targetUser);
-        messageRepository.saveChatRoomMember(targetMembership);
+        for (UserWithFMJpaEntity targetUser: targetUsers) {
+            ChatRoomMemberJpaEntity targetMembership = ChatRoomMemberJpaEntity.createMembership(newRoom, targetUser);
+            messageRepository.saveChatRoomMember(targetMembership);
+        }
 
         log.info("[CreateChatRoomCommandService] 신규 채팅방 개설 완료 - 방ID: {}", newRoom.getId());
 
+        //멤버 명단
+        List<MemberInfo> members = new ArrayList<>();
+        for (int i = 0; i < targetUsers.size(); i++) {
+            UserWithFMJpaEntity target = targetUsers.get(i);
+            String status = friendStatuses.get(i);
+
+            members.add(new MemberInfo(
+                    target.getId(),
+                    "TEACHER".equals(target.getRole()) ? target.getName() : null,
+                    target.getNickname(),
+                    target.getRole(),
+                    status
+            ));
+        }
+
+        //생성된 방 정보
+        RoomInfo roomInfo = new RoomInfo(
+                newRoom.getId(),
+                command.roomTitle(),
+                inMemberCount + 1 //로그인 유저 포함 멤버수이므로 초대된 멤버 + 1
+        );
+
         return new CreateRoomView(
                 false,
-                newRoom.getId(),
-                targetUser.getId(),
-                targetUser.getNickname(),
-                targetUser.getRole(),
-                "FRIEND"
+                roomInfo, //생성된 방 정보
+                members //참여자 정보
         );
     }
 

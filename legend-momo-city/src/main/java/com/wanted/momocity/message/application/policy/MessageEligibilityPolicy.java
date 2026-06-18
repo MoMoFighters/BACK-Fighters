@@ -45,18 +45,49 @@ public class MessageEligibilityPolicy {
 
 
     //채팅방 개설 자격 겸증(409)
-    public void validateCreate(Long loginUserId, Long targetUserId, String friendStatus) {
+    public void validateCreate(Long loginUserId, String roomTitle, List<UserWithFMJpaEntity> targetUsers, List<String> friendStatuses) {
+        //빈 멤버 검증(아무도 선택 안하고 개설 시도)
+        if (targetUsers == null || targetUsers.isEmpty()) {
+            log.warn("[MessageEligibilityPolicy] 대화창 개설 시패 - 초대된 멤버가 없음");
+            throw new FMBusinessRuleViolationException("채팅방 멤버는 최소 1명 이상 지정해야 합니다.");
+        }
+
+        //일대일 구분: 방 이름 없는지 확인(없으면 일대일, 있으면 다대다)
+        boolean isOneToOne = (roomTitle == null || roomTitle.isEmpty()) && targetUsers.size() == 1;
+
+        //방이름 설정 공백 불가(다대다의 경우만 해당)
+        if (!isOneToOne && roomTitle != null && roomTitle.trim().isEmpty()) {
+            log.warn("[MessageEligibilityPolicy] 대화창 개설 실패 - 방 제목이 공백으로만 이루어짐");
+            throw new FMBusinessRuleViolationException("방 제목은 공백일 수 없습니다.");
+        }
+
         //나와의 채팅 개설 시도 차단
-        if (loginUserId.equals(targetUserId)) {
+        if (isOneToOne && targetUsers.get(0).getId().equals(loginUserId)) {
             log.warn("[MessageEligibilityPolicy] 대화창 개설 실패 - 자신과 대화창 개설 시도함");
             throw new FMResourceConflictException("자기 자신과는 대화창을 개설할 수 없습니다.");
         }
 
-        //무조건 FRIEND 상태여야 개설 가능
-        if (!"FRIEND".equals(friendStatus)) {
-            log.warn("[MessageEligibilityPolicy] 대화창 개설 실패 - 친구 상태가 아님 (현재 상태: {})", friendStatus);
-            throw new FMResourceConflictException("대화창을 개설할 수 없는 사용자입니다.");
+        //초대 멤버들 한 명씩 빼서 검증
+        for (int i = 0; i < targetUsers.size(); i++) {
+            UserWithFMJpaEntity targetUser = targetUsers.get(i);
+            String friendStatus = friendStatuses.get(i);
+
+            //409 다대다의 경우 학새 외(강사, 관리자) 포함 불가
+            if (targetUsers.size() > 1){
+                if (!"STUDENT".equals(targetUser.getRole())) {
+                    log.warn("[MessageEligibilityPolicy] 대화창 개설 실패 - 학생 외 인물 초대 불가. 유저ID: {}, 역할: {}", targetUser.getId(), targetUser.getRole());
+                    throw new FMResourceConflictException("대화창을 개설할 수 없는 사용자입니다.");
+                }
+            }
+
+            //v2 -> 초대할 멤버와 로그인 유저가 친구인지만 확인(초대된 멤버끼리는 친구 아닐 수 있음)
+            //무조건 FRIEND 상태여야 개설 가능
+            if (!targetUser.getId().equals(loginUserId) && !"FRIEND".equals(friendStatus)) {
+                log.warn("[MessageEligibilityPolicy] 대화창 개설 실패 - 친구 상태가 아닌 사용자가 포함됨. (유저ID: {}, 현재 상태: {})", targetUser.getId(), friendStatus);
+                throw new FMResourceConflictException("대화창을 개설할 수 없는 사용자입니다.");
+            }
         }
+
     }
 
     //회원가입 완료 후 이벤트로 나와의 채팅방 개설 검증

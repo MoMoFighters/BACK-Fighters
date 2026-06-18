@@ -68,7 +68,7 @@ public class CatalogMessageAdapter implements MessageRepository {
             }
 
             result.add(new ChatRoomQueryProjection(
-                    roomId, finalMessage
+                    roomId, room.getRoomTitle(), finalMessage, room.getCreatedAt()
             ));
         }
 
@@ -153,6 +153,8 @@ public class CatalogMessageAdapter implements MessageRepository {
 
         return springDataChatRoomMemberRepository.findByRoomId_Id(roomId);
     }
+
+    //메시지 저장
     @Override
     @Transactional
     public void saveMessage(MessageJpaEntity newMessage) {

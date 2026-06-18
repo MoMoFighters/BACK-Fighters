@@ -10,6 +10,7 @@ import com.wanted.momocity.message.application.usecase.MessageCommandUseCase.Rea
 import com.wanted.momocity.message.application.usecase.MessageCommandUseCase.SendView;
 import com.wanted.momocity.message.application.usecase.MessageQueryUseCase.MessageHistoryView;
 import com.wanted.momocity.message.application.usecase.MessageCommandUseCase.LeaveChatRoomView;
+import com.wanted.momocity.message.presentation.api.request.CreateChatRoomRequest;
 import com.wanted.momocity.message.presentation.api.request.SendMessageRequest;
 import com.wanted.momocity.message.presentation.api.response.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -62,23 +63,23 @@ public class MessageController {
         ));
     }
 
-    @PostMapping("/chatrooms/create/{userId}")
+    //v2 -> 다대다 확장으로 개설 대상자들 리스트로
+    @PostMapping("/api/v2/chatrooms/create")
     @Operation(summary = "채팅방 조회 및 개설", description = "채팅방 개설 시 기존 채팅방 존재 여부 확인 후 있으면 기존 채팅방으로 보내고 없으면 개설한다.")
-    public ResponseEntity<ApiResponse<CreateChatRoomResponse>> findAndNewChatRoom(@AuthenticationPrincipal CustomUserDetails userDetails, @PathVariable("userId") Long targetUserId) {
+    public ResponseEntity<ApiResponse<CreateChatRoomResponse>> findAndNewChatRoom(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam(value = "roomTitle", required = false) String roomTitle,
+            @Valid @RequestBody CreateChatRoomRequest request) {
 
         Long userId = userDetails.getUserId();
 
+        CreateChatRoomCommand command = new CreateChatRoomCommand(userId, roomTitle, request.chatMember());
+
         //커맨드 조립해서 유스케이스 발송
-        CreateRoomView view = messageCommandUseCase.createChatRoomCommandHandle(userId, targetUserId);
+        CreateRoomView view = messageCommandUseCase.createChatRoomCommandHandle(command);
 
         //공통 응답 데이터 그릇
-        CreateChatRoomResponse responseData = new CreateChatRoomResponse(
-                view.roomId(),
-                view.targetUserId(),
-                view.nickname(),
-                view.role(),
-                view.status()
-        );
+        CreateChatRoomResponse responseData = CreateChatRoomResponse.of(view);
 
         //기존 채팅방 존재할 때
         if (view.isExisting()) {
@@ -90,7 +91,20 @@ public class MessageController {
         }
 
         //새로운 채팅방 개설
-        String successMessage = String.format("%s님과의 대화창을 개설했습니다. 대화를 시작해보세요!", responseData.nickname());
+        //일대일, 다대다 성공 메시지 분기
+        String successMessage = "";
+
+        //roomTitle이 존재하고 멤버가 여러명: 다대다
+        if (roomTitle != null && !roomTitle.isEmpty()) {
+            successMessage = String.format("'%s' 대화창을 개설했습니다. 대화를 시작해보세요!", roomTitle);
+        } else if (view.memberInfo().size() == 1) {
+            //일대일: 방제목 없고 멤버 정보의 개수가 1개
+            //첫 번째 유저의 닉네임 빼오기
+            String targetNickname =  view.memberInfo().get(0).nickname();
+            successMessage = String.format("%s님과의 대화창을 개설했습니다. 대화를 시작해보세요!", targetNickname);
+
+        }
+
         return ResponseEntity.ok(ApiResponse.created(
                 "SUCCESS",
                 successMessage,
