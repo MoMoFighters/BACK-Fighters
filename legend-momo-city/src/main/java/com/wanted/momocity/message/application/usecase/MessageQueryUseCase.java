@@ -1,31 +1,53 @@
 package com.wanted.momocity.message.application.usecase;
 
+import com.wanted.momocity.message.application.query.FindChatRoomQuery;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
 public interface MessageQueryUseCase {
 
     //메시지 채팅 목록
-    List<ChatRoomView> getChatRoomQueryHandle(Long userId);
+    List<ChatRoomView> getChatRoomQueryHandle(FindChatRoomQuery query);
 
     record ChatRoomView(
-            Long userId,
-            String name, //강사 본명
-            String nickname, //가공된 닉네임(알 수 없음)
-            String role,
-            String status, //친구 상태
+            RoomInfo roomInfo,
+            List<MemberInfo> memberInfo,
+//            Long userId,
+//            String name, //강사 본명
+//            String nickname, //가공된 닉네임(알 수 없음)
+//            String role,
+//            String status, //친구 상태
             Boolean isNotActive, //ACTIVE아닌 것
             boolean shouldMasked,
-            boolean isLeftRoom,
-            Long roomId, //채팅방 번호
+//            boolean isLeftRoom,
+//            Long roomId, //채팅방 번호
+//            String roomTitle,
+//            Long inMemberCount,
+//            String content, //마지막 채팅 내역
+//            LocalDateTime createdAt, //마지막 채팅 시각
+            LocalDateTime lastestOrderTime //채팅방 목록 정령을 위함
+//            Long unreadCount, //읽지 않은 메시지 수
+//            List<String> lectureTitle, //가공된 강의명 묶음
+//            String profileImageUrl
+    ) {}
+    record RoomInfo(
+            Long roomId,
             String roomTitle,
             Long inMemberCount,
-            String content, //마지막 채팅 내역
-            LocalDateTime createdAt, //마지막 채팅 시각
-            LocalDateTime lastestOrderTime, //채팅방 목록 정령을 위함
-            Long unreadCount, //읽지 않은 메시지 수
-            List<String> lectureTitle, //가공된 강의명 묶음
-            String profileImageUrl
+            String content,
+            LocalDateTime createdAt,
+            Long unreadCount
+    ) {}
+    record MemberInfo(
+            Long userId,
+            String name,
+            String nickname,
+            List<String> lectureTitle,
+            String role,
+            String status,
+            String profileImageUrl,
+            boolean isLeftRoom
     ) {}
 
     //메시지 내역 조회

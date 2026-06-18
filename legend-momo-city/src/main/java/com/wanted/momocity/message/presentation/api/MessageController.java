@@ -3,6 +3,7 @@ package com.wanted.momocity.message.presentation.api;
 import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.message.application.command.CreateChatRoomCommand;
+import com.wanted.momocity.message.application.query.FindChatRoomQuery;
 import com.wanted.momocity.message.application.usecase.*;
 import com.wanted.momocity.message.application.usecase.MessageCommandUseCase.CreateRoomView;
 import com.wanted.momocity.message.application.usecase.MessageQueryUseCase.ChatRoomView;
@@ -40,7 +41,8 @@ public class MessageController {
 
         Long userId = userDetails.getUserId();
 
-        List<ChatRoomView> view = messageQueryUseCase.getChatRoomQueryHandle(userId);
+        FindChatRoomQuery query = new FindChatRoomQuery(userId);
+        List<ChatRoomView> view = messageQueryUseCase.getChatRoomQueryHandle(query);
 
         //채팅방이 한개도 없을 때
         if (view.isEmpty()) {
