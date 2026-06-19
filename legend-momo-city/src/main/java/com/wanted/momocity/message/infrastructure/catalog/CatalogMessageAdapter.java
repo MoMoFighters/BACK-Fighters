@@ -276,18 +276,18 @@ public class CatalogMessageAdapter implements MessageRepository {
         springDataMessageRepository.save(newMessage);
     }
 
-    //안내 문구 내역 조회
-    @Override
-    public List<MessageAnnounceJpaEntity> findAnnounceHistory(Long roomId, LocalDateTime startTimeLine) {
-        //나갔다 재입장한 유저의 타임라인 이후 발생한 공지는 전체를 가져와 메시지와 병합하여 정렬
-        return SpringDataMessageAnnounceRepository.findByRoomId_IdAndCreatedAtGreaterThanEqual(roomId, startTimeLine);
-    }
-
     //(말풍선)하나의 메시지에 대해 읽지 않은 사람 수
     @Override
     public Long countUnreadMembersForMessage(Long messageId) {
         //메시지 읽음 테이블에서 해당 메시지 아이디 기준으로 isMsgRead가 false인 개수
         return springDataMessageReadRepository.countByMessageId_IdAndIsMsgReadFalse(messageId);
+    }
+
+    //안내 문구 조회
+    @Override
+    public List<MessageAnnounceJpaEntity> findAnnounceHistory(Long roomId, LocalDateTime startTimeLine) {
+        //재입장한 유저의 타임라인 이후 생성한 안내 문구 전체를 가져와 메시지와 병합하여 정렬
+        return springDataMessageAnnounceRepository.findByRoomId_IdAndCreatedAtGreaterThanEqual(roomId, startTimeLine);
     }
 
     //회원가입 직후 방 존재 여부 확인용

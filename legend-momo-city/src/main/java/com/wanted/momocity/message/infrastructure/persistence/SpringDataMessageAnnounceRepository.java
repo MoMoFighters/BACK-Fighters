@@ -16,7 +16,5 @@ public interface SpringDataMessageAnnounceRepository extends JpaRepository<Messa
     void deleteByRoomId_Id(Long roomId);
 
     //안내 문구 내역 조회(재입장 고려)
-    static List<MessageAnnounceJpaEntity> findByRoomId_IdAndCreatedAtGreaterThanEqual(Long roomId, LocalDateTime startTimeLine) {
-
-    }
+    List<MessageAnnounceJpaEntity> findByRoomId_IdAndCreatedAtGreaterThanEqual(Long roomId, LocalDateTime startTimeLine);
 }
