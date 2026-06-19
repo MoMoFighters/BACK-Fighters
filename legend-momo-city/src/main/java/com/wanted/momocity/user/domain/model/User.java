@@ -5,7 +5,6 @@ import lombok.Builder;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Builder
 public class User {
 
     private final Long id;
@@ -27,6 +26,7 @@ public class User {
     private final LocalDateTime deletedAt;
     private final Boolean isTempPwd;  // 이 사용자의 비밀번호가 임시비밀번호인지 아닌지
 
+    @Builder
     public User(Long id, String email, String password, String name, String nickname, LocalDate birth, String profileImageUrl, Role role, Status status, Category category, String proof, Long point, Boolean isPaid, Boolean doNotDisturb, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, Boolean isTempPwd) {
         this.id = id;
         this.email = email;
