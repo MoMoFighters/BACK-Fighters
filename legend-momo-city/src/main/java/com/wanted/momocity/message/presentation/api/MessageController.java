@@ -3,6 +3,7 @@ package com.wanted.momocity.message.presentation.api;
 import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.message.application.command.CreateChatRoomCommand;
+import com.wanted.momocity.message.application.command.SendMessageCommand;
 import com.wanted.momocity.message.application.query.FindChatRoomQuery;
 import com.wanted.momocity.message.application.usecase.*;
 import com.wanted.momocity.message.application.usecase.MessageCommandUseCase.CreateRoomView;
@@ -121,7 +122,9 @@ public class MessageController {
                                                                         @Valid @RequestBody SendMessageRequest request) {
         Long userId = userDetails.getUserId();
 
-        SendView view = messageCommandUseCase.sendMessageCommandHandle(userId, roomId, request.content());
+        SendMessageCommand command = new SendMessageCommand(userId, roomId, request.content());
+
+        SendView view = messageCommandUseCase.sendMessageCommandHandle(command);
 
         SendMessageResponse responseData = new SendMessageResponse(
                 view.roomId(),

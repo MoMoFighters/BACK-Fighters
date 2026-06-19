@@ -31,6 +31,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.enableSimpleBroker("/sub");
         //프론트엔드가 서버로 메시지를 보낼 때 사용할 접두사
         registry.setApplicationDestinationPrefixes("/pub");
+        //개별 사용자 전용 메시지 라우팅을 위한 접두사 지정
+        registry.setUserDestinationPrefix("/user");
     }
 
     @Override

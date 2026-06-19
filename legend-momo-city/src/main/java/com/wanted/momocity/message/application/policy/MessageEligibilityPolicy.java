@@ -118,8 +118,15 @@ public class MessageEligibilityPolicy {
             log.info("[MessageEligibilityPolicy] 나와의 채팅방 메시지 전송 - 검증 패스. 방ID: {}", roomId);
             return;
         }
+
+        //v2 -> 다대다 분기: 멤버가 3명 이상이면 (로그인 유저 포함) 친구 검증 패스
+        if (roomMemberCount >= 3) {
+            log.info("[MessageEligibilityPolicy] 다대다 그룹 채팅방 메시지 전송 - 친구 여부 관계없이 허용. 방ID: {}", roomId);
+            return;
+        }
+
         //방에 혼자 남았다면 상대방이 나간 것(409)
-        if (roomMemberCount < 2) {
+        if (!"me".equals(friendStatus) && roomMemberCount < 2) {
             log.warn("[MessageEligibilityPolicy] 메시지 전송 실패 - 상대방이 방을 나갔음. 방ID: {}", roomId);
             throw new FMResourceConflictException("상대방이 채팅방을 나갔습니다.");
         }

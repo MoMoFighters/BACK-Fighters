@@ -1,6 +1,7 @@
 package com.wanted.momocity.message.application.usecase;
 
 import com.wanted.momocity.message.application.command.CreateChatRoomCommand;
+import com.wanted.momocity.message.application.command.SendMessageCommand;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -29,7 +30,7 @@ public interface MessageCommandUseCase {
     ) {}
 
     //메시지 전송
-    SendView sendMessageCommandHandle(Long senderId, Long roomId, String content);
+    SendView sendMessageCommandHandle(SendMessageCommand command);
 
     record SendView(
             Long roomId,

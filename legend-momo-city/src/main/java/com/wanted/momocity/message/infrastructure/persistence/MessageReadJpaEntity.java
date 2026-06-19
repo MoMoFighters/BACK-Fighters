@@ -46,4 +46,18 @@ public class MessageReadJpaEntity {
     public void changeIsNotiRead(boolean isNotiRead) {
         this.isNotiRead = isNotiRead;
     }
+
+    //메지시 전송 시 읽음 여부, 알림 삭제 여부 처리
+    public static MessageReadJpaEntity createNewUnreadMessage(ChatRoomJpaEntity chatRoom, MessageJpaEntity messageId, UserWithFMJpaEntity userId, boolean isMsgRead, boolean isNotiRead, boolean isDeleted) {
+        MessageReadJpaEntity m = new MessageReadJpaEntity();
+
+        m.roomId = chatRoom;
+        m.messageId = messageId;
+        m.userId = userId;
+        m.isMsgRead = isMsgRead;
+        m.isNotiRead = isNotiRead;
+        m.isDeleted = isDeleted;
+
+        return m;
+    }
 }

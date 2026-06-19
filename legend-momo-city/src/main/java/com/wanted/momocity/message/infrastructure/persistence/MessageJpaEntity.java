@@ -47,7 +47,7 @@ public class MessageJpaEntity {
     }
 
     //메시지 전송
-    public static MessageJpaEntity createNewMessage(ChatRoomJpaEntity roomId, UserWithFMJpaEntity senderId, String content, boolean isRead) {
+    public static MessageJpaEntity createNewMessage(ChatRoomJpaEntity roomId, UserWithFMJpaEntity senderId, String content) {
         MessageJpaEntity entity = new MessageJpaEntity();
         entity.roomId = roomId;
         entity.senderId = senderId;
