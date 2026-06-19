@@ -1,5 +1,7 @@
 package com.wanted.momocity.streak.presentation.api.response;
 
+import com.wanted.momocity.streak.domain.model.StreakLevel;
+
 import java.time.LocalDate;
 
 /*
@@ -11,6 +13,6 @@ import java.time.LocalDate;
 
 public record StreakResponse(
         LocalDate streakDate,
-        int level
+        StreakLevel level
 ) {
 }
