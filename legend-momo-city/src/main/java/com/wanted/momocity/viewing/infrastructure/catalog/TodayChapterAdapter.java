@@ -5,6 +5,7 @@ import com.wanted.momocity.calendar.application.port.TodayChapterPort;
 import com.wanted.momocity.viewing.application.port.ChapterPort;
 import com.wanted.momocity.viewing.application.port.LecturePort;
 import com.wanted.momocity.viewing.domain.model.LearningHistory;
+import com.wanted.momocity.viewing.domain.model.Lecture;
 import com.wanted.momocity.viewing.domain.repository.LearningHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,13 +48,14 @@ public class TodayChapterAdapter implements TodayChapterPort {
                     String chapterTitle = chapterPort.findById(history.getChapterId())
                             .getTitle();
 
-                    // 강의 제목 조회
+                    // 강의 정보 조회 (제목 + 카테고리)
                     // LecturePort.findById() 로 조회 -> 없으면 DomainRuleViolationException 발생
-                    String lectureTitle = lecturePort.findById(history.getLectureId())
-                            .getTitle();
+                    Lecture lecture = lecturePort.findById(history.getLectureId());
 
                     return new TodayChapterInfo(
-                            lectureTitle,
+                            lecture.getTitle(),
+                            history.getLectureId(),
+                            lecture.getCategory(),
                             chapterTitle
                     );
                 })
