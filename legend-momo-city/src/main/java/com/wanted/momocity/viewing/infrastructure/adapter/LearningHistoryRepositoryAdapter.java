@@ -7,6 +7,9 @@ import com.wanted.momocity.viewing.infrastructure.persistence.LearningHistoryJpa
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -56,6 +59,34 @@ public class LearningHistoryRepositoryAdapter implements LearningHistoryReposito
     public Optional<LearningHistory> findLatestByUserIdAndLectureId(Long userId, Long lectureId) {
         return jpaRepository
                 .findTopByUserIdAndLectureIdOrderByUpdatedAtDesc(userId, lectureId)
+                .map(LearningHistoryJpaEntity::toDomain);
+    }
+
+    @Override
+    public List<LearningHistory> findByUserIdAndDate(Long userId, LocalDate date) {
+
+        // last_watched_at 이 해당 날짜인 시청 기록 조회
+        // -> 날짜의 시작(00:00:00) - 끝(23:59:59) 범위로 조회
+        LocalDateTime start = date.atStartOfDay();
+        LocalDateTime end = date.atTime(LocalTime.MAX);
+        return jpaRepository
+                .findByUserIdAndLastWatchedAtBetween(userId, start, end)
+                .stream()
+                .map(LearningHistoryJpaEntity::toDomain)
+                .toList();
+    }
+
+    @Override
+    public Optional<LearningHistory> findLatestByUserId(Long userId) {
+        return jpaRepository
+                .findTopByUserIdOrderByLastWatchedAtDesc(userId)
+                .map(LearningHistoryJpaEntity::toDomain);
+    }
+
+    @Override
+    public Optional<LearningHistory> findLatestByUserIdAndLectureIds(Long userId, List<Long> lectureIds) {
+        return jpaRepository
+                .findTopByUserIdAndLectureIdInOrderByLastWatchedAtDesc(userId, lectureIds)
                 .map(LearningHistoryJpaEntity::toDomain);
     }
 }

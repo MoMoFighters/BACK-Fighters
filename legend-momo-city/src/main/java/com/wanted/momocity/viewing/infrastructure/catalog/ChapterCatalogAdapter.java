@@ -23,12 +23,11 @@ import java.util.Optional;
 *  ChapterPort 인터페이스 구현체
 *  -
 *  [Redis 캐싱 전략]
- * @Cacheable("chapter")  → chapterId 기준 단건 캐싱
- * findAllByLectureId()   → StringRedisTemplate 직접 사용
+ * @Cacheable("chapter") -> chapterId 기준 단건 캐싱
+ * findAllByLectureId() -> StringRedisTemplate 직접 사용
  * -
  * 왜 캐싱이 필요한가:
- * -> saveProgress() 5~10초 주기 호출 시
- *   매번 DB 조회 → Redis 캐싱으로 DB 부하 감소
+ * -> saveProgress() 5~10초 주기 호출 시 매번 DB 조회 → Redis 캐싱으로 DB 부하 감소
  * -
  * @CacheEvict:
  * -> 챕터 정보 변경 시 캐시 무효화 (팀원 머지 후 적용)

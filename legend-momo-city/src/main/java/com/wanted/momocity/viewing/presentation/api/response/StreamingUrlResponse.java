@@ -8,11 +8,9 @@ package com.wanted.momocity.viewing.presentation.api.response;
 * */
 
 public record StreamingUrlResponse(
-        Long chapterId,
         String presignedUrl,
         // URL 유효 시간 (초)
         int expiresIn,
-        String videoTitle,
-        int durationSec
+        int lastPositionSec
 ) {
 }
