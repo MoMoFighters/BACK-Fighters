@@ -11,7 +11,7 @@
 
 import http from 'k6/http';
 import { check } from 'k6';
-import { BASE_URL, randomLectureId, LECTURE_CHAPTER_MAP } from './config.js';
+import { BASE_URL, randomLectureId, LECTURE_CHAPTER_MAP, EXPIRED_TOKEN } from './config.js';
 
 function authHeaders(token) {
     return {
@@ -95,4 +95,25 @@ export function saveProgress(token, lectureId, chapterId, playbackSeconds) {
 export function studentBrowseAndEnroll(token) {
     getLectures({}, token);
     enrollLecture(token, randomLectureId());
+}
+
+// 만료된 토큰으로 진척도 저장 API를 호출합니다.
+// 서버가 401을 안정적으로 반환하는지 확인하는 시나리오(05-expired-token.js)에서 사용합니다.
+export function requestWithExpiredToken(lectureId, chapterId, playbackSeconds) {
+    const res = http.patch(
+        `${BASE_URL}/api/v1/lectures/${lectureId}/chapters/${chapterId}/progress`,
+        JSON.stringify({ playbackSeconds }),
+        {
+            headers: authHeaders(EXPIRED_TOKEN),
+            tags: { type: 'expired-token', api: 'PATCH /api/v1/lectures/{id}/chapters/{id}/progress' },
+            responseCallback: http.expectedStatuses(401),
+        }
+    );
+
+    check(res, {
+        'expired-token: status is 401':   (r) => r.status === 401,
+        'expired-token: no server error': (r) => r.status !== 500,
+    });
+
+    return res;
 }

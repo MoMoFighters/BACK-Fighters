@@ -25,6 +25,10 @@ export const STUDENT_TOKENS = [
     __ENV.TOKEN_STUDENT4 || 'eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI1Iiwicm9sZXMiOiJST0xFX1NUVURFTlQiLCJpYXQiOjE3ODE4Mzg5NDEsImV4cCI6MTc4MTg0MjU0MX0.zELvonyDtt9MuWHwapruOjcFkq56u1iukkdha2nI0mb-nF093b7IevHTe1F7C9z56KQ9dL6EnZJa46oZHP_jvQ',
 ];
 
+// 만료된 accessToken입니다. 05-expired-token.js 시나리오에서 사용합니다.
+// 토큰 만료 후 재발급이 필요하면 이 값을 교체합니다.
+export const EXPIRED_TOKEN = __ENV.EXPIRED_TOKEN || 'eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIyIiwicm9sZXMiOiJST0xFX1NUVURFTlQiLCJpYXQiOjE3ODE4Mzg5NDAsImV4cCI6MTc4MTg0MjU0MH0.BUbF3e4ixX7LNxcT0mFZHd8ENhwZeI8IBxLU8QxqxnCEsTzn1q8GZeUWBeOvMJjuk1olnfRcm610jpd3PVz-iA';
+
 // 현재 DB에 있는 ACTIVE 상태 강의 ID 목록입니다.
 export const LECTURE_IDS = [1, 2, 3, 6, 8, 9];
 
