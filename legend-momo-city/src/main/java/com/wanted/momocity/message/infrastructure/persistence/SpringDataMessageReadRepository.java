@@ -12,4 +12,6 @@ public interface SpringDataMessageReadRepository extends JpaRepository<MessageRe
     //메시지 읽음 처리
     List<MessageReadJpaEntity> findByRoomId_IdAndUserId_IdAndIsMsgReadFalse(Long roomId, Long userId);
 
+    //채팅방 가가기: 읽음 여부 삭제
+    void deleteByRoomId_Id(Long roomId);
 }

@@ -1,10 +1,13 @@
 package com.wanted.momocity.message.infrastructure.catalog;
 
 import com.wanted.momocity.friend.domain.repository.FriendRepository;
+import com.wanted.momocity.friend.enrollment.EnrollmentWithFMJpaEntity;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendSideEnrollmentRepository;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendSideUserRepository;
 import com.wanted.momocity.friend.infrastructure.persistence.SpringDataFriendRepository;
+import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
+import com.wanted.momocity.message.application.policy.MessageEligibilityPolicy;
 import com.wanted.momocity.message.domain.repository.ChatRoomQueryProjection;
 import com.wanted.momocity.message.domain.repository.MessageRepository;
 import com.wanted.momocity.message.infrastructure.persistence.*;
@@ -27,14 +30,134 @@ import java.util.Optional;
 @Slf4j
 public class CatalogMessageAdapter implements MessageRepository {
 
-    private final SpringDataFriendRepository springDataFriendRepository;
-    private final SpringDataChatRoomMemberRepository springDataChatRoomMemberRepository;
-    //충돌 회피로 만든 수강신청 인터페이스 저장소
-    private final MessageSideEnrollmentRepository messageSideEnrollmentRepository;
-    //충돌 회피로 만든 사용자 인터페이스 저장소
     private final MessageSideUserRepository messageSideUserRepository;
+    private final MessageSideEnrollmentRepository messageSideEnrollmentRepository;
+    private final MessageSideFriendRepository messageSideFriendRepository;
+
+    private final SpringDataChatRoomMemberRepository springDataChatRoomMemberRepository;
     private final SpringDataMessageRepository springDataMessageRepository;
     private final SpringDataChatRoomRepository springDataChatRoomRepository;
+    private final SpringDataMessageReadRepository springDataMessageReadRepository;
+    private final SpringDataMessageAnnounceRepository springDataMessageAnnounceRepository;
+
+    //사용자 정보 찾기
+    @Override
+    public Optional<UserWithFMJpaEntity> findUserWithFMById(Long userId) {
+        return messageSideUserRepository.findById(userId);
+    }
+
+    //수강 정보 찾기
+    @Override
+    public List<EnrollmentWithFMJpaEntity> findEnrollmentsByUserId(Long userId) {
+        return messageSideEnrollmentRepository.findByUserId_Id(userId);
+    }
+
+    //나간 상대방 식별 메시지 역추적용(로그인 유저 제외 마지막 메시지 정보)
+    @Override
+    public Optional<MessageJpaEntity> findLatestMessageExceptMe(Long roomId, Long loginUserId) {
+        return springDataMessageRepository.findFirstByRoomId_IdAndSenderId_IdNotOrderByIdDesc(roomId, loginUserId);
+    }
+
+    //양방향 친구 관계 찾기
+    @Override
+    public Optional<FriendJpaEntity> findFriendRelation(Long loginId, Long targetUserId) {
+        Optional<FriendJpaEntity> relation = messageSideFriendRepository.findByFromUserId_IdAndToUserId_Id(loginId, targetUserId);
+        if (relation.isEmpty()) {
+            relation = messageSideFriendRepository.findByFromUserId_IdAndToUserId_Id(targetUserId, loginId);
+        }
+        return relation;
+    }
+
+    @Override
+    public Optional<LocalDateTime> findLatestAnnounceTime(Long roomId) {
+        return springDataMessageAnnounceRepository.findFirstByRoomId_IdOrderByCreatedAtDesc(roomId)
+                .map(MessageAnnounceJpaEntity::getCreatedAt);
+    }
+
+    //채팅방 존재 확인
+    @Override
+    public boolean existsRoomById(Long roomId) {
+        return springDataChatRoomRepository.existsById(roomId);
+    }
+
+    //방 멤버 존재 확인
+    @Override
+    public boolean existsMemberByRoomIdAndUserId(Long roomId, Long userId) {
+        return springDataChatRoomMemberRepository.existsByRoomId_IdAndUserId_Id(roomId, userId);
+    }
+
+    //마지막 메시지 존재 확인
+    @Override
+    public boolean existsMessageByRoomIdAndSenderId(Long roomId, Long senderId) {
+        return springDataMessageRepository.existsByRoomId_IdAndSenderId_Id(roomId, senderId);
+    }
+
+    //20개씩 메시지 내역 조회
+    @Override
+    public List<MessageJpaEntity> findMessageHistory(Long roomId, Long lastMessageId, LocalDateTime startTimeLie) {
+        if (lastMessageId == null) {
+            return springDataMessageRepository.findTop20ByRoomId_IdAndCreatedAtGreaterThanEqualOrderByIdDesc(roomId, startTimeLie);
+        }
+        return springDataMessageRepository.findTop20ByRoomId_IdAndIdLessThanAndCreatedAtGreaterThanEqualOrderByIdDesc(roomId, lastMessageId, startTimeLie);
+    }
+
+    //이거 무슨 용도지?
+    @Override
+    public UserWithFMJpaEntity getUserWithFMReferenceById(Long userId) {
+        return messageSideUserRepository.getReferenceById(userId);
+    }
+
+    //로그인 유저가 속한 방 멤버
+    @Override
+    public List<ChatRoomMemberJpaEntity> findChatRoomMembersByUserId(Long userId) {
+        return springDataChatRoomMemberRepository.findByUserId_Id(userId);
+    }
+
+    //메시지 읽음 처리
+    @Override
+    @Transactional
+    public void saveAllMessageRead(List<MessageReadJpaEntity> messageReads) {
+        springDataMessageReadRepository.saveAll(messageReads);
+    }
+
+    //안읽은 메시지 내역 조회
+    @Override
+    public List<MessageReadJpaEntity> findUnreadMessages(Long roomId, Long userId) {
+        return springDataMessageReadRepository.findByRoomId_IdAndUserId_IdAndIsMsgReadFalse(roomId, userId);
+    }
+
+    //채팅방 나가기: 모든 메시지 삭제
+    @Override
+    @Transactional
+    public void deleteMessagesByRoomId(Long roomId) {
+        springDataMessageAnnounceRepository.deleteByRoomId_Id(roomId);
+        springDataMessageReadRepository.deleteByRoomId_Id(roomId);
+        springDataMessageRepository.deleteByRoomId_Id(roomId);
+    }
+
+    //채팅방 나가기: 멤버 삭제
+    @Override
+    @Transactional
+    public void deleteChatRoomMember(ChatRoomMemberJpaEntity member) {
+        springDataChatRoomMemberRepository.delete(member);
+    }
+
+    //채팅방 나가기: 방 삭제
+    @Override
+    @Transactional
+    public void deleteChatRoom(ChatRoomJpaEntity room) {
+        springDataChatRoomRepository.delete(room);
+    }
+
+//    private final SpringDataFriendRepository springDataFriendRepository;
+//    private final SpringDataChatRoomMemberRepository springDataChatRoomMemberRepository;
+//    //충돌 회피로 만든 수강신청 인터페이스 저장소
+//    private final MessageSideEnrollmentRepository messageSideEnrollmentRepository;
+//    //충돌 회피로 만든 사용자 인터페이스 저장소
+//    private final MessageSideUserRepository messageSideUserRepository;
+//    private final SpringDataMessageRepository springDataMessageRepository;
+//    private final SpringDataChatRoomRepository springDataChatRoomRepository;
+//    private final SpringDataMessageReadRepository springDataMessageReadRepository;
 
     //로그인 유저의 채팅방 조회
     @Override
@@ -79,7 +202,7 @@ public class CatalogMessageAdapter implements MessageRepository {
     //채팅방별 안읽은 메시지 개수
     @Override
     public Long countUnreadMessage(Long roomId, Long userId) {
-        return springDataMessageRepository.countByRoomId_IdAndSenderId_IdNotAndIsReadFalse(roomId, userId);
+        return springDataMessageReadRepository.countByRoomId_IdAndUserId_IdAndIsMsgReadFalse(roomId, userId);
     }
 
     //채팅방 조회 및 신설

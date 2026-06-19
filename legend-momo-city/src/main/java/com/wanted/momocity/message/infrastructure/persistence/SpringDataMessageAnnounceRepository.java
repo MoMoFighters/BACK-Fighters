@@ -8,4 +8,7 @@ public interface SpringDataMessageAnnounceRepository extends JpaRepository<Messa
 
     //채팅방 목록 정렬을 위한 안내 문구 시간 확인
     Optional<MessageAnnounceJpaEntity> findFirstByRoomId_IdOrderByCreatedAtDesc(Long roomId);
+
+    //채팅방 나가기: 안내 문구 삭제
+    void deleteByRoomId_Id(Long roomId);
 }

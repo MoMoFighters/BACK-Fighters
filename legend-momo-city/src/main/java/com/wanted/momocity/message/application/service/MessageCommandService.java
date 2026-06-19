@@ -6,6 +6,7 @@ import com.wanted.momocity.friend.fmexception.FMResourceNotFoundException;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import com.wanted.momocity.message.application.command.CreateChatRoomCommand;
+import com.wanted.momocity.message.application.command.ReadMessageCommand;
 import com.wanted.momocity.message.application.command.SendMessageCommand;
 import com.wanted.momocity.message.application.manager.ChatRoomSessionManager;
 import com.wanted.momocity.message.application.policy.MessageEligibilityPolicy;
@@ -31,22 +32,22 @@ import java.util.Optional;
 @Transactional
 public class MessageCommandService implements MessageCommandUseCase {
 
-    private final MessageSideUserRepository messageSideUserRepository;
-    private final MessageSideFriendRepository messageSideFriendRepository;
+//    private final MessageSideUserRepository messageSideUserRepository;
+//    private final MessageSideFriendRepository messageSideFriendRepository;
     private final MessageRepository messageRepository;
     private final MessageEligibilityPolicy messageEligibilityPolicy;
-    private final SpringDataMessageRepository springDataMessageRepository;
-    private final SpringDataChatRoomMemberRepository springDataChatRoomMemberRepository;
+//    private final SpringDataMessageRepository springDataMessageRepository;
+//    private final SpringDataChatRoomMemberRepository springDataChatRoomMemberRepository;
     //notification에 행 추가
     private final ApplicationEventPublisher eventPublisher;
     //웹소켓
     private final ChatRoomSessionManager sessionManager;
     //웹소켓 브로드캐스팅 템플릿 주입
     private final SimpMessagingTemplate messagingTemplate;
-    private final SpringDataChatRoomMemberRepository chatRoomMemberRepository;
-    private final SpringDataChatRoomRepository springDataChatRoomRepository;
-
-    private final SpringDataMessageReadRepository springDataMessageReadRepository;
+//    private final SpringDataChatRoomMemberRepository chatRoomMemberRepository;
+//    private final SpringDataChatRoomRepository springDataChatRoomRepository;
+//
+//    private final SpringDataMessageReadRepository springDataMessageReadRepository;
 
     //채팅방 조회 및 개설
     @Override
@@ -60,20 +61,15 @@ public class MessageCommandService implements MessageCommandUseCase {
 
         for (Long memberId : command.chatMembers()) {
             //초대할 멤버가 존재하지 않는 경우 404
-            UserWithFMJpaEntity targetUser = (UserWithFMJpaEntity) messageSideUserRepository.findUserById(memberId)
+            UserWithFMJpaEntity targetUser = messageRepository.findUserWithFMById(memberId)
                     .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 사용자의 대화창을 개설할 수 없습니다."));
             targetUsers.add(targetUser);
 
             //양방향 친구 관계 조회
             //두 사람 사이의 관계 양방향 조회
-            String friendStatus = "none";
-            Optional<FriendJpaEntity> relationOpt = messageSideFriendRepository.findByFromUserId_IdAndToUserId_Id(command.userId(), memberId);
-            if (relationOpt.isEmpty()) {
-                relationOpt = messageSideFriendRepository.findByFromUserId_IdAndToUserId_Id(memberId, command.userId());
-            }
-            if (relationOpt.isPresent()) {
-                friendStatus = relationOpt.get().getStatus();
-            }
+            String friendStatus = messageRepository.findFriendRelation(command.userId(), memberId)
+                    .map(FriendJpaEntity::getStatus)
+                    .orElse("none");
             friendStatuses.add(friendStatus);
         }
 
@@ -100,26 +96,26 @@ public class MessageCommandService implements MessageCommandUseCase {
                 log.info("[CreateChatRoomCommandService] 1차 검증 실패(나간 유저 존재) -> 2차 메시지 교차 검증 역추적 시작...");
 
                 //상대방이 참여 중인 모든 멤버 다져옴
-                List<ChatRoomMemberJpaEntity> targetMemberships = springDataChatRoomMemberRepository.findByUserId_Id(targetUserId);
+                List<ChatRoomMemberJpaEntity> targetMemberships = messageRepository.findChatRoomMembersByUserId(targetUserId);
 
                 for (ChatRoomMemberJpaEntity membership : targetMemberships) {
                     //내가 나간 방일 가능성 있는 후보방
                     Long candidateRoomId = membership.getRoomId().getId();
 
                     //상대방이 참여 중인 그 방의 인원이 혼자인지 확인
-                    List<ChatRoomMemberJpaEntity> roomMembers = springDataChatRoomMemberRepository.findByRoomId_Id(candidateRoomId);
+                    List<ChatRoomMemberJpaEntity> roomMembers = messageRepository.findMembersByRoomId(candidateRoomId);
 
                     if (roomMembers.size() == 1) {
                         //상대방이 혼자 남은 방에 로그인 유저가 보낸 메시지가 1개라도 존재하는 지 확인
                         //로그인 유저가 보낸 메시지가 있다면 로그인 유저가 나간 방
-                        boolean hasMyPastMessage = springDataMessageRepository.existsByRoomId_IdAndSenderId_Id(candidateRoomId, command.userId());
+                        boolean hasMyPastMessage = messageRepository.existsMessageByRoomIdAndSenderId(candidateRoomId, command.userId());
 
                         if (hasMyPastMessage) {
                             finalRoomId = candidateRoomId;
                             log.info("[CreatChatRoomCommandService] 2차 교차 검증 성공 - 로그인 유저가 나갔던 과거 채팅방 발견: {}", finalRoomId);
 
                             //로그인 유저가 나갔던 방이므로 해당 채팅방 멤버로 복구
-                            UserWithFMJpaEntity loginUser = messageSideUserRepository.getReferenceById(command.userId());
+                            UserWithFMJpaEntity loginUser = messageRepository.getUserWithFMReferenceById(command.userId());
                             ChatRoomJpaEntity existingRoom = messageRepository.findChatRoomById(finalRoomId)
                                     .orElseThrow(() -> new FMBusinessRuleViolationException("존재하지 않는 채팅방입니다."));
 
@@ -168,7 +164,7 @@ public class MessageCommandService implements MessageCommandUseCase {
                 newRoom.getId(), command.userId(), command.chatMembers());
 
         //로그인 유저 jpaEntity로 담기
-        UserWithFMJpaEntity loginUser = messageSideUserRepository.getReferenceById(command.userId());
+        UserWithFMJpaEntity loginUser = messageRepository.getUserWithFMReferenceById(command.userId());
 
         //로그인 유저 멤버 저장
         ChatRoomMemberJpaEntity myMembership = ChatRoomMemberJpaEntity.createMembership(newRoom, loginUser);
@@ -218,8 +214,7 @@ public class MessageCommandService implements MessageCommandUseCase {
     public SendView sendMessageCommandHandle(SendMessageCommand command) {
         log.info("[SendMessageService] 메시지 전송 프로세스 시작 - 요청자: {}, 방번호: {}", command.senderId(), command.roomId());
 
-        UserWithFMJpaEntity sender = messageSideUserRepository.findUserById(command.senderId())
-                .map(obj -> (UserWithFMJpaEntity) obj)
+        UserWithFMJpaEntity sender = messageRepository.findUserWithFMById(command.senderId())
                 .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 사용자입니다."));
 
         //채팅방 조회
@@ -244,13 +239,9 @@ public class MessageCommandService implements MessageCommandUseCase {
             //위에서 상대가 없다면 로그인 유저를 넣었으므로 나와의 채팅방 인식
             friendStatus = "me";
         } else {
-            Optional<FriendJpaEntity> relationOpt = messageSideFriendRepository.findByFromUserId_IdAndToUserId_Id(command.senderId(), targetUser.getId());
-            if (relationOpt.isEmpty()) {
-                relationOpt = messageSideFriendRepository.findByFromUserId_IdAndToUserId_Id(targetUser.getId(), command.senderId());
-            }
-            if (relationOpt.isPresent()) {
-                friendStatus = relationOpt.get().getStatus();
-            }
+            friendStatus = messageRepository.findFriendRelation(command.senderId(), targetUser.getId())
+                    .map(FriendJpaEntity::getStatus)
+                    .orElse("none");
         }
 
         messageEligibilityPolicy.sendable(command.roomId(), command.senderId(), friendStatus, roomMemberCount);
@@ -261,11 +252,6 @@ public class MessageCommandService implements MessageCommandUseCase {
 
         //읽음 상태 기본 false
         boolean isRead = false;
-
-//        //웹소켓으로 상대방이 방에 머무는 거 확인 후 있다면 true 처리
-//        if (targetUser != null) {
-//            isRead = sessionManager.isUserInRoom(targetUser.getId(), command.roomId());
-//        }
 
         //로그인 유저를 제외한 메시지를 받는 사람들 뽑기
         List<MessageReadJpaEntity> readOtherUsers = new ArrayList<>();
@@ -298,14 +284,9 @@ public class MessageCommandService implements MessageCommandUseCase {
             readOtherUsers.add(newUnreadMessage);
 
             //웹소켓에서도 친구 관계가 아니라면 '닉네임(알 수 없음)'으로 데이터 가공
-            String relationWithReceiver = "none";
-            Optional<FriendJpaEntity> recOpt = messageSideFriendRepository.findByFromUserId_IdAndToUserId_Id(command.senderId(), receiver.getId());
-            if (recOpt.isEmpty()) {
-                recOpt = messageSideFriendRepository.findByFromUserId_IdAndToUserId_Id(receiver.getId(), command.senderId());
-            }
-            if (recOpt.isPresent()) {
-                relationWithReceiver = recOpt.get().getStatus();
-            }
+            String relationWithReceiver = messageRepository.findFriendRelation(command.senderId(), receiver.getId())
+                    .map(FriendJpaEntity::getStatus)
+                    .orElse("none");
 
             //웹소켓 시 친구 상태가 아니라면 알 수 없음
             String displayNickname = sender.getNickname();
@@ -332,7 +313,7 @@ public class MessageCommandService implements MessageCommandUseCase {
 
         //루프가 끝난 후 모아둔 읽음 행들 모두 저장
         if (!readOtherUsers.isEmpty()) {
-            springDataMessageReadRepository.saveAll(readOtherUsers);
+            messageRepository.saveAllMessageRead(readOtherUsers);
         }
 
         // 🎯 2. 나와의 채팅방이 아닐 때만 상대방(targetUser)에게 알림 이벤트 발행
@@ -388,31 +369,29 @@ public class MessageCommandService implements MessageCommandUseCase {
 
     //메시지 읽음
     @Override
-    public ReadView readMessageCommandHandle(Long roomId, Long userId) {
+    public ReadView readMessageCommandHandle(ReadMessageCommand command) {
 
         //방 존재 검증
-        boolean existsRoom = springDataChatRoomRepository.existsById(roomId);
-        if (!existsRoom) {
+        if (!messageRepository.existsRoomById(command.roomId())) {
             throw new FMResourceNotFoundException("존재하지 않거나 삭제된 채팅방입니다.");
         }
 
         //권한 체크(방 멤버가 맞는지)
-        boolean isMember = chatRoomMemberRepository.existsByRoomId_IdAndUserId_Id(roomId, userId);
-        if (!isMember) {
+        if (!messageRepository.existsMemberByRoomIdAndUserId(command.roomId(), command.userId())) {
             throw new FMResourceAccessDeniedException("해당 채팅방에 접근할 권한이 없습니다.");
         }
 
         //상대방 닉네임 추출
-        List<ChatRoomMemberJpaEntity> members = chatRoomMemberRepository.findByRoomId_Id(roomId);
+        List<ChatRoomMemberJpaEntity> members = messageRepository.findMembersByRoomId(command.roomId());
         UserWithFMJpaEntity targetUser = members.stream()
                 .map(ChatRoomMemberJpaEntity::getUserId)
-                .filter(user -> !user.getId().equals(userId))
+                .filter(user -> !user.getId().equals(command.userId()))
                 .findFirst()
                 .orElse(members.get(0).getUserId()); //나와의 채팅방 대비
 
         //이 채팅방에서 상대방이 보낸 메시지 중 안읽은 메시지 뽑기
         //v2->읽음 테이블에서 userId가 로그인 유저이면서 메시지 안읽음 여부 확인(메시지 안읽고 알림만 읽은 경우 고려)
-        List<MessageReadJpaEntity> unreadMessages = springDataMessageReadRepository.findByRoomId_IdAndUserId_IdAndIsMsgReadFalse(roomId, userId);
+        List<MessageReadJpaEntity> unreadMessages = messageRepository.findUnreadMessages(command.roomId(), command.userId());
 
         //안읽은 메시지 리스트가 비어있는지 체크
         boolean hasUnread = !unreadMessages.isEmpty();
@@ -428,7 +407,7 @@ public class MessageCommandService implements MessageCommandUseCase {
         }
 
         return new ReadView(
-                roomId,
+                command.roomId(),
                 targetUser.getId(),
                 targetUser.getNickname(),
                 hasUnread
@@ -441,11 +420,11 @@ public class MessageCommandService implements MessageCommandUseCase {
         log.info("[LeaveChatRoomCommandService] 채팅방 나가기 검증 시작 - 방ID: {}, 유저ID: {}", roomId, userId);
 
         //나가려는 채팅방이 존재하는 지 검증(404)
-        ChatRoomJpaEntity chatRoom = springDataChatRoomRepository.findById(roomId)
+        ChatRoomJpaEntity chatRoom = messageRepository.findChatRoomById(roomId)
                 .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않거나 이미 나간 채팅방입니다."));
 
         //해당 방에 들어있는 모든 멤버 가져오기
-        List<ChatRoomMemberJpaEntity> allMembers = springDataChatRoomMemberRepository.findByRoomId_Id(roomId);
+        List<ChatRoomMemberJpaEntity> allMembers = messageRepository.findMembersByRoomId(roomId);
 
         //정책 위임(403, 409)
         messageEligibilityPolicy.leaveChatRoom(userId, roomId, allMembers);
@@ -465,9 +444,9 @@ public class MessageCommandService implements MessageCommandUseCase {
         //로그인 유저가 방에 남은 마지막 사용자일 때(chat_room, chat_room_member, message 모두 삭제)
         if (currentMemberCount <= 1) {
             log.info("[LeaveChatRoomCommandService] 마지막 사용자 퇴장 처리 -> 방 폭파 진행");
-            springDataMessageRepository.deleteByRoomId_Id(roomId);
-            springDataChatRoomMemberRepository.delete(myMembership);
-            springDataChatRoomRepository.delete(chatRoom);
+            messageRepository.deleteMessagesByRoomId(roomId); //안내 문구, 읽음 여부, 메시지 삭제
+            messageRepository.deleteChatRoomMember(myMembership);
+            messageRepository.deleteChatRoom(chatRoom);
 
             return new LeaveChatRoomView(
                     true,
@@ -481,7 +460,7 @@ public class MessageCommandService implements MessageCommandUseCase {
 
         //상대방이 남아있을 때(chat_room_member에서만 삭제)
         log.info("[LeaveChatRoomCommandService] 상대방 존재 확인 -> 로그인 유저 멤버 행만 삭제");
-        springDataChatRoomMemberRepository.delete(myMembership);
+        messageRepository.deleteChatRoomMember(myMembership);
 
         // 🎯 [수정]: 전체 멤버 중 '내가 아닌 사람(남겨진 사람)'을 정확히 찾아옵니다.
         // 이러면 나중에 다대다로 확장되어도 최소한 남은 사람 중 한 명을 안전하게 찝어올 수 있습니다.
@@ -493,14 +472,9 @@ public class MessageCommandService implements MessageCommandUseCase {
             }
         }
 
-        String friendStatus = "none";
-        Optional<FriendJpaEntity> relationOpt = messageSideFriendRepository.findByFromUserId_IdAndToUserId_Id(userId, targetUser.getId());
-        if (relationOpt.isEmpty()) {
-            relationOpt = messageSideFriendRepository.findByFromUserId_IdAndToUserId_Id(targetUser.getId(), userId);
-        }
-        if (relationOpt.isPresent()) {
-            friendStatus = relationOpt.get().getStatus();
-        }
+        String friendStatus = messageRepository.findFriendRelation(userId, targetUser.getId())
+                .map(FriendJpaEntity::getStatus)
+                .orElse("none");
 
         UserWithFMJpaEntity loginUser = myMembership.getUserId();
 

@@ -30,17 +30,8 @@ import java.util.Optional;
 public class MessageQueryService implements MessageQueryUseCase {
 
     private final MessageRepository messageRepository;
-    private final MessageSideEnrollmentRepository messageSideEnrollmentRepository;
-    private final MessageSideUserRepository messageSideUserRepository;
-    private final SpringDataChatRoomMemberRepository springDataChatRoomMemberRepository;
-    private final MessageSideFriendRepository messageSideFriendRepository;
     //정책 주입
     private final MessageEligibilityPolicy messageEligibilityPolicy;
-    private final SpringDataMessageRepository springDataMessageRepository;
-    private final SpringDataChatRoomRepository springDataChatRoomRepository;
-    private final SpringDataMessageReadRepository springDataMessageReadRepository;
-    private final SpringDataMessageAnnounceRepository springDataMessageAnnounceRepository;
-
 
     //메시지 채팅 목록
     @Override
@@ -48,13 +39,13 @@ public class MessageQueryService implements MessageQueryUseCase {
         log.info("[FindChatRoomQueryService] 채팅방 목록 조회 비즈니스 가공 시작 - 조회 요청 유저ID: {}", query.userId());
 
         //현재 로그인한 유저 정보 확인(학생/강사 판별)
-        UserWithFMJpaEntity loginUser = messageSideUserRepository.findById(query.userId())
+        UserWithFMJpaEntity loginUser = messageRepository.findUserWithFMById(query.userId())
                 .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 유저입니다."));
         String loginUserRole = loginUser.getRole(); //학생 또는 강사
 
         //채팅방 리스트 및 수강신청 전체 내역 로드
         List<ChatRoomQueryProjection> pros = messageRepository.findChatRoomByUserId(query.userId());
-        List<EnrollmentWithFMJpaEntity> myEnrollments = messageSideEnrollmentRepository.findByUserId_Id(query.userId());
+        List<EnrollmentWithFMJpaEntity> myEnrollments = messageRepository.findEnrollmentsByUserId(query.userId());
 
         //로그인 유저가 참여중인 방ID만 모아서 가장 작은 ID(제일 먼저 만든 방) 찾기(나와의 채팅방)
         Long firstRoomId = pros.stream()
@@ -69,7 +60,7 @@ public class MessageQueryService implements MessageQueryUseCase {
             Long roomId = pro.roomId();
 
             //상대방 유저 찾기
-            List<ChatRoomMemberJpaEntity> allMembers = springDataChatRoomMemberRepository.findByRoomId_Id(roomId);
+            List<ChatRoomMemberJpaEntity> allMembers = messageRepository.findMembersByRoomId(roomId);
             //채팅방 멤버 수(로그인 유저 포함)
             Long inMemberCount = (long) allMembers.size();
 
@@ -100,8 +91,8 @@ public class MessageQueryService implements MessageQueryUseCase {
                     //해당 채팅방에 로그인 유저 말고 다른 사람이 보낸 메시지가 있는지 확인
                     //로그인 유저 외에 다른 사용자가 보낸 메시지가 있다면 그 방은 상대방이 나간 방
                     //과거 메시지 내역에서 나간 상대방의 유저 정보를 역추적하여 가져옴
-                    Optional<MessageJpaEntity> otherMsgOpt = springDataMessageRepository
-                            .findFirstByRoomId_IdAndSenderId_IdNotOrderByIdDesc(roomId, query.userId());
+                    Optional<MessageJpaEntity> otherMsgOpt = messageRepository
+                            .findLatestMessageExceptMe(roomId, query.userId());
 
                     if (otherMsgOpt.isPresent()) {
                         //나간 상대방 유저 정보 꺼내기
@@ -122,13 +113,9 @@ public class MessageQueryService implements MessageQueryUseCase {
             //친구 삭제의 경우에도 (알 수 없음) 처리, 있으면 실제 상태 추출
             //친구 상태 양방향 조회 (나와의 채팅이면 관계 조회 필요없이 me 상태로 처리)
             if (targetUser != null && !"me".equals(friendStatus) && !targetUser.getId().equals(query.userId())) {
-                Optional<FriendJpaEntity> relationOpt = messageSideFriendRepository.findByFromUserId_IdAndToUserId_Id(query.userId(), targetUser.getId());
-                if (relationOpt.isEmpty()) {
-                    relationOpt = messageSideFriendRepository.findByFromUserId_IdAndToUserId_Id(targetUser.getId(), query.userId());
-                }
-                if (relationOpt.isPresent()) {
-                    friendStatus = relationOpt.get().getStatus();
-                }
+                friendStatus = messageRepository.findFriendRelation(query.userId(), targetUser.getId())
+                        .map(FriendJpaEntity::getStatus)
+                        .orElse("none");
             }
 
             //학생끼리의 대화방
@@ -167,7 +154,7 @@ public class MessageQueryService implements MessageQueryUseCase {
                     }
                 } else if ("TEACHER".equals(loginUserRole)) {
                     //로그인 유저가 강사, 상대가 학생
-                    List<EnrollmentWithFMJpaEntity> targetEnrollments = messageSideEnrollmentRepository.findByUserId_Id(targetUser.getId());
+                    List<EnrollmentWithFMJpaEntity> targetEnrollments = messageRepository.findEnrollmentsByUserId(targetUser.getId());
                     for (EnrollmentWithFMJpaEntity enrollment : targetEnrollments) {
                         LectureWithFMJpaEntity lecture = enrollment.getLectureId();
                         if (lecture.getTeacherId().getId().equals(query.userId())) {
@@ -182,9 +169,7 @@ public class MessageQueryService implements MessageQueryUseCase {
             LocalDateTime lastChattedAt = (pro.lastMessage() != null) ? pro.lastMessage().getCreatedAt() : null;
 
             //안내 문구 시간 정렬 기준 추가
-            LocalDateTime lastAnnounceAt = springDataMessageAnnounceRepository.findFirstByRoomId_IdOrderByCreatedAtDesc(roomId)
-                    .map(announce -> announce.getCreatedAt())
-                    .orElse(null);
+            LocalDateTime lastAnnounceAt = messageRepository.findLatestAnnounceTime(roomId).orElse(null);
 
             //실제 정렬 기준이 될 시간 계산(메시지 시간, 안내 문구 시간)
             LocalDateTime lastestOrderTime = lastAnnounceAt;
@@ -206,7 +191,7 @@ public class MessageQueryService implements MessageQueryUseCase {
                 unreadCount = 0L;
             } else {
                 //일반 채팅방만 안읽은 메시지 카운트
-                unreadCount = springDataMessageReadRepository.countByRoomId_IdAndUserId_IdAndIsMsgReadFalse(roomId, query.userId());
+                unreadCount = messageRepository.countUnreadMessage(roomId, query.userId());
             }
 
             //Query 사용으로 구조 변경
@@ -273,25 +258,23 @@ public class MessageQueryService implements MessageQueryUseCase {
         log.info("[GetMessageHistoryQueryService] 내역 조회 시작 - 유저: {}, 방: {}, 커서ID: {}", userId, roomId, lastMessageId);
 
         // 1. 유저 정보 및 권한 확인
-        UserWithFMJpaEntity loginUser = messageSideUserRepository.findUserById(userId)
-                .map(obj -> (UserWithFMJpaEntity) obj)
+        UserWithFMJpaEntity loginUser = messageRepository.findUserWithFMById(userId)
                 .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 유저입니다."));
 
         //방 존재 검증
-        boolean existsRoom = springDataChatRoomRepository.existsById(roomId);
-        if (!existsRoom) {
+        if (!messageRepository.existsRoomById(roomId)) {
             throw new FMResourceNotFoundException("존재하지 않거나 삭제된 채팅방입니다.");
         }
 
         //방 멤버가 맞는지 검증
-        boolean isCurrentMember = springDataChatRoomMemberRepository.existsByRoomId_IdAndUserId_Id(roomId, userId);
+        boolean isCurrentMember = messageRepository.existsMemberByRoomIdAndUserId(roomId, userId);
         //멤버엔 없지만 과거 메시지엔 있는지
-        boolean hasPastMessage = springDataMessageRepository.existsByRoomId_IdAndSenderId_Id(roomId, userId);
+        boolean hasPastMessage = messageRepository.existsMessageByRoomIdAndSenderId(roomId, userId);
         if (!isCurrentMember) {
             throw new FMResourceAccessDeniedException("해당 채팅방에 접근할 권한이 없습니다.");
         }
 
-        List<ChatRoomMemberJpaEntity> allMembers = springDataChatRoomMemberRepository.findByRoomId_Id(roomId);
+        List<ChatRoomMemberJpaEntity> allMembers = messageRepository.findMembersByRoomId(roomId);
 
         //채팅방 나갔다 들어온 사람 처리
         //기존 멤버는 모든 메시지 다 보여줌(채팅방 생성 시간==멤버 생성 시간)
@@ -315,7 +298,6 @@ public class MessageQueryService implements MessageQueryUseCase {
             }
         }
 
-
         // 2. 상대방 유저 특정 및 나가기 역추적 (목록 조회 로직 이식)
         UserWithFMJpaEntity targetUser = null;
         for (ChatRoomMemberJpaEntity member : allMembers) {
@@ -331,16 +313,15 @@ public class MessageQueryService implements MessageQueryUseCase {
         // 나와의 채팅 혹은 상대방 퇴장 방 판별
         if (targetUser == null && allMembers.size() == 1) {
             // 목록에서 구한 최초 방 ID 조회 방식을 대용하기 위해, 메시지 역추적 진행
-            Optional<MessageJpaEntity> otherMsgOpt = springDataMessageRepository
-                    .findFirstByRoomId_IdAndSenderId_IdNotOrderByIdDesc(roomId, userId);
+            Optional<MessageJpaEntity> otherMsgOpt = messageRepository
+                    .findLatestMessageExceptMe(roomId, userId);
 
             if (otherMsgOpt.isPresent()) {
                 targetUser = otherMsgOpt.get().getSenderId();
                 isLeftRoom = true;
             } else {
-
                 // 🎯 변경 2: 메시지가 0개일 때, 로그인 유저가 참여한 방 중 가장 작은 ID(최초 생성 방)와 비교
-                List<ChatRoomMemberJpaEntity> myAllRooms = springDataChatRoomMemberRepository.findByUserId_Id(userId);
+                List<ChatRoomMemberJpaEntity> myAllRooms = messageRepository.findChatRoomMembersByUserId(userId);
                 Long firstRoomId = myAllRooms.stream()
                         .map(member -> member.getRoomId().getId())
                         .min(Long::compare)
@@ -360,13 +341,9 @@ public class MessageQueryService implements MessageQueryUseCase {
 
         // 3. 친구 상태 추출 (나와의 채팅이 아닐 때)
         if (!"me".equals(friendStatus) && targetUser != null && !targetUser.getId().equals(userId)) {
-            Optional<FriendJpaEntity> relationOpt = messageSideFriendRepository.findByFromUserId_IdAndToUserId_Id(userId, targetUser.getId());
-            if (relationOpt.isEmpty()) {
-                relationOpt = messageSideFriendRepository.findByFromUserId_IdAndToUserId_Id(targetUser.getId(), userId);
-            }
-            if (relationOpt.isPresent()) {
-                friendStatus = relationOpt.get().getStatus();
-            }
+            friendStatus = messageRepository.findFriendRelation(userId, targetUser.getId())
+                    .map(FriendJpaEntity::getStatus)
+                    .orElse("none");
         }
 
         // 4. 활성화 여부 정책 판별
@@ -381,7 +358,7 @@ public class MessageQueryService implements MessageQueryUseCase {
                 !("STUDENT".equals(loginUser.getRole()) && "STUDENT".equals(targetUser.getRole()))) {
 
             if ("STUDENT".equals(loginUser.getRole())) {
-                List<EnrollmentWithFMJpaEntity> myEnrollments = messageSideEnrollmentRepository.findByUserId_Id(userId);
+                List<EnrollmentWithFMJpaEntity> myEnrollments = messageRepository.findEnrollmentsByUserId(userId);
                 for (EnrollmentWithFMJpaEntity enrollment : myEnrollments) {
                     LectureWithFMJpaEntity lecture = enrollment.getLectureId();
                     if (lecture.getTeacherId().getId().equals(targetUser.getId())) {
@@ -389,7 +366,7 @@ public class MessageQueryService implements MessageQueryUseCase {
                     }
                 }
             } else if ("TEACHER".equals(loginUser.getRole())) {
-                List<EnrollmentWithFMJpaEntity> targetEnrollments = messageSideEnrollmentRepository.findByUserId_Id(targetUser.getId());
+                List<EnrollmentWithFMJpaEntity> targetEnrollments = messageRepository.findEnrollmentsByUserId(targetUser.getId());
                 for (EnrollmentWithFMJpaEntity enrollment : targetEnrollments) {
                     LectureWithFMJpaEntity lecture = enrollment.getLectureId();
                     if (lecture.getTeacherId().getId().equals(userId)) {
@@ -400,12 +377,7 @@ public class MessageQueryService implements MessageQueryUseCase {
         }
 
         //메시지 내역 자르기
-        List<MessageJpaEntity> messages;
-        if (lastMessageId == null) {
-            messages = springDataMessageRepository.findTop20ByRoomId_IdAndCreatedAtGreaterThanEqualOrderByIdDesc(roomId, messageVisibleStartTimeLine);
-        } else {
-            messages = springDataMessageRepository.findTop20ByRoomId_IdAndIdLessThanAndCreatedAtGreaterThanEqualOrderByIdDesc(roomId, lastMessageId, messageVisibleStartTimeLine);
-        }
+        List<MessageJpaEntity> messages = messageRepository.findMessageHistory(roomId, lastMessageId, messageVisibleStartTimeLine);
 
         //프론트 응답: 과거 대화가 위로, 최신 대화가 아래로
         List<MessageJpaEntity> sortedMessages = new ArrayList<>(messages);
