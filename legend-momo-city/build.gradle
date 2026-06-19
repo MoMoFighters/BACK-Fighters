@@ -67,6 +67,9 @@ dependencies {
     /* 설명. 모니터링 - Actuator + Prometheus 메트릭 노출 */
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'io.micrometer:micrometer-registry-prometheus'
+
+    /* 설명. 모니터링 - Loki */
+    implementation 'com.github.loki4j:loki-logback-appender:1.5.2'
 }
 
 tasks.named('test') {
