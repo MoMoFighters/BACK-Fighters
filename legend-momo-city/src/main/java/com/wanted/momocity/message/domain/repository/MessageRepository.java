@@ -4,10 +4,7 @@ import com.wanted.momocity.friend.enrollment.EnrollmentWithFMJpaEntity;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import com.wanted.momocity.message.domain.model.ChatRoom;
-import com.wanted.momocity.message.infrastructure.persistence.ChatRoomJpaEntity;
-import com.wanted.momocity.message.infrastructure.persistence.ChatRoomMemberJpaEntity;
-import com.wanted.momocity.message.infrastructure.persistence.MessageJpaEntity;
-import com.wanted.momocity.message.infrastructure.persistence.MessageReadJpaEntity;
+import com.wanted.momocity.message.infrastructure.persistence.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -69,7 +66,6 @@ public interface MessageRepository {
 
     //채팅방 나가기: 채팅방 삭제
     void deleteChatRoom(ChatRoomJpaEntity room);
-    //----
 
     //채팅방 개설 시 기존 채팅방 존재 여부 확인
     Optional<Long> findExistingRoom(Long userId, Long targetUserId);
@@ -84,5 +80,18 @@ public interface MessageRepository {
     //멤버 찾기
     List<ChatRoomMemberJpaEntity> findMembersByRoomId(Long roomId);
 
+    //새로운 메시지 저장
     void saveMessage(MessageJpaEntity newMessage);
+
+    //안내 문구 내역 조회
+    List<MessageAnnounceJpaEntity> findAnnounceHistory(Long roomId, LocalDateTime startTimeLine);
+
+    //특정 메시지를 안읽은 사람 수
+    Long countUnreadMembersForMessage(Long messageId);
+
+    // 회원가입 직후 방 존재 여부 확인용
+    boolean existsChatRoomMemberByUserId(Long userId);
+
+    //나와의 채팅방 인식: 첫 번째 채팅방 조회
+    Optional<Long> findFirstRoomIdByUserId(Long userId);
 }

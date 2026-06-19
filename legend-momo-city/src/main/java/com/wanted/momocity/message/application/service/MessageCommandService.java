@@ -376,10 +376,11 @@ public class MessageCommandService implements MessageCommandUseCase {
             throw new FMResourceNotFoundException("존재하지 않거나 삭제된 채팅방입니다.");
         }
 
+        //권한 체크를 위해 멤버 여부 조회
+        boolean isCurrentMember = messageRepository.existsMemberByRoomIdAndUserId(command.roomId(), command.userId());
+
         //권한 체크(방 멤버가 맞는지)
-        if (!messageRepository.existsMemberByRoomIdAndUserId(command.roomId(), command.userId())) {
-            throw new FMResourceAccessDeniedException("해당 채팅방에 접근할 권한이 없습니다.");
-        }
+        messageEligibilityPolicy.validateAccess(command.roomId(), command.userId(), isCurrentMember);
 
         //상대방 닉네임 추출
         List<ChatRoomMemberJpaEntity> members = messageRepository.findMembersByRoomId(command.roomId());

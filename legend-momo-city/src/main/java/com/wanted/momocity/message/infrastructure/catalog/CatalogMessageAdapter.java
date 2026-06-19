@@ -149,16 +149,6 @@ public class CatalogMessageAdapter implements MessageRepository {
         springDataChatRoomRepository.delete(room);
     }
 
-//    private final SpringDataFriendRepository springDataFriendRepository;
-//    private final SpringDataChatRoomMemberRepository springDataChatRoomMemberRepository;
-//    //충돌 회피로 만든 수강신청 인터페이스 저장소
-//    private final MessageSideEnrollmentRepository messageSideEnrollmentRepository;
-//    //충돌 회피로 만든 사용자 인터페이스 저장소
-//    private final MessageSideUserRepository messageSideUserRepository;
-//    private final SpringDataMessageRepository springDataMessageRepository;
-//    private final SpringDataChatRoomRepository springDataChatRoomRepository;
-//    private final SpringDataMessageReadRepository springDataMessageReadRepository;
-
     //로그인 유저의 채팅방 조회
     @Override
     public List<ChatRoomQueryProjection> findChatRoomByUserId(Long userId) {
@@ -284,5 +274,34 @@ public class CatalogMessageAdapter implements MessageRepository {
         log.info("[CatalogMessageAdapter] message 테이블에 저장 - 요청자ID: {}", newMessage.getSenderId().getId());
 
         springDataMessageRepository.save(newMessage);
+    }
+
+    //안내 문구 내역 조회
+    @Override
+    public List<MessageAnnounceJpaEntity> findAnnounceHistory(Long roomId, LocalDateTime startTimeLine) {
+        //나갔다 재입장한 유저의 타임라인 이후 발생한 공지는 전체를 가져와 메시지와 병합하여 정렬
+        return SpringDataMessageAnnounceRepository.findByRoomId_IdAndCreatedAtGreaterThanEqual(roomId, startTimeLine);
+    }
+
+    //(말풍선)하나의 메시지에 대해 읽지 않은 사람 수
+    @Override
+    public Long countUnreadMembersForMessage(Long messageId) {
+        //메시지 읽음 테이블에서 해당 메시지 아이디 기준으로 isMsgRead가 false인 개수
+        return springDataMessageReadRepository.countByMessageId_IdAndIsMsgReadFalse(messageId);
+    }
+
+    //회원가입 직후 방 존재 여부 확인용
+    @Override
+    public boolean existsChatRoomMemberByUserId(Long userId) {
+        return springDataChatRoomMemberRepository.existsByUserId_Id(userId);
+    }
+
+    //나와의 채팅방 인식: 첫 번째 방
+    @Override
+    public Optional<Long> findFirstRoomIdByUserId(Long userId) {
+        List<ChatRoomMemberJpaEntity> myAllRooms = springDataChatRoomMemberRepository.findByUserId_Id(userId);
+        return myAllRooms.stream()
+                .map(member -> member.getRoomId().getId())
+                .min(Long::compare);
     }
 }

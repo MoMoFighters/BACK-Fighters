@@ -6,6 +6,7 @@ import com.wanted.momocity.friend.fmexception.FMResourceConflictException;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 
+import com.wanted.momocity.message.domain.repository.MessageRepository;
 import com.wanted.momocity.message.infrastructure.persistence.ChatRoomMemberJpaEntity;
 import com.wanted.momocity.message.infrastructure.persistence.SpringDataChatRoomMemberRepository;
 
@@ -19,10 +20,12 @@ import java.util.List;
 @Slf4j
 public class MessageEligibilityPolicy {
 
-    private final SpringDataChatRoomMemberRepository springDataChatRoomMemberRepository;
+    private final MessageRepository messageRepository;
+//    private final SpringDataChatRoomMemberRepository springDataChatRoomMemberRepository;
 
-    public MessageEligibilityPolicy(SpringDataChatRoomMemberRepository springDataChatRoomMemberRepository) {
-        this.springDataChatRoomMemberRepository = springDataChatRoomMemberRepository;
+    public MessageEligibilityPolicy(MessageRepository messageRepository) {
+        this.messageRepository = messageRepository;
+//        this.springDataChatRoomMemberRepository = springDataChatRoomMemberRepository;
     }
 
     //유저 상태, 친구 상태, 역할을 종합하여 (알 수 없음) 가공 여부를 판별하는 규칙
@@ -95,14 +98,14 @@ public class MessageEligibilityPolicy {
         log.info("[MessageEligibilityPolicy] 회원가입 직후 나와의 채팅방 중복 생성 여부 검증 - 유저ID: {}", userId);
 
         //내가 참여 중인 행이 단 1개라도 있으면 이미 방이 파진 것
-        return springDataChatRoomMemberRepository.existsByUserId_Id(userId);
+        return messageRepository.existsChatRoomMemberByUserId(userId);
     }
 
     //메시지 전송 검증
     public void sendable(Long roomId, Long senderId, String friendStatus, long roomMemberCount) {
 
         //로그인한 유저가 채팅방의 멤버가 맞는지 검증
-        boolean isMember = springDataChatRoomMemberRepository.existsByRoomId_IdAndUserId_Id(roomId, senderId);
+        boolean isMember = messageRepository.existsMemberByRoomIdAndUserId(roomId, senderId);
 
         if (!isMember) {
             log.warn("[MessageEligibilityPolicy] 권한 없음 - 요청 유저가 방의 멤버가 아님. 유저: {}, 방: {}", senderId, roomId);
@@ -110,8 +113,7 @@ public class MessageEligibilityPolicy {
         }
 
         //나와의 채팅방 여부 확인
-        Long selfRoomId = springDataChatRoomMemberRepository.findFirstRoomIdByUserId_Id(senderId)
-                .map(member -> member.getRoomId().getId())
+        Long selfRoomId = messageRepository.findFirstRoomIdByUserId(senderId)
                 .orElse(null);
         //나와의 채팅방이라면 상대방 퇴장 및 친구 상태 검증 모두 통과
         if (roomId.equals(selfRoomId)) {
@@ -139,6 +141,14 @@ public class MessageEligibilityPolicy {
 
     }
 
+    //메시지 내역 조회 검증
+    public void validateAccess(Long roomId, Long userId, boolean isCurrentMember) {
+        if (!isCurrentMember) {
+            log.warn("[MessageEligibilityPolicy] 접근 권한 없음 - 요청 유저가 방의 멤버가 아님. 유저ID: {}, 방ID: {}", userId, roomId);
+            throw new FMResourceAccessDeniedException("해당 채팅방에 접근할 권한이 없습니다.");
+        }
+    }
+
     //채팅방 나가기 검증
     public void leaveChatRoom(Long userId, Long roomId, List<ChatRoomMemberJpaEntity> allMembers) {
         //로그인 유저가 해당 방의 멤버가 맞는지 확인(403)
@@ -148,7 +158,7 @@ public class MessageEligibilityPolicy {
                 .orElseThrow(() -> new FMResourceAccessDeniedException("해당 채팅방을 나갈 권한이 없습니다."));
 
         //사용자의 최초 방ID를 비교(나와의 채팅방)(409)
-        List<ChatRoomMemberJpaEntity> myAllRooms = springDataChatRoomMemberRepository.findByUserId_Id(userId);
+        List<ChatRoomMemberJpaEntity> myAllRooms = messageRepository.findChatRoomMembersByUserId(userId);
         Long firstRoomId = myAllRooms.stream()
                 .map(member -> member.getRoomId().getId())
                 .min(Long::compare)

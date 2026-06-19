@@ -6,22 +6,22 @@ import com.wanted.momocity.friend.fmexception.FMResourceNotFoundException;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 import com.wanted.momocity.friend.lecture.LectureWithFMJpaEntity;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
+import com.wanted.momocity.message.application.command.GetMessageHistoryQuery;
 import com.wanted.momocity.message.application.policy.MessageEligibilityPolicy;
 import com.wanted.momocity.message.application.query.FindChatRoomQuery;
 import com.wanted.momocity.message.application.usecase.MessageQueryUseCase;
 import com.wanted.momocity.message.domain.repository.ChatRoomQueryProjection;
 import com.wanted.momocity.message.domain.repository.MessageRepository;
 import com.wanted.momocity.message.infrastructure.persistence.*;
+import com.wanted.momocity.message.presentation.api.response.GetMessageHistoryResponse.RoomInfo;
+import com.wanted.momocity.message.presentation.api.response.GetMessageHistoryResponse.Message;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -254,27 +254,31 @@ public class MessageQueryService implements MessageQueryUseCase {
 
     //메시지 내역
     @Override
-    public List<MessageHistoryView> getMessageHistoryQueryHandle(Long roomId, Long userId, Long lastMessageId) {
-        log.info("[GetMessageHistoryQueryService] 내역 조회 시작 - 유저: {}, 방: {}, 커서ID: {}", userId, roomId, lastMessageId);
+    public List<MessageHistoryView> getMessageHistoryQueryHandle(GetMessageHistoryQuery query) {
+        log.info("[GetMessageHistoryQueryService] 내역 조회 시작 - 유저: {}, 방: {}, 커서ID: {}", query.userId(), query.roomId(), query.lastMessageId());
 
         // 1. 유저 정보 및 권한 확인
-        UserWithFMJpaEntity loginUser = messageRepository.findUserWithFMById(userId)
+        UserWithFMJpaEntity loginUser = messageRepository.findUserWithFMById(query.userId())
                 .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 유저입니다."));
 
         //방 존재 검증
-        if (!messageRepository.existsRoomById(roomId)) {
+        if (!messageRepository.existsRoomById(query.roomId())) {
             throw new FMResourceNotFoundException("존재하지 않거나 삭제된 채팅방입니다.");
         }
 
         //방 멤버가 맞는지 검증
-        boolean isCurrentMember = messageRepository.existsMemberByRoomIdAndUserId(roomId, userId);
-        //멤버엔 없지만 과거 메시지엔 있는지
-        boolean hasPastMessage = messageRepository.existsMessageByRoomIdAndSenderId(roomId, userId);
+        boolean isCurrentMember = messageRepository.existsMemberByRoomIdAndUserId(query.roomId(), query.userId());
+        //채팅방 권환 확인 위임
+        messageEligibilityPolicy.validateAccess(query.roomId(), query.userId(), isCurrentMember);
         if (!isCurrentMember) {
             throw new FMResourceAccessDeniedException("해당 채팅방에 접근할 권한이 없습니다.");
         }
 
-        List<ChatRoomMemberJpaEntity> allMembers = messageRepository.findMembersByRoomId(roomId);
+        List<ChatRoomMemberJpaEntity> allMembers = messageRepository.findMembersByRoomId(query.roomId());
+        Long inMemberCount = (long) allMembers.size();
+
+        //일대일의 경우 방이름 없음
+        String roomTitle = (inMemberCount <= 2) ? null : (allMembers.isEmpty() ? null : allMembers.get(0).getRoomId().getRoomTitle());
 
         //채팅방 나갔다 들어온 사람 처리
         //기존 멤버는 모든 메시지 다 보여줌(채팅방 생성 시간==멤버 생성 시간)
@@ -284,7 +288,7 @@ public class MessageQueryService implements MessageQueryUseCase {
         if (isCurrentMember) {
             //현재 멤버인 경우 나의 멤버 정보 추출
             ChatRoomMemberJpaEntity myMembership = allMembers.stream()
-                    .filter(member -> member.getUserId().getId().equals(userId))
+                    .filter(member -> member.getUserId().getId().equals(query.userId()))
                     .findFirst()
                     .orElse(null);
 
@@ -301,7 +305,7 @@ public class MessageQueryService implements MessageQueryUseCase {
         // 2. 상대방 유저 특정 및 나가기 역추적 (목록 조회 로직 이식)
         UserWithFMJpaEntity targetUser = null;
         for (ChatRoomMemberJpaEntity member : allMembers) {
-            if (!member.getUserId().getId().equals(userId)) {
+            if (!member.getUserId().getId().equals(query.userId())) {
                 targetUser = member.getUserId();
                 break;
             }
@@ -314,20 +318,20 @@ public class MessageQueryService implements MessageQueryUseCase {
         if (targetUser == null && allMembers.size() == 1) {
             // 목록에서 구한 최초 방 ID 조회 방식을 대용하기 위해, 메시지 역추적 진행
             Optional<MessageJpaEntity> otherMsgOpt = messageRepository
-                    .findLatestMessageExceptMe(roomId, userId);
+                    .findLatestMessageExceptMe(query.roomId(), query.userId());
 
             if (otherMsgOpt.isPresent()) {
                 targetUser = otherMsgOpt.get().getSenderId();
                 isLeftRoom = true;
             } else {
                 // 🎯 변경 2: 메시지가 0개일 때, 로그인 유저가 참여한 방 중 가장 작은 ID(최초 생성 방)와 비교
-                List<ChatRoomMemberJpaEntity> myAllRooms = messageRepository.findChatRoomMembersByUserId(userId);
+                List<ChatRoomMemberJpaEntity> myAllRooms = messageRepository.findChatRoomMembersByUserId(query.userId());
                 Long firstRoomId = myAllRooms.stream()
                         .map(member -> member.getRoomId().getId())
                         .min(Long::compare)
                         .orElse(-1L);
 
-                if (roomId.equals(firstRoomId)) {
+                if (query.roomId().equals(firstRoomId)) {
                     // 내 첫 번째 자동 개설 방이 맞다면 진짜 '나와의 채팅방'
                     targetUser = loginUser;
                     friendStatus = "me";
@@ -340,8 +344,8 @@ public class MessageQueryService implements MessageQueryUseCase {
         }
 
         // 3. 친구 상태 추출 (나와의 채팅이 아닐 때)
-        if (!"me".equals(friendStatus) && targetUser != null && !targetUser.getId().equals(userId)) {
-            friendStatus = messageRepository.findFriendRelation(userId, targetUser.getId())
+        if (!"me".equals(friendStatus) && targetUser != null && !targetUser.getId().equals(query.userId())) {
+            friendStatus = messageRepository.findFriendRelation(query.userId(), targetUser.getId())
                     .map(FriendJpaEntity::getStatus)
                     .orElse("none");
         }
@@ -349,16 +353,16 @@ public class MessageQueryService implements MessageQueryUseCase {
         // 4. 활성화 여부 정책 판별
         boolean shouldMasked = false;
         if (targetUser != null) {
-            shouldMasked = messageEligibilityPolicy.determineNotActive(targetUser, friendStatus, userId);
+            shouldMasked = messageEligibilityPolicy.determineNotActive(targetUser, friendStatus, query.userId());
         }
 
         // 5. 강의명 리스트 추출
         List<String> lectureTitleList = new ArrayList<>();
-        if (targetUser != null && !targetUser.getId().equals(userId) &&
+        if (targetUser != null && !targetUser.getId().equals(query.userId()) &&
                 !("STUDENT".equals(loginUser.getRole()) && "STUDENT".equals(targetUser.getRole()))) {
 
             if ("STUDENT".equals(loginUser.getRole())) {
-                List<EnrollmentWithFMJpaEntity> myEnrollments = messageRepository.findEnrollmentsByUserId(userId);
+                List<EnrollmentWithFMJpaEntity> myEnrollments = messageRepository.findEnrollmentsByUserId(query.userId());
                 for (EnrollmentWithFMJpaEntity enrollment : myEnrollments) {
                     LectureWithFMJpaEntity lecture = enrollment.getLectureId();
                     if (lecture.getTeacherId().getId().equals(targetUser.getId())) {
@@ -369,65 +373,125 @@ public class MessageQueryService implements MessageQueryUseCase {
                 List<EnrollmentWithFMJpaEntity> targetEnrollments = messageRepository.findEnrollmentsByUserId(targetUser.getId());
                 for (EnrollmentWithFMJpaEntity enrollment : targetEnrollments) {
                     LectureWithFMJpaEntity lecture = enrollment.getLectureId();
-                    if (lecture.getTeacherId().getId().equals(userId)) {
+                    if (lecture.getTeacherId().getId().equals(query.userId())) {
                         lectureTitleList.add(lecture.getTitle());
                     }
                 }
             }
         }
 
-        //메시지 내역 자르기
-        List<MessageJpaEntity> messages = messageRepository.findMessageHistory(roomId, lastMessageId, messageVisibleStartTimeLine);
-
-        //프론트 응답: 과거 대화가 위로, 최신 대화가 아래로
-        List<MessageJpaEntity> sortedMessages = new ArrayList<>(messages);
-        Collections.reverse(sortedMessages);
-
-        // 4. View 주머니에 차곡차곡 담기 (스트림 안 쓰고 향상된 for문으로 안전하고 쉽게)
-        List<MessageHistoryView> viewList = new ArrayList<>();
-
-        if (sortedMessages.isEmpty()) {
-            viewList.add(new MessageHistoryView(
-                    null,                                          // messageId -> null
-                    null,                                          // senderId -> null
-                    targetUser != null ? targetUser.getName() : null,
-                    targetUser != null ? targetUser.getNickname() : loginUser.getNickname(),
-                    targetUser != null ? targetUser.getRole() : loginUser.getRole(),
-                    friendStatus,
-                    targetUser != null && !"ACTIVE".equals(targetUser.getStatus()),
-                    lectureTitleList,
-                    null,                                          // content -> null
-                    null,                                          // createdAt -> null
-                    true,
-                    false,
-                    isLeftRoom, //채팅방 나감 여부
-                    shouldMasked,
-                    targetUser != null ? targetUser.getProfileImageUrl() : loginUser.getProfileImageUrl()
-            ));
-        } else {
-            for (MessageJpaEntity msg : sortedMessages) {
-                boolean isMine = msg.getSenderId().getId().equals(userId);
-                viewList.add(new MessageHistoryView(
-                        msg.getId(),
-                        msg.getSenderId().getId(),
-                        targetUser != null ? targetUser.getName() : null, //강사 실제 이름
-                        msg.getSenderId().getNickname(),
-                        msg.getSenderId().getRole(), //역할
-                        friendStatus, //친구 상태
-                        targetUser != null && !"ACTIVE".equals(targetUser.getStatus()),
-                        lectureTitleList,
-                        msg.getContent(), // 🎯 빠져있던 본문 추가!
-                        msg.getCreatedAt(),
-                        true, // 과거 내역은 무조건 다 읽음 처리
-                        isMine,
-                        isLeftRoom,
-                        shouldMasked,
-                        targetUser != null ? targetUser.getProfileImageUrl() : loginUser.getProfileImageUrl()
+        //멤버 정보 조립(로그인 유저 제외)
+        List<MemberInfoView> memberInfoViews = new ArrayList<>();
+        for (ChatRoomMemberJpaEntity m : allMembers) {
+            if (!m.getUserId().getId().equals(query.userId())) {
+                UserWithFMJpaEntity user = m.getUserId();
+                memberInfoViews.add(new MemberInfoView(
+                        user.getId(),
+                        user.getName(),
+                        user.getNickname(),
+                        lectureTitleList.isEmpty() ? null : String.join(",", lectureTitleList),
+                        user.getRole(),
+                        friendStatus,
+                        user.getProfileImageUrl(),
+                        false
                 ));
             }
         }
 
-        return viewList;
+        //메시지 내역과 안내 문구 내역 혼합
+        //메시지 내역 자르기
+        List<MessageJpaEntity> messages = messageRepository.findMessageHistory(query.roomId(), query.lastMessageId(), messageVisibleStartTimeLine);
+        List<MessageAnnounceJpaEntity> announces = messageRepository.findAnnounceHistory(query.roomId(), messageVisibleStartTimeLine);
+
+        //시간순 병합 정렬용
+        record TimeLineItem(
+              Long messageId,
+              Long senderId,
+              String name,
+              String nickname,
+              String role,
+              String content,
+              LocalDateTime createdAt,
+              Long targetUserId,
+              String type,
+              boolean isAnnounce
+        ) {}
+        List<TimeLineItem> holders = new ArrayList<>();
+
+        for (MessageJpaEntity m : messages) {
+            holders.add(new TimeLineItem(
+                    m.getId(),
+                    m.getSenderId().getId(),
+                    m.getSenderId().getName(),
+                    m.getSenderId().getNickname(),
+                    m.getSenderId().getRole(),
+                    m.getContent(),
+                    m.getCreatedAt(),
+                    null,
+                    null,
+                    false
+            ));
+        }
+        if (query.lastMessageId() == null) {
+            for (MessageAnnounceJpaEntity a : announces) {
+                holders.add(new TimeLineItem(
+                        a.getId(),
+                        null,
+                        null,
+                        null,
+                        null,
+                        a.getContent(),
+                        a.getCreatedAt(),
+                        a.getTargetId().getId(),
+                        a.getType(),
+                        true
+                ));
+            }
+        }
+
+        //과거 대화가 위로, 최신 대화가 아래로 가도록 설정
+        holders.sort(Comparator.comparing(TimeLineItem::createdAt));
+
+        //하단 메시지 타임라인 가공
+        List<MessageDetail> messagesView = new ArrayList<>();
+        for (TimeLineItem item : holders) {
+            boolean isMine = !item.isAnnounce() && item.senderId().equals(query.userId());
+
+            //하나의 메시지를 읽지 않은 사람 수(공지는 읽음 수 없음)
+            Long unreadCount = item.isAnnounce() ? null : messageRepository.countUnreadMembersForMessage(item.messageId());
+
+            messagesView.add(new MessageDetail(
+                    item.messageId(),
+                    item.senderId(),
+                    item.name(),
+                    item.nickname(),
+                    item.role(),
+                    friendStatus,
+                    item.content(),
+                    item.createdAt(),
+                    unreadCount,
+                    isMine,
+                    isLeftRoom,
+                    targetUser != null ? targetUser.getProfileImageUrl() : null,
+                    item.targetUserId(),
+                    item.type()
+            ));
+        }
+
+        RoomInfoView roomInfoView = new RoomInfoView(
+                query.roomId(),
+                inMemberCount,
+                roomTitle
+        );
+
+        return List.of(new MessageHistoryView(
+                roomInfoView,
+                memberInfoViews,
+                messagesView,
+                targetUser != null && !"ACTIVE".equals(targetUser.getStatus()),
+                true,
+                shouldMasked
+        ));
     }
 
 }

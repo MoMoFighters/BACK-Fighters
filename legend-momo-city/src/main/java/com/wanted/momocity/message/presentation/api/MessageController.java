@@ -3,6 +3,7 @@ package com.wanted.momocity.message.presentation.api;
 import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.message.application.command.CreateChatRoomCommand;
+import com.wanted.momocity.message.application.command.GetMessageHistoryQuery;
 import com.wanted.momocity.message.application.command.ReadMessageCommand;
 import com.wanted.momocity.message.application.command.SendMessageCommand;
 import com.wanted.momocity.message.application.query.FindChatRoomQuery;
@@ -181,12 +182,16 @@ public class MessageController {
                                                                  @RequestParam(value = "lastMessageId", required = false) Long lastMessgeId) {
         Long userId = userDetails.getUserId();
 
-        List<MessageHistoryView> viewList = messageQueryUseCase.getMessageHistoryQueryHandle(roomId, userId, lastMessgeId);
+        GetMessageHistoryQuery query = new GetMessageHistoryQuery(roomId, userId, lastMessgeId);
 
-        boolean isNoHistory = !viewList.isEmpty() && viewList.get(0).messageId() == null;
+        List<MessageHistoryView> viewList = messageQueryUseCase.getMessageHistoryQueryHandle(query);
+
+        MessageHistoryView mainView = viewList.get(0);
+
+        boolean isNoHistory = mainView.messages() == null || mainView.messages().isEmpty();
         //채팅 내역이 없을 때
         if (isNoHistory && lastMessgeId == null) {
-            GetMessageHistoryResponse responseRoomInfo = GetMessageHistoryResponse.of(roomId, viewList);
+            GetMessageHistoryResponse responseRoomInfo = GetMessageHistoryResponse.of(mainView);
             return ResponseEntity.ok(ApiResponse.success(
                     "SUCCESS",
                     "아직 대화 기록이 없습니다. 첫 메시지를 보내보세요!",
@@ -195,7 +200,7 @@ public class MessageController {
         }
 
         //채팅 내역 있을 때
-        GetMessageHistoryResponse responseData = GetMessageHistoryResponse.of(roomId, viewList);
+        GetMessageHistoryResponse responseData = GetMessageHistoryResponse.of(mainView);
 
         return ResponseEntity.ok(ApiResponse.success(
                 "SUCCESS",
