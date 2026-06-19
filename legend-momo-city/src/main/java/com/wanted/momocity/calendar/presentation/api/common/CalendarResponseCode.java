@@ -12,7 +12,7 @@ public class CalendarResponseCode {
 
     // 캘린더 조회
     public static final String MONTHLY_CALENDAR_FOUND = "CALENDAR-MONTHLY-FOUND";
-    public static final String DAILY_CALENDAR_FOUND   = "CALENDAR-DAILY-FOUND";
+    public final String DAILY_CALENDAR_FOUND   = "CALENDAR-DAILY-FOUND";
 
     // Todo
     public static final String TODO_CREATED          = "CALENDAR-TODO-CREATED";
