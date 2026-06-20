@@ -1,6 +1,6 @@
 package com.wanted.momocity.enrollment.application.usecase;
 
-import com.wanted.momocity.user.domain.model.Category;
+import com.wanted.momocity.global.domain.model.Category;
 
 import java.util.List;
 

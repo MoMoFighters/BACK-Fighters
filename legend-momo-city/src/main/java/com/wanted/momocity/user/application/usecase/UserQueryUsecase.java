@@ -1,7 +1,6 @@
 package com.wanted.momocity.user.application.usecase;
 
 import com.wanted.momocity.user.domain.model.TeacherApplication;
-import com.wanted.momocity.user.domain.model.Category;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

@@ -35,7 +35,6 @@ public class BuildingController {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "메인페이지 렌더링 정보 조회 성공"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
     })
     public ResponseEntity<ApiResponse<List<EnrollmentQueryUsecase.RenderingBuildingsView>>> renderingBuildings(
             @AuthenticationPrincipal CustomUserDetails userDetails ){

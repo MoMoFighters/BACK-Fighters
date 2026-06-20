@@ -1,6 +1,6 @@
 package com.wanted.momocity.user.infrastructure.persistence;
 
-import com.wanted.momocity.user.domain.model.Category;
+import com.wanted.momocity.global.domain.model.Category;
 import com.wanted.momocity.user.domain.model.Role;
 import com.wanted.momocity.user.domain.model.Status;
 import com.wanted.momocity.user.domain.model.User;
