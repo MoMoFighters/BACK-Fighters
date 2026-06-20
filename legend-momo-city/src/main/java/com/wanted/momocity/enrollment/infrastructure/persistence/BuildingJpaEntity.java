@@ -1,4 +1,4 @@
-package com.wanted.momocity.user.infrastructure.persistence;
+package com.wanted.momocity.enrollment.infrastructure.persistence;
 
 import com.wanted.momocity.global.infrastructure.persistence.BaseTimeEntity;
 import com.wanted.momocity.user.domain.model.Category;
