@@ -23,8 +23,11 @@ public interface CommentJpaRepository extends JpaRepository<CommentJpaEntity, Lo
     // 게시글 전체 댓글 조회 (소프트딜리트 제외)
     List<CommentJpaEntity> findAllByPostIdAndDeletedAtIsNull(Long postId);
 
+    // 하드딜리트 (스케줄러용)
+    // deletedAt IS NOT NULL : 소프트딜리트된 댓글만 대상
+    // deletedAt < threshold : 기준일(6개월) 이전 데이터만 삭제
     @Modifying
-    @Query("DELETE FROM PostJpaEntity p WHERE p.deletedAt IS NOT NULL AND p.deletedAt < :threshold")
+    @Query("DELETE FROM CommentJpaEntity c WHERE c.deletedAt IS NOT NULL AND c.deletedAt < :threshold")
     int hardDeleteByDeletedAtBefore(@Param("threshold") LocalDateTime threshold);
 
 }

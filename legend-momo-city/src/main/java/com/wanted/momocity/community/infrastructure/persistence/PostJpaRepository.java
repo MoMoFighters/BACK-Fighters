@@ -33,6 +33,9 @@ public interface PostJpaRepository extends JpaRepository<PostJpaEntity, Long> {
             Pageable pageable
     );
 
+    // 하드딜리트 (스케줄러용)
+    // deletedAt IS NOT NULL : 소프트딜리트된 게시글만 대상
+    // deletedAt < threshold : 기준일(6개월) 이전 데이터만 삭제
     @Modifying
     @Query("DELETE FROM PostJpaEntity p WHERE p.deletedAt IS NOT NULL AND p.deletedAt < :threshold")
     int hardDeleteByDeletedAtBefore(@Param("threshold") LocalDateTime threshold);
