@@ -37,4 +37,10 @@ public interface CalendarJpaRepository extends JpaRepository<CalendarJpaEntity, 
             @Param("endDate") LocalDate endDate
     );
 
+    // 스케줄러용 - 전체 유저 오늘 날짜 포함 일정 조회
+    // Todo  : start = today
+    // Memo  : start <= today <= end
+    List<CalendarJpaEntity> findAllByStartLessThanEqualAndEndGreaterThanEqual(
+            LocalDate start, LocalDate end);
+
 }

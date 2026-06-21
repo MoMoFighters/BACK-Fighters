@@ -61,7 +61,8 @@ public class SecurityConfig {
         configuration.setAllowedOriginPatterns(Arrays.asList(
                 "http://localhost:3000", // React, Vue 등의 개발서버
                 "http://localhost:8081", // 다른 로컬 개발 환경
-                "https://your-production-frontend.com" // 배포하게 될 경우
+                "https://your-production-frontend.com", // 배포하게 될 경우
+                "*"
         ));
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
@@ -139,6 +140,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/logout").authenticated()
                         // 임시 비밀번호 발급도 인증 토큰 필요
                         .requestMatchers("/api/v1/auth/**").permitAll() // 인증 없이 허용
+                        .requestMatchers("/ws-chat/**").permitAll()
                         .anyRequest().authenticated()) // 나머지는 인증 필요
 //                ========================================================================
 
