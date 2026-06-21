@@ -40,6 +40,9 @@ public class PostJpaEntity extends BaseTimeEntity {
     @Column(name = "category", nullable = false)
     private String category;
 
+    @Column(name = "thumbnail_url")
+    private String thumbnailUrl;
+
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
@@ -52,6 +55,7 @@ public class PostJpaEntity extends BaseTimeEntity {
         entity.viewCount = domain.getViewCount();
         entity.likeCount = domain.getLikeCount();
         entity.category = domain.getCategory();
+        entity.thumbnailUrl = domain.getThumbnailUrl();
         entity.deletedAt = domain.getDeletedAt();
         return entity;
     }
@@ -60,7 +64,7 @@ public class PostJpaEntity extends BaseTimeEntity {
     public Post toDomain() {
         return Post.reconstitute(
                 id, userId, title, category,
-                viewCount, likeCount,
+                thumbnailUrl, viewCount, likeCount,
                 getCreatedAt(), getUpdatedAt(), deletedAt
         );
     }

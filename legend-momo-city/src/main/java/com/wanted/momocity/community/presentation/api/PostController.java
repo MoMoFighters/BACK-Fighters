@@ -98,7 +98,7 @@ public class PostController {
                 ))
                 .toList();
 
-        postCommandUseCase.uploadContents(userId, postId, commands);
+        postCommandUseCase.uploadContents(userId, postId, request.thumbnailUrl(), commands);
 
         return ResponseEntity.ok(ApiResponse.success(
                 CommunityResponseCode.POST_CONTENT_UPLOADED,
@@ -198,7 +198,7 @@ public class PostController {
                 ))
                 .toList();
 
-        postCommandUseCase.updateContents(userId, postId, commands);
+        postCommandUseCase.updateContents(userId, postId, request.thumbnailUrl(), commands);
 
         return ResponseEntity.ok(ApiResponse.success(
                 CommunityResponseCode.POST_CONTENT_UPDATED,

@@ -17,6 +17,7 @@ public class Post {
     private Long userId;
     private String title;
     private String category;
+    private String thumbnailUrl;
     private int viewCount;
     private int likeCount;
     private LocalDateTime createdAt;
@@ -29,6 +30,7 @@ public class Post {
         post.userId = userId;
         post.title = title;
         post.category = category;
+        post.thumbnailUrl = null;
         post.viewCount = 0;
         post.likeCount = 0;
         return post;
@@ -37,7 +39,7 @@ public class Post {
     // DB 복원용
     public static Post reconstitute(
             Long id, Long userId, String title, String category,
-            int viewCount, int likeCount,
+            String thumbnailUrl, int viewCount, int likeCount,
             LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt
     ) {
         Post post = new Post();
@@ -45,6 +47,7 @@ public class Post {
         post.userId = userId;
         post.title = title;
         post.category = category;
+        post.thumbnailUrl = thumbnailUrl;
         post.viewCount = viewCount;
         post.likeCount = likeCount;
         post.createdAt = createdAt;
@@ -57,6 +60,12 @@ public class Post {
     public void update(String title, String category) {
         this.title = title;
         this.category = category;
+    }
+
+    // 썸네일 수정
+    // 컨텐츠 업로드 / 수정 시 호출
+    public void updateThumbnail(String thumbnailUrl) {
+        this.thumbnailUrl = thumbnailUrl;
     }
 
     // 소프트딜리트
@@ -88,6 +97,7 @@ public class Post {
     public Long getUserId() { return userId; }
     public String getTitle() { return title; }
     public String getCategory() { return category; }
+    public String getThumbnailUrl() { return thumbnailUrl; }
     public int getViewCount() { return viewCount; }
     public int getLikeCount() { return likeCount; }
     public LocalDateTime getCreatedAt() { return createdAt; }

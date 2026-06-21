@@ -25,13 +25,13 @@ public interface PostCommandUseCase {
     String uploadImage(MultipartFile image);
 
     // 게시글 콘텐츠 업로드 (POST)
-    void uploadContents(Long userId, Long postId, List<PostContentCommand> contents);
+    void uploadContents(Long userId, Long postId, String thumbnailUrl, List<PostContentCommand> contents);
 
     // 게시글 제목/카테고리 수정
     void updatePost(Long userId, Long postId, String title, String category);
 
     // 게시글 콘텐츠 수정 (PUT)
-    void updateContents(Long userId, Long postId, List<PostContentCommand> contents);
+    void updateContents(Long userId, Long postId, String thumbnailUrl, List<PostContentCommand> contents);
 
     // 게시글 삭제
     void deletePost(Long userId, Long postId);

@@ -1,10 +1,8 @@
 package com.wanted.momocity.community.presentation.api.request;
 
-import com.wanted.momocity.community.application.command.PostContentCommand;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 
 import java.util.List;
 
@@ -17,6 +15,9 @@ import java.util.List;
 * */
 
 public record UploadContentsRequest(
+
+        String thumbnailUrl,
+
         @NotEmpty(message = "콘텐츠를 1개 이상 입력해주세요.")
         @Valid
         List<ContentItem> contents

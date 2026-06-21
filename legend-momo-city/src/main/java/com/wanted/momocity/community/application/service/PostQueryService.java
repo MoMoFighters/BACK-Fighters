@@ -67,6 +67,7 @@ public class PostQueryService implements PostQueryUseCase {
                             post.getViewCount(),
                             post.getLikeCount(),
                             commentCount,
+                            post.getThumbnailUrl(),
                             user.getName(),
                             user.getProfileImageUrl(),
                             user.getRole().name(),

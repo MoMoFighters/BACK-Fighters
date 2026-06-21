@@ -78,12 +78,15 @@ public class PostCommandService implements PostCommandUseCase {
     // 게시글 콘텐츠 업로드 (POST)
     // 최초 작성 시 호출 -> IMAGE 타입 최대 5개 검증, order_no 자동 부여
     @Override
-    public void uploadContents(Long userId, Long postId, List<PostContentCommand> contents) {
+    public void uploadContents(Long userId, Long postId, String thumbnailUrl, List<PostContentCommand> contents) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CommunityNotFoundException("게시글을 찾을 수 없습니다."));
 
         validateAuthor(post.getUserId(), userId);
         validateImageCount(contents);
+
+        post.updateThumbnail(thumbnailUrl);
+        postRepository.save(post);
 
         List<PostContent> postContents = new ArrayList<>();
         for (int i = 0; i < contents.size(); i++) {
@@ -117,12 +120,16 @@ public class PostCommandService implements PostCommandUseCase {
     // 기준 콘텐츠 전체 소프트딜리트 후 새 콘텐츠 저장 -> 트랜잭션으로 한번에 처리
     @Override
     @CacheEvict(value = "posts", allEntries = true)
-    public void updateContents(Long userId, Long postId, List<PostContentCommand> contents) {
+    public void updateContents(Long userId, Long postId, String thumbnailUrl, List<PostContentCommand> contents) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CommunityNotFoundException("게시글을 찾을 수 없습니다."));
 
         validateAuthor(post.getUserId(), userId);
         validateImageCount(contents);
+
+        // 썸네일 업데이트
+        post.updateThumbnail(thumbnailUrl);
+        postRepository.save(post);
 
         // 기존 콘텐츠 전체 소프트딜리트 -> 새 콘텐츠 저장
         postContentRepository.deleteAllByPostId(postId);

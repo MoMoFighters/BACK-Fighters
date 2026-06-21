@@ -32,6 +32,7 @@ public record PostListResponse (
             int viewCount,
             int likeCount,
             int commentCount,
+            String thumbnailUrl,
             String authorName,
             String authorProfileImageUrl,
             String authorRole,
