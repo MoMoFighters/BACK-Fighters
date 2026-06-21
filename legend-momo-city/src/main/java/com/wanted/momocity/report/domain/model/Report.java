@@ -15,20 +15,18 @@ import java.time.LocalDateTime;
         - targetId        : 신고 대상 ID (외부 참조, BC 경계 침범 X)
         - reason          : 신고 사유 (SPAM/ABUSE/...)
         - detail          : 자유 설명 (nullable)
-        - status          : 신고 처리 상태 (PENDING/REVIEWING/CONFIRMED/REJECTED)
+        - isRead          : 읽음 여부 (false=미읽음, true=읽음)
         - reportedAt      : 접수 시각
         - handledAt       : 처리 시각 (검토 후, nullable)
         - handlerAdminId  : 처리자 (검토 후, nullable)
     4. 불변/가변 구분 :
         - 불변(final) : id, reporterUserId, targetType, targetId, reason, detail, reportedAt
-        - 가변        : status, handledAt, handlerAdminId (review/confirm/reject 로 변경)
+        - 가변        : isRead, handledAt, handlerAdminId (markAsRead 로 변경)
     5. 정적 팩토리 2개 의도 :
-        - submit()  : 신규 신고 접수 (id=null, status=PENDING, reportedAt=now)
+        - submit()  : 신규 신고 접수 (id=null, isRead=false, reportedAt=now)
         - restore() : DB 복원 (모든 필드 그대로)
-    6. 도메인 행위 3개 (module04 stub) :
-        - review()         : PENDING → REVIEWING 전이 (module04)
-        - confirm(adminId) : REVIEWING → CONFIRMED 전이 (module04)
-        - reject(adminId)  : REVIEWING → REJECTED 전이 (module04)
+    6. 도메인 행위 :
+        - markAsRead() : 신고를 읽음 처리 (isRead = true)
  */
 public class Report {
 
@@ -39,7 +37,7 @@ public class Report {
     private final Long targetId;
     private final ReportReason reason;
     private final String detail;
-    private ReportStatus status;
+    private boolean isRead;
     private final LocalDateTime reportedAt;
     private LocalDateTime handledAt;
     private Long handlerAdminId;
@@ -49,7 +47,7 @@ public class Report {
         외부에서 호출 차단 (submit / restore 통해서만 생성)
      */
     private Report(Long id, Long reporterUserId, ReportTargetType targetType, Long targetId,
-                   ReportReason reason, String detail, ReportStatus status,
+                   ReportReason reason, String detail, boolean isRead,
                    LocalDateTime reportedAt, LocalDateTime handledAt, Long handlerAdminId) {
 
         if (reporterUserId == null) {
@@ -61,9 +59,6 @@ public class Report {
         if (reason == null) {
             throw new DomainRuleViolationException("신고 사유는 필수입니다.");
         }
-        if (status == null) {
-            throw new DomainRuleViolationException("신고 상태는 필수입니다.");
-        }
         if (reportedAt == null) {
             throw new DomainRuleViolationException("신고 시각은 필수입니다.");
         }
@@ -74,7 +69,7 @@ public class Report {
         this.targetId = targetId;
         this.reason = reason;
         this.detail = detail;
-        this.status = status;
+        this.isRead = isRead;
         this.reportedAt = reportedAt;
         this.handledAt = handledAt;
         this.handlerAdminId = handlerAdminId;
@@ -83,11 +78,11 @@ public class Report {
     /**
      * 신규 신고 접수 (사용자가 신고 버튼 누름)
      * - id = null (DB 가 부여)
-     * - status = PENDING
+     * - isRead = false (신규 신고는 미읽음 상태로 시작)
      * - reportedAt = now()
      * - handledAt, handlerAdminId = null
      */
-    // 신규 신고 접수 - 항상 PENDING 상태로 진행하며 현재 시각으로 시작된다.
+    // 신규 신고 접수 - isRead=false 로 시작하며 현재 시각으로 접수된다.
     public static Report submit(Long reporterUserId, ReportTargetType targetType, Long targetId,
                                 ReportReason reason, String detail) {
         return new Report(
@@ -97,7 +92,7 @@ public class Report {
                 targetId,
                 reason,
                 detail, // null 허용
-                ReportStatus.PENDING, // 신규는 무조건 PENDING
+                false,
                 LocalDateTime.now(), // 접수 시각 = 호출 시점
                 null, // handledAt : 검토 전이라 null
                 null // handlerAdminId : 검토 전이라 null
@@ -108,27 +103,14 @@ public class Report {
      * DB 에서 읽어온 값으로 기존 객체 복원
      */
     public static Report restore(Long id, Long reporterUserId, ReportTargetType targetType, Long targetId,
-                                 ReportReason reason, String detail, ReportStatus status,
+                                 ReportReason reason, String detail, boolean isRead,
                                  LocalDateTime reportedAt, LocalDateTime handledAt, Long handlerAdminId) {
-        return new Report(id, reporterUserId, targetType, targetId, reason, detail, status,
+        return new Report(id, reporterUserId, targetType, targetId, reason, detail, isRead,
                 reportedAt, handledAt, handlerAdminId);
     }
 
-    // === 도메인 행위 (module04 stub) ===
-
-    // PENDING → REVIEWING 전이
-    public void review() {
-        throw new UnsupportedOperationException("TODO: module04 - 신고 검토 시작");
-    }
-
-    // REVIEWING → CONFIRMED 전이 (관리자 인정)
-    public void confirm(Long adminId) {
-        throw new UnsupportedOperationException("TODO: module04 - 신고 인정");
-    }
-
-    // REVIEWING → REJECTED 전이 (관리자 기각)
-    public void reject(Long adminId) {
-        throw new UnsupportedOperationException("TODO: module04 - 신고 기각");
+    public void markAsRead() {
+        this.isRead = true;
     }
 
     // === Getters (Setter 없음 = 도메인 행위로만 변경) ===
@@ -138,7 +120,7 @@ public class Report {
     public Long getTargetId() { return targetId; }
     public ReportReason getReason() { return reason; }
     public String getDetail() { return detail; }
-    public ReportStatus getStatus() { return status; }
+    public boolean isRead() { return isRead; }
     public LocalDateTime getReportedAt() { return reportedAt; }
     public LocalDateTime getHandledAt() { return handledAt; }
     public Long getHandlerAdminId() { return handlerAdminId; }

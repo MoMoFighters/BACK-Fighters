@@ -2,7 +2,6 @@ package com.wanted.momocity.report.infrastructure.persistence;
 
 import com.wanted.momocity.report.domain.model.Report;
 import com.wanted.momocity.report.domain.model.ReportReason;
-import com.wanted.momocity.report.domain.model.ReportStatus;
 import com.wanted.momocity.report.domain.model.ReportTargetType;
 import com.wanted.momocity.report.domain.repository.ReportRepository;
 import org.springframework.data.domain.PageRequest;
@@ -54,8 +53,8 @@ public class ReportRepositoryAdapter implements ReportRepository {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Report> findByStatus(ReportStatus status, int limit) {
-        return repository.findAllByStatusOrderByReportedAtDesc(status.name(), PageRequest.of(0, limit))
+    public List<Report> findByIsRead(boolean isRead, int limit) {
+        return repository.findAllByIsReadOrderByReportedAtDesc(isRead, PageRequest.of(0, limit))
                 .stream()
                 .map(this::toDomain)
                 .toList();
@@ -78,7 +77,7 @@ public class ReportRepositoryAdapter implements ReportRepository {
                 report.getTargetId(),
                 report.getReason().name(),
                 report.getDetail(),
-                report.getStatus().name(),
+                report.isRead(),
                 report.getReportedAt(),
                 report.getHandledAt(),
                 report.getHandlerAdminId()
@@ -94,7 +93,7 @@ public class ReportRepositoryAdapter implements ReportRepository {
                 entity.getTargetId(),
                 ReportReason.valueOf(entity.getReason()),
                 entity.getDetail(),
-                ReportStatus.valueOf(entity.getStatus()),
+                entity.isRead(),
                 entity.getReportedAt(),
                 entity.getHandledAt(),
                 entity.getHandlerAdminId()
