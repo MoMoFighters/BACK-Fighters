@@ -2,6 +2,10 @@ package com.wanted.momocity.community.presentation.api;
 
 import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.community.application.command.PostContentCommand;
+import com.wanted.momocity.community.application.result.CommentCreateResult;
+import com.wanted.momocity.community.application.result.LikeResult;
+import com.wanted.momocity.community.application.result.PostCreateResult;
+import com.wanted.momocity.community.application.result.ReplyCreateResult;
 import com.wanted.momocity.community.application.usecase.PostCommandUseCase;
 import com.wanted.momocity.community.application.usecase.PostQueryUseCase;
 import com.wanted.momocity.community.presentation.api.common.CommunityResponseCode;
@@ -42,17 +46,17 @@ public class PostController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 토큰 만료")
     })
     @PostMapping
-    public ResponseEntity<ApiResponse<Long>> createPost(
+    public ResponseEntity<ApiResponse<PostCreateResponse>> createPost(
             @RequestBody @Valid CreatePostRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         Long userId = userDetails.getUserId();
-        Long postId = postCommandUseCase.createPost(userId, request.title(), request.category());
+        PostCreateResult result = postCommandUseCase.createPost(userId, request.title(), request.category());
 
         return ResponseEntity.status(201).body(ApiResponse.created(
                 CommunityResponseCode.POST_CREATED,
                 "게시글이 작성되었습니다.",
-                postId
+                new PostCreateResponse(result.postId())
         ));
     }
 
@@ -229,16 +233,17 @@ public class PostController {
     // POST /api/v2/posts/{postId}/likes
     @Operation(summary = "좋아요", description = "게시글에 좋아요를 누릅니다.")
     @PostMapping("/{postId}/likes")
-    public ResponseEntity<ApiResponse<Void>> likePost(
+    public ResponseEntity<ApiResponse<LikeResponse>> likePost(
             @PathVariable Long postId,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         Long userId = userDetails.getUserId();
-        postCommandUseCase.likePost(userId, postId);
+        LikeResult result = postCommandUseCase.likePost(userId, postId);
 
         return ResponseEntity.ok(ApiResponse.success(
                 CommunityResponseCode.LIKE_CREATED,
-                "좋아요를 눌렀습니다."
+                "좋아요를 눌렀습니다.",
+                new LikeResponse(result.postId(), result.likeCount(), result.isLiked())
         ));
     }
 
@@ -246,16 +251,17 @@ public class PostController {
     // DELETE /api/v2/posts/{postId}/likes
     @Operation(summary = "좋아요 취소", description = "게시글 좋아요를 취소합니다.")
     @DeleteMapping("/{postId}/likes")
-    public ResponseEntity<ApiResponse<Void>> unlikePost(
+    public ResponseEntity<ApiResponse<LikeResponse>> unlikePost(
             @PathVariable Long postId,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         Long userId = userDetails.getUserId();
-        postCommandUseCase.unlikePost(userId, postId);
+        LikeResult result = postCommandUseCase.unlikePost(userId, postId);
 
         return ResponseEntity.ok(ApiResponse.success(
                 CommunityResponseCode.LIKE_DELETED,
-                "좋아요를 취소했습니다."
+                "좋아요를 취소했습니다.",
+                new LikeResponse(result.postId(), result.likeCount(), result.isLiked())
         ));
     }
 
@@ -263,18 +269,25 @@ public class PostController {
     // POST /api/v2/posts/{postId}/comments
     @Operation(summary = "댓글 작성", description = "게시글에 댓글을 작성합니다.")
     @PostMapping("/{postId}/comments")
-    public ResponseEntity<ApiResponse<Long>> createComment(
+    public ResponseEntity<ApiResponse<CommentCreateResponse>> createComment(
             @PathVariable Long postId,
             @RequestBody @Valid CreateCommentRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         Long userId = userDetails.getUserId();
-        Long commentId = postCommandUseCase.createComment(userId, postId, request.content());
+        CommentCreateResult result = postCommandUseCase.createComment(userId, postId, request.content());
 
         return ResponseEntity.status(201).body(ApiResponse.created(
                 CommunityResponseCode.COMMENT_CREATED,
                 "댓글이 작성되었습니다.",
-                commentId
+                new CommentCreateResponse(
+                        result.commentId(),
+                        result.content(),
+                        result.authorName(),
+                        result.authorProfileImageUrl(),
+                        result.authorRole(),
+                        result.createdAt()
+                )
         ));
     }
 
@@ -300,19 +313,27 @@ public class PostController {
     // POST /api/v2/posts/{postId}/comments/{commentId}/replies
     @Operation(summary = "대댓글 작성", description = "댓글에 대댓글을 작성합니다.")
     @PostMapping("/{postId}/comments/{commentId}/replies")
-    public ResponseEntity<ApiResponse<Long>> createReply(
+    public ResponseEntity<ApiResponse<ReplyCreateResponse>> createReply(
             @PathVariable Long postId,
             @PathVariable Long commentId,
             @RequestBody @Valid CreateCommentRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         Long userId = userDetails.getUserId();
-        Long replyId = postCommandUseCase.createReply(userId, postId, commentId, request.content());
+        ReplyCreateResult result = postCommandUseCase.createReply(userId, postId, commentId, request.content());
 
         return ResponseEntity.status(201).body(ApiResponse.created(
                 CommunityResponseCode.REPLY_CREATED,
                 "대댓글이 작성되었습니다.",
-                replyId
+                new ReplyCreateResponse(
+                        result.replyId(),
+                        result.commentId(),
+                        result.content(),
+                        result.authorName(),
+                        result.authorProfileImageUrl(),
+                        result.authorRole(),
+                        result.createdAt()
+                )
         ));
     }
 

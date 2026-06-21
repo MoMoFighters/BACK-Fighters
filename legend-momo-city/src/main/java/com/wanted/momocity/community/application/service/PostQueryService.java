@@ -106,7 +106,6 @@ public class PostQueryService implements PostQueryUseCase {
                 .findAllByPostId(postId)
                 .stream()
                 .map(c -> new PostContentResponse(
-                        c.getOrderNo(),
                         c.getType().name(),
                         c.getContent(),
                         c.getImageUrl()

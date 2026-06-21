@@ -1,7 +1,12 @@
 package com.wanted.momocity.community.application.service;
 
+import com.wanted.momocity.auth.domain.model.User;
 import com.wanted.momocity.community.application.command.PostContentCommand;
 import com.wanted.momocity.community.application.port.UserInfoPort;
+import com.wanted.momocity.community.application.result.CommentCreateResult;
+import com.wanted.momocity.community.application.result.LikeResult;
+import com.wanted.momocity.community.application.result.PostCreateResult;
+import com.wanted.momocity.community.application.result.ReplyCreateResult;
 import com.wanted.momocity.community.application.usecase.PostCommandUseCase;
 import com.wanted.momocity.community.domain.event.CommentCreatedEvent;
 import com.wanted.momocity.community.domain.event.PostLikedEvent;
@@ -21,6 +26,7 @@ import com.wanted.momocity.global.infrastructure.cloudfront.CloudFrontUrlConvert
 import com.wanted.momocity.global.infrastructure.s3.S3UploadAdapter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.aspectj.weaver.ast.Var;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Async;
@@ -61,12 +67,12 @@ public class PostCommandService implements PostCommandUseCase {
     // allEntries = true : category, page, size 등 다양한 조합
     // -> 특정 키 하나만 삭제하면 안 되고, posts 캐시 전체를 삭제해야 함
     @CacheEvict(value = "posts", allEntries = true)
-    public Long createPost(Long userId, String title, String category) {
+    public PostCreateResult createPost(Long userId, String title, String category) {
         Post post = Post.create(userId, title, category);
         Post saved = postRepository.save(post);
 
         log.info("[Community] 게시글 생성 완료 | userId={}, postId={}", userId, saved.getId());
-        return saved.getId();
+        return new PostCreateResult(saved.getId());
     }
 
     // 게시글 콘텐츠 업로드 (POST)
@@ -156,7 +162,7 @@ public class PostCommandService implements PostCommandUseCase {
     // 좋아요
     // post_like 저장 -> post.like_count +1
     @Override
-    public void likePost(Long userId, Long postId) {
+    public LikeResult likePost(Long userId, Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CommunityNotFoundException("게시글을 찾을 수 없습니다."));
 
@@ -179,12 +185,13 @@ public class PostCommandService implements PostCommandUseCase {
         }
 
         log.info("[Community] 좋아요 완료 | userId={}, postId={}", userId, postId);
+        return new LikeResult(postId, post.getLikeCount(), true);
     }
 
     // 좋아요 취소
     // post_like 삭제 -> post.like_count -1
     @Override
-    public void unlikePost(Long userId, Long postId) {
+    public LikeResult unlikePost(Long userId, Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CommunityNotFoundException("게시글을 찾을 수 없습니다."));
 
@@ -196,11 +203,12 @@ public class PostCommandService implements PostCommandUseCase {
         postRepository.save(post);
 
         log.info("[Community] 좋아요 취소 완료 | userId={}, postId={}", userId, postId);
+        return new LikeResult(postId, post.getLikeCount(), false);
     }
 
     // 댓글 작성
     @Override
-    public Long createComment(Long userId, Long postId, String content) {
+    public CommentCreateResult createComment(Long userId, Long postId, String content) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CommunityNotFoundException("게시글을 찾을 수 없습니다."));
 
@@ -211,18 +219,26 @@ public class PostCommandService implements PostCommandUseCase {
         Comment comment = Comment.create(postId, userId, content);
         Comment saved = commentRepository.save(comment);
 
+        // 유저 정보 조회 (알림 + Result 공통 사용)
+        User user = userInfoPort.findById(userId)
+                .orElseThrow(() -> new CommunityNotFoundException("사용자를 찾을 수 없습니다."));
+
         // 본인 게시글 댓글 시 알림 제외
         if (!post.getUserId().equals(userId)) {
-            String commenterName = userInfoPort.findById(userId)
-                    .orElseThrow(() -> new CommunityNotFoundException("사용자를 찾을 수 없습니다."))
-                    .getName();
             eventPublisher.publishEvent(
-                    new CommentCreatedEvent(postId, post.getUserId(), userId, commenterName));
+                    new CommentCreatedEvent(postId, post.getUserId(), userId, user.getName()));
         }
 
         log.info("[Community] 댓글 작성 완료 | userId={}, postId={}, commentId={}",
                 userId, postId, saved.getId());
-        return saved.getId();
+        return new CommentCreateResult(
+                saved.getId(),
+                saved.getContent(),
+                user.getName(),
+                user.getProfileImageUrl(),
+                user.getRole().name(),
+                saved.getCreatedAt()
+        );
     }
 
     // 댓글 삭제
@@ -242,7 +258,7 @@ public class PostCommandService implements PostCommandUseCase {
     // 대댓글 작성
     // parentId = commentId -> 대댓글에 대댓글 불가
     @Override
-    public Long createReply(Long userId, Long postId, Long commentId, String content) {
+    public ReplyCreateResult createReply(Long userId, Long postId, Long commentId, String content) {
         Comment parentComment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new CommunityNotFoundException("댓글을 찾을 수 없습니다."));
 
@@ -257,9 +273,8 @@ public class PostCommandService implements PostCommandUseCase {
         Comment reply = Comment.createReply(postId, userId, commentId, content);
         Comment saved = commentRepository.save(reply);
 
-        String replierName = userInfoPort.findById(userId)
-                .orElseThrow(() -> new CommunityNotFoundException("사용자를 찾을 수 없습니다."))
-                .getName();
+        User user = userInfoPort.findById(userId)
+                .orElseThrow(() -> new CommunityNotFoundException("사용자를 찾을 수 없습니다."));
 
         // postOwnerId 조회
         Post post = postRepository.findById(postId)
@@ -270,12 +285,20 @@ public class PostCommandService implements PostCommandUseCase {
                 post.getUserId(),
                 parentComment.getUserId(),
                 userId,
-                replierName
+                user.getName()
         ));
 
         log.info("[Community] 대댓글 작성 완료 | userId={}, commentId={}, replyId={}",
                 userId, commentId, saved.getId());
-        return saved.getId();
+        return new ReplyCreateResult(
+                saved.getId(),
+                commentId,
+                saved.getContent(),
+                user.getName(),
+                user.getProfileImageUrl(),
+                user.getRole().name(),
+                saved.getCreatedAt()
+        );
 
     }
 
