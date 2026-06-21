@@ -23,10 +23,8 @@ import com.wanted.momocity.community.domain.repository.PostLikeRepository;
 import com.wanted.momocity.community.domain.repository.PostRepository;
 import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.global.infrastructure.cloudfront.CloudFrontUrlConverter;
-import com.wanted.momocity.global.infrastructure.s3.S3UploadAdapter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.aspectj.weaver.ast.Var;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Async;
@@ -56,7 +54,6 @@ public class PostCommandService implements PostCommandUseCase {
     private final PostLikeRepository postLikeRepository;
     private final CommentRepository commentRepository;
     private final UserInfoPort userInfoPort;
-    private final S3UploadAdapter s3UploadAdapter;
     private final CloudFrontUrlConverter cloudFrontUrlConverter;
     private final S3UploadPort s3UploadPort;
     private final ApplicationEventPublisher eventPublisher;
@@ -105,6 +102,7 @@ public class PostCommandService implements PostCommandUseCase {
 
     // 게시글 제목 / 카테고리 수정
     @Override
+    @CacheEvict(value = "posts", allEntries = true)
     public void updatePost(Long userId, Long postId, String title, String category) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CommunityNotFoundException("게시글을 찾을 수 없습니다."));
@@ -255,6 +253,12 @@ public class PostCommandService implements PostCommandUseCase {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new CommunityNotFoundException("댓글을 찾을 수 없습니다."));
 
+        // 해당 게시글 소속 댓글인지 검증
+        // -> 다른 게시글 댓글 삭제 시도 방지
+        if (!comment.getPostId().equals(postId)) {
+            throw new CommunityAccessDeniedException("해당 게시글의 댓글이 아닙니다.");
+        }
+
         validateAuthor(comment.getUserId(), userId);
         comment.delete();
         commentRepository.delete(comment);
@@ -287,13 +291,16 @@ public class PostCommandService implements PostCommandUseCase {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CommunityNotFoundException("게시글을 찾을 수 없습니다."));
 
-        eventPublisher.publishEvent(new ReplyCreatedEvent(
-                postId,
-                post.getUserId(),
-                parentComment.getUserId(),
-                userId,
-                user.getName()
-        ));
+        // 본인 게시글 또는 본인 댓글에 대댓글 시 알림 제외
+        if (!userId.equals(post.getUserId()) && !userId.equals(parentComment.getUserId())) {
+            eventPublisher.publishEvent(new ReplyCreatedEvent(
+                    postId,
+                    post.getUserId(),
+                    parentComment.getUserId(),
+                    userId,
+                    user.getName()
+            ));
+        }
 
         log.info("[Community] 대댓글 작성 완료 | userId={}, commentId={}, replyId={}",
                 userId, commentId, saved.getId());
@@ -315,6 +322,11 @@ public class PostCommandService implements PostCommandUseCase {
     public void deleteReply(Long userId, Long postId, Long commentId, Long replyId) {
         Comment reply = commentRepository.findById(replyId)
                 .orElseThrow(() -> new CommunityNotFoundException("대댓글을 찾을 수 없습니다."));
+
+        // 해당 게시글 소속 대댓글인지 검증
+        if (!reply.getPostId().equals(postId)) {
+            throw new CommunityAccessDeniedException("해당 게시글의 대댓글이 아닙니다.");
+        }
 
         validateAuthor(reply.getUserId(), userId);
         reply.delete();
@@ -357,7 +369,6 @@ public class PostCommandService implements PostCommandUseCase {
     }
 
     @Override
-    @Transactional(readOnly = false)
     public String uploadImage(MultipartFile image) {
         String key = s3UploadPort.upload(image, "community/images");
         String url = cloudFrontUrlConverter.convert(key);
