@@ -1,23 +1,23 @@
-# k6 Result - 02-lecture-list
+# k6 Result - 05-expired-token
 
 ## Summary
 
 | Metric | Value |
 | --- | ---: |
-| http_reqs | 6538 |
-| iterations | 6538 |
-| checks success rate | 98.75% |
-| http_req_failed | 2.51% |
-| data_received bytes | 4176187 |
-| data_sent bytes | 1522275 |
+| http_reqs | 3022 |
+| iterations | 3022 |
+| checks success rate | 100.00% |
+| http_req_failed | 0.00% |
+| data_received bytes | 1540317 |
+| data_sent bytes | 1226932 |
 
 ## Duration Metrics
 
 | Metric | avg(ms) | min(ms) | med(ms) | p90(ms) | p95(ms) | p99(ms) | max(ms) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| http_req_duration | 4.13 | 0 | 3.78 | 6.57 | 7.56 | 9.42 | 27.77 |
-| http_req_waiting | 4.06 | 0 | 3.70 | 6.49 | 7.47 | 9.26 | 27.67 |
-| http_req_blocked | 0.01 | 0 | 0.00 | 0.00 | 0.01 | 0.24 | 1.74 |
+| http_req_duration | 5.73 | 1.55 | 3.78 | 5.52 | 6.14 | 114.16 | 115.57 |
+| http_req_waiting | 5.59 | 1.40 | 3.67 | 5.37 | 6.01 | 113.27 | 115.57 |
+| http_req_blocked | 0.21 | 0 | 0 | 0 | 0 | 12.61 | 13.61 |
 
 ## Metric Meaning
 

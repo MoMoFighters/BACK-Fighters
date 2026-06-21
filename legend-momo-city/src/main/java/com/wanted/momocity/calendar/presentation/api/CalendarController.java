@@ -75,6 +75,7 @@ public class CalendarController {
             description = "해당 날짜의 Todo 와 오늘 수강한 챕터 목록을 반환합니다.")
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "날짜 파라미터 누락 또는 형식 오류"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 토큰 만료")
     })
     @GetMapping("/daily")

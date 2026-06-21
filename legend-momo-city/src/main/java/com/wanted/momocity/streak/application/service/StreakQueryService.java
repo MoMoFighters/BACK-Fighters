@@ -30,6 +30,14 @@ public class StreakQueryService implements StreakQueryUseCase {
 
     @Override
     public StreakMonthlyResponse getMonthlyStreak(Long userId, LocalDate startDate, LocalDate endDate) {
+
+        // 단일 월 범위 검증
+        // startDate 와 endDate 가 동일한 년-월에 속하는지 확인 -> 여러 달에 걸친 범위 방지
+        if (startDate.getYear() != endDate.getYear() ||
+                startDate.getMonthValue() != endDate.getMonthValue()) {
+            throw new IllegalArgumentException("조회 범위는 동일한 년-월이어야 합니다.");
+        }
+
         List<Streak> streaks = streakRepository
                 .findUserIdAndStreakDateBetween(userId, startDate,endDate);
 

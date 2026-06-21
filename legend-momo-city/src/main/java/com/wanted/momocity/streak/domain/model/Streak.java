@@ -8,7 +8,7 @@ public class Streak {
     private Long userId;
     private LocalDate streakDate;
     private int dailyWatchedSeconds;
-    private int level;
+    private StreakLevel level;
 
     // 신규 생성용
     public static Streak create(Long userId, LocalDate streakDate, int watchedSeconds) {
@@ -16,14 +16,14 @@ public class Streak {
         streak.userId = userId;
         streak.streakDate = streakDate;
         streak.dailyWatchedSeconds = watchedSeconds;
-        streak.level = calculateLevel(watchedSeconds);
+        streak.level = StreakLevel.from(watchedSeconds);
         return streak;
     }
 
     // DB 복원용
     public static Streak reconstitute(
             Long id, Long userId, LocalDate streakDate,
-            int dailyWatchedSeconds, int level
+            int dailyWatchedSeconds, StreakLevel level
     ) {
         Streak streak = new Streak();
         streak.id = id;
@@ -39,22 +39,13 @@ public class Streak {
         // 음수 방어
         if (watchedSeconds <= 0) return;
         this.dailyWatchedSeconds += watchedSeconds;
-        this.level = calculateLevel(this.dailyWatchedSeconds);
-    }
-
-    // dailyWatchedSeconds 기준으로 레벨 계산
-    private static int calculateLevel(int seconds) {
-        if (seconds <= 0) return 0;
-        if (seconds <= 600) return 1;
-        if (seconds <= 1800) return 2;
-        if (seconds <= 3600) return 3;
-        return 4;
+        this.level = StreakLevel.from(this.dailyWatchedSeconds);
     }
 
     public Long getId() {return id;}
     public Long getUserId() {return userId;}
     public LocalDate getStreakDate() {return streakDate;}
     public int getDailyWatchedSeconds() {return dailyWatchedSeconds;}
-    public int getLevel() {return level;}
+    public StreakLevel getLevel() {return level;}
 
 }

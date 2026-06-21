@@ -9,6 +9,8 @@ package com.wanted.momocity.calendar.application.port;
 
 public record TodayChapterInfo(
         String lectureTitle,
+        Long lectureId,
+        String category,
         String chapterTitle
 ) {
 }

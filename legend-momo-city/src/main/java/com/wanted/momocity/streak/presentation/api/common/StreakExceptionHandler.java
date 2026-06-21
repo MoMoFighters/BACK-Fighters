@@ -45,5 +45,18 @@ public class StreakExceptionHandler {
                         "year 는 2000~2100, month 는 1~12 사이 값이어야 합니다."
                 ));
     }
+    
+    // startDate. endDate 가 다른 년 - 월인 경우 발생 -> 400 으로 처리
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiErrorResponse> handleIllegalArgumentException(
+            IllegalArgumentException exception
+    ) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiErrorResponse.of(
+                        HttpStatus.BAD_REQUEST.value(),
+                        ApiResponseCode.VALIDATION_ERROR,
+                        exception.getMessage()
+                ));
+    }
 
 }

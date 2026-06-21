@@ -30,9 +30,24 @@
         </encoder>
     </appender>
 
+    <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
+        <http>
+            <url>http://localhost:3100/loki/api/v1/push</url>
+        </http>
+        <format>
+            <label>
+                <pattern>job=legend-momo-city,host=${HOSTNAME}</pattern>
+            </label>
+            <message>
+                <pattern>${CONSOLE_PATTERN}</pattern>
+            </message>
+        </format>
+    </appender>
+
     <!-- 우리 프로젝트 패키지 레벨은 application.yaml 의 logging.level.com.wanted.momocity 로 제어 -->
 
     <root level="${LOG_LEVEL_ROOT}">
         <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="LOKI"/>
     </root>
 </configuration>
