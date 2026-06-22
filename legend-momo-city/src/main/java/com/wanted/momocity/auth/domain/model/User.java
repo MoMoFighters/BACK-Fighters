@@ -1,6 +1,5 @@
 package com.wanted.momocity.auth.domain.model;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public class User {
@@ -46,7 +45,7 @@ public class User {
     }
 
     // DB에서 꺼내 쓸 메서드
-    public static User restore(Long id, String email, String password, String name, String nickname, String profileImageUrl, Role role, Status status, Category category, String proof, long point, boolean doNotDisturb, Long suspensionCount, LocalDateTime suspendedUntil, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, boolean isTempPwd) {
+    public static User restore(Long id, String email, String password, String name, String nickname, String profileImageUrl, Role role, Status status, Category category, String proof, Long point, boolean doNotDisturb, Long suspensionCount, LocalDateTime suspendedUntil, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, boolean isTempPwd) {
         return new User(id, email, password, name, nickname, profileImageUrl,
                 role, status, category, proof, point,
                  doNotDisturb, suspensionCount, suspendedUntil, createdAt, updatedAt, deletedAt, isTempPwd);

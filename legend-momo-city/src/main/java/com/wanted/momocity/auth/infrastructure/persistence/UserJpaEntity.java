@@ -5,7 +5,6 @@ import com.wanted.momocity.auth.domain.model.Role;
 import com.wanted.momocity.auth.domain.model.Status;
 import jakarta.persistence.*;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity(name = "AuthUser")
@@ -73,7 +72,7 @@ public class UserJpaEntity {
 
     protected UserJpaEntity() {}
 
-    public UserJpaEntity(String email, String password, String name, String nickname, String profileImageUrl, Role role, Status status, Category category, String proof, Long point, boolean doNotDisturb, long suspensionCount, LocalDateTime suspendedUntil, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, boolean isTempPwd) {
+    public UserJpaEntity(String email, String password, String name, String nickname, String profileImageUrl, Role role, Status status, Category category, String proof, Long point, boolean doNotDisturb, Long suspensionCount, LocalDateTime suspendedUntil, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, boolean isTempPwd) {
         this.email = email;
         this.password = password;
         this.name = name;
@@ -85,7 +84,7 @@ public class UserJpaEntity {
         this.proof = proof;
         this.point = point;
         this.doNotDisturb = doNotDisturb;
-        this.suspensionCount =suspensionCount;
+        this.suspensionCount = suspensionCount;
         this.suspendedUntil = suspendedUntil;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
