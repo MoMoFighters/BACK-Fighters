@@ -8,7 +8,7 @@ import java.io.Serializable;
 
 @Getter
 @JsonIgnoreProperties(ignoreUnknown = true)
-@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
+//@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
 public class Lecture implements Serializable {
 
     private static final long serialVersionUID = 1L;

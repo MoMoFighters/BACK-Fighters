@@ -1,5 +1,7 @@
 package com.wanted.momocity.community.application.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wanted.momocity.auth.domain.model.User;
 import com.wanted.momocity.community.application.port.UserInfoPort;
 import com.wanted.momocity.community.application.usecase.PostQueryUseCase;
@@ -14,22 +16,21 @@ import com.wanted.momocity.community.presentation.api.response.CommentResponse;
 import com.wanted.momocity.community.presentation.api.response.PostContentResponse;
 import com.wanted.momocity.community.presentation.api.response.PostDetailResponse;
 import com.wanted.momocity.community.presentation.api.response.PostListResponse;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class PostQueryService implements PostQueryUseCase {
 
@@ -42,13 +43,73 @@ public class PostQueryService implements PostQueryUseCase {
     // PostCommandService -> PostQueryService 참조 없음
     private final PostCommandService postCommandService;
 
-    // 게시글 목록 조회
-    // category 없으면 전체 조회
-    // 페이지 네이션 적용
-    // authorName. authorProfileImageUrl 포함함
+    // String 타입 전용 RedisTemplate
+    // 저장 / 조회 시 raw JSON 문자열 그대로 처리
+    // GenericJackson2JsonRedisSerializer 의 @class 타입 정보 충돌 문제 없음
+    private final StringRedisTemplate stringRedisTemplate;
+
+    // activateDefaultTyping 비활성화 상태의 순수 ObjectMapper
+    // @class 타입 정보 없이 순수 JSON 으로 직렬화 / 역직렬화
+    // JavaTimeModule 등록으로 LocalDateTime 처리 가능
+    // HTTP 응답 직렬화에는 영향 없음 (Spring 기본 ObjectMapper 와 별개)
+    private final ObjectMapper plainObjectMapper = new ObjectMapper()
+            .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+
+    public PostQueryService(
+            PostRepository postRepository,
+            PostContentRepository postContentRepository,
+            PostLikeRepository postLikeRepository,
+            CommentRepository commentRepository,
+            UserInfoPort userInfoPort,
+            PostCommandService postCommandService,
+            StringRedisTemplate stringRedisTemplate
+    ) {
+        this.postRepository = postRepository;
+        this.postContentRepository = postContentRepository;
+        this.postLikeRepository = postLikeRepository;
+        this.commentRepository = commentRepository;
+        this.userInfoPort = userInfoPort;
+        this.postCommandService = postCommandService;
+        this.stringRedisTemplate = stringRedisTemplate;
+    }
+
+    /*
+    * comment.
+    *  게시글 목록 조회
+    *  캐시 키
+    *  - "posts::null:0:10" (category, page, size) -> category = null : 전체 조회
+    *  -
+    *  캐시 조회 우선
+    *  1. Redis 에서 키로 raw JSON 조회
+    *  2. 캐시 히트 시 plainObjectMapper 로 PostListResponse 역직렬화 후 반환
+    *  3. 캐시 미스 시 DB 조회 후 Redis 에 저장
+    *  -
+    *  예외처리
+    *  - 캐시 조회 / 저장 실패 시 -> 로그만 남기고 DB 조회로 fallback
+    *  -> 캐시 장애가 서비스 장애로 이어지지 않도록 방어
+    * */
     @Override
-    @Cacheable(value = "posts", key = "#category + ':' + #page + ':' + #size")
     public PostListResponse getPosts(Long userId, String category, int page, int size) {
+
+        String cacheKey = "posts::" + category + ":" + page + ":" + size;
+
+        // 1. Redis 캐시 조회
+        try {
+            String json = stringRedisTemplate.opsForValue().get(cacheKey);
+            if (json != null) {
+                PostListResponse cached = plainObjectMapper.readValue(
+                        json, new TypeReference<PostListResponse>() {
+                        }
+                );
+                log.debug("[Community] posts 캐시 히트 | key={}", cacheKey);
+                return cached;
+            }
+        } catch (Exception e) {
+            log.warn("[Community] posts 캐시 조회 실패, DB 조회로 fallback | key={} | 예외={}",
+                    cacheKey, e.getMessage());
+        }
+
+        // 2. DB 조회
         PageRequest pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Post> postPage = postRepository.findAll(category, pageable);
 
@@ -76,16 +137,27 @@ public class PostQueryService implements PostQueryUseCase {
                 })
                 .toList();
 
-        log.info("[Community] 게시글 목록 조회 완료 | category={}, page={}, size={}",
-                category, page, size);
-
-        return new PostListResponse(
+        PostListResponse response = new PostListResponse(
                 items,
                 postPage.getTotalElements(),
                 postPage.getTotalPages(),
                 page
         );
 
+        log.info("[Community] 게시글 목록 조회 완료 | category={}, page={}, size={}",
+                category, page, size);
+
+        // 3. Redis 캐시 저장
+        // TTL 1시간 → 게시글 작성/수정/삭제 시 @CacheEvict 로 무효화
+        try {
+            String json = plainObjectMapper.writeValueAsString(response);
+            stringRedisTemplate.opsForValue().set(cacheKey, json, Duration.ofHours(1));
+            log.debug("[Community] posts 캐시 저장 | key={}", cacheKey);
+        } catch (Exception e) {
+            log.warn("[Community] posts 캐시 저장 실패 | key={}", cacheKey);
+        }
+
+        return response;
     }
 
     // 게시글 단건 조회
