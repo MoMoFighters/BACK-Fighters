@@ -1,5 +1,6 @@
 package com.wanted.momocity.user.application.service;
 
+import com.wanted.momocity.user.domain.exception.UserNotFoundException;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.user.application.policy.UserPolicy;
 import com.wanted.momocity.user.application.usecase.UserQueryUsecase;
@@ -58,7 +59,7 @@ public class UserQueryService implements UserQueryUsecase {
     @Override
     public TeacherApplication getApplicationDetail(Long userId) {
         return userRepository.findTeacherApplicationById(userId)
-                .orElseThrow(() -> new DomainRuleViolationException("해당 강사 신청자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new UserNotFoundException("해당 강사 신청자를 찾을 수 없습니다."));
     }
 
     // 관리자 회원관리용 회원 조회

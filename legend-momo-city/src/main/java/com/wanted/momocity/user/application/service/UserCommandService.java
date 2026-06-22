@@ -1,6 +1,7 @@
 package com.wanted.momocity.user.application.service;
 
 import com.wanted.momocity.auth.application.port.PasswordEncodePort;
+import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.user.domain.exception.UserNotFoundException;
 import com.wanted.momocity.user.domain.model.User;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
@@ -29,6 +30,7 @@ public class UserCommandService implements UserCommandUsecase {
     private final UserPolicy userPolicy;
     private final PasswordEncodePort passwordEncodePort;
     private final UserEmailSendPort userEmailSendPort;
+    private final S3UploadPort s3UploadPort;
 
     @Override
     public String registerNickname(NicknameRegisterCommand command) {
@@ -67,6 +69,9 @@ public class UserCommandService implements UserCommandUsecase {
     @Override
     public void teacherApply(TeacherApplyCommand command) {
 
+        userPolicy.validate(command.proof());
+        String proofKey = s3UploadPort.upload(command.proof(), "teacher_proof");
+
         userRepository.findById(command.userId())
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
 
@@ -77,7 +82,7 @@ public class UserCommandService implements UserCommandUsecase {
         // 닉네임 중복 확인
         userPolicy.nicknamePolicy(command.nickname());
 
-        userRepository.teacherApply(command.userId(),command.nickname(),command.category(),command.proof());
+        userRepository.teacherApply(command.userId(),command.nickname(),command.category(),proofKey);
 
         log.info("[teacherApply] 강사 신청 완료 | userId={} | role=TEACHER", command.userId());
 

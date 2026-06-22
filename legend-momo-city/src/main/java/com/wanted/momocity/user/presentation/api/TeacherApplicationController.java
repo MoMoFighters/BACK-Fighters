@@ -4,9 +4,6 @@ import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.user.application.command.ApproveTeacherCommand;
 import com.wanted.momocity.user.application.command.RejectTeacherCommand;
 import com.wanted.momocity.user.application.command.TeacherApplyCommand;
-import com.wanted.momocity.user.domain.exception.InvalidFileCountException;
-import com.wanted.momocity.user.domain.exception.InvalidFileExtensionException;
-import com.wanted.momocity.user.domain.exception.MissingProofException;
 import com.wanted.momocity.user.presentation.api.request.TeacherApplyRequest;
 import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
@@ -143,7 +140,9 @@ public class TeacherApplicationController {
             @PathVariable Long userId
     ) {
         TeacherApplication application = userQueryUsecase.getApplicationDetail(userId);
+
         TeacherApplicationDetailResponse response = toDetailResponse(application);
+
         return ResponseEntity.ok(ApiResponse.success(
                 TeacherResponseCode.APPLICATION_DETAIL_FETCHED,
                 TeacherResponseMessage.APPLICATION_DETAIL_FETCHED,
@@ -208,7 +207,11 @@ public class TeacherApplicationController {
                 app.name(),
                 app.email(),
                 app.category(),
-                app.appliedAt()
+                app.status(),
+                app.role(),
+                app.suspensionCount(),
+                app.suspendedUntil(),
+                app.createdAt()
         );
     }
 
@@ -223,7 +226,7 @@ public class TeacherApplicationController {
                 app.proof(),
                 app.status(),
                 app.role(),
-                app.appliedAt()
+                app.createdAt()
         );
     }
 }

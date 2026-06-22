@@ -144,13 +144,17 @@ public class UserRepositoryAdapter implements UserRepository {
     private TeacherApplication toTeacherApplication(UserJpaEntity entity) {
         return new TeacherApplication(
                 entity.getId(),
-                entity.getEmail(),
-                entity.getName(),
                 entity.getNickname(),
+                entity.getName(),
+                entity.getEmail(),
                 entity.getProfileImageUrl(),
-                entity.getCategory() != null ? entity.getCategory().name() : null,
+                entity.getCategory() ,
                 entity.getProof(),
-                entity.getUpdatedAt()
+                entity.getStatus(),
+                entity.getRole(),
+                entity.getSuspensionCount(),
+                entity.getSuspendedUntil(),
+                entity.getCreatedAt()
         );
     }
 
