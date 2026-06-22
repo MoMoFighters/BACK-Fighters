@@ -74,7 +74,7 @@ public class UserJpaEntity {
     protected UserJpaEntity() {}
 
     // id 포함 생성자 추가
-    public UserJpaEntity(Long id,String email, String password, String name, String nickname, String profileImageUrl, Role role,Status status,Category category, String proof, Long point, boolean doNotDisturb, long suspensionCount, LocalDateTime suspendedUntil, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, boolean isTempPwd) {
+    public UserJpaEntity(Long id,String email, String password, String name, String nickname, String profileImageUrl, Role role,Status status,Category category, String proof, Long point, boolean doNotDisturb, Long suspensionCount, LocalDateTime suspendedUntil, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, boolean isTempPwd) {
         this.id=id;
         this.email = email;
         this.password = password;
