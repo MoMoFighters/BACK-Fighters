@@ -2,7 +2,6 @@ package com.wanted.momocity.auth.infrastructure.persistence;
 
 import com.wanted.momocity.auth.application.port.LoadUserPort;
 import com.wanted.momocity.auth.application.port.UpdatePasswordPort;
-import com.wanted.momocity.auth.domain.model.Category;
 import com.wanted.momocity.auth.domain.model.Role;
 import com.wanted.momocity.auth.domain.model.User;
 import com.wanted.momocity.auth.domain.repository.UserRepository;

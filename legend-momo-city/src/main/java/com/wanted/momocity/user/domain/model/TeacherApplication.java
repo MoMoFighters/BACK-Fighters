@@ -28,7 +28,6 @@ public record TeacherApplication(
         String email,
         String name,
         String nickname,
-        LocalDate birth,
         String profileImageUrl,
         // category 가 String 인 이유는?
         // - 회원 영역 MemberCategory enum 타입을 직접 받을 수 있지만 String 선택
