@@ -34,12 +34,12 @@ public class EnrollmentProgressController {
         // 로그인한 사용자의 Id를 꺼낸다.
         Long userId = userDetails.getUserId();
 
-        // Controller에서 받은 값을 Application 계층으로 넘기기 위한 Query 객첼호 묶는다.
+        // Controller에서 받은 값을 Application 계층으로 넘기기 위한 Query 객체로 묶는다.
         GetEnrollmentProgressQuery query = new GetEnrollmentProgressQuery(
                 userId,
                 category
         );
-        // UseCase를 호출해 학습 진처곧 응답 데이터를 조회한다.
+        // UseCase를 호출해 학습 진척도 응답 데이터를 조회한다.
         EnrollmentProgressResponse response = enrollmentQueryUsecase.getProgress(query);
 
         // 공통 성공 응답 형식으로 반환

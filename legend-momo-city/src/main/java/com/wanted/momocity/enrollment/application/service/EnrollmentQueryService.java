@@ -106,7 +106,7 @@ public class EnrollmentQueryService implements EnrollmentQueryUsecase {
             Long userId,
             String category
     ) {
-        // 현재는 완료 강의 수 조회 Repository 메서드가 아직 없으므로 임시로 0을 반환합니다.
+
         return enrollmentRepository.countCompletedLecturesByUserIdAndCategory(
                 userId,
                 category
@@ -144,21 +144,5 @@ public class EnrollmentQueryService implements EnrollmentQueryUsecase {
     // 건물 전체 필요 경험치
     private Integer calculateTotalExp() {
         return  1000;
-    }
-
-    private Integer calculateBuildingLevel(int completedLectureCount) {
-
-        // 강의 20개 이상 완료 시 LEVEL3입니다.
-        if (completedLectureCount >= 20) {
-            return 3;
-        }
-
-        // 강의 10개 이상 완료 시 LEVEL2입니다.
-        if (completedLectureCount >= 10) {
-            return 2;
-        }
-
-        // 강의 0~9개 완료 시 LEVEL1입니다.
-        return 1;
     }
 }
