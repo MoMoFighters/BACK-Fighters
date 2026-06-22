@@ -34,15 +34,15 @@ public class UserRepositoryAdapter implements UserRepository, LoadUserPort, Upda
                 user.getPassword(),
                 user.getName(),
                 null,                    // nickname
-                null,                    // birth
                 user.getProfileImageUrl(),                    // profileImageUrl
                 Role.STUDENT,
                 user.getStatus(),
                 user.getCategory(),
                 user.getProof(),
                 user.getPoint(),                       // point
-                false,                   // isPaid
                 false,                   // doNotDisturb
+                user.getSuspensionCount(),
+                user.getSuspendedUntil(),
                 user.getCreatedAt(),         // createdAt
                 LocalDateTime.now(),     // updatedAt
                 null,                    // deletedAt
@@ -66,15 +66,15 @@ public class UserRepositoryAdapter implements UserRepository, LoadUserPort, Upda
                 entity.getPassword(),
                 entity.getName(),
                 entity.getNickname(),
-                entity.getBirth(),
                 entity.getProfileImageUrl(),
                 entity.getRole(),
                 entity.getStatus(),
                 entity.getCategory(),
                 entity.getProof(),
                 entity.getPoint(),
-                entity.isPaid(),
                 entity.isDoNotDisturb(),
+                entity.getSuspensionCount(),
+                entity.getSuspendedUntil(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt(),
                 entity.getDeletedAt(),
