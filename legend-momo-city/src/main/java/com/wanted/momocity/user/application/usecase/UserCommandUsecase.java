@@ -14,10 +14,10 @@ public interface UserCommandUsecase {
     void teacherApply(TeacherApplyCommand command);
 
     // 강사 승인 처리
-    TeacherActionResult approve(ApproveTeacherCommand command);
+    void approve(ApproveTeacherCommand command);
 
     // 강사 거절 처리
-    TeacherActionResult reject(RejectTeacherCommand command);
+    void reject(RejectTeacherCommand command);
 
     // 밤티 알림 설정
     boolean setAlarm(Long userId);

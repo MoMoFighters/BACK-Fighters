@@ -22,8 +22,8 @@ public final class TeacherResponseCode {
     }
 
     public static final String SUCCESS = "SUCCESS";
-    public static final String APPLICATION_LIST_FETCHED = "TEACHER-001";
-    public static final String APPLICATION_DETAIL_FETCHED = "TEACHER-002";
-    public static final String APPROVED = "TEACHER-003";
-    public static final String REJECTED = "TEACHER-004";
+    public static final String APPLICATION_LIST_FETCHED = "승인 대기 중인 강사 목록 조회";
+    public static final String APPLICATION_DETAIL_FETCHED = "해당 강사의 상세 정보 조회";
+    public static final String APPROVED = "강사 승인 처리";
+    public static final String REJECTED = "강사 반려 처리";
 }

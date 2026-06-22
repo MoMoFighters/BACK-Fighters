@@ -85,21 +85,22 @@ public class UserCommandService implements UserCommandUsecase {
 
     // 강사승인
     @Override
-    public TeacherActionResult approve(ApproveTeacherCommand command) {
+    public void approve(ApproveTeacherCommand command) {
 
-        String email = userRepository.findById(command.userId())
-                .orElseThrow(() -> new DomainRuleViolationException("사용자를 찾을 수 없습니다."))
-                .getEmail();
+        command.userId().forEach(userId -> {
+                    String email = userRepository.findById(userId)
+                            .orElseThrow(() -> new DomainRuleViolationException("사용자를 찾을 수 없습니다."))
+                            .getEmail();
 
-        userRepository.updateRoleAndStatus(command.userId(), Role.TEACHER, Status.ACTIVE);
-        userEmailSendPort.sendTeacherResult(email, "ACTIVE", null);
-        log.info("[teacher] 강사 승인 처리 | userId={}", command.userId());
-        return new TeacherActionResult(command.userId(), "ACTIVE", null, LocalDateTime.now());
+            userRepository.updateRoleAndStatus(userId, Role.TEACHER, Status.ACTIVE);
+            userEmailSendPort.sendTeacherResult(email, "ACTIVE", null);
+            log.info("[teacher] 강사 승인 처리 | userId={}", userId);
+        });
     }
 
     // 강사거절
     @Override
-    public TeacherActionResult reject(RejectTeacherCommand command) {
+    public void reject(RejectTeacherCommand command) {
 
         if (command.reason() == null || command.reason().length() < 10) {
             throw new InvalidReasonException("반려 사유는 최소 10자 이상이어야 합니다.");
@@ -112,7 +113,7 @@ public class UserCommandService implements UserCommandUsecase {
         userRepository.updateRoleAndStatus(command.userId(), Role.TEACHER, Status.REJECTED);
         userEmailSendPort.sendTeacherResult(email, "REJECTED", command.reason());
         log.info("[teacher] 강사 반려 처리 | userId={} | reason={}", command.userId(), command.reason());
-        return new TeacherActionResult(command.userId(), "REJECTED", command.reason(), LocalDateTime.now());
+//        return new TeacherActionResult(command.userId(), "REJECTED", command.reason(), LocalDateTime.now());
     }
 
 

@@ -24,8 +24,8 @@ public final class TeacherResponseMessage {
     }
     public static final String TEACHER_APPLIED = "강사 신청이 완료되었습니다. 강사로 승인된 후 로그인 하실 수 있습니다.";
 
-    public static final String APPLICATION_LIST_FETCHED = "강사 신청자 목록 조회 완료";
-    public static final String APPLICATION_DETAIL_FETCHED = "강사 신청자 상세 조회 완료";
-    public static final String APPROVED = "강사 승인 완료";
-    public static final String REJECTED = "강사 반려 완료";
+    public static final String APPLICATION_LIST_FETCHED = "강사 신청자 목록이 조회되었습니다.";
+    public static final String APPLICATION_DETAIL_FETCHED = "강사 신청자 상세 정보가 조회되었습니다.";
+    public static final String APPROVED = "강사 승인 처리가 완료되었습니다.";
+    public static final String REJECTED = "강사 반려 처리가 완료되었습니다.";
 }
