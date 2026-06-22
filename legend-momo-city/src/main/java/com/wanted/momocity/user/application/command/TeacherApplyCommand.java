@@ -1,6 +1,6 @@
 package com.wanted.momocity.user.application.command;
 
-import com.wanted.momocity.user.domain.model.Category;
+import com.wanted.momocity.global.domain.model.Category;
 
 public record TeacherApplyCommand(
 
