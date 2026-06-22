@@ -1,9 +1,9 @@
-package com.wanted.momocity.user.infrastructure.persistence;
+package com.wanted.momocity.enrollment.infrastructure.persistence;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.Optional;
+import java.util.List;
 
 public interface SpringDataBuildingRepository extends JpaRepository<BuildingJpaEntity, Long> {
-    Optional<BuildingJpaEntity> findByUserId(Long userId);
+    List<BuildingJpaEntity> findByUserId(Long userId);
 }

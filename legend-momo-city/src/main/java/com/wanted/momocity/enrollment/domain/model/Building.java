@@ -1,4 +1,6 @@
-package com.wanted.momocity.user.domain.model;
+package com.wanted.momocity.enrollment.domain.model;
+
+import com.wanted.momocity.global.domain.model.Category;
 
 import java.time.LocalDateTime;
 

@@ -1,5 +1,6 @@
 package com.wanted.momocity.user.domain.model;
 
+import com.wanted.momocity.global.domain.model.Category;
 import lombok.Builder;
 
 import java.time.LocalDate;

@@ -1,5 +1,6 @@
 package com.wanted.momocity.user.infrastructure.persistence;
 
+import com.wanted.momocity.global.domain.model.Category;
 import com.wanted.momocity.user.application.command.UpdateUserInfoCommand;
 import com.wanted.momocity.user.domain.exception.UserNotFoundException;
 import com.wanted.momocity.user.domain.model.*;
@@ -116,7 +117,7 @@ public class UserRepositoryAdapter implements UserRepository {
     }
 
     @Override
-    public void teacherApply(Long userId,String nickname , Category category, String proof) {
+    public void teacherApply(Long userId, String nickname , Category category, String proof) {
         springDataUserRepository.teacherApply(userId,nickname,category,proof);
     }
 

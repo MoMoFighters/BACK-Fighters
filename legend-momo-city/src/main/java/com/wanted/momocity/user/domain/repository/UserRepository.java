@@ -1,5 +1,6 @@
 package com.wanted.momocity.user.domain.repository;
 
+import com.wanted.momocity.global.domain.model.Category;
 import com.wanted.momocity.user.application.command.UpdateUserInfoCommand;
 import com.wanted.momocity.user.domain.model.*;
 
@@ -50,7 +51,7 @@ public interface UserRepository {
     boolean setAlarm(Long userId);
 
     // 강사 신청
-    void teacherApply(Long userId,String nickname, Category category, String proof);
+    void teacherApply(Long userId, String nickname, Category category, String proof);
 
     // 강사 중복 신청 확인용
     boolean existsByIdAndRoleAndStatus(Long userId, Role role, Status status);
