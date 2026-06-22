@@ -50,4 +50,11 @@ public class CalendarRepositoryAdapter implements CalendarRepository {
         jpaRepository.deleteById(id);
     }
 
+    @Override
+    public List<Calendar> findAllByDate(LocalDate date) {
+        return jpaRepository.findAllByStartLessThanEqualAndEndGreaterThanEqual(date, date)
+                .stream()
+                .map(CalendarJpaEntity::toDomain)
+                .toList();
+    }
 }

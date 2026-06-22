@@ -104,6 +104,9 @@ public class RedisConfig {
         // lecture 단건 조회 캐시
         cacheConfigs.put("lecture", defaultConfig.entryTtl(Duration.ofHours(1)));
 
+        // 게시글 목록 캐시
+        cacheConfigs.put("posts", defaultConfig.entryTtl(Duration.ofHours(1)));
+
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
                 .withInitialCacheConfigurations(cacheConfigs)

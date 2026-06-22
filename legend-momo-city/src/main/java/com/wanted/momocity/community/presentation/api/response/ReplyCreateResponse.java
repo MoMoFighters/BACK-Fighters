@@ -1,0 +1,14 @@
+package com.wanted.momocity.community.presentation.api.response;
+
+import java.time.LocalDateTime;
+
+public record ReplyCreateResponse(
+        Long replyId,
+        Long commentId,
+        String content,
+        String authorName,
+        String authorProfileImageUrl,
+        String authorRole,
+        LocalDateTime createdAt
+) {
+}

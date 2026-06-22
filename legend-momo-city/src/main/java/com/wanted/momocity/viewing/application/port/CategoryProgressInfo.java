@@ -4,7 +4,7 @@ package com.wanted.momocity.viewing.application.port;
 * comment.
 *  CategoryProgressPort 의 반환 DTO
 *  팀원 빌딩 / 마이페이지에서 사용할 진척도 + 이어보기 정보
-*  -> category = null 이면 전체 진척도 + 전체 최근 이어보기
+*  -> category == null 이면 전체 진척도 + 전체 최근 이어보기
 *  -> category != null 이면 카테고리별 진척도 + 카테고리별 최근 이어보기
 * */
 
