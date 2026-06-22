@@ -63,4 +63,36 @@ public class UserExceptionHandler {
                 ));
     }
 
+    // 증빙자료 누락 시
+    @ExceptionHandler(MissingProofException.class)
+    public ResponseEntity<ApiErrorResponse> handleMissingProof(MissingProofException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiErrorResponse.of(
+                        HttpStatus.BAD_REQUEST.value(),
+                        "MISSING_PROOF",
+                        e.getMessage()
+                ));
+    }
+
+    // 증빙 자료 확장자 안 맞을 시
+    @ExceptionHandler(InvalidFileExtensionException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidFileExtension(InvalidFileExtensionException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiErrorResponse.of(
+                        HttpStatus.BAD_REQUEST.value(),
+                        "INVALID_FILE_EXTENSION",
+                        e.getMessage()
+                ));
+    }
+
+    // 파일 갯수 제한
+    @ExceptionHandler(InvalidFileCountException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidFileCount(InvalidFileCountException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiErrorResponse.of(
+                        HttpStatus.BAD_REQUEST.value(),
+                        "INVALID_FILE_COUNT",
+                        e.getMessage()
+                ));
+    }
 }

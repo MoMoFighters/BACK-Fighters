@@ -1,4 +1,4 @@
-package com.wanted.momocity.auth.domain.exception;
+package com.wanted.momocity.user.domain.exception;
 
 public class MissingProofException extends RuntimeException {
     public MissingProofException(String message) {

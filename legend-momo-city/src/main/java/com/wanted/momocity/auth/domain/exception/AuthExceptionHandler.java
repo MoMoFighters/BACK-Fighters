@@ -4,13 +4,12 @@ import com.wanted.momocity.auth.infrastructure.exception.ExpiredJwtCustomExcepti
 import com.wanted.momocity.auth.infrastructure.exception.InvalidJwtCustomException;
 import com.wanted.momocity.auth.infrastructure.exception.InvalidRefreshTokenException;
 import com.wanted.momocity.global.presentation.api.common.ApiErrorResponse;
+import com.wanted.momocity.user.domain.exception.MissingProofException;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-import java.util.Map;
 
 @Order(-1)
 @RestControllerAdvice
@@ -170,15 +169,5 @@ public class AuthExceptionHandler {
                 ));
     }
 
-    // 강사 증빙자료 누락
-    @ExceptionHandler(MissingProofException.class)
-    public ResponseEntity<ApiErrorResponse> handleMissingProof(MissingProofException e) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiErrorResponse.of(
-                        HttpStatus.BAD_REQUEST.value(),
-                        "MISSING_PROOF",
-                        e.getMessage()
-                ));
-    }
 
 }

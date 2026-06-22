@@ -4,7 +4,9 @@ import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.user.application.command.ApproveTeacherCommand;
 import com.wanted.momocity.user.application.command.RejectTeacherCommand;
 import com.wanted.momocity.user.application.command.TeacherApplyCommand;
-import com.wanted.momocity.auth.domain.exception.MissingProofException;
+import com.wanted.momocity.user.domain.exception.InvalidFileCountException;
+import com.wanted.momocity.user.domain.exception.InvalidFileExtensionException;
+import com.wanted.momocity.user.domain.exception.MissingProofException;
 import com.wanted.momocity.user.presentation.api.request.TeacherApplyRequest;
 import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
@@ -29,6 +31,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 /* comment.
     TeacherApplicationController 정리
@@ -89,7 +92,23 @@ public class TeacherApplicationController {
             throw new MissingProofException("증빙 자료는 필수 제출입니다.");
         }
 
-        String proofKey = s3UploadPort.upload(request.proof(),"teacher_proof");
+        // 파일 갯수 제한 - 1개
+        if (request.proof().size() > 1) {
+            throw new InvalidFileCountException("파일은 1개만 업로드 가능합니다.");
+        }
+
+        MultipartFile proof = request.proof().get(0);
+
+        // 확장자 제한 - pdf/mp4만 가능
+        String extension = proof.getOriginalFilename()
+                .substring(proof.getOriginalFilename().lastIndexOf(".") + 1)
+                .toLowerCase();
+
+        if (!extension.equals("pdf") && !extension.equals("mp4")) {
+            throw new InvalidFileExtensionException("pdf 또는 mp4 파일만 업로드 가능합니다.");
+        }
+
+        String proofKey = s3UploadPort.upload(proof,"teacher_proof");
 
         userCommandUsecase.teacherApply(new TeacherApplyCommand(userDetails.getUserId(),request.nickname(),request.category(),proofKey));
 
@@ -151,30 +170,6 @@ public class TeacherApplicationController {
                 response
         ));
     }
-
-
-//    public ResponseEntity<ApiResponse<TeacherActionResponse>> changeRole(
-//            @Parameter(description = "신청자 user PK", example = "7")
-//            @PathVariable Long userId,
-//            @Valid @RequestBody TeacherActionRequest request
-//    ) {
-//        TeacherActionResult result = "APPROVE".equals(request.action())
-//                ? userCommandUsecase.approve(new ApproveTeacherCommand(userId))
-//                : userCommandUsecase.reject(new RejectTeacherCommand(userId, request.reason()));
-//
-//        TeacherActionResponse response = new TeacherActionResponse(
-//                result.userId(),
-//                result.status(),
-//                result.reason(),
-//                result.processedAt()
-//        );
-//        boolean approved = "APPROVE".equals(request.action());
-//        return ResponseEntity.ok(ApiResponse.success(
-//                approved ? TeacherResponseCode.APPROVED : TeacherResponseCode.REJECTED,
-//                approved ? TeacherResponseMessage.APPROVED : TeacherResponseMessage.REJECTED,
-//                response
-//        ));
-//    }
 
 
     @PatchMapping("/application-approve")
