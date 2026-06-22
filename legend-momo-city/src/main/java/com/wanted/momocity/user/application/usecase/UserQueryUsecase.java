@@ -17,7 +17,6 @@ public interface UserQueryUsecase {
             String email,
             String name,
             String nickname,
-            LocalDate birth,
             Boolean isTempPwd,
             LocalDateTime createdAt
 

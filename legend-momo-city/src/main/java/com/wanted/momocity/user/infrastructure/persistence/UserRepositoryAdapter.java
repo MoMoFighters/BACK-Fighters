@@ -135,7 +135,6 @@ public class UserRepositoryAdapter implements UserRepository {
                 entity.getEmail(),
                 entity.getName(),
                 entity.getNickname(),
-                entity.getBirth(),
                 entity.isTempPwd(),
                 entity.getCreatedAt()
         );
@@ -148,7 +147,6 @@ public class UserRepositoryAdapter implements UserRepository {
                 entity.getEmail(),
                 entity.getName(),
                 entity.getNickname(),
-                entity.getBirth(),
                 entity.getProfileImageUrl(),
                 entity.getCategory() != null ? entity.getCategory().name() : null,
                 entity.getProof(),

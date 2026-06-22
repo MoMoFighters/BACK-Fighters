@@ -20,7 +20,6 @@ public record TeacherApplicationDetailResponse(
         String nickname,
         String name,
         String email,
-        LocalDate birth,
         String profileImageUrl,
         String category,
         String proof,
