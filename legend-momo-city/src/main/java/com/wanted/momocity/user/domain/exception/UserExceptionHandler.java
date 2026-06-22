@@ -85,14 +85,4 @@ public class UserExceptionHandler {
                 ));
     }
 
-    // 파일 갯수 제한
-    @ExceptionHandler(InvalidFileCountException.class)
-    public ResponseEntity<ApiErrorResponse> handleInvalidFileCount(InvalidFileCountException e) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiErrorResponse.of(
-                        HttpStatus.BAD_REQUEST.value(),
-                        "INVALID_FILE_COUNT",
-                        e.getMessage()
-                ));
-    }
 }

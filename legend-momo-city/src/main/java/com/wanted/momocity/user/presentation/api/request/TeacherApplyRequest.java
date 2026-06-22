@@ -26,6 +26,7 @@ public record TeacherApplyRequest(
                 type = "string",
                 format = "binary")
         @NotNull(message = "증빙 자료는 필수 제출입니다.")
+        @Size(min = 1, max = 1)
         List<MultipartFile> proof
 
 

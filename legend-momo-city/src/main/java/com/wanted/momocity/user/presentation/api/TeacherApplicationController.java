@@ -87,30 +87,9 @@ public class TeacherApplicationController {
             @Valid @ModelAttribute TeacherApplyRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails){
 
-        // 증빙자료 제출 여부 확인
-        if (request.proof() == null || request.proof().isEmpty()) {
-            throw new MissingProofException("증빙 자료는 필수 제출입니다.");
-        }
-
-        // 파일 갯수 제한 - 1개
-        if (request.proof().size() > 1) {
-            throw new InvalidFileCountException("파일은 1개만 업로드 가능합니다.");
-        }
-
-        MultipartFile proof = request.proof().get(0);
-
-        // 확장자 제한 - pdf/mp4만 가능
-        String extension = proof.getOriginalFilename()
-                .substring(proof.getOriginalFilename().lastIndexOf(".") + 1)
-                .toLowerCase();
-
-        if (!extension.equals("pdf") && !extension.equals("mp4")) {
-            throw new InvalidFileExtensionException("pdf 또는 mp4 파일만 업로드 가능합니다.");
-        }
-
-        String proofKey = s3UploadPort.upload(proof,"teacher_proof");
-
-        userCommandUsecase.teacherApply(new TeacherApplyCommand(userDetails.getUserId(),request.nickname(),request.category(),proofKey));
+        userCommandUsecase.teacherApply(
+                new TeacherApplyCommand(userDetails.getUserId(), request.nickname(), request.category(), request.proof().get(0))
+        );
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(
@@ -120,7 +99,8 @@ public class TeacherApplicationController {
                 ));
     }
 
-    @GetMapping("/admin/users/instructor-applications")
+
+    @GetMapping("/teacher-applications")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "강사 신청자 목록 조회 (MS-3)")
     @ApiResponses({
@@ -149,7 +129,7 @@ public class TeacherApplicationController {
         ));
     }
 
-    @GetMapping("/admin/users/instructor-applications/{userId}")
+    @GetMapping("/teacher-application-detail/{userId}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "강사 신청자 상세 조회 (MS-4)")
     @ApiResponses({
@@ -241,6 +221,8 @@ public class TeacherApplicationController {
                 app.profileImageUrl(),
                 app.category(),
                 app.proof(),
+                app.status(),
+                app.role(),
                 app.appliedAt()
         );
     }
