@@ -1,6 +1,9 @@
 package com.wanted.momocity.enrollment.infrastructure.persistence;
 
+import com.wanted.momocity.lecture.domain.model.LectureCategory;
+import io.lettuce.core.dynamic.annotation.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,4 +31,22 @@ public interface EnrollmentJpaRepository extends JpaRepository<EnrollmentJpaEnti
      * 즉, 내 수강 내역 조회에서 사용합니다.
      */
     List<EnrollmentJpaEntity> findAllByUserId(Long userId);
+
+    // 사용자가 수강신청한 강의 중, 특정 카테고리이고 진척도가 100 이상인 강의 수를 조회합니다.
+    @Query("""
+        select count(enrollment)
+        from EnrollmentJpaEntity enrollment
+        join LectureJpaEntity lecture on lecture.id = enrollment.lectureId
+        where enrollment.userId = :userId
+          and lecture.category = :category
+          and enrollment.totalProgress >= 100
+        """)
+    // count 결과는 long으로 나올 수 있으므로 long으로 받습니다.
+        long countCompletedLecturesByUserIdAndCategory(
+            // 조회할 사용자 ID입니다.
+            @Param("userId") Long userId,
+
+            // 조회할 강의 카테고리입니다.
+            @Param("category") LectureCategory category
+    );
 }
