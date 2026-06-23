@@ -25,8 +25,10 @@ import java.util.List;
 public interface ReportQueryUseCase {
 
     ReportList getRecent(int limit);
-
     ReportList getByIsRead(boolean isRead, int limit);
+
+    // id 값을 받기 위해서 필요한 data
+    ReportDetail getById(Long id);
 
     /* comment.
         ReportList 정리
@@ -41,4 +43,9 @@ public interface ReportQueryUseCase {
     record ReportList(
             List<Report> reports
     ) { }
+
+    // 해당 UseCase 가 어떤 것을 반환하는지 확인가능하기 때문에 여기에 둔다.
+    record ReportDetail(
+            Report report
+    ) {}
 }

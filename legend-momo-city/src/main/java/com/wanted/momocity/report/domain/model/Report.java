@@ -113,6 +113,13 @@ public class Report {
         this.isRead = true;
     }
 
+    // 관리자가 이 신고를 검토하고 처리를 완료했다 (도메인 행위)
+    public void resolve(Long adminId) {
+        this.isRead = true;
+        this.handledAt = LocalDateTime.now();
+        this.handlerAdminId = adminId;
+    }
+
     // === Getters (Setter 없음 = 도메인 행위로만 변경) ===
     public Long getId() { return id; }
     public Long getReporterUserId() { return reporterUserId; }

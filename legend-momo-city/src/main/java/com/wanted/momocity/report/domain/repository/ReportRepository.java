@@ -2,6 +2,7 @@ package com.wanted.momocity.report.domain.repository;
 
 import com.wanted.momocity.report.domain.model.Report;
 import java.util.List;
+import java.util.Optional;
 
 /* comment.
     ReportRepository 정리
@@ -10,8 +11,6 @@ import java.util.List;
        → DIP. 도메인이 약속만 정의, 인프라가 구현.
     3. limit(N) 방식
        → 관리자 위젯이 작아 페이지네이션 불필요 (ErrorLogRepository 와 동일 정책).
-    4. findById 미선언
-       → module04 검토 기능 들어갈 때 추가.
  */
 public interface ReportRepository {
 
@@ -26,4 +25,8 @@ public interface ReportRepository {
 
     // 전체 신고 수 (대시보드 통계용 - ReportStatsAdapter 가 호출)
     long countAll();
+
+    // ID 로 신고 단건 조회 (ID 가 Null 값일 경우 빈 Optional 값)
+    // 예외는 ReportNotFoundException 클래스에서 진행
+    Optional<Report> findById(Long id);
 }
