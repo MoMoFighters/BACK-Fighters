@@ -115,6 +115,9 @@ public class Report {
 
     // 관리자가 이 신고를 검토하고 처리를 완료했다 (도메인 행위)
     public void resolve(Long adminId) {
+        if (adminId == null) {
+            throw new DomainRuleViolationException("처리자 ID는 필수입니다.");
+        }
         this.isRead = true;
         this.handledAt = LocalDateTime.now();
         this.handlerAdminId = adminId;

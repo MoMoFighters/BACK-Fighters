@@ -26,7 +26,6 @@ public interface ReportRepository {
     // 전체 신고 수 (대시보드 통계용 - ReportStatsAdapter 가 호출)
     long countAll();
 
-    // ID 로 신고 단건 조회 (ID 가 Null 값일 경우 빈 Optional 값)
-    // 예외는 ReportNotFoundException 클래스에서 진행
+    // ID 로 신고 단건 조회 (없으면 빈 Optional)
     Optional<Report> findById(Long id);
 }
