@@ -1,0 +1,84 @@
+package com.wanted.momocity.review.application.service;
+
+import com.wanted.momocity.enrollment.domain.repository.EnrollmentRepository;
+import com.wanted.momocity.lecture.domain.exception.LectureNotFoundException;
+import com.wanted.momocity.lecture.domain.repository.LectureRepository;
+import com.wanted.momocity.review.application.command.ReviewCommand;
+import com.wanted.momocity.review.application.usecase.ReviewCommandUseCase;
+import com.wanted.momocity.review.domain.exception.DuplicateReviewException;
+import com.wanted.momocity.review.domain.exception.ReviewAccessDeniedException;
+import com.wanted.momocity.review.domain.model.Review;
+import com.wanted.momocity.review.domain.repository.ReviewRepository;
+import com.wanted.momocity.review.presentation.api.response.CreateReviewResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+// 수강평 등록 서비스 로직
+@Service
+@RequiredArgsConstructor
+@Transactional
+@Slf4j
+public class ReviewCommandService implements ReviewCommandUseCase {
+
+    private final ReviewRepository reviewRepository;
+    private final LectureRepository lectureRepository;
+    private final EnrollmentRepository enrollmentRepository;
+
+    @Override
+    public CreateReviewResponse createReview(
+            ReviewCommand.CreateReviewCommand command
+    ) {
+        // 수강평 등록 시작 로그
+        log.info("수강평 등록 시작 - userId={}, lectureId{}",
+                command.userId(),
+                command.lectureId()
+        );
+
+        // 강의 존재 여부 확인
+        lectureRepository.findById(command.lectureId())
+                .orElseThrow(() -> new LectureNotFoundException("강의를 찾을 수 없습니다."));
+
+        // 로그인 한 사용자가 해당 강의 신청 확인
+        boolean enrolled = enrollmentRepository.existsByUserIdAndLectureId(
+                command.userId(),
+                command.lectureId()
+        );
+
+        // 신청한 강의가 아니면 작성 못한다
+        if (!enrolled){
+            throw new ReviewAccessDeniedException("신청하지 않은 강의입니다.");
+        }
+
+        // 로그인 한 사용자가 강의평을 이미 작성했는지 확인하기
+        boolean alreadyReviewed = reviewRepository.existsByUserIdAndLectureId(
+                command.userId(),
+                command.lectureId()
+        );
+        // 이미 수강평 작성했을 경우 중복 방지
+        if (alreadyReviewed) {
+            throw new DuplicateReviewException("이미 수강평을 작성한 강의입니다.");
+        }
+
+        // 검증 후 수강평 도메인 객체 생성
+        Review review = Review.create(
+                command.userId(),
+                command.lectureId(),
+                command.rating(),
+                command.content()
+        );
+
+        // 수강평 DB 저장
+        Review savedReview= reviewRepository.save(review);
+
+        // 수강평 완료 로그
+        log.info("수강평 등록 완료 : reviewId={}, userId={}, lectureID={}",
+                savedReview.getId(),
+                savedReview.getUserId(),
+                savedReview.getLectureId()
+        );
+
+        return CreateReviewResponse.from(savedReview);
+    }
+}
