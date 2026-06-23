@@ -7,7 +7,6 @@ import com.wanted.momocity.user.domain.model.Role;
 import com.wanted.momocity.user.domain.model.Status;
 import com.wanted.momocity.user.domain.model.TeacherApplication;
 import com.wanted.momocity.user.domain.model.User;
-import com.wanted.momocity.user.domain.repository.BuildingRepository;
 import com.wanted.momocity.user.domain.repository.UserRepository;
 import com.wanted.momocity.user.presentation.api.response.AdminUserListResponse;
 import lombok.RequiredArgsConstructor;
@@ -22,9 +21,7 @@ import java.util.List;
 public class UserQueryService implements UserQueryUsecase {
 
     private final UserRepository userRepository;
-    private final BuildingRepository buildingRepository;
     private final UserPolicy userPolicy;
-
 
     // 마이페이지 내 정보 조회용
     @Override
@@ -37,7 +34,6 @@ public class UserQueryService implements UserQueryUsecase {
                 user.getEmail(),
                 user.getName(),
                 user.getNickname(),
-                user.getBirth(),
                 user.getTempPwd(),
                 user.getCreatedAt()
         );
@@ -48,16 +44,6 @@ public class UserQueryService implements UserQueryUsecase {
         userPolicy.nicknamePolicy(nickname);
     }
 
-    @Override
-    public RenderingBuildingsView userBuildingInfo(Long userId) {
-        return buildingRepository.findByUserId(userId)
-                .map(building -> new RenderingBuildingsView(
-                        building.getCategory(),
-                        building.getPosition(),
-                        building.getLevel()
-                ))
-                .orElse(new RenderingBuildingsView(null, null, null));
-    }
 
     // 대기 강사 전체 조회
     @Override

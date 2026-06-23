@@ -1,5 +1,10 @@
 package com.wanted.momocity.enrollment.presentation.endpoint;
 
+import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
+import org.springframework.stereotype.Component;
+
+@Component
+@Endpoint(id="building")
 public class BuildingEndpoint {
 
     /*comment

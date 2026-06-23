@@ -4,6 +4,7 @@ import com.wanted.momocity.auth.application.port.BlacklistPort;
 import com.wanted.momocity.auth.application.port.RedisRefreshTokenPort;
 import com.wanted.momocity.auth.application.port.TokenProviderPort;
 import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
+import com.wanted.momocity.enrollment.application.usecase.EnrollmentQueryUsecase;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.user.application.command.NicknameRegisterCommand;
 import com.wanted.momocity.user.application.command.UpdateUserInfoCommand;
@@ -24,6 +25,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/user")
@@ -32,6 +35,7 @@ public class UserController {
 
     private final UserCommandUsecase userCommandUsecase;
     private final UserQueryUsecase userQueryUsecase;
+    private final EnrollmentQueryUsecase enrollmentQueryUsecase;
 
     private final BlacklistPort blacklistPort;
     private final TokenProviderPort tokenProviderPort;
@@ -48,13 +52,17 @@ public class UserController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
     })
-    public ResponseEntity<ApiResponse<UserQueryUsecase.UserDetailView>> getUserDetail(
+    public ResponseEntity<ApiResponse<UserInfoDetailResponse>> getUserDetail(
             @AuthenticationPrincipal CustomUserDetails userDetails){
+
+        Long userId = userDetails.getUserId();
+        UserQueryUsecase.UserDetailView userDetail = userQueryUsecase.userDetail(userId);
+        List<EnrollmentQueryUsecase.RenderingBuildingsView>  userBuildingInfo = enrollmentQueryUsecase.userBuildingInfo(userId);
 
         return ResponseEntity.ok(ApiResponse.success(
                 UserResponseCode.SUCCESS,
                 UserResponseMessage.VIEW_SUCCESS,
-                userQueryUsecase.userDetail(userDetails.getUserId())
+                new UserInfoDetailResponse(userDetail, userBuildingInfo)
         ));
     }
 

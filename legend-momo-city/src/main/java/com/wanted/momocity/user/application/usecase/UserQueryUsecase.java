@@ -1,7 +1,6 @@
 package com.wanted.momocity.user.application.usecase;
 
 import com.wanted.momocity.user.domain.model.TeacherApplication;
-import com.wanted.momocity.user.domain.model.Category;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -13,25 +12,15 @@ public interface UserQueryUsecase {
 
     void checkNickname(String nickname);
 
-    RenderingBuildingsView userBuildingInfo(Long userId);
-
     record UserDetailView(
             String profileImageUrl,
             String email,
             String name,
             String nickname,
-            LocalDate birth,
             Boolean isTempPwd,
             LocalDateTime createdAt
 
     ){}
-
-    record RenderingBuildingsView(
-            Category category,
-            Long position,
-            Integer level
-    ){}
-
 
     // 승인 대기 중인 강사 전체 목록 조회
     TeacherApplicationListResult getApplicationList(int page, int size);

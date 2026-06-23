@@ -1,5 +1,6 @@
 package com.wanted.momocity.user.domain.model;
 
+import com.wanted.momocity.global.domain.model.Category;
 import lombok.Builder;
 
 import java.time.LocalDate;
@@ -12,36 +13,36 @@ public class User {
     private final String password;
     private final String name;
     private final String nickname;
-    private final LocalDate birth;
     private final String profileImageUrl;
     private final Role role;          // STUDENT, TEACHER, ADMIN
     private final Status status;      // ACTIVE, SUSPENDED, BANNED, DELETED, BLACK
     private final Category category;  // HEALTH, STUDY, COOK, BEAUTY, ART
     private final String proof;
     private final Long point;
-    private final Boolean isPaid;  // 결제를 했는지 안 했는지
     private final Boolean doNotDisturb; // 설정 끄기를 했는지 안 했는지
+    private final Long suspensionCount; // 신고를 몇번 받았는지
+    private final LocalDateTime suspendedUntil; // 임시 정지 회원이 언제까지 정지인지
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
     private final LocalDateTime deletedAt;
     private final Boolean isTempPwd;  // 이 사용자의 비밀번호가 임시비밀번호인지 아닌지
 
     @Builder
-    public User(Long id, String email, String password, String name, String nickname, LocalDate birth, String profileImageUrl, Role role, Status status, Category category, String proof, Long point, Boolean isPaid, Boolean doNotDisturb, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, Boolean isTempPwd) {
+    public User(Long id, String email, String password, String name, String nickname, String profileImageUrl, Role role, Status status, Category category, String proof, Long point, Boolean doNotDisturb, Long suspensionCount, LocalDateTime suspendedUntil, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, Boolean isTempPwd) {
         this.id = id;
         this.email = email;
         this.password = password;
         this.name = name;
         this.nickname = nickname;
-        this.birth = birth;
         this.profileImageUrl = profileImageUrl;
         this.role = role;
         this.status = status;
         this.category = category;
         this.proof = proof;
         this.point = point;
-        this.isPaid = isPaid;
         this.doNotDisturb = doNotDisturb;
+        this.suspensionCount = suspensionCount;
+        this.suspendedUntil = suspendedUntil;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.deletedAt = deletedAt;
@@ -51,13 +52,12 @@ public class User {
     // 마이페이지에서 사용자에게 제시할 사용자 정보가 몇 개 없어서 user칼럼 전체 다 가져오면 널이 너무 만ㅎ음
     // -> 빌더 사용
     public static User restore(String profileImageUrl, String email,
-                               String name, String nickname, LocalDate birth, Boolean isTempPwd, LocalDateTime createdAt) {
+                               String name, String nickname,  Boolean isTempPwd, LocalDateTime createdAt) {
         return User.builder()
                 .profileImageUrl(profileImageUrl)
                 .email(email)
                 .name(name)
                 .nickname(nickname)
-                .birth(birth)
                 .isTempPwd(isTempPwd)
                 .createdAt(createdAt)
                 .build();
@@ -100,10 +100,6 @@ public class User {
         return nickname;
     }
 
-    public LocalDate getBirth() {
-        return birth;
-    }
-
     public String getProfileImageUrl() {
         return profileImageUrl;
     }
@@ -128,12 +124,16 @@ public class User {
         return point;
     }
 
-    public Boolean getPaid() {
-        return isPaid;
-    }
-
     public Boolean getDoNotDisturb() {
         return doNotDisturb;
+    }
+
+    public Long getSuspensionCount() {
+        return suspensionCount;
+    }
+
+    public LocalDateTime getSuspendedUntil() {
+        return suspendedUntil;
     }
 
     public LocalDateTime getCreatedAt() {

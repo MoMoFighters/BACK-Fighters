@@ -2,7 +2,6 @@ package com.wanted.momocity.auth.infrastructure.persistence;
 
 import com.wanted.momocity.auth.application.port.LoadUserPort;
 import com.wanted.momocity.auth.application.port.UpdatePasswordPort;
-import com.wanted.momocity.auth.domain.model.Category;
 import com.wanted.momocity.auth.domain.model.Role;
 import com.wanted.momocity.auth.domain.model.User;
 import com.wanted.momocity.auth.domain.repository.UserRepository;
@@ -34,15 +33,15 @@ public class UserRepositoryAdapter implements UserRepository, LoadUserPort, Upda
                 user.getPassword(),
                 user.getName(),
                 null,                    // nickname
-                null,                    // birth
                 user.getProfileImageUrl(),                    // profileImageUrl
                 Role.STUDENT,
                 user.getStatus(),
                 user.getCategory(),
                 user.getProof(),
                 user.getPoint(),                       // point
-                false,                   // isPaid
                 false,                   // doNotDisturb
+                user.getSuspensionCount(),
+                user.getSuspendedUntil(),
                 user.getCreatedAt(),         // createdAt
                 LocalDateTime.now(),     // updatedAt
                 null,                    // deletedAt
@@ -66,15 +65,15 @@ public class UserRepositoryAdapter implements UserRepository, LoadUserPort, Upda
                 entity.getPassword(),
                 entity.getName(),
                 entity.getNickname(),
-                entity.getBirth(),
                 entity.getProfileImageUrl(),
                 entity.getRole(),
                 entity.getStatus(),
                 entity.getCategory(),
                 entity.getProof(),
                 entity.getPoint(),
-                entity.isPaid(),
                 entity.isDoNotDisturb(),
+                entity.getSuspensionCount(),
+                entity.getSuspendedUntil(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt(),
                 entity.getDeletedAt(),
