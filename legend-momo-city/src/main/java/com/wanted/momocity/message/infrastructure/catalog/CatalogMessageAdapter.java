@@ -1,13 +1,8 @@
 package com.wanted.momocity.message.infrastructure.catalog;
 
-import com.wanted.momocity.friend.domain.repository.FriendRepository;
 import com.wanted.momocity.friend.enrollment.EnrollmentWithFMJpaEntity;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
-import com.wanted.momocity.friend.infrastructure.persistence.FriendSideEnrollmentRepository;
-import com.wanted.momocity.friend.infrastructure.persistence.FriendSideUserRepository;
-import com.wanted.momocity.friend.infrastructure.persistence.SpringDataFriendRepository;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
-import com.wanted.momocity.message.application.policy.MessageEligibilityPolicy;
 import com.wanted.momocity.message.domain.repository.ChatRoomQueryProjection;
 import com.wanted.momocity.message.domain.repository.MessageRepository;
 import com.wanted.momocity.message.infrastructure.persistence.*;
@@ -17,10 +12,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.swing.text.html.Option;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static org.apache.logging.log4j.ThreadContext.isEmpty;
 
 //포트 문을 통해 db세상으로 나가는 문
 //다른 테이블에서 필요한 정보 가져오기(또는 서비스에서)
@@ -68,6 +65,7 @@ public class CatalogMessageAdapter implements MessageRepository {
         return relation;
     }
 
+    //채팅방 정렬을 위한 마지막 안내 문구 시간
     @Override
     public Optional<LocalDateTime> findLatestAnnounceTime(Long roomId) {
         return springDataMessageAnnounceRepository.findFirstByRoomId_IdOrderByCreatedAtDesc(roomId)
@@ -201,46 +199,27 @@ public class CatalogMessageAdapter implements MessageRepository {
     public Optional<Long> findExistingRoom(Long userId, Long targetUserId) {
         log.info("[CatalogMessageAdapter] 두 유저간의 기존 대화방 존재 여부 탐색 시작 - 요청자ID: {}, 대상자ID: {}", userId, targetUserId);
 
-        //로그인 유저가 참여하는 방ID
-        List<ChatRoomMemberJpaEntity> myMemberships = springDataChatRoomMemberRepository.findByUserId_Id(userId);
-        List<Long> myRoomIds = myMemberships.stream()
+        //두 유저가 참여중인 방ID
+        List<ChatRoomMemberJpaEntity> memberships = springDataChatRoomMemberRepository.findByUserId_IdInAndRoomId_RoomTitleIsNull(List.of(userId, targetUserId));
+
+        // 2. 엔티티 리스트에서 '방 ID'만 추출해서 Long 리스트로 변환합니다.
+        List<Long> roomIds = memberships.stream()
                 .map(m -> m.getRoomId().getId())
                 .toList();
 
-        //1차 비교: 멤버에 로그인 유저와 상대방 있는지 확인(나감 여부 없음)
-        List<ChatRoomMemberJpaEntity> targetMemberships = springDataChatRoomMemberRepository.findByUserId_Id(targetUserId);
-
-        //로그인 유저와 상대방이 참여한 교집합 방 있으면 반환
-        for (ChatRoomMemberJpaEntity targetMeta : targetMemberships) {
-            Long targetRoomId = targetMeta.getRoomId().getId();
-            if (myRoomIds.contains(targetRoomId)) {
-                log.info("[CatalogMessageAdapter] 두 유저가 모두 참여 중인 기존 방 발견 - 방ID: {}", targetRoomId);
-                return Optional.of(targetRoomId);
-            }
-        }
-
-        //2차 비교: 상대방이 나간 경우 확인
-        //로그인 유저가 참여한 방 중 대상자가 보낸 메시지 있는 거 확인
-        log.info("[CatalogMessageAdapter] 동시 참여 중인 방 없음. 과거 메시지 이력 역추적 시작...");
-        for (ChatRoomMemberJpaEntity myMeta : myMemberships) {
-            Long roomId = myMeta.getRoomId().getId();
-
-            //해당 채팅방에 속하면서 상대방 메시지가 존재하는지 확인
-            boolean hasMessageFromTarget = springDataMessageRepository.existsByRoomId_IdAndSenderId_Id(roomId, targetUserId);
-
-            if (hasMessageFromTarget) {
-                log.info("[CatalogMessageAdapter] 과거 메시지 송수신 이력이 있는 기존 방 발견 - 방ID: {}", roomId);
-                return Optional.of(roomId);
-            }
-        }
-        //상대방이 보낸 메시지 흔적이 없다면 텅 빈 값 반환
-        log.info("[CatalogMessageAdapter] 로그인 유저 채팅방에 상대방 메시지 내역 없음. 채팅방 신설 시작.");
-        return Optional.empty();
+        //교집합: 빈도수가 2인 것 가져오기.
+        // 나의 모든 일대일 채팅방, 상대의 모든 일대일 채팅방 중 두 번 나온게 나와 상대방 유저의 일대일 방
+        return roomIds.stream()
+                .filter(roomId -> Collections.frequency(roomIds, roomId) == 2)
+                .findFirst();
     }
+
+    //채팅방 개설
     //채팅방 생성 시점에 시간 주입
     @Override
     public void saveChatRoom(ChatRoomJpaEntity room) {
         room.changeCreatedAt(LocalDateTime.now());
+        room.changeUpdatedAt(LocalDateTime.now());
         springDataChatRoomRepository.save(room);
         log.info("[CatalogMessageAdapter] chat_room 테이블 행 추가 완료 - 채팅방생성시간: {}", room.getCreatedAt());
     }
@@ -285,9 +264,9 @@ public class CatalogMessageAdapter implements MessageRepository {
 
     //안내 문구 조회
     @Override
-    public List<MessageAnnounceJpaEntity> findAnnounceHistory(Long roomId, LocalDateTime startTimeLine) {
-        //재입장한 유저의 타임라인 이후 생성한 안내 문구 전체를 가져와 메시지와 병합하여 정렬
-        return springDataMessageAnnounceRepository.findByRoomId_IdAndCreatedAtGreaterThanEqual(roomId, startTimeLine);
+    public List<MessageAnnounceJpaEntity> findAnnounceHistory(Long roomId, LocalDateTime startTimeLine, LocalDateTime endTimeLine) {
+        //채팅방 생성 또는 멤버로 가입된 시점 이후부터 마지막 메시지의 시간 사이의 안내 문구 조회
+        return springDataMessageAnnounceRepository.findByRoomId_IdAndCreatedAtBetween(roomId, startTimeLine, endTimeLine);
     }
 
     //회원가입 직후 방 존재 여부 확인용
@@ -303,5 +282,51 @@ public class CatalogMessageAdapter implements MessageRepository {
         return myAllRooms.stream()
                 .map(member -> member.getRoomId().getId())
                 .min(Long::compare);
+    }
+
+    //채팅방 나가기: 안내문구 저장
+    @Override
+    public void saveLeaveAnnounce(ChatRoomJpaEntity chatRoom, UserWithFMJpaEntity leaveUser, String leaveMessage) {
+        log.info("[CatalogMessageAdapter] 채팅방 퇴장 안내 문구 저장 시작 - 방ID:{}, 유저ID:{}", chatRoom.getId(), leaveUser.getId());
+
+        MessageAnnounceJpaEntity announce = MessageAnnounceJpaEntity.createLeaveAnnounce(
+                chatRoom,
+                leaveUser,
+                leaveMessage,
+                "LEAVE",
+                LocalDateTime.now()
+        );
+        springDataMessageAnnounceRepository.save(announce);
+        log.info("[CatalogMessageAdapter] 퇴장 안내 문구 저장 완료 - ID: {}", announce.getId());
+
+    }
+
+    //채팅방 목록 조회: 마지막 메시지 시간
+    @Override
+    public Optional<LocalDateTime> findLatestMessageTimeById(Long messageId) {
+        return springDataMessageRepository.findCreatedAtById(messageId)
+                .map(MessageJpaEntity::getCreatedAt);
+    }
+
+    //웹소켓 메시지 내역 조회?(지연 가능성)
+    @Override
+    public void flush() {
+        springDataMessageReadRepository.flush();
+    }
+
+    //일대일 재입장 안내 문구
+    @Override
+    public void saveEnterAnnounce(ChatRoomJpaEntity chatRoom, UserWithFMJpaEntity enterUser, String enterMessage) {
+        log.info("[CatalogMessageAdapter] 일대일 채팅방 재입장 안내 문구 저장 시작 - 방ID:{}, 유저ID:{}", chatRoom.getId(), enterUser.getId());
+        MessageAnnounceJpaEntity announce = MessageAnnounceJpaEntity.createLeaveAnnounce(
+                chatRoom,
+                enterUser,
+                enterMessage,
+                "LEAVE",
+                LocalDateTime.now()
+        );
+        springDataMessageAnnounceRepository.save(announce);
+        log.info("[CatalogMessageAdapter] 일대일 재입장 안내 문구 저장 완료 - ID: {}", announce.getId());
+
     }
 }

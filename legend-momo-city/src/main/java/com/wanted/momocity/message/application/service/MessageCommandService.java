@@ -1,17 +1,20 @@
 package com.wanted.momocity.message.application.service;
 
+import com.wanted.momocity.friend.enrollment.EnrollmentWithFMJpaEntity;
 import com.wanted.momocity.friend.fmexception.FMBusinessRuleViolationException;
-import com.wanted.momocity.friend.fmexception.FMResourceAccessDeniedException;
 import com.wanted.momocity.friend.fmexception.FMResourceNotFoundException;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import com.wanted.momocity.message.application.command.CreateChatRoomCommand;
+import com.wanted.momocity.message.application.command.LeaveChatRoomCommand;
 import com.wanted.momocity.message.application.command.ReadMessageCommand;
 import com.wanted.momocity.message.application.command.SendMessageCommand;
 import com.wanted.momocity.message.application.manager.ChatRoomSessionManager;
 import com.wanted.momocity.message.application.policy.MessageEligibilityPolicy;
+import com.wanted.momocity.message.application.query.FindChatRoomQuery;
+import com.wanted.momocity.message.application.query.GetMessageHistoryQuery;
 import com.wanted.momocity.message.application.usecase.MessageCommandUseCase;
-import com.wanted.momocity.message.domain.event.LeftRoomPublishedEvent;
+import com.wanted.momocity.message.application.usecase.MessageQueryUseCase;
 import com.wanted.momocity.message.domain.event.SendMessagePublishedEvent;
 import com.wanted.momocity.message.domain.repository.MessageRepository;
 import com.wanted.momocity.message.infrastructure.persistence.*;
@@ -22,6 +25,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -32,22 +36,16 @@ import java.util.Optional;
 @Transactional
 public class MessageCommandService implements MessageCommandUseCase {
 
-//    private final MessageSideUserRepository messageSideUserRepository;
-//    private final MessageSideFriendRepository messageSideFriendRepository;
     private final MessageRepository messageRepository;
     private final MessageEligibilityPolicy messageEligibilityPolicy;
-//    private final SpringDataMessageRepository springDataMessageRepository;
-//    private final SpringDataChatRoomMemberRepository springDataChatRoomMemberRepository;
-    //notification에 행 추가
     private final ApplicationEventPublisher eventPublisher;
     //웹소켓
     private final ChatRoomSessionManager sessionManager;
     //웹소켓 브로드캐스팅 템플릿 주입
     private final SimpMessagingTemplate messagingTemplate;
-//    private final SpringDataChatRoomMemberRepository chatRoomMemberRepository;
-//    private final SpringDataChatRoomRepository springDataChatRoomRepository;
-//
-//    private final SpringDataMessageReadRepository springDataMessageReadRepository;
+
+    //웹소켓 중복 가공 회피를 위한 QueryUseCase 주입
+    private final MessageQueryUseCase messageQueryUseCase;
 
     //채팅방 조회 및 개설
     @Override
@@ -101,11 +99,13 @@ public class MessageCommandService implements MessageCommandUseCase {
                 for (ChatRoomMemberJpaEntity membership : targetMemberships) {
                     //내가 나간 방일 가능성 있는 후보방
                     Long candidateRoomId = membership.getRoomId().getId();
+                    ChatRoomJpaEntity room = membership.getRoomId(); //방 엔티티 꺼내기
 
                     //상대방이 참여 중인 그 방의 인원이 혼자인지 확인
                     List<ChatRoomMemberJpaEntity> roomMembers = messageRepository.findMembersByRoomId(candidateRoomId);
 
-                    if (roomMembers.size() == 1) {
+                    //인원이 1명이면서 방 제목이 없어야 일대일 과거방.
+                    if (roomMembers.size() == 1 && (room.getRoomTitle() == null || room.getRoomTitle().trim().isEmpty())) {
                         //상대방이 혼자 남은 방에 로그인 유저가 보낸 메시지가 1개라도 존재하는 지 확인
                         //로그인 유저가 보낸 메시지가 있다면 로그인 유저가 나간 방
                         boolean hasMyPastMessage = messageRepository.existsMessageByRoomIdAndSenderId(candidateRoomId, command.userId());
@@ -122,6 +122,10 @@ public class MessageCommandService implements MessageCommandUseCase {
                             ChatRoomMemberJpaEntity myNewMembership = ChatRoomMemberJpaEntity.createMembership(existingRoom, loginUser);
                             messageRepository.saveChatRoomMember(myNewMembership);
                             log.info("[CreateChatRoomCommandService] 나갔던 로그인 유저(ID: {})를 기존 방(ID: {})의 멤버로 복구 완료", command.userId(), finalRoomId);
+
+                            //재입장 시 message_announce 테이블에 안내 문구 추가
+                            messageRepository.saveEnterAnnounce(existingRoom, loginUser, loginUser.getNickname() + "님이 입장했습니다.");
+                            log.info("[CreatedChatRoomCommandService] 재입장 안내 문구 추가 완료. 방ID:{}", finalRoomId);
 
                             break;
                         }
@@ -221,9 +225,16 @@ public class MessageCommandService implements MessageCommandUseCase {
         ChatRoomJpaEntity chatRoom = messageRepository.findChatRoomById(command.roomId())
                 .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 채팅방입니다."));
 
+        //나와의 채팅방 식별: 로그인 유저의 최초의 방
+        Long firstRoomId = messageRepository.findFirstRoomIdByUserId(command.senderId())
+                .orElse(null);
+
         //어댑터에서 멤버 테이블 찔러서 현재 방에 소속된 멤버 긁어오기
         List<ChatRoomMemberJpaEntity> members = messageRepository.findMembersByRoomId(command.roomId());
         long roomMemberCount = members.size();
+
+        //일대일, 다대다 여부
+        boolean isOneToOne = chatRoom.getRoomTitle() == null || chatRoom.getRoomTitle().trim().isEmpty();
 
         //상대방 유저 추출
         UserWithFMJpaEntity targetUser = members.stream()
@@ -244,137 +255,137 @@ public class MessageCommandService implements MessageCommandUseCase {
                     .orElse("none");
         }
 
-        messageEligibilityPolicy.sendable(command.roomId(), command.senderId(), friendStatus, roomMemberCount);
+        messageEligibilityPolicy.sendable(command.roomId(), command.senderId(), friendStatus, roomMemberCount, isOneToOne, targetUser, firstRoomId);
 
         //메시지 테이블에 저장
         MessageJpaEntity newMessage = MessageJpaEntity.createNewMessage(chatRoom, sender, command.content());
         messageRepository.saveMessage(newMessage);
 
-        //읽음 상태 기본 false
-        boolean isRead = false;
-
-        //로그인 유저를 제외한 메시지를 받는 사람들 뽑기
         List<MessageReadJpaEntity> readOtherUsers = new ArrayList<>();
-        for (ChatRoomMemberJpaEntity member: members) {
-            //메시지 보낸 로그인 유저를 수신자 목록에서 제외
-            if (member.getUserId().getId().equals(command.senderId())) {
-                continue;
-            }
 
-            //수신자
+        for (ChatRoomMemberJpaEntity member : members) {
+            //로그인 유저가 보낸 메시지라면 그대로
+            if (member.getUserId().getId().equals(command.senderId())) continue;
+
+            //메시지 받는 사람
             UserWithFMJpaEntity receiver = member.getUserId();
-
-            //웹소켓으로 상대방이 방에 머무는 거 확인 후 있다면 true 처리
-            //수신자가 실시간 웹소켓 채널에 접속 중인지 여부 체크
+            //메시지 받는 사람이 현재 방에 머무는지
             boolean isUserInRoom = sessionManager.isUserInRoom(receiver.getId(), command.roomId());
-            if (isUserInRoom) {
-                isRead = true; //상대방이
-            }
 
-            //메시지 읽음 테이블에 저장
             MessageReadJpaEntity newUnreadMessage = MessageReadJpaEntity.createNewUnreadMessage(
                     chatRoom,
                     newMessage,
                     receiver,
-                    isUserInRoom, //메시지 읽음 여부: 상대방이 채팅방에 머무르면 true, 없으면 false
-                    isUserInRoom, //알림 읽음 여부: 상대방이 채팅방에 머무르면 true, 없으면 false
-                    isUserInRoom //알림 삭제 여부: 상대방이 채팅방에 머무르면 알림이 없으므로 ture, 없으면 false
+                    isUserInRoom,
+                    isUserInRoom,
+                    isUserInRoom
             );
-
             readOtherUsers.add(newUnreadMessage);
-
-            //웹소켓에서도 친구 관계가 아니라면 '닉네임(알 수 없음)'으로 데이터 가공
-            String relationWithReceiver = messageRepository.findFriendRelation(command.senderId(), receiver.getId())
-                    .map(FriendJpaEntity::getStatus)
-                    .orElse("none");
-
-            //웹소켓 시 친구 상태가 아니라면 알 수 없음
-            String displayNickname = sender.getNickname();
-            if (!"FRIEND".equals(relationWithReceiver)) {
-                displayNickname += "(알 수 없음)";
-            }
-
-            //실시간 웹소켓 전송(프론트엔트가 구독 중인 주소로 메시지 주머니 투척)
-            MessageCommandService.WebSocketMessageDto wsPayload = new MessageCommandService.WebSocketMessageDto(
-                newMessage.getId(),
-                command.senderId(),
-                "TEACHER".equals(sender.getRole()) ? sender.getName() : null,
-                displayNickname,
-                sender.getRole(),
-                command.content(),
-                newMessage.getCreatedAt(),
-                isRead
-            );
-
-            //WebSocketConfig에서 설정한 prefix "/sub" 채널로 발송
-            String destination = "/sub/chat/room/" + command.roomId();
-            messagingTemplate.convertAndSendToUser(receiver.getId().toString(), destination, wsPayload);
         }
 
-        //루프가 끝난 후 모아둔 읽음 행들 모두 저장
+        //현재 채팅방에 머무는 사람이 있으면 읽음 처리
         if (!readOtherUsers.isEmpty()) {
             messageRepository.saveAllMessageRead(readOtherUsers);
         }
 
-        // 🎯 2. 나와의 채팅방이 아닐 때만 상대방(targetUser)에게 알림 이벤트 발행
-        for (MessageReadJpaEntity readEntity : readOtherUsers) {
-            log.info("[SendMessageService] 메시지 전송 성공 - 알림 발행. 수신자: {}", targetUser.getId());
-            eventPublisher.publishEvent(new SendMessagePublishedEvent(
-                    command.roomId(),
-                    command.senderId(),
-                    sender.getNickname(),   // 발신자 닉네임 추출
-                    readEntity.getUserId(),
-                    newMessage.getCreatedAt()
-            ));
+        //데이터 정합성을 위한 영속성 플러시
+        // (새로 데이터를 전송하고 밑에서 채팅방에 머무르는 사람있으면 저장되기 전에 메시지 내역이 호출됨)
+        messageRepository.flush();
+
+        //WebSocketConfig에서 설정한 prefix "/sub" 채널로 발송
+        String destination = "/sub/chat/room/" + command.roomId();
+
+        //방에 있는 모든 사람 찾기(로그인 유저 포함)
+        for (ChatRoomMemberJpaEntity member: members) {
+            //수신자
+            UserWithFMJpaEntity receiver = member.getUserId();
+
+            //메시지 내역 웹소켓
+            List<MessageQueryUseCase.MessageHistoryView> historyPayload =
+                    messageQueryUseCase.getMessageHistoryQueryHandle(new GetMessageHistoryQuery(receiver.getId(), command.roomId(), null));
+            messagingTemplate.convertAndSendToUser(receiver.getId().toString(), destination, historyPayload);
+
+            //채팅방 목록 웹소켓
+            List<MessageQueryUseCase.ChatRoomView> chatRoomListPayload =
+                    messageQueryUseCase.getChatRoomQueryHandle(new FindChatRoomQuery(receiver.getId()));
+            messagingTemplate.convertAndSendToUser(receiver.getId().toString(), "/sub/chat/rooms", chatRoomListPayload);
         }
+        log.info("[웹소켓 실시간 발송] QueryService 기존 로직 재활용");
 
-
-        //로그인 유저(보낸 사람) 화면에도 실시간으로 말풍선을 띄위기 위함
-        WebSocketMessageDto myPayload = new WebSocketMessageDto(
-                newMessage.getId(),
+        // 🎯 2. 나와의 채팅방이 아닐 때만 상대방(targetUser)에게 알림 이벤트 발행
+        log.info("[SendMessageService] 메시지 전송 성공 - 알림 발행. 방번호: {}", command.roomId());
+        eventPublisher.publishEvent(new SendMessagePublishedEvent(
+                command.roomId(),
+                chatRoom.getRoomTitle(),
                 command.senderId(),
-                "TEACHER".equals(sender.getRole()) ? sender.getName() : null,
-                sender.getNickname(),
-                sender.getRole(),
-                command.content(),
-                newMessage.getCreatedAt(),
-                isRead
-        );
-        messagingTemplate.convertAndSendToUser(command.senderId().toString(), "/sub/chat/room/" + command.roomId(), myPayload);
-        log.info("[웹소켓 개별 분할 발송] 방번호 {} 참여자별 실시간 메시지 브로드캐스팅 완료", command.roomId());
-
+                sender.getNickname(),   // 발신자 닉네임 추출
+                isOneToOne ? targetUser : null, //일대일이면 상대방 정보 전달, 다대다면 null 처리
+                newMessage.getCreatedAt()
+        ));
 
         return new SendView(
                 command.roomId(),
-                targetUser.getId(),
-                targetUser.getNickname(),
-                targetUser.getRole(),
-                friendStatus,
+                isOneToOne ? targetUser.getId() : null,
+                isOneToOne ? targetUser.getNickname() : chatRoom.getRoomTitle(),
+                isOneToOne ? targetUser.getRole() : null,
+                isOneToOne ? friendStatus : "none",
                 command.content(),
                 newMessage.getCreatedAt()
         );
     }
 
-    // 🎯 웹소켓 전송용 가벼운 내부 레코드(DTO) 생성
-    public record WebSocketMessageDto(
-            Long messageId,
-            Long senderId,
-            String name,
-            String nickname,
-            String role,
-            String content,
-            java.time.LocalDateTime createdAt,
-            boolean isRead
-    ) {}
+//    // 🎯 웹소켓 전송용 가벼운 내부 레코드(DTO) 생성
+//    public record WebSocketMessageDto(
+//            RoomInfoWebsocket roomInfo
+//    ) {}
+//
+//    //웹소켓 방 정보(멤버, 메시지)
+//    public record RoomInfoWebsocket(
+//            Long roomId,
+//            Long inMemberCount,
+//            String roomTitle, //일대일이면 null
+//            List<MemberInfoWebSocket> memberInfo,
+//            List<MessagesWebsocket> messages
+//    ) {}
+//
+//    //엡소켓 멤버 정보
+//    public record MemberInfoWebSocket(
+//            Long userId,
+//            String name, //강사 아니면 null
+//            String nickname,
+//            String lectureTitle, //강사와의 대화아니면 null
+//            String role,
+//            String status, //친구 상태
+//            String profileImageUrl,
+//            boolean isLeftRoom
+//    ) {}
+//
+//    //웹소켓 메시지 정보
+//    public record MessagesWebsocket(
+//            Long messageId,
+//            Long senderId,
+//            String name,
+//            String nickname,
+//            String role,
+//            String status,
+//            String content,
+//            LocalDateTime createdAt,
+//            Long unreadCount, //말풍선 안읽은 사람 수
+//            Boolean isMine,
+//            Boolean isLeftRoom,
+//            String profileImageUrl,
+//            Long targetUserId,
+//            String type
+//    ) {}
 
     //메시지 읽음
     @Override
     public ReadView readMessageCommandHandle(ReadMessageCommand command) {
 
+        //방제목 알아야 함(응답 메시지에서 다대다 분기를 위함)
         //방 존재 검증
-        if (!messageRepository.existsRoomById(command.roomId())) {
-            throw new FMResourceNotFoundException("존재하지 않거나 삭제된 채팅방입니다.");
-        }
+        ChatRoomJpaEntity chatRoom = messageRepository.findChatRoomById(command.roomId())
+                .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않거나 삭제된 채팅방입니다."));
 
         //권한 체크를 위해 멤버 여부 조회
         boolean isCurrentMember = messageRepository.existsMemberByRoomIdAndUserId(command.roomId(), command.userId());
@@ -382,13 +393,20 @@ public class MessageCommandService implements MessageCommandUseCase {
         //권한 체크(방 멤버가 맞는지)
         messageEligibilityPolicy.validateAccess(command.roomId(), command.userId(), isCurrentMember);
 
-        //상대방 닉네임 추출
-        List<ChatRoomMemberJpaEntity> members = messageRepository.findMembersByRoomId(command.roomId());
-        UserWithFMJpaEntity targetUser = members.stream()
-                .map(ChatRoomMemberJpaEntity::getUserId)
-                .filter(user -> !user.getId().equals(command.userId()))
-                .findFirst()
-                .orElse(members.get(0).getUserId()); //나와의 채팅방 대비
+        //일대일, 다대다 분가
+        boolean isOneToOne = chatRoom.getRoomTitle() == null ||chatRoom.getRoomTitle().trim().isEmpty();
+
+        UserWithFMJpaEntity targetUser = null;
+
+        //상대방 닉네임 추출(일대일인 경우)
+        if (isOneToOne) {
+            List<ChatRoomMemberJpaEntity> members = messageRepository.findMembersByRoomId(command.roomId());
+            targetUser = members.stream()
+                    .map(ChatRoomMemberJpaEntity::getUserId)
+                    .filter(user -> !user.getId().equals(command.userId()))
+                    .findFirst()
+                    .orElse(members.get(0).getUserId()); //나와의 채팅방 대비
+        }
 
         //이 채팅방에서 상대방이 보낸 메시지 중 안읽은 메시지 뽑기
         //v2->읽음 테이블에서 userId가 로그인 유저이면서 메시지 안읽음 여부 확인(메시지 안읽고 알림만 읽은 경우 고려)
@@ -409,49 +427,51 @@ public class MessageCommandService implements MessageCommandUseCase {
 
         return new ReadView(
                 command.roomId(),
-                targetUser.getId(),
-                targetUser.getNickname(),
+                isOneToOne ? targetUser.getId() : null,
+                isOneToOne ? targetUser.getNickname() : chatRoom.getRoomTitle(),
                 hasUnread
         );
     }
 
     //채팅방 나가기
     @Override
-    public LeaveChatRoomView leaveChatRoomCommandHandle(Long roomId, Long userId) {
-        log.info("[LeaveChatRoomCommandService] 채팅방 나가기 검증 시작 - 방ID: {}, 유저ID: {}", roomId, userId);
+    public LeaveChatRoomView leaveChatRoomCommandHandle(LeaveChatRoomCommand command) {
+        log.info("[LeaveChatRoomCommandService] 채팅방 나가기 검증 시작 - 방ID: {}, 유저ID: {}", command.roomId(), command.userId());
 
         //나가려는 채팅방이 존재하는 지 검증(404)
-        ChatRoomJpaEntity chatRoom = messageRepository.findChatRoomById(roomId)
+        ChatRoomJpaEntity chatRoom = messageRepository.findChatRoomById(command.roomId())
                 .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않거나 이미 나간 채팅방입니다."));
 
         //해당 방에 들어있는 모든 멤버 가져오기
-        List<ChatRoomMemberJpaEntity> allMembers = messageRepository.findMembersByRoomId(roomId);
+        List<ChatRoomMemberJpaEntity> allMembers = messageRepository.findMembersByRoomId(command.roomId());
 
         //정책 위임(403, 409)
-        messageEligibilityPolicy.leaveChatRoom(userId, roomId, allMembers);
+        messageEligibilityPolicy.leaveChatRoom(command.userId(), command.roomId(), allMembers);
 
         //로그인 유저 정보 추출
         ChatRoomMemberJpaEntity myMembership = null;
         for (ChatRoomMemberJpaEntity member: allMembers) {
-            if (member.getUserId().getId().equals(userId)) {
+            if (member.getUserId().getId().equals(command.userId())) {
                 myMembership = member;
                 break;
             }
         }
 
+        UserWithFMJpaEntity loginUser = messageRepository.getUserWithFMReferenceById(command.userId());
+
         //방 분기
-        int currentMemberCount = allMembers.size();
+        long currentMemberCount = allMembers.size();
 
         //로그인 유저가 방에 남은 마지막 사용자일 때(chat_room, chat_room_member, message 모두 삭제)
         if (currentMemberCount <= 1) {
             log.info("[LeaveChatRoomCommandService] 마지막 사용자 퇴장 처리 -> 방 폭파 진행");
-            messageRepository.deleteMessagesByRoomId(roomId); //안내 문구, 읽음 여부, 메시지 삭제
+            messageRepository.deleteMessagesByRoomId(command.roomId()); //안내 문구, 읽음 여부, 메시지 삭제
             messageRepository.deleteChatRoomMember(myMembership);
             messageRepository.deleteChatRoom(chatRoom);
 
             return new LeaveChatRoomView(
                     true,
-                    roomId,
+                    command.roomId(),
                     null,
                     null,
                     null,
@@ -463,35 +483,60 @@ public class MessageCommandService implements MessageCommandUseCase {
         log.info("[LeaveChatRoomCommandService] 상대방 존재 확인 -> 로그인 유저 멤버 행만 삭제");
         messageRepository.deleteChatRoomMember(myMembership);
 
-        // 🎯 [수정]: 전체 멤버 중 '내가 아닌 사람(남겨진 사람)'을 정확히 찾아옵니다.
-        // 이러면 나중에 다대다로 확장되어도 최소한 남은 사람 중 한 명을 안전하게 찝어올 수 있습니다.
-        UserWithFMJpaEntity targetUser = null;
-        for (ChatRoomMemberJpaEntity member : allMembers) {
-            if (!member.getUserId().getId().equals(userId)) {
-                targetUser = member.getUserId();
-                break;
+        //message_announce 테이블에 행 추가
+        messageRepository.saveLeaveAnnounce(chatRoom, loginUser, loginUser.getNickname() + "님이 나갔습니다.");
+
+        String destination = "/sub/chat/room/" + command.roomId();
+        for (ChatRoomMemberJpaEntity memberW : allMembers) {
+            //방을 나간 로그인 유저를 제외한 나머지 남은 인원들에게 발송
+            if (!memberW.getUserId().getId().equals(command.userId())) {
+                Long remainingUserId = memberW.getUserId().getId();
+
+                //웹소켓 퇴장 안내 문구(메시지 내역)
+                List<MessageQueryUseCase.MessageHistoryView> historyPayload =
+                        messageQueryUseCase.getMessageHistoryQueryHandle(new GetMessageHistoryQuery(remainingUserId, command.roomId(), null));
+                messagingTemplate.convertAndSendToUser(remainingUserId.toString(), destination, historyPayload);
+
+                //웹소켓 채팅방 목록
+                List<MessageQueryUseCase.ChatRoomView> chatRoomListPayload =
+                        messageQueryUseCase.getChatRoomQueryHandle(new FindChatRoomQuery(remainingUserId));
+                messagingTemplate.convertAndSendToUser(remainingUserId.toString(), "/sub/chat/rooms", chatRoomListPayload);
             }
         }
 
-        String friendStatus = messageRepository.findFriendRelation(userId, targetUser.getId())
-                .map(FriendJpaEntity::getStatus)
-                .orElse("none");
+        // 🎯 [수정]: 전체 멤버 중 '내가 아닌 사람(남겨진 사람)'을 정확히 찾아옵니다.
+        // 이러면 나중에 다대다로 확장되어도 최소한 남은 사람 중 한 명을 안전하게 찝어올 수 있습니다.
+        UserWithFMJpaEntity targetUser = null;
+        String friendStatus = "none";
 
-        UserWithFMJpaEntity loginUser = myMembership.getUserId();
+        //로그인 유저 나간 멤버수
+        long remainingCount = allMembers.size() - 1;
 
-        eventPublisher.publishEvent(new LeftRoomPublishedEvent(
-                roomId,
-                userId,
-                loginUser.getNickname()
-        ));
+        //1명 이상이면 null로 응답, 1명이면 남은 유저 정보 전달
+        if (remainingCount == 1) {
+            for (ChatRoomMemberJpaEntity member : allMembers) {
+                if (!member.getUserId().getId().equals(command.userId())) {
+                    targetUser = member.getUserId();
+                    break;
+                }
+            }
+
+            if (targetUser != null) {
+                friendStatus = messageRepository.findFriendRelation(command.userId(), targetUser.getId())
+                        .map(FriendJpaEntity::getStatus)
+                        .orElse("none");
+            }
+        }
+
 
         return new LeaveChatRoomView(
                 false,
-                roomId,
-                targetUser.getId(),
-                targetUser.getNickname(),
-                targetUser.getRole(),
-                friendStatus
+                command.roomId(),
+                remainingCount == 1 ? targetUser.getId() : null,
+                remainingCount == 1 && chatRoom.getRoomTitle() == null ? targetUser.getNickname() : chatRoom.getRoomTitle(),
+                //남은 인원이 한 명이고 채팅방 이름 없음(일대일)이면 그 사람 닉네임, 아니면 채팅방 이름
+                remainingCount == 1? targetUser.getRole() : null,
+                remainingCount == 1? friendStatus : null
         );
     }
 }

@@ -1,6 +1,7 @@
 package com.wanted.momocity.message.application.usecase;
 
 import com.wanted.momocity.message.application.command.CreateChatRoomCommand;
+import com.wanted.momocity.message.application.command.LeaveChatRoomCommand;
 import com.wanted.momocity.message.application.command.ReadMessageCommand;
 import com.wanted.momocity.message.application.command.SendMessageCommand;
 
@@ -54,7 +55,7 @@ public interface MessageCommandUseCase {
     ) {}
 
     //채팅방 나가기
-    LeaveChatRoomView leaveChatRoomCommandHandle(Long roomId, Long userId);
+    LeaveChatRoomView leaveChatRoomCommandHandle(LeaveChatRoomCommand command);
 
     record LeaveChatRoomView(
             boolean isLastMember, //마지막 남은 사람이었는지 여부

@@ -3,7 +3,6 @@ package com.wanted.momocity.message.domain.repository;
 import com.wanted.momocity.friend.enrollment.EnrollmentWithFMJpaEntity;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
-import com.wanted.momocity.message.domain.model.ChatRoom;
 import com.wanted.momocity.message.infrastructure.persistence.*;
 
 import java.time.LocalDateTime;
@@ -84,7 +83,7 @@ public interface MessageRepository {
     void saveMessage(MessageJpaEntity newMessage);
 
     //안내 문구 내역 조회
-    List<MessageAnnounceJpaEntity> findAnnounceHistory(Long roomId, LocalDateTime startTimeLine);
+    List<MessageAnnounceJpaEntity> findAnnounceHistory(Long roomId, LocalDateTime startTimeLine, LocalDateTime endTimeLine);
 
     //특정 메시지를 안읽은 사람 수
     Long countUnreadMembersForMessage(Long messageId);
@@ -94,4 +93,16 @@ public interface MessageRepository {
 
     //나와의 채팅방 인식: 첫 번째 채팅방 조회
     Optional<Long> findFirstRoomIdByUserId(Long userId);
+
+    //채팅방 나가기: 안내 문구 저장
+    void saveLeaveAnnounce(ChatRoomJpaEntity roomId, UserWithFMJpaEntity leaveUserId, String leaveMessage);
+
+    //메시지 내역 조회(마지막 메시지의 시간)
+    Optional<LocalDateTime> findLatestMessageTimeById(Long messageId);
+
+    //메시지 전송 웹소켓
+    void flush();
+
+    //채팅방 재입장: 안내 문구 저장(일대일 채팅방 나갔다가 재입장함)
+    void saveEnterAnnounce(ChatRoomJpaEntity chatRoom, UserWithFMJpaEntity enterUser, String enterMessage);
 }

@@ -68,11 +68,15 @@ public class NotificationLifecycleEventHandler {
     public void handleSendMessage(SendMessagePublishedEvent event) {
         log.info("[NotificationLifecycleEventHandler] 메시지 전송 -> 알림 서비스로 이동");
 
+        //다대다인 경우 수신자가 null
+        Long receiverId = (event.receiverId() != null) ? event.receiverId().getId() : null;
+
         notificationHandlerService.sendMessageNotification(
                 event.roomId(), //refId용
-                event.senderNickname(), //문구에 들어갈 보낸 사람 닉네임
+                event.roomTitle(), //다대다를 위한 채팅방 이름
                 event.senderId(), //보낸 사람
-                event.receiverId(),
+                event.senderNickname(), //문구에 들어갈 보낸 사람 닉네임
+                receiverId,
                 event.createdAt() //날짜 업데이트용
         );
     }

@@ -1,4 +1,4 @@
-package com.wanted.momocity.message.application.command;
+package com.wanted.momocity.message.application.query;
 
 public record GetMessageHistoryQuery(
         Long roomId,

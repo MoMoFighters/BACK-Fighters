@@ -63,7 +63,7 @@ public class NotificationHandlerService {
     }
 
     //메시지 전송
-    public void sendMessageNotification(Long roomId, String senderNickname, Long senderId, Long receiverId, LocalDateTime createdAt) {
+    public void sendMessageNotification(Long roomId, String roomTitle, Long senderId, String senderNickname, Long receiverId, LocalDateTime createdAt) {
         log.info("[NotificationHandlerService] 메시지 전송으로 인한 알림 처리 - 방ID(refId): {}", roomId);
 
         // 나와의 채팅 확인
@@ -75,7 +75,13 @@ public class NotificationHandlerService {
         //방 번호와 타입, senderId으로 기존 알림이 이미 존재하는 지 확인
         Optional<Notification> existingNotificationOpt = notificationRepository.findByRefIdAndTypeAndUserId_Id(roomId, "MESSAGE", senderId);
 
-        String message = String.format("%s님이 메시지를 보냈습니다.", senderNickname);
+        String message = "";
+        //일대일 채팅인 경우
+        if (roomTitle == null || roomTitle.isEmpty()) {
+            message = String.format("%s님이 메시지를 보냈습니다.", senderNickname);
+        } else {
+            message = String.format("'%s' 대화창에 %s님이 메시지를 보냈습니다.", roomTitle, senderNickname);
+        }
 
         //기존 알림이 존재하는 경우 ->시간만 업데이트, 읽지 않음 처리
         if (existingNotificationOpt.isPresent()) {

@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 
 public record SendMessagePublishedEvent(
         Long roomId,
+        String roomTitle,
         Long senderId,
         String senderNickname,
         UserWithFMJpaEntity receiverId, //알림 받아야 하는 사람

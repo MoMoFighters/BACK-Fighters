@@ -20,6 +20,7 @@ import java.security.Principal;
 @Slf4j
 public class TopicSubscriptionInterceptor implements ChannelInterceptor {
 
+    //웹소켓
     private final ChatRoomSessionManager sessionManager;
     private final LoadUserPort loadUserPort;
 
@@ -44,10 +45,13 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
         }
 
         //프론트엔드가 웹소켓 연결을 끊거나 방을 나갈 때
-        if (StompCommand.DISCONNECT.equals(accessor.getCommand())) {
+        //채팅방 주소 구독을 취소하거나(UNSUBSCRIBE = 뒤로가기), 웹소켓 연결 자체가 끊어질 때(DISCONNECT = 앱 종료)
+        if (StompCommand.UNSUBSCRIBE.equals(command) || StompCommand.DISCONNECT.equals(accessor.getCommand())) {
             Long userId = getUserIdFromAccessor(accessor);
-            sessionManager.leaveRoom(userId);
-            log.info("[웹소켓 인터셉터] 유저 {}이 채팅방에서 퇴장했습니다.", userId);
+            if (userId != null) {
+                sessionManager.leaveRoom(userId);
+                log.info("[웹소켓 인터셉터] 유저 {}번이 채팅방 세션에서 제거되었습니다. (이벤트 종류: {})", userId, command);
+            }
         }
         return message;
     }

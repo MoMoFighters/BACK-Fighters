@@ -1,6 +1,6 @@
 package com.wanted.momocity.message.application.usecase;
 
-import com.wanted.momocity.message.application.command.GetMessageHistoryQuery;
+import com.wanted.momocity.message.application.query.GetMessageHistoryQuery;
 import com.wanted.momocity.message.application.query.FindChatRoomQuery;
 
 import java.time.LocalDateTime;
@@ -63,7 +63,7 @@ public interface MessageQueryUseCase {
             String role, //강사/학생 구분
             String status, //친구 상태
             String profileImageUrl,
-            boolean isLeftRoom
+            Boolean isLeftRoom
     ) {}
 
     record MessageDetail(
@@ -76,8 +76,8 @@ public interface MessageQueryUseCase {
             String content,
             LocalDateTime createdAt, //메시지 시간 또는 안내 문구
             Long unreadCount, //말풍선에 띄울 해당 메시지를 안읽은 사람 수
-            boolean isMine,
-            boolean isLeftRoom,
+            Boolean isMine,
+            Boolean isLeftRoom,
             String profileImageUrl,
             Long targetUserId, //안내 문구에 해당하는 사람(ex. 초대된 사람, 나간 사람, 이름 바꾼 사람)
             String type //안내 문구의 유형

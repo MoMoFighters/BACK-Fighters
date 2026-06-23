@@ -2,11 +2,9 @@ package com.wanted.momocity.message.presentation.api;
 
 import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
-import com.wanted.momocity.message.application.command.CreateChatRoomCommand;
-import com.wanted.momocity.message.application.command.GetMessageHistoryQuery;
-import com.wanted.momocity.message.application.command.ReadMessageCommand;
-import com.wanted.momocity.message.application.command.SendMessageCommand;
+import com.wanted.momocity.message.application.command.*;
 import com.wanted.momocity.message.application.query.FindChatRoomQuery;
+import com.wanted.momocity.message.application.query.GetMessageHistoryQuery;
 import com.wanted.momocity.message.application.usecase.*;
 import com.wanted.momocity.message.application.usecase.MessageCommandUseCase.CreateRoomView;
 import com.wanted.momocity.message.application.usecase.MessageQueryUseCase.ChatRoomView;
@@ -20,7 +18,6 @@ import com.wanted.momocity.message.presentation.api.response.*;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.apache.coyote.Response;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -28,7 +25,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/messages")
 @RequiredArgsConstructor
 public class MessageController {
 
@@ -69,12 +65,12 @@ public class MessageController {
     }
 
     //v2 -> 다대다 확장으로 개설 대상자들 리스트로
-    @PostMapping("/api/v2/chatrooms/create")
+    @PostMapping("/api/v2/messages/chatrooms/create")
     @Operation(summary = "채팅방 조회 및 개설", description = "채팅방 개설 시 기존 채팅방 존재 여부 확인 후 있으면 기존 채팅방으로 보내고 없으면 개설한다.")
     public ResponseEntity<ApiResponse<CreateChatRoomResponse>> findAndNewChatRoom(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam(value = "roomTitle", required = false) String roomTitle,
-            @Valid @RequestBody CreateChatRoomRequest request) {
+            @RequestBody CreateChatRoomRequest request) {
 
         Long userId = userDetails.getUserId();
 
@@ -100,7 +96,7 @@ public class MessageController {
         String successMessage = "";
 
         //roomTitle이 존재하고 멤버가 여러명: 다대다
-        if (roomTitle != null && !roomTitle.isEmpty()) {
+        if (roomTitle != null && !roomTitle.trim().isEmpty()) {
             successMessage = String.format("'%s' 대화창을 개설했습니다. 대화를 시작해보세요!", roomTitle);
         } else if (view.memberInfo().size() == 1) {
             //일대일: 방제목 없고 멤버 정보의 개수가 1개
@@ -117,7 +113,7 @@ public class MessageController {
         ));
     }
 
-    @PostMapping("/send/{roomId}")
+    @PostMapping("/api/v1/messages/send/{roomId}")
     @Operation(summary = "메시지 전송", description = "채팅방을 선택하고 메시지를 전송한다.")
     public ResponseEntity<ApiResponse<SendMessageResponse>> sendMessage(@AuthenticationPrincipal CustomUserDetails userDetails,
                                                                         @PathVariable("roomId") Long roomId,
@@ -138,7 +134,15 @@ public class MessageController {
                 view.createdAt()
         );
 
-        String successMessage = String.format("%s님에게 메시지를 성공적으로 전송했습니다.", view.targetNickname());
+        String successMessage = "";
+
+        //다대다인 경우
+        if(view.targetUserId() == null) {
+            successMessage = String.format("'%s' 대화방에 메시지를 성공적으로 전송했습니다.", view.targetNickname());
+
+        }
+        //일대일인 경우 동일
+        successMessage = String.format("%s님에게 메시지를 성공적으로 전송했습니다.", view.targetNickname());
 
         return ResponseEntity.ok(ApiResponse.created(
                 "SUCCESS",
@@ -147,7 +151,7 @@ public class MessageController {
         ));
     }
 
-    @PatchMapping("/read/{roomId}")
+    @PatchMapping("/api/v1/messages/read/{roomId}")
     @Operation(summary = "메시지 읽음 처리", description = "채팅방 진입 시 읽음과 내역 조회 두 개의 API 호출 및 웹소켓으로 채팅방 머무르는 여부 확인")
     public ResponseEntity<ApiResponse<ReadMessageResponse>> readMessages(@AuthenticationPrincipal CustomUserDetails userDetails, @PathVariable("roomId") Long roomId) {
 
@@ -164,9 +168,17 @@ public class MessageController {
                 true
         );
 
-        String successMessage = view.hasUnread()
-                ? String.format("%s님에게 온 메시지를 성공적으로 읽었습니다.", view.nickname())
-                : "새로 온 메시지가 없어 읽음 상태가 유지됩니다.";
+        String successMessage = "";
+        if (view.hasUnread()) {
+            //안읽은 메시지가 있을 때
+            successMessage = (view.targetUserId() == null)
+                    ? String.format("'%s' 대화창의 메시지를 성공적으로 읽었습니다.", view.nickname())
+                    : String.format("%s님에게 온 메시지를 성공적으로 읽었습니다.", view.nickname());
+
+        } else {
+            //안읽은 메시지가 없을 때
+            successMessage = "새로 온 메시지가 없어 읽음 상태가 유지됩니다.";
+        }
 
         return ResponseEntity.ok(ApiResponse.success(
                 "SUCCESS",
@@ -175,7 +187,7 @@ public class MessageController {
         ));
     }
 
-    @GetMapping("/history/{roomId}")
+    @GetMapping("/api/v2/messages/history/{roomId}")
     @Operation(summary = "메시지 내역 조회", description = "메시지 내역을 최신 20개씩 보내고 최상단 스크롤하면 마지막 메시지 아이디 기준으로 최신순 보여준다.")
     public ResponseEntity<ApiResponse<GetMessageHistoryResponse>> getMessageHistory(@AuthenticationPrincipal CustomUserDetails userDetails,
                                                                  @PathVariable("roomId") Long roomId,
@@ -209,13 +221,15 @@ public class MessageController {
         ));
     }
 
-    @DeleteMapping("/chatRooms/leave/{roomId}")
+    @DeleteMapping("/api/v1/messages/chatRooms/leave/{roomId}")
     @Operation(summary = "채팅방 나가기", description = "혼자 남으면 전체 폭파하고 누군가 남아있으면 멤버에서만 삭제한다.")
     public ResponseEntity<ApiResponse<LeaveChatRoomResponse>> leaveChatRoom(@AuthenticationPrincipal CustomUserDetails userDetails, @PathVariable("roomId") Long roomId) {
 
         Long userId = userDetails.getUserId();
 
-        LeaveChatRoomView view = messageCommandUseCase.leaveChatRoomCommandHandle(roomId, userId);
+        LeaveChatRoomCommand command = new LeaveChatRoomCommand(roomId, userId);
+
+        LeaveChatRoomView view = messageCommandUseCase.leaveChatRoomCommandHandle(command);
 
         //채팅방에 마지막 남은 사용자일 때
         if (view.isLastMember()) {
@@ -235,7 +249,13 @@ public class MessageController {
                 view.status()
         );
 
-        String successMessage = String.format("%s님과의 대화창을 나갔습니다.", view.nickname());
+        String successMessage = "";
+        //남은 사람 여러명, 다대다 채팅이었던 경우
+        if (view.userId() == null) {
+            successMessage = String.format("%s 대화창에서 나갔습니다.", view.nickname());
+        }
+        //남은 사람 한 명, 일대일 채팅이었던 경우
+        successMessage = String.format("%s님과의 대화창을 나갔습니다.", view.nickname());
         return ResponseEntity.ok(ApiResponse.success(
                 "SUCCESS",
                 successMessage,

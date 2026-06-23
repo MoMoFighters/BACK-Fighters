@@ -37,8 +37,8 @@ public record GetMessageHistoryResponse(
             String content,
             LocalDateTime createdAt, //메시지 시간 또는 안내 문구
             Long unreadCount, //말풍선을 읽지 않은 사람 수
-            boolean isMine,
-            boolean isLeftRoom,
+            Boolean isMine,
+            Boolean isLeftRoom,
             String profileImageUrl,
             Long targetUserId, //안내 문구에 해당하는 사람(ex. 초대된 사람, 나간 사람, 이름 바꾼 사람)
             String type //안내 문구 타입
@@ -80,20 +80,22 @@ public record GetMessageHistoryResponse(
                     String finalLectureTitle = null;
 
                     //상대방이 보낸 말풍선 가공
-                    if (msg.isMine()) {
-                        displayNickname = msg.nickname();
-                    } else if (!"me".equals(msg.status())) {
-                        //내가 쓴 글이나 나와의 채팅이 아닌, 상대 메시지 가공
-                        if (!view.isNotActive() && (view.shouldMasked() || displayNickname == null || displayNickname.isEmpty() || msg.isLeftRoom())) {
-                            if (displayNickname == null || displayNickname.isEmpty()) {
-                                //역추적 후에도 나간 상대방 식별 불가
-                                displayNickname = "(알 수 없음)";
-                            } else {
-                                //상대방 식별 가능하지만 친구 아니거나 나간 경우
-                                displayNickname += "(알 수 없음)";
+                    if (msg.isMine() != null) {
+                        if (msg.isMine()) {
+                            displayNickname = msg.nickname();
+                        } else if (!"me".equals(msg.status())) {
+                            //내가 쓴 글이나 나와의 채팅이 아닌, 상대 메시지 가공
+                            if (!view.isNotActive() && (view.shouldMasked() || displayNickname == null || displayNickname.isEmpty() || msg.isLeftRoom())) {
+                                if (displayNickname == null || displayNickname.isEmpty()) {
+                                    //역추적 후에도 나간 상대방 식별 불가
+                                    displayNickname = "(알 수 없음)";
+                                } else {
+                                    //상대방 식별 가능하지만 친구 아니거나 나간 경우
+                                    displayNickname += "(알 수 없음)";
+                                }
                             }
-                        }
-                     }
+                         }
+                    }
 
                     return new Message(
                             msg.messageId(),

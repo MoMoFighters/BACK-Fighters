@@ -55,17 +55,32 @@ public class MessageEligibilityPolicy {
             throw new FMBusinessRuleViolationException("채팅방 멤버는 최소 1명 이상 지정해야 합니다.");
         }
 
+        //개설할 인원이 1명인데 방 제목을 입력한 경우 차단: 일대일엔 방제목 없음
+        if (targetUsers.size() == 1 && roomTitle != null && !roomTitle.trim().isEmpty()) {
+            log.warn("[MessageEligibilityPolicy] 대화창 개설 실패 - 일대일 채팅방 개설 시 방 제목 지정 불가. 입력된 제목:{}", roomTitle);
+            throw new FMBusinessRuleViolationException("일대일 채팅방은 방 제목을 지정할 수 없습니다.");
+        }
+
         //일대일 구분: 방 이름 없는지 확인(없으면 일대일, 있으면 다대다)
         boolean isOneToOne = (roomTitle == null || roomTitle.isEmpty()) && targetUsers.size() == 1;
 
         //방이름 설정 공백 불가(다대다의 경우만 해당)
-        if (!isOneToOne && roomTitle != null && roomTitle.trim().isEmpty()) {
+        if (!isOneToOne && (roomTitle == null || roomTitle.trim().isEmpty())) {
             log.warn("[MessageEligibilityPolicy] 대화창 개설 실패 - 방 제목이 공백으로만 이루어짐");
             throw new FMBusinessRuleViolationException("방 제목은 공백일 수 없습니다.");
         }
 
+        //방 이름 20자 제한
+        if (roomTitle != null && roomTitle.length() > 20) {
+            log.warn("[MessageEligibilityPolicy] 대화창 개설 실패 - 방 제목 글자수 제한 초과. 입력된 글자수:{}", roomTitle.length());
+            throw new FMBusinessRuleViolationException("방 제목은 최대 20자까지 가능합니다.");
+        }
+
+        //일대일, 다대다 모두 로그인 유저 포함 차단
+        boolean hasMe = targetUsers.stream().anyMatch(user -> user.getId().equals(loginUserId));
+
         //나와의 채팅 개설 시도 차단
-        if (isOneToOne && targetUsers.get(0).getId().equals(loginUserId)) {
+        if (hasMe) {
             log.warn("[MessageEligibilityPolicy] 대화창 개설 실패 - 자신과 대화창 개설 시도함");
             throw new FMResourceConflictException("자기 자신과는 대화창을 개설할 수 없습니다.");
         }
@@ -75,11 +90,11 @@ public class MessageEligibilityPolicy {
             UserWithFMJpaEntity targetUser = targetUsers.get(i);
             String friendStatus = friendStatuses.get(i);
 
-            //409 다대다의 경우 학새 외(강사, 관리자) 포함 불가
+            //409 다대다의 경우 학생 외(강사, 관리자) 포함 불가
             if (targetUsers.size() > 1){
                 if (!"STUDENT".equals(targetUser.getRole())) {
                     log.warn("[MessageEligibilityPolicy] 대화창 개설 실패 - 학생 외 인물 초대 불가. 유저ID: {}, 역할: {}", targetUser.getId(), targetUser.getRole());
-                    throw new FMResourceConflictException("대화창을 개설할 수 없는 사용자입니다.");
+                    throw new FMResourceConflictException("대화창을 개설할 수 없는 사용자가 포함되어 있습니다.");
                 }
             }
 
@@ -87,7 +102,7 @@ public class MessageEligibilityPolicy {
             //무조건 FRIEND 상태여야 개설 가능
             if (!targetUser.getId().equals(loginUserId) && !"FRIEND".equals(friendStatus)) {
                 log.warn("[MessageEligibilityPolicy] 대화창 개설 실패 - 친구 상태가 아닌 사용자가 포함됨. (유저ID: {}, 현재 상태: {})", targetUser.getId(), friendStatus);
-                throw new FMResourceConflictException("대화창을 개설할 수 없는 사용자입니다.");
+                throw new FMResourceConflictException("대화창을 개설할 수 없는 사용자가 포함되어 있습니다.");
             }
         }
 
@@ -102,7 +117,7 @@ public class MessageEligibilityPolicy {
     }
 
     //메시지 전송 검증
-    public void sendable(Long roomId, Long senderId, String friendStatus, long roomMemberCount) {
+    public void sendable(Long roomId, Long senderId, String friendStatus, long roomMemberCount, boolean isOneToOne, UserWithFMJpaEntity targetUser, Long firstRoomId) {
 
         //로그인한 유저가 채팅방의 멤버가 맞는지 검증
         boolean isMember = messageRepository.existsMemberByRoomIdAndUserId(roomId, senderId);
@@ -121,22 +136,33 @@ public class MessageEligibilityPolicy {
             return;
         }
 
-        //v2 -> 다대다 분기: 멤버가 3명 이상이면 (로그인 유저 포함) 친구 검증 패스
-        if (roomMemberCount >= 3) {
-            log.info("[MessageEligibilityPolicy] 다대다 그룹 채팅방 메시지 전송 - 친구 여부 관계없이 허용. 방ID: {}", roomId);
-            return;
-        }
-
         //방에 혼자 남았다면 상대방이 나간 것(409)
-        if (!"me".equals(friendStatus) && roomMemberCount < 2) {
+        //targetUser가 로그인한 유저: 상대가 나간 것 or 나와의 채팅
+        //isOneToOne이 true: 일대일 채팅방(나와의 채팅방 포함)
+        //나와의 채팅: 로그인 유저의 첫 채팅방
+        if (firstRoomId != roomId) {
+            if (roomMemberCount < 2) {
             log.warn("[MessageEligibilityPolicy] 메시지 전송 실패 - 상대방이 방을 나갔음. 방ID: {}", roomId);
             throw new FMResourceConflictException("상대방이 채팅방을 나갔습니다.");
+            }
+        }
+
+        //v2 -> 다대다 분기: 멤버가 3명 이상이면 (로그인 유저 포함) 친구 검증 패스
+        if (roomMemberCount >= 3 || !isOneToOne) {
+            log.info("[MessageEligibilityPolicy] 다대다 그룹 채팅방 메시지 전송 - 친구 여부 관계없이 허용. 방ID: {}", roomId);
+            return;
         }
 
         //친구 상태가 아니라면 전송 불가(409)
         if (!"FRIEND".equals(friendStatus)) {
             log.warn("[MessageEligibilityPolicy] 메시지 전송 실패 - 차단된 관계. 요청자: {}", senderId);
             throw new FMResourceConflictException("메시지를 전송할 수 없는 사용자입니다.");
+        }
+
+        //일대일인 경우 비활성 유저에게 못 보냄.
+        if (!"ACTIVE".equals(targetUser.getStatus())) {
+            log.warn("[MessageEligibilityPolicy] 메시지 전송 실패 - 상대방이 활성 상태가 아님. 상대 상태:{}", targetUser.getStatus());
+            throw new FMBusinessRuleViolationException("상대방이 비활성화 상태이므로 메시지를 보낼 수 없습니다.");
         }
 
     }
