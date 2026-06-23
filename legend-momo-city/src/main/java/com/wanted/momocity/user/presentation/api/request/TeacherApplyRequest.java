@@ -7,6 +7,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @Schema(description = "강사 수강 신청 요청")
 public record TeacherApplyRequest(
 

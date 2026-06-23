@@ -1,22 +1,20 @@
 package com.wanted.momocity.user.presentation.api;
 
 import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
+import com.wanted.momocity.user.application.command.ApproveTeacherCommand;
+import com.wanted.momocity.user.application.command.RejectTeacherCommand;
 import com.wanted.momocity.user.application.command.TeacherApplyCommand;
-import com.wanted.momocity.auth.domain.exception.MissingProofException;
 import com.wanted.momocity.user.presentation.api.request.TeacherApplyRequest;
 import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
-import com.wanted.momocity.user.application.command.ApproveTeacherCommand;
-import com.wanted.momocity.user.application.command.RejectTeacherCommand;
 import com.wanted.momocity.user.application.usecase.UserCommandUsecase;
 import com.wanted.momocity.user.application.usecase.UserQueryUsecase;
 import com.wanted.momocity.user.domain.model.TeacherApplication;
-import com.wanted.momocity.user.application.usecase.UserCommandUsecase.TeacherActionResult;
 import com.wanted.momocity.user.application.usecase.UserQueryUsecase.TeacherApplicationListResult;
+import com.wanted.momocity.user.presentation.api.request.TeacherApproveRequest;
+import com.wanted.momocity.user.presentation.api.request.TeacherRejectRequest;
 import com.wanted.momocity.user.presentation.api.response.TeacherResponseCode;
 import com.wanted.momocity.user.presentation.api.response.TeacherResponseMessage;
-import com.wanted.momocity.user.presentation.api.request.TeacherActionRequest;
-import com.wanted.momocity.user.presentation.api.response.TeacherActionResponse;
 import com.wanted.momocity.user.presentation.api.response.TeacherApplicationDetailResponse;
 import com.wanted.momocity.user.presentation.api.response.TeacherApplicationListResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -67,9 +65,6 @@ public class TeacherApplicationController {
     private final UserCommandUsecase userCommandUsecase;
     private final UserQueryUsecase userQueryUsecase;
 
-    private final S3UploadPort s3UploadPort;
-
-
 
     @PostMapping("/teacherApply")
     @Operation(
@@ -79,20 +74,14 @@ public class TeacherApplicationController {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "강사 신청 완료"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "유효하지 않은 요청 값 (@Valid 실패)"),
-//            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "이메일 중복")
     })
     public ResponseEntity<ApiResponse<Void>> teacherApply(
             @Valid @ModelAttribute TeacherApplyRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails){
 
-        // 증빙자료 제출 여부 확인
-        if (request.proof() == null || request.proof().isEmpty()) {
-            throw new MissingProofException("증빙 자료는 필수 제출입니다.");
-        }
-
-        String proofKey = s3UploadPort.upload(request.proof(),"teacher_proof");
-
-        userCommandUsecase.teacherApply(new TeacherApplyCommand(userDetails.getUserId(),request.nickname(),request.category(),proofKey));
+        userCommandUsecase.teacherApply(
+                new TeacherApplyCommand(userDetails.getUserId(), request.nickname(), request.category(), request.proof())
+        );
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(
@@ -102,7 +91,8 @@ public class TeacherApplicationController {
                 ));
     }
 
-    @GetMapping("/admin/users/instructor-applications")
+
+    @GetMapping("/teacher-applications")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "강사 신청자 목록 조회 (MS-3)")
     @ApiResponses({
@@ -131,7 +121,7 @@ public class TeacherApplicationController {
         ));
     }
 
-    @GetMapping("/admin/users/instructor-applications/{userId}")
+    @GetMapping("/teacher-application-detail/{userId}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "강사 신청자 상세 조회 (MS-4)")
     @ApiResponses({
@@ -145,7 +135,9 @@ public class TeacherApplicationController {
             @PathVariable Long userId
     ) {
         TeacherApplication application = userQueryUsecase.getApplicationDetail(userId);
+
         TeacherApplicationDetailResponse response = toDetailResponse(application);
+
         return ResponseEntity.ok(ApiResponse.success(
                 TeacherResponseCode.APPLICATION_DETAIL_FETCHED,
                 TeacherResponseMessage.APPLICATION_DETAIL_FETCHED,
@@ -153,37 +145,51 @@ public class TeacherApplicationController {
         ));
     }
 
-    @PatchMapping("/users/{userId}/role")
+
+    @PatchMapping("/application-approve")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "강사 승인/반려 (MS-5)",
-            description = "action=APPROVE 시 강사 승인, action=REJECT 시 반려. REJECT 는 reason 최소 10자.")
+    @Operation(summary = "강사 승인",
+            description = "APPROVE 로 강사 승인")
     @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "강사 승인 또는 반려 처리 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "유효하지 않은 요청 값 (action 누락, reason 10자 미만 등)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "강사 승인 처리 성공"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한 없음"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "신청자를 찾을 수 없음")
     })
-    public ResponseEntity<ApiResponse<TeacherActionResponse>> changeRole(
+    public ResponseEntity<ApiResponse<Void>> teacherApprove(
+            @Valid @RequestBody TeacherApproveRequest request
+    ){
+        userCommandUsecase.approve(new ApproveTeacherCommand(request.userId()));
+
+        return ResponseEntity.ok(ApiResponse.success(
+                TeacherResponseCode.APPROVED,
+                TeacherResponseMessage.APPROVED,
+                null
+        ));
+    }
+
+
+    @PatchMapping("/application-reject/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "강사 반려",
+            description = " REJECT 로 반려. reason 최소 10자.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "강사 반려 처리 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "신청자를 찾을 수 없음")
+    })
+    public ResponseEntity<ApiResponse<Void>> teacherReject(
             @Parameter(description = "신청자 user PK", example = "7")
             @PathVariable Long userId,
-            @Valid @RequestBody TeacherActionRequest request
-    ) {
-        TeacherActionResult result = "APPROVE".equals(request.action())
-                ? userCommandUsecase.approve(new ApproveTeacherCommand(userId))
-                : userCommandUsecase.reject(new RejectTeacherCommand(userId, request.reason()));
+            @Valid @RequestBody TeacherRejectRequest request
+    ){
+        userCommandUsecase.reject(new RejectTeacherCommand(userId, request.reason()));
 
-        TeacherActionResponse response = new TeacherActionResponse(
-                result.userId(),
-                result.status(),
-                result.reason(),
-                result.processedAt()
-        );
-        boolean approved = "APPROVE".equals(request.action());
         return ResponseEntity.ok(ApiResponse.success(
-                approved ? TeacherResponseCode.APPROVED : TeacherResponseCode.REJECTED,
-                approved ? TeacherResponseMessage.APPROVED : TeacherResponseMessage.REJECTED,
-                response
+                TeacherResponseCode.REJECTED,
+                TeacherResponseMessage.REJECTED,
+                null
         ));
     }
 
@@ -194,7 +200,11 @@ public class TeacherApplicationController {
                 app.name(),
                 app.email(),
                 app.category(),
-                app.appliedAt()
+                app.status(),
+                app.role(),
+                app.suspensionCount(),
+                app.suspendedUntil(),
+                app.createdAt()
         );
     }
 
@@ -204,11 +214,12 @@ public class TeacherApplicationController {
                 app.nickname(),
                 app.name(),
                 app.email(),
-                app.birth(),
                 app.profileImageUrl(),
                 app.category(),
                 app.proof(),
-                app.appliedAt()
+                app.status(),
+                app.role(),
+                app.createdAt()
         );
     }
 }

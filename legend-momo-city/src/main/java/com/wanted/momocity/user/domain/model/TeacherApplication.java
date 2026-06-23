@@ -1,6 +1,7 @@
 package com.wanted.momocity.user.domain.model;
 
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
+import com.wanted.momocity.global.domain.model.Category;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -25,17 +26,17 @@ import java.time.LocalDateTime;
 
 public record TeacherApplication(
         Long userId,
-        String email,
-        String name,
         String nickname,
+        String name,
+        String email,
         String profileImageUrl,
-        // category 가 String 인 이유는?
-        // - 회원 영역 MemberCategory enum 타입을 직접 받을 수 있지만 String 선택
-        // - 이유 : 영역 경계는 enum 타입으로 결합 시키지 않음
-        // - 영역 내부에는 enum 타입으로, 영역 경게 통과 시 String 으로 약화
-        String category,
+        Category category,
         String proof,
-        LocalDateTime appliedAt
+        Status status,
+        Role role,
+        Long suspensionCount,
+        LocalDateTime suspendedUntil,
+        LocalDateTime createdAt
 ) {
     // 검증 후 자동 대입
     // - 컴파일러가 자동으로 this.userId = userId 등 대입 코드 생성

@@ -1,12 +1,11 @@
 package com.wanted.momocity.user.application.policy;
 
 import com.wanted.momocity.auth.application.port.PasswordEncodePort;
-import com.wanted.momocity.user.domain.exception.InvalidPasswordException;
-import com.wanted.momocity.user.domain.exception.NicknameDuplicateException;
-import com.wanted.momocity.user.domain.exception.SamePasswordException;
+import com.wanted.momocity.user.domain.exception.*;
 import com.wanted.momocity.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
 
 @Component
 @RequiredArgsConstructor
@@ -39,5 +38,28 @@ public class UserPolicy {
         if (passwordEncodePort.matches(newPassword, storedPassword)) {
             throw new SamePasswordException("기존 비밀번호와 일치합니다.");
         }
+    }
+
+    // 강사증빙자료 관련 정책
+    public void teacherProofPolicy(MultipartFile proof) {
+        // 증빙자료 제출 여부 확인
+        if (proof == null || proof.isEmpty()) {
+            throw new MissingProofException("증빙 자료는 필수 제출입니다.");
+        }
+
+        // 확장자 제한 - pdf/mp4만 가능
+        // 1. 확장자 없는 파일
+        String originalFilename = proof.getOriginalFilename();
+        int dotIndex = (originalFilename == null) ? -1 : originalFilename.lastIndexOf('.');
+        if (dotIndex <= 0 || dotIndex == originalFilename.length() - 1) {
+            throw new InvalidFileExtensionException("pdf 또는 mp4 파일만 업로드 가능합니다.");
+        }
+
+        // 2. 확장자가 pdf/mp4 아닌 경우
+        String extension = originalFilename.substring(dotIndex + 1).toLowerCase();
+        if (!extension.equals("pdf") && !extension.equals("mp4")) {
+            throw new InvalidFileExtensionException("pdf 또는 mp4 파일만 업로드 가능합니다.");
+        }
+
     }
 }
