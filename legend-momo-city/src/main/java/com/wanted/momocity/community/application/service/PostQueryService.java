@@ -113,13 +113,21 @@ public class PostQueryService implements PostQueryUseCase {
         PageRequest pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Post> postPage = postRepository.findAll(category, pageable);
 
+        List<Long> postIds = postPage.getContent().stream()
+                .map(Post::getId)
+                .toList();
+
+        Map<Long, Long> commentCountMap = postIds.isEmpty()
+                ? Map.of()
+                : commentRepository.countByPostIds(postIds);
+
         List<PostListResponse.PostItem> items = postPage.getContent().stream()
                 .map(post -> {
                     User user = userInfoPort.findById(post.getUserId())
                             .orElseThrow(() -> new CommunityNotFoundException("사용자를 찾을 수 없습니다."));
 
-                    // commentCount : 해당 게시글 댓글 + 대댓글 수
-                    int commentCount = commentRepository.findAllByPostId(post.getId()).size();
+                    int commentCount = commentCountMap
+                            .getOrDefault(post.getId(), 0L).intValue();
 
                     return new PostListResponse.PostItem(
                             post.getId(),

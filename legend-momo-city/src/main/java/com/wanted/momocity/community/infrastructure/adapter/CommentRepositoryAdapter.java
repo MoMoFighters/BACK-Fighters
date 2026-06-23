@@ -10,7 +10,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /*
 * comment.
@@ -41,6 +43,19 @@ public class CommentRepositoryAdapter implements CommentRepository {
                 .stream()
                 .map(CommentJpaEntity::toDomain)
                 .toList();
+    }
+
+    // 댓글 목록의 댓글 수 일괄 조회
+    @Override
+    public Map<Long, Long> countByPostIds(List<Long> postIds) {
+        return commentJpaRepository.countByPostIds(postIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        // postId
+                        row -> (Long) row[0],
+                        // count
+                        row -> (Long) row[1]
+                ));
     }
 
     // 댓글 소프트딜리트
