@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 /* comment.
     ReportRepositoryAdapter 정리
@@ -64,6 +65,15 @@ public class ReportRepositoryAdapter implements ReportRepository {
     @Transactional(readOnly = true)
     public long countAll() {
         return repository.count();
+    }
+
+    // ReportRepository 에 선언만 하고 구현은 되어있지 않음.
+    // 인터페이스를 구현하는 클래스는 선언된 메서드를 모두 구현해야핸다.
+    // Transactional 은 DB 작업을 하나로 묶어버리고, 실패 시 롤백
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Report> findById(Long id) {
+        return repository.findById(id).map(this::toDomain);
     }
 
     // === 변환 메서드 (도메인 ↔ 엔티티) ===

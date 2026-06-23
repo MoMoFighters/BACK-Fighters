@@ -3,7 +3,6 @@ package com.wanted.momocity.admin;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.report.domain.model.Report;
 import com.wanted.momocity.report.domain.model.ReportReason;
-import com.wanted.momocity.report.domain.model.ReportStatus;
 import com.wanted.momocity.report.domain.model.ReportTargetType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -30,7 +29,7 @@ class ReportTest {
     class Submit {
 
         @Test
-        @DisplayName("정상 생성 - id=null, status=PENDING, reportedAt=현재시각")
+        @DisplayName("정상 생성 - id=null, isRead=false, reportedAt=현재시각")
         void submit_정상_생성_성공() {
             // when
             Report report = Report.submit(
@@ -48,7 +47,7 @@ class ReportTest {
             assertThat(report.getTargetId()).isEqualTo(100L);
             assertThat(report.getReason()).isEqualTo(ReportReason.INAPPROPRIATE);
             assertThat(report.getDetail()).isEqualTo("강의 내용이 부적절합니다");
-            assertThat(report.getStatus()).isEqualTo(ReportStatus.PENDING);
+            assertThat(report.isRead()).isFalse();
             assertThat(report.getReportedAt()).isNotNull();
             assertThat(report.getReportedAt()).isBeforeOrEqualTo(LocalDateTime.now());
             assertThat(report.getHandledAt()).isNull();
@@ -67,7 +66,7 @@ class ReportTest {
             );
 
             assertThat(report.getDetail()).isNull();
-            assertThat(report.getStatus()).isEqualTo(ReportStatus.PENDING);
+            assertThat(report.isRead()).isFalse();
         }
 
         @Test
@@ -106,13 +105,13 @@ class ReportTest {
     class Restore {
 
         @Test
-        @DisplayName("DB 값 복원 - 모든 필드 채움 (검토 완료 상태)")
+        @DisplayName("DB 값 복원 - 모든 필드 채움 (처리 완료 상태, isRead=true)")
         void restore_DB_값_복원_성공() {
             // given
             LocalDateTime reportedAt = LocalDateTime.of(2026, 5, 1, 10, 0);
             LocalDateTime handledAt = LocalDateTime.of(2026, 5, 2, 14, 0);
 
-            // when
+            // when (시그니처 수정으로인한 리팩)
             Report report = Report.restore(
                     42L,
                     10L,
@@ -120,7 +119,7 @@ class ReportTest {
                     100L,
                     ReportReason.INAPPROPRIATE,
                     "부적절한 내용",
-                    ReportStatus.CONFIRMED,
+                    true,
                     reportedAt,
                     handledAt,
                     99L
@@ -128,7 +127,8 @@ class ReportTest {
 
             // then
             assertThat(report.getId()).isEqualTo(42L);
-            assertThat(report.getStatus()).isEqualTo(ReportStatus.CONFIRMED);
+            //restore() 호출할 때 isRead = true 로 넣었다. 따라서 isFalse() 로 넣게 되면 테스트가 항상 실패한다.
+            assertThat(report.isRead()).isTrue();
             assertThat(report.getHandledAt()).isEqualTo(handledAt);
             assertThat(report.getHandlerAdminId()).isEqualTo(99L);
         }
