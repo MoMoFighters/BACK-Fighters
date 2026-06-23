@@ -55,4 +55,7 @@ public interface UserRepository {
 
     // 강사 중복 신청 확인용
     boolean existsByIdAndRoleAndStatus(Long userId, Role role, Status status);
+
+    // 강사 승인/반려 확인용
+    Status findStatusById(Long userId);
 }

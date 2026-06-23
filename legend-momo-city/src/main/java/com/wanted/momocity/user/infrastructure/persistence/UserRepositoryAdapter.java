@@ -127,6 +127,14 @@ public class UserRepositoryAdapter implements UserRepository {
         return springDataUserRepository.existsByIdAndRoleAndStatus(userId, role, status);
     }
 
+    // 강사 승인/반려 확인용
+    @Override
+    public Status findStatusById(Long userId) {
+        return springDataUserRepository.findById(userId)
+                .map(UserJpaEntity::getStatus)
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
+    }
+
 
     // 마이페이지 내 정보 조회용
     private User toDomain(UserJpaEntity entity) {

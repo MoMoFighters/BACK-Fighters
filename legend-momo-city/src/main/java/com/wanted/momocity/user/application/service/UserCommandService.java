@@ -95,13 +95,18 @@ public class UserCommandService implements UserCommandUsecase {
 
         command.userId().forEach(userId -> {
             String email = userRepository.findById(userId)
-                    .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."))
+                    .orElseThrow(()-> new UserNotFoundException("사용자를 찾을 수 없습니다."))
                     .getEmail();
+
+            // PENDING 상태인지 검증
+            Status status = userRepository.findStatusById(userId);
+            if (status != Status.PENDING) {
+                throw new DomainRuleViolationException("강사 신청 중인 사용자가 아닙니다.");
+            }
 
             userRepository.updateRoleAndStatus(userId, Role.TEACHER, ACTIVE);
             log.info("[teacher] 강사 승인 처리 | userId={}", userId);
-
-            eventPublisher.publishEvent(new TeacherApplicationEvent(email,ACTIVE,null)); // 결과 이메일 전송 이벤트 발행
+            eventPublisher.publishEvent(new TeacherApplicationEvent(email, ACTIVE, null));
         });
     }
 
@@ -114,8 +119,14 @@ public class UserCommandService implements UserCommandUsecase {
         }
 
         String email = userRepository.findById(command.userId())
-                .orElseThrow(() -> new DomainRuleViolationException("사용자를 찾을 수 없습니다."))
+                .orElseThrow(()-> new UserNotFoundException("사용자를 찾을 수 없습니다."))
                 .getEmail();
+
+        // PENDING 상태인지 검증
+        Status status = userRepository.findStatusById(command.userId());
+        if (status != Status.PENDING) {
+            throw new DomainRuleViolationException("강사 신청 중인 사용자가 아닙니다.");
+        }
 
         userRepository.updateRoleAndStatus(command.userId(), Role.STUDENT, REJECTED);
         log.info("[teacher] 강사 반려 처리 | userId={} | reason={}", command.userId(), command.reason());
