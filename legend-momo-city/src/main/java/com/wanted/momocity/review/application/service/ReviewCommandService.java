@@ -9,9 +9,9 @@ import com.wanted.momocity.review.domain.exception.DuplicateReviewException;
 import com.wanted.momocity.review.domain.exception.ReviewAccessDeniedException;
 import com.wanted.momocity.review.domain.model.Review;
 import com.wanted.momocity.review.domain.repository.ReviewRepository;
-import com.wanted.momocity.review.presentation.api.response.CreateReviewResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,8 +26,9 @@ public class ReviewCommandService implements ReviewCommandUseCase {
     private final LectureRepository lectureRepository;
     private final EnrollmentRepository enrollmentRepository;
 
+    // 등록 API는 응답 데이터가 필요 없으므로 반환하지 않습니다.
     @Override
-    public CreateReviewResponse createReview(
+    public void createReview(
             ReviewCommand.CreateReviewCommand command
     ) {
         // 수강평 등록 시작 로그
@@ -70,7 +71,15 @@ public class ReviewCommandService implements ReviewCommandUseCase {
         );
 
         // 수강평 DB 저장
-        Review savedReview= reviewRepository.save(review);
+        Review savedReview;
+
+        try {
+            // DB에 수강평을 저장합니다.
+            savedReview = reviewRepository.save(review);
+        } catch (DataIntegrityViolationException exception) {
+            // 동시에 중복 요청이 들어와 DB unique 제약조건이 발생한 경우 409 예외로 변환합니다.
+            throw new DuplicateReviewException("이미 수강평을 작성한 강의입니다.");
+        }
 
         // 수강평 완료 로그
         log.info("수강평 등록 완료 : reviewId={}, userId={}, lectureID={}",
@@ -78,7 +87,5 @@ public class ReviewCommandService implements ReviewCommandUseCase {
                 savedReview.getUserId(),
                 savedReview.getLectureId()
         );
-
-        return CreateReviewResponse.from(savedReview);
     }
 }
