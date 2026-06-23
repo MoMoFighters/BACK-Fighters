@@ -95,7 +95,7 @@ public class UserCommandService implements UserCommandUsecase {
 
         command.userId().forEach(userId -> {
             String email = userRepository.findById(userId)
-                    .orElseThrow(() -> new DomainRuleViolationException("사용자를 찾을 수 없습니다."))
+                    .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."))
                     .getEmail();
 
             userRepository.updateRoleAndStatus(userId, Role.TEACHER, ACTIVE);
@@ -117,7 +117,7 @@ public class UserCommandService implements UserCommandUsecase {
                 .orElseThrow(() -> new DomainRuleViolationException("사용자를 찾을 수 없습니다."))
                 .getEmail();
 
-        userRepository.updateRoleAndStatus(command.userId(), Role.TEACHER, REJECTED);
+        userRepository.updateRoleAndStatus(command.userId(), Role.STUDENT, REJECTED);
         log.info("[teacher] 강사 반려 처리 | userId={} | reason={}", command.userId(), command.reason());
         eventPublisher.publishEvent(new TeacherApplicationEvent(email, REJECTED, command.reason()));
     }
