@@ -48,10 +48,15 @@ public class UserPolicy {
         }
 
         // 확장자 제한 - pdf/mp4만 가능
-        String extension = proof.getOriginalFilename()
-                .substring(proof.getOriginalFilename().lastIndexOf(".") + 1)
-                .toLowerCase();
+        // 1. 확장자 없는 파일
+        String originalFilename = proof.getOriginalFilename();
+        int dotIndex = (originalFilename == null) ? -1 : originalFilename.lastIndexOf('.');
+        if (dotIndex <= 0 || dotIndex == originalFilename.length() - 1) {
+            throw new InvalidFileExtensionException("pdf 또는 mp4 파일만 업로드 가능합니다.");
+        }
 
+        // 2. 확장자가 pdf/mp4 아닌 경우
+        String extension = originalFilename.substring(dotIndex + 1).toLowerCase();
         if (!extension.equals("pdf") && !extension.equals("mp4")) {
             throw new InvalidFileExtensionException("pdf 또는 mp4 파일만 업로드 가능합니다.");
         }

@@ -9,11 +9,6 @@ package com.wanted.momocity.user.presentation.api.response;
         - 영역별 코드(TEACHER-001 등) = 각 영역의 ResponseCode 클래스
     4. 명명 규약 : "TEACHER-{3자리 숫자}"
         - 다른 영역 예시 : MEMBER-001, LECTURE-001, REPORT-001 (m03 추가 예정)
-    5. 4개 상수 의미 :
-        - APPLICATION_LIST_FETCHED (TEACHER-001) : 강사 신청자 목록 조회 성공
-        - APPLICATION_DETAIL_FETCHED (TEACHER-002) : 강사 신청자 상세 조회 성공
-        - APPROVED (TEACHER-003) : 강사 승인 완료
-        - REJECTED (TEACHER-004) : 강사 반려 완료
  */
 
 public final class TeacherResponseCode {

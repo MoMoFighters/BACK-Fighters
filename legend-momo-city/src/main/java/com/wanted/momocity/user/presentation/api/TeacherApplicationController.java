@@ -28,7 +28,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 /* comment.
     TeacherApplicationController 정리
@@ -65,9 +64,6 @@ public class TeacherApplicationController {
 
     private final UserCommandUsecase userCommandUsecase;
     private final UserQueryUsecase userQueryUsecase;
-
-    private final S3UploadPort s3UploadPort;
-
 
 
     @PostMapping("/teacherApply")
@@ -153,10 +149,9 @@ public class TeacherApplicationController {
     @PatchMapping("/application-approve")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "강사 승인",
-            description = "action=APPROVE 로 강사 승인")
+            description = "APPROVE 로 강사 승인")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "강사 승인 처리 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "유효하지 않은 요청 값 (action 누락 등)"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한 없음"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "신청자를 찾을 수 없음")
@@ -177,10 +172,9 @@ public class TeacherApplicationController {
     @PatchMapping("/application-reject/{userId}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "강사 반려",
-            description = " action=REJECT 로 반려. reason 최소 10자.")
+            description = " REJECT 로 반려. reason 최소 10자.")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "강사 반려 처리 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "유효하지 않은 요청 값 (action 누락, reason 10자 미만 등)"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한 없음"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "신청자를 찾을 수 없음")
