@@ -29,6 +29,7 @@ import java.util.List;
  *  HTTP 요청을 받아서 UseCase 에 전달하고 응답 반환
  *  비즈니스 로직 없음, HTTP 반환만 담당
  */
+
 @Tag(name = "Community", description = "Community 도메인 - 게시글 CRUD 및 댓글 API")
 @RestController
 @RequiredArgsConstructor

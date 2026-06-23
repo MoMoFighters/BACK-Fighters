@@ -1,8 +1,6 @@
 package com.wanted.momocity.global.infrastructure.config;
 
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,23 +18,21 @@ import java.util.Map;
 
 /*
  * comment
- *  [역할]
  *  Spring Cache 와 Redis 를 연결하는 설정
  *  -> @Cacheable, @CacheEvict 등 캐시 어노테이션 활성화
  *  -
- *  [캐시 전략]
+ *  캐시 전략
  *  chapter  : TTL 1시간 -> 챕터 정보는 자주 바뀌지 않음
  *  chapters : TTL 1시간 -> 강의 전체 챕터 목록
  *  lecture  : TTL 1시간 -> 강의 정보는 자주 바뀌지 않음
  *  -
- *  [왜 캐싱이 필요한가]
  *  saveProgress() 가 5~10초 주기로 호출될 때마다
  *  -> ChapterPort.findById() -> DB 조회
  *  -> ChapterPort.findAllByLectureId() -> DB 조회
  *  -> LecturePort.findById() -> DB 조회
  *  -> Redis 캐싱으로 DB 부하 감소
  *  -
- *  [직렬화 설정]
+ *  직렬화 설정
  *  Key : StringRedisSerializer -> 사람이 읽을 수 있는 문자열
  *  Value : GenericJackson2JsonRedisSerializer -> JSON 형태로 저장
  */
@@ -52,7 +48,7 @@ public class RedisConfig {
     *  -> Spring 이 캐시 작업 시 이 Bean 을 찾아서 실행
     * */
 
-    @Bean
+    @Bean (name = "redisCacheManager")
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
 
         /*
@@ -147,23 +143,33 @@ public class RedisConfig {
         // JavaTimeModule : LocalDateTime 등 Java 8 날짜/시간 타입 처리
         // 없으면 enrolledAt 같은 날짜 직렬화 실패
         objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
-        BasicPolymorphicTypeValidator typeValidator = BasicPolymorphicTypeValidator.builder()
-                // allowIfBaseType(Object.class) : 모든 Object 하위 타입 허용
-                // -> Chapter, Lecture 등 커스텀 클래스 포함
-                .allowIfBaseType(Object.class)
-                .build();
+
+        /*
+        * comment.
+        *  activateDefaultTyping 적용 시 직렬화 문제 발생
+        *  -> record 타입, List<T> 역직렬화 시 @class 타입 정보 충돌
+        *  -> 직렬화 실패로 Redis 저장 자체가 안 되는 문제
+        *  -> 해결: StringRedisTemplate + plainObjectMapper 방식으로 전환
+        *  (ChapterCatalogAdapter, LectureCatalogAdapter, PostQueryService 참고)
+        * */
+
+//        BasicPolymorphicTypeValidator typeValidator = BasicPolymorphicTypeValidator.builder()
+//                // allowIfBaseType(Object.class) : 모든 Object 하위 타입 허용
+//                // -> Chapter, Lecture 등 커스텀 클래스 포함
+//                .allowIfBaseType(Object.class)
+//                .build();
         // activateDefaultTyping :  직렬화 시 각 객체에 타입 정보(@class) 포함
         // 예: {"@class":"...Chapter", "id":1, ...}
         // -> 역직렬화 시 @class 보고 정확한 타입으로 복원
-        objectMapper.activateDefaultTyping(
-                typeValidator,
+//        objectMapper.activateDefaultTyping(
+//                typeValidator,
                 // DefaultTyping.NON_FINAL : final 이 아닌 모든 클래스에 타입 정보 포함
                 // -> Chapter, Lecture 등 도메인 객체에 적용
-                ObjectMapper.DefaultTyping.NON_FINAL,
+//                ObjectMapper.DefaultTyping.NON_FINAL,
                 //  JsonTypeInfo.As.PROPERTY : 타입 정보를 JSON 프로퍼티로 포함
                 // {"@class":"...Chapter", ...} 형태
-                JsonTypeInfo.As.PROPERTY
-        );
+//                JsonTypeInfo.As.PROPERTY
+//        );
 
         return objectMapper;
 
