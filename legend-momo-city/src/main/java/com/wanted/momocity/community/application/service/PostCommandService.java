@@ -42,11 +42,11 @@ import java.util.Set;
 *  - 콘텐츠 업로드, 수정
 *  - 좋아요, 댓글, 대댓글
 *  -
-*   Redis 캐시 무효화 전략
- *  @CacheEvict 대신 StringRedisTemplate 직접 사용
- *  -> PostQueryService 가 StringRedisTemplate 으로 posts 캐시 저장
- *  -> @CacheEvict 는 RedisCacheManager 경유 → 직렬화 충돌 발생
- *  -> evictPostsCache() 로 "posts::*" 패턴 키 전체 삭제
+*  Redis 캐시 무효화 전략
+*  @CacheEvict 대신 StringRedisTemplate 직접 사용
+*  -> PostQueryService 가 StringRedisTemplate 으로 posts 캐시 저장
+*  -> @CacheEvict 는 RedisCacheManager 경유 → 직렬화 충돌 발생
+*  -> evictPostsCache() 로 "posts::*" 패턴 키 전체 삭제
 * */
 
 @Slf4j

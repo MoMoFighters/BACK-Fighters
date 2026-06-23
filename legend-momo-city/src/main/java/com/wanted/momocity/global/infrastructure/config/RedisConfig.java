@@ -143,6 +143,16 @@ public class RedisConfig {
         // JavaTimeModule : LocalDateTime 등 Java 8 날짜/시간 타입 처리
         // 없으면 enrolledAt 같은 날짜 직렬화 실패
         objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+
+        /*
+        * comment.
+        *  activateDefaultTyping 적용 시 직렬화 문제 발생
+        *  -> record 타입, List<T> 역직렬화 시 @class 타입 정보 충돌
+        *  -> 직렬화 실패로 Redis 저장 자체가 안 되는 문제
+        *  -> 해결: StringRedisTemplate + plainObjectMapper 방식으로 전환
+        *  (ChapterCatalogAdapter, LectureCatalogAdapter, PostQueryService 참고)
+        * */
+
 //        BasicPolymorphicTypeValidator typeValidator = BasicPolymorphicTypeValidator.builder()
 //                // allowIfBaseType(Object.class) : 모든 Object 하위 타입 허용
 //                // -> Chapter, Lecture 등 커스텀 클래스 포함
