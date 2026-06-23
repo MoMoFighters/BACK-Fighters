@@ -125,8 +125,7 @@ public class ViewingQueryService implements ViewingQueryUseCase {
 
                                     return new LectureMetaResponse.ChapterItem(
                                             chapter.getId(),
-                                            // chapterThumbnailUrl 추후 추가시 코드 반영 후 수정
-                                            null,
+                                            chapter.getChapterThumbnailUrl(),
                                             chapter.getTitle(),
                                             chapter.getOrderNo(),
                                             chapter.getDurationSec(),

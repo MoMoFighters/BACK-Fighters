@@ -26,6 +26,7 @@ public class Chapter implements Serializable {
 
     private Long id;
     private Long lectureId;
+    private String chapterThumbnailUrl;
     private String title;
     private int orderNo;
     private String videoUrl;
@@ -36,12 +37,13 @@ public class Chapter implements Serializable {
     // DB 에서 조회한 데이터로 도메인 객체 복원용
     // create() 는 신규 생성, reconstitute() 는 DB 복원
     public static Chapter reconstitute(
-            Long id, Long lectureId, String title,
+            Long id, Long lectureId, String chapterThumbnailUrl, String title,
             int orderNo, String videoUrl, int durationSec
     ) {
         Chapter chapter = new Chapter();
         chapter.id = id;
         chapter.lectureId = lectureId;
+        chapter.chapterThumbnailUrl = chapterThumbnailUrl;
         chapter.title = title;
         chapter.orderNo = orderNo;
         chapter.videoUrl = videoUrl;
