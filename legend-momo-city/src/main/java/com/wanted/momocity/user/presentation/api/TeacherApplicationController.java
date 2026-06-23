@@ -78,14 +78,13 @@ public class TeacherApplicationController {
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "강사 신청 완료"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "유효하지 않은 요청 값 (@Valid 실패)"),
-//            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "이메일 중복")
     })
     public ResponseEntity<ApiResponse<Void>> teacherApply(
             @Valid @ModelAttribute TeacherApplyRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails){
 
         userCommandUsecase.teacherApply(
-                new TeacherApplyCommand(userDetails.getUserId(), request.nickname(), request.category(), request.proof().get(0))
+                new TeacherApplyCommand(userDetails.getUserId(), request.nickname(), request.category(), request.proof())
         );
 
         return ResponseEntity.status(HttpStatus.OK)

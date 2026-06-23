@@ -41,7 +41,7 @@ public class UserPolicy {
     }
 
     // 강사증빙자료 관련 정책
-    public void validate(MultipartFile proof) {
+    public void teacherProofPolicy(MultipartFile proof) {
         // 증빙자료 제출 여부 확인
         if (proof == null || proof.isEmpty()) {
             throw new MissingProofException("증빙 자료는 필수 제출입니다.");

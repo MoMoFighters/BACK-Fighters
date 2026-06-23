@@ -69,7 +69,7 @@ public class UserCommandService implements UserCommandUsecase {
     @Override
     public void teacherApply(TeacherApplyCommand command) {
 
-        userPolicy.validate(command.proof());
+        userPolicy.teacherProofPolicy(command.proof());
         String proofKey = s3UploadPort.upload(command.proof(), "teacher_proof");
 
         userRepository.findById(command.userId())
