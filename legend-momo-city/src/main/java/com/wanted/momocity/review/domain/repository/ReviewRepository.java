@@ -13,4 +13,10 @@ public interface ReviewRepository {
             Long userId,
             Long lectureId
     );
+
+    // 삭제 전 리뷰 존재 여부 확인
+    boolean existsById(Long reviewId);
+
+    // 리뷰 Id 기준 삭제
+    void deleteById(Long reviewId);
 }

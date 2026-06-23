@@ -19,4 +19,13 @@ public record CreateReviewSuccessResponse(
                 "수강평이 등록되었습니다."
         );
     }
+
+    public static CreateReviewSuccessResponse deleted() {
+        return new CreateReviewSuccessResponse(
+                LocalDateTime.now(),
+                200,
+                ApiResponseCode.SUCCESS,
+                "수강평이 삭제되었습니다."
+        );
+    }
 }

@@ -7,4 +7,7 @@ public interface ReviewCommandUseCase {
     void createReview(
             ReviewCommand.CreateReviewCommand command
     );
+
+    // 관리자 수강평 삭제 기능
+    void deleteReview(Long reviewId);
 }
