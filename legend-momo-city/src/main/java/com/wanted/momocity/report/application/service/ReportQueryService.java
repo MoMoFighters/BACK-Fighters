@@ -1,6 +1,8 @@
 package com.wanted.momocity.report.application.service;
 
 import com.wanted.momocity.report.application.usecase.ReportQueryUseCase;
+import com.wanted.momocity.report.domain.exception.ReportNotFoundException;
+import com.wanted.momocity.report.domain.model.Report;
 import com.wanted.momocity.report.domain.repository.ReportRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -38,5 +40,13 @@ public class ReportQueryService implements ReportQueryUseCase {
     @Override
     public ReportList getByIsRead(boolean isRead, int limit) {
         return new ReportList(reportRepository.findByIsRead(isRead, limit));
+    }
+
+    // id 값이 없으면 예외처리를 위한 메서드 재정의
+    @Override
+    public ReportDetail getById(Long id) {
+        Report report = reportRepository.findById(id)
+                .orElseThrow(() -> new ReportNotFoundException(id));
+        return new ReportDetail(report);
     }
 }
