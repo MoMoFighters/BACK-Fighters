@@ -97,6 +97,7 @@ public class PostCommandService implements PostCommandUseCase {
     public PostCreateResult createPost(Long userId, String title, String category) {
         Post post = Post.create(userId, title, category);
         Post saved = postRepository.save(post);
+        evictPostsCache();
 
         log.info("[Community] 게시글 생성 완료 | userId={}, postId={}", userId, saved.getId());
         return new PostCreateResult(saved.getId());
@@ -143,6 +144,7 @@ public class PostCommandService implements PostCommandUseCase {
         validateAuthor(post.getUserId(), userId);
         post.update(title, category);
         postRepository.save(post);
+        evictPostsCache();
 
         log.info("[Community] 게시글 수정 완료 | postId={}", postId);
     }
@@ -179,6 +181,7 @@ public class PostCommandService implements PostCommandUseCase {
 
         }
         postContentRepository.saveAll(postContents);
+        evictPostsCache();
         log.info("[Community] 콘텐츠 수정 완료 | postId={}, count={}", postId, postContents.size());
     }
 
@@ -195,6 +198,7 @@ public class PostCommandService implements PostCommandUseCase {
         post.delete();
         postRepository.save(post);
         postContentRepository.deleteAllByPostId(postId);
+        evictPostsCache();
 
         log.info("[Community] 게시글 삭제 완료 | postId={}", postId);
     }
