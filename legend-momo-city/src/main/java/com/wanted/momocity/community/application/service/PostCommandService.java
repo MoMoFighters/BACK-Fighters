@@ -3,10 +3,8 @@ package com.wanted.momocity.community.application.service;
 import com.wanted.momocity.auth.domain.model.User;
 import com.wanted.momocity.community.application.command.PostContentCommand;
 import com.wanted.momocity.community.application.port.UserInfoPort;
-import com.wanted.momocity.community.application.result.CommentCreateResult;
 import com.wanted.momocity.community.application.result.LikeResult;
 import com.wanted.momocity.community.application.result.PostCreateResult;
-import com.wanted.momocity.community.application.result.ReplyCreateResult;
 import com.wanted.momocity.community.application.usecase.PostCommandUseCase;
 import com.wanted.momocity.community.domain.event.CommentCreatedEvent;
 import com.wanted.momocity.community.domain.event.PostLikedEvent;
@@ -25,6 +23,8 @@ import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.global.infrastructure.cloudfront.CloudFrontUrlConverter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.redis.core.Cursor;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -252,7 +252,7 @@ public class PostCommandService implements PostCommandUseCase {
 
     // 댓글 작성
     @Override
-    public CommentCreateResult createComment(Long userId, Long postId, String content) {
+    public void createComment(Long userId, Long postId, String content) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CommunityNotFoundException("게시글을 찾을 수 없습니다."));
 
@@ -275,14 +275,15 @@ public class PostCommandService implements PostCommandUseCase {
 
         log.info("[Community] 댓글 작성 완료 | userId={}, postId={}, commentId={}",
                 userId, postId, saved.getId());
-        return new CommentCreateResult(
-                saved.getId(),
-                saved.getContent(),
-                user.getName(),
-                user.getProfileImageUrl(),
-                user.getRole().name(),
-                saved.getCreatedAt()
-        );
+//        return new CommentCreateResult(
+//                saved.getId(),
+//                saved.getUserId(),
+//                saved.getContent(),
+//                user.getName(),
+//                user.getProfileImageUrl(),
+//                user.getRole().name(),
+//                saved.getCreatedAt()
+//        );
     }
 
     // 댓글 삭제
@@ -308,7 +309,7 @@ public class PostCommandService implements PostCommandUseCase {
     // 대댓글 작성
     // parentId = commentId -> 대댓글에 대댓글 불가
     @Override
-    public ReplyCreateResult createReply(Long userId, Long postId, Long commentId, String content) {
+    public void createReply(Long userId, Long postId, Long commentId, String content) {
         Comment parentComment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new CommunityNotFoundException("댓글을 찾을 수 없습니다."));
 
@@ -343,15 +344,16 @@ public class PostCommandService implements PostCommandUseCase {
 
         log.info("[Community] 대댓글 작성 완료 | userId={}, commentId={}, replyId={}",
                 userId, commentId, saved.getId());
-        return new ReplyCreateResult(
-                saved.getId(),
-                commentId,
-                saved.getContent(),
-                user.getName(),
-                user.getProfileImageUrl(),
-                user.getRole().name(),
-                saved.getCreatedAt()
-        );
+//        return new ReplyCreateResult(
+//                saved.getId(),
+//                commentId,
+//                saved.getUserId(),
+//                saved.getContent(),
+//                user.getName(),
+//                user.getProfileImageUrl(),
+//                user.getRole().name(),
+//                saved.getCreatedAt()
+//        );
 
     }
 
@@ -396,10 +398,16 @@ public class PostCommandService implements PostCommandUseCase {
      *  -> "posts::*" 패턴으로 저장된 모든 게시글 목록 캐시 삭제
      *  -> category, page, size 조합별로 저장된 키 전체 삭제
      *  -
-     *  PostQueryService 가 StringRedisTemplate 으로 posts 캐시 저장
+     *  @CacheEvict 대신 직접 삭제하는 이유
+     *  - PostQueryService 가 StringRedisTemplate 으로 posts 캐시 저장
      *  -> @CacheEvict 는 RedisCacheManager 경유
      *  -> RedisCacheManager 와 StringRedisTemplate 은 서로 다른 키 네임스페이스 사용
      *  -> @CacheEvict 로는 StringRedisTemplate 으로 저장된 키 삭제 불가
+     *  -
+     *  KEYS "posts::*" : Redis 전체 키를 한 번에 스캔 -> Redis 는 단일 스레드
+     *  -> 스캔하는 동안 다른 모든 요청 블로킹 -> 키가 많을 수록 서비스 전체 지연 발생
+     *  SCAN : 커서 기반으로 100개씩 나눠서 조회 -> 100개 조회 후 다른 요청 처리 가능
+     *  -> Redis 블로킹 없이 안전하게 키 삭제 가능
      *  -
      *  예외 처리
      *  캐시 무효화 실패 시 → 로그만 남기고 서비스 계속 진행
@@ -408,11 +416,36 @@ public class PostCommandService implements PostCommandUseCase {
 
     private void evictPostsCache() {
         try {
-            Set<String> keys = stringRedisTemplate.keys("posts::*");
-            if (keys != null && !keys.isEmpty()) {
-                stringRedisTemplate.delete(keys);
-                log.debug("[Community] posts 캐시 무효화 완료 | 삭제 키 수={}", keys.size());
+            // SCAN 옵션 설정
+            ScanOptions options = ScanOptions.scanOptions()
+                    // match : "posts::*" 패턴에 해당하는 키만 조회
+                    .match("posts::*")
+                    // count : 한 번에 조회할 키 수 (힌트값, 정확히 100개가 아닐 수 있음)
+                    .count(100)
+                    .build();
+
+            List<String> keys = new ArrayList<>();
+
+            // 커서 기반으로 조금씩 나눠서 키 조회
+            // try-with-resources 로 커서 자동 닫힘 보장
+            try (Cursor<String> cursor = stringRedisTemplate.scan(options)) {
+                while (cursor.hasNext()) {
+                    keys.add(cursor.next());
+
+                    // 100개씩 배치 삭제
+                    // 한 번에 너무 많이 삭제하지 않도록 제한 -> Redis 블로킹 방지
+                    if (keys.size() >= 100) {
+                        stringRedisTemplate.delete(keys);
+                        keys.clear();
+                    }
+                }
             }
+
+            // 100개 미만으로 남은 키 삭제
+            if (!keys.isEmpty()) {
+                stringRedisTemplate.delete(keys);
+            }
+            log.debug("[Community] posts 캐시 무효화 완료");
         } catch (Exception e) {
             log.warn("[Community] posts 캐시 무효화 실패 | 예외={}", e.getMessage());
         }

@@ -20,11 +20,11 @@ public record PostDetailResponse (
         int likeCount,
         boolean isLiked,
         boolean isMine,
+        Long authorId,
         String authorName,
         String authorProfileImageUrl,
         String authorRole,
         List<PostContentResponse> contents,
-        List<CommentResponse> comments,
         LocalDateTime createdAt
 ) {
 }

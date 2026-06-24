@@ -2,10 +2,8 @@ package com.wanted.momocity.community.presentation.api;
 
 import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.community.application.command.PostContentCommand;
-import com.wanted.momocity.community.application.result.CommentCreateResult;
 import com.wanted.momocity.community.application.result.LikeResult;
 import com.wanted.momocity.community.application.result.PostCreateResult;
-import com.wanted.momocity.community.application.result.ReplyCreateResult;
 import com.wanted.momocity.community.application.usecase.PostCommandUseCase;
 import com.wanted.momocity.community.application.usecase.PostQueryUseCase;
 import com.wanted.momocity.community.presentation.api.common.CommunityResponseCode;
@@ -270,25 +268,18 @@ public class PostController {
     // POST /api/v2/posts/{postId}/comments
     @Operation(summary = "댓글 작성", description = "게시글에 댓글을 작성합니다.")
     @PostMapping("/{postId}/comments")
-    public ResponseEntity<ApiResponse<CommentCreateResponse>> createComment(
+    public ResponseEntity<ApiResponse<Void>> createComment(
             @PathVariable Long postId,
             @RequestBody @Valid CreateCommentRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         Long userId = userDetails.getUserId();
-        CommentCreateResult result = postCommandUseCase.createComment(userId, postId, request.content());
+        postCommandUseCase.createComment(userId, postId, request.content());
 
         return ResponseEntity.status(201).body(ApiResponse.created(
                 CommunityResponseCode.COMMENT_CREATED,
                 "댓글이 작성되었습니다.",
-                new CommentCreateResponse(
-                        result.commentId(),
-                        result.content(),
-                        result.authorName(),
-                        result.authorProfileImageUrl(),
-                        result.authorRole(),
-                        result.createdAt()
-                )
+                null
         ));
     }
 
@@ -314,27 +305,19 @@ public class PostController {
     // POST /api/v2/posts/{postId}/comments/{commentId}/replies
     @Operation(summary = "대댓글 작성", description = "댓글에 대댓글을 작성합니다.")
     @PostMapping("/{postId}/comments/{commentId}/replies")
-    public ResponseEntity<ApiResponse<ReplyCreateResponse>> createReply(
+    public ResponseEntity<ApiResponse<Void>> createReply(
             @PathVariable Long postId,
             @PathVariable Long commentId,
             @RequestBody @Valid CreateCommentRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         Long userId = userDetails.getUserId();
-        ReplyCreateResult result = postCommandUseCase.createReply(userId, postId, commentId, request.content());
+        postCommandUseCase.createReply(userId, postId, commentId, request.content());
 
         return ResponseEntity.status(201).body(ApiResponse.created(
                 CommunityResponseCode.REPLY_CREATED,
                 "대댓글이 작성되었습니다.",
-                new ReplyCreateResponse(
-                        result.replyId(),
-                        result.commentId(),
-                        result.content(),
-                        result.authorName(),
-                        result.authorProfileImageUrl(),
-                        result.authorRole(),
-                        result.createdAt()
-                )
+                null
         ));
     }
 
@@ -356,4 +339,24 @@ public class PostController {
                 "대댓글이 삭제되었습니다."
         ));
     }
+
+    // 댓글 목록 조회
+    // GET api/v2/posts/{postId}/comments
+    @Operation(summary = "게시글 댓글 조회", description = "게시글 댓글 목록을 조회합니다.")
+    @GetMapping("/{postId}/comments")
+    public ResponseEntity<ApiResponse<PostCommentResponse>> getComments(
+            @PathVariable Long postId,
+            @RequestParam(required = false) Long cursor,
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long userId = userDetails.getUserId();
+
+        return ResponseEntity.ok(ApiResponse.success(
+                CommunityResponseCode.COMMENT_FOUND,
+                "댓글 조회에 성공했습니다.",
+                postQueryUseCase.getComments(userId, postId, cursor, size)
+        ));
+    }
+
 }
