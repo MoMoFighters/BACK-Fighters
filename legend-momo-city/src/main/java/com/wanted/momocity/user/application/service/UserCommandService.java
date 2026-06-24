@@ -78,8 +78,10 @@ public class UserCommandService implements UserCommandUsecase {
             throw new DomainRuleViolationException("이미 강사 신청 중입니다.");
         }
 
-        // 닉네임 중복 확인
-        userPolicy.nicknamePolicy(command.nickname());
+        // 기존 닉네임이랑 새로운 닉네임이 다르면 policy로 중복 검증
+        if(!command.currentNickname().equals(command.nickname())){
+            userPolicy.nicknamePolicy(command.nickname());
+        }
         userPolicy.teacherProofPolicy(command.proof());
         String proofKey = s3UploadPort.upload(command.proof(), "teacher_proof");
 
@@ -138,5 +140,11 @@ public class UserCommandService implements UserCommandUsecase {
     @Override
     public boolean setAlarm(Long userId) {
        return userRepository.setAlarm(userId);
+    }
+
+    // 강사 포기
+    @Override
+    public void teacherGiveup(Long userId) {
+        userRepository.changeStatus(userId,ACTIVE);
     }
 }

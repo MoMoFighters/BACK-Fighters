@@ -29,6 +29,7 @@ public record TeacherApplicationDetailResponse(
         String proof,
         Status status,
         Role role,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        String fileType
 ) {
 }

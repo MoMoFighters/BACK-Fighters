@@ -58,4 +58,7 @@ public interface UserRepository {
 
     // 강사 승인/반려 확인용
     Status findStatusById(Long userId);
+
+    // 강사 포기
+    void changeStatus(Long userId, Status status);
 }

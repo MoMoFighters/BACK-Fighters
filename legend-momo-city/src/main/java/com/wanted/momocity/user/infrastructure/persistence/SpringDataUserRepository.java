@@ -117,6 +117,15 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
             "WHEN u.doNotDisturb = true " +
             "THEN false " +
             "ELSE true END WHERE u.id = :userId")
+    @Transactional
     void setAlarm(@Param("userId") Long userId);
 
-}
+    // 강사 포기
+    // 기존에 강사 신청했다가 반려된 사람 = REJECTED + STUDENT 이
+    // 더이상 강사 신청을 안 할거라면 status를 ACTIVE로 바꿔줌
+    @Query("UPDATE UserUser u SET u.status = :status WHERE u.id = :userId")
+    @Modifying
+    @Transactional
+    void changeStatus(
+            @Param("userId") Long userId,
+            @Param("status") Status status);}

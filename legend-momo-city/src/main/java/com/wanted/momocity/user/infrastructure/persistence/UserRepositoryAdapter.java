@@ -135,6 +135,11 @@ public class UserRepositoryAdapter implements UserRepository {
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
     }
 
+    @Override
+    public void changeStatus(Long userId, Status status) {
+        springDataUserRepository.changeStatus(userId, status);
+    }
+
 
     // 마이페이지 내 정보 조회용
     private User toDomain(UserJpaEntity entity) {
