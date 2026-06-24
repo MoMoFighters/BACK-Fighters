@@ -75,6 +75,17 @@ public class CommentRepositoryAdapter implements CommentRepository {
         return commentJpaRepository.countByPostId(postId);
     }
 
+    // 커서 기반 대댓글 조회 -> CommentJpaEntity -> Comment 도메인 변환
+    @Override
+    public List<Comment> findRepliesByCommentIdWithCursor(Long commentId, Long cursor, int size) {
+        return commentJpaRepository.findRepliesByCommentIdWithCursor(
+                        commentId, cursor, PageRequest.of(0, size)
+                )
+                .stream()
+                .map(CommentJpaEntity::toDomain)
+                .toList();
+    }
+
     // 댓글 소프트딜리트
     // deleted_at 업데이트
     @Override

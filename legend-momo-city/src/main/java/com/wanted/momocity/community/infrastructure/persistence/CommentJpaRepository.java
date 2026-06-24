@@ -1,5 +1,6 @@
 package com.wanted.momocity.community.infrastructure.persistence;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -82,6 +83,27 @@ public interface CommentJpaRepository extends JpaRepository<CommentJpaEntity, Lo
         AND c.deletedAt IS NULL
     """)
     int countByPostId(@Param("postId") Long postId);
+
+    /*
+     * comment.
+     *  커서 기반 대댓글 조회
+     *  parentId = commentId -> 대댓글만 조회 (parentId != NULL)
+     *  cursor = null -> 첫페이지, cursor != null -> 해당 id 보다 큰 데이터 조회
+     *  -> 오래된 순서로 조회(ASC)
+     * */
+
+    @Query("""
+    SELECT c FROM CommentJpaEntity c
+    WHERE c.parentId = :commentId
+    AND c.deletedAt IS NULL
+    AND (:cursor IS NULL OR c.id > :cursor)
+    ORDER BY c.id ASC
+""")
+    List<CommentJpaEntity> findRepliesByCommentIdWithCursor(
+            @Param("commentId") Long commentId,
+            @Param("cursor") Long cursor,
+            Pageable pageable
+    );
 
     // 하드딜리트 (스케줄러용)
     // deletedAt IS NOT NULL : 소프트딜리트된 댓글만 대상
