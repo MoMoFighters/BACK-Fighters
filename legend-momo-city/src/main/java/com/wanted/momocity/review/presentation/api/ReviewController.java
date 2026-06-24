@@ -12,6 +12,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -48,4 +49,14 @@ public class ReviewController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(CreateReviewSuccessResponse.created());
     }
+
+    // 강의 삭제
+    @DeleteMapping("/reviews/{reviewId}")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')") // 관리자만 삭제 가능
+    public ResponseEntity<?> deleteReview(@PathVariable Long reviewId // URL에서 reviewId 추출
+    ) { // 메서드 시작
+        reviewCommandUseCase.deleteReview(reviewId); // 서비스에 삭제 요청 위임
+
+        return ResponseEntity.ok(CreateReviewSuccessResponse.deleted()); // 삭제 성공 응답 반환
+    } // 메서드 종료
 }

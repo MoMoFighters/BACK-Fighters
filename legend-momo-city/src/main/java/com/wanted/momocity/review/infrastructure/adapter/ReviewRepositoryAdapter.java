@@ -36,4 +36,16 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
                 lectureId
         );
     }
+
+    // 리뷰 존재 여부 확인
+    @Override
+    public boolean existsById(Long reviewId) {
+        return reviewJpaRepository.existsById(reviewId);
+    }
+
+    // 리뷰 삭제 (관리자)
+    @Override
+    public void deleteById(Long reviewId) {
+        reviewJpaRepository.deleteById(reviewId);
+    }
 }

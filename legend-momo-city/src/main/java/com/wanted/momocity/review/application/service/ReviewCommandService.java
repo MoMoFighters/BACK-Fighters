@@ -7,6 +7,7 @@ import com.wanted.momocity.review.application.command.ReviewCommand;
 import com.wanted.momocity.review.application.usecase.ReviewCommandUseCase;
 import com.wanted.momocity.review.domain.exception.DuplicateReviewException;
 import com.wanted.momocity.review.domain.exception.ReviewAccessDeniedException;
+import com.wanted.momocity.review.domain.exception.ReviewNotFoundException;
 import com.wanted.momocity.review.domain.model.Review;
 import com.wanted.momocity.review.domain.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
@@ -87,5 +88,17 @@ public class ReviewCommandService implements ReviewCommandUseCase {
                 savedReview.getUserId(),
                 savedReview.getLectureId()
         );
+    }
+
+    // ReviewCommandUseCase 인터페이스의 메서드를 구현한다는 표시
+    @Override
+    public void deleteReview(Long reviewId) {
+        // 삭제할 리뷰가 DB에 존재하지 않는지 확인
+        if (!reviewRepository.existsById(reviewId)) {
+            throw new ReviewNotFoundException("수강평을 찾을 수 없습니다.");
+        }
+
+        // 리뷰 ID 기준으로 수강평 삭제 실행
+        reviewRepository.deleteById(reviewId);
     }
 }
