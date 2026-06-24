@@ -217,6 +217,7 @@ public class CatalogMessageAdapter implements MessageRepository {
     //채팅방 개설
     //채팅방 생성 시점에 시간 주입
     @Override
+    @Transactional
     public void saveChatRoom(ChatRoomJpaEntity room) {
         room.changeCreatedAt(LocalDateTime.now());
         room.changeUpdatedAt(LocalDateTime.now());
@@ -225,6 +226,7 @@ public class CatalogMessageAdapter implements MessageRepository {
     }
     //멤버 저장
     @Override
+    @Transactional
     public void saveChatRoomMember(ChatRoomMemberJpaEntity member) {
         springDataChatRoomMemberRepository.save(member);
         log.info("[CatalogMessageAdapter] chat_room_member 행 추가 완료 - 매핑 방ID: {}", member.getRoomId().getId());
@@ -286,6 +288,7 @@ public class CatalogMessageAdapter implements MessageRepository {
 
     //채팅방 나가기: 안내문구 저장
     @Override
+    @Transactional
     public void saveLeaveAnnounce(ChatRoomJpaEntity chatRoom, UserWithFMJpaEntity leaveUser, String leaveMessage) {
         log.info("[CatalogMessageAdapter] 채팅방 퇴장 안내 문구 저장 시작 - 방ID:{}, 유저ID:{}", chatRoom.getId(), leaveUser.getId());
 
@@ -316,6 +319,7 @@ public class CatalogMessageAdapter implements MessageRepository {
 
     //일대일 재입장 안내 문구
     @Override
+    @Transactional
     public void saveEnterAnnounce(ChatRoomJpaEntity chatRoom, UserWithFMJpaEntity enterUser, String enterMessage) {
         log.info("[CatalogMessageAdapter] 일대일 채팅방 재입장 안내 문구 저장 시작 - 방ID:{}, 유저ID:{}", chatRoom.getId(), enterUser.getId());
         MessageAnnounceJpaEntity announce = MessageAnnounceJpaEntity.createLeaveAnnounce(
