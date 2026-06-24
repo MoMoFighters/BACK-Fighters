@@ -18,8 +18,7 @@ public record ReportDetailResponse(
         String detail,
         boolean isRead,
         LocalDateTime reportedAt,
-        LocalDateTime handledAt,
-        Long handlerAdminId
+        LocalDateTime handledAt
 ) {
 
     public static ReportDetailResponse from(Report report) {
@@ -30,10 +29,9 @@ public record ReportDetailResponse(
                 report.getTargetId(),
                 report.getReason().name(),
                 report.getDetail(),
-                report.isRead(),
-                report.getReportedAt(),
-                report.getHandledAt(),
-                report.getHandlerAdminId()
+                report.isResolved(),
+                report.getCreatedAt(),
+                report.getResolvedAt()
         );
     }
 

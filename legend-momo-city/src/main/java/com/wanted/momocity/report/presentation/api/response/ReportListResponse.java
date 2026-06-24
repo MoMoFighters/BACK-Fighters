@@ -69,8 +69,8 @@ public record ReportListResponse(
                     report.getTargetId(),
                     report.getReason().name(),
                     report.getDetail(),
-                    report.isRead(),
-                    report.getReportedAt()
+                    report.isResolved(),
+                    report.getCreatedAt()
             );
         }
     }
