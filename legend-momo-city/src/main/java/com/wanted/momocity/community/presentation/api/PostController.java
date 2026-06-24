@@ -359,26 +359,6 @@ public class PostController {
         ));
     }
 
-    // 대댓글 목록 조회
-    // GET /api/v2/posts/{postId}/comments/{commentId}/replies
-    @Operation(summary = "대댓글 목록 조회", description = "댓글의 대댓글 목록을 조회합니다.")
-    @GetMapping("/{postId}/comments/{commentId}/replies")
-    public ResponseEntity<ApiResponse<PostCommentResponse>> getReplies(
-            @PathVariable Long postId,
-            @PathVariable Long commentId,
-            @RequestParam(required = false) Long cursor,
-            @RequestParam(defaultValue = "5") int size,
-            @AuthenticationPrincipal CustomUserDetails userDetails
-    ) {
-        Long userId = userDetails.getUserId();
-
-        return ResponseEntity.ok(ApiResponse.success(
-                CommunityResponseCode.COMMENT_FOUND,
-                "대댓글 조회에 성공했습니다.",
-                postQueryUseCase.getReplies(userId, postId, commentId, cursor, size)
-        ));
-    }
-
     // 마이페이지 - 내 게시글 목록 기반
     // GET api/v2/posts/me?cursor={lastPostId}&size=10
     @Operation(summary = "마이페이지 게시글 목록", description = "내 게시글 목록을 조회합니다.")
