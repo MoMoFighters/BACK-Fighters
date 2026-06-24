@@ -3,7 +3,6 @@ package com.wanted.momocity.store.presentation.api;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.store.application.usecase.StoreCommandUsecase;
 import com.wanted.momocity.store.application.usecase.StoreQueryUsecase;
-import com.wanted.momocity.store.domain.model.Store;
 import com.wanted.momocity.store.domain.model.StoreListResult;
 import com.wanted.momocity.store.presentation.api.common.StoreResponseCode;
 import com.wanted.momocity.store.presentation.api.common.StoreResponseMessage;
@@ -18,8 +17,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor

@@ -1,9 +1,6 @@
 package com.wanted.momocity.store.application.usecase;
 
-import com.wanted.momocity.store.domain.model.Store;
 import com.wanted.momocity.store.domain.model.StoreListResult;
-
-import java.util.List;
 
 public interface StoreQueryUsecase {
 
