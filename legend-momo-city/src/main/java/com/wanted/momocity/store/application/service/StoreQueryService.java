@@ -23,7 +23,7 @@ public class StoreQueryService implements StoreQueryUsecase{
     // 전체 상품 목록 조회
     @Override
     public StoreListResult getProductList(int page, int size) {
-        List<Store> stores = storeRepository.getProductList(PageRequest.of(page - 1, size));
+        List<Store> stores = storeRepository.getProductList(page, size);
         long totalElements = storeRepository.countProductList();
         int totalPages = (int) Math.ceil((double) totalElements / size);
         return new StoreListResult(stores, page, size, totalElements, totalPages);

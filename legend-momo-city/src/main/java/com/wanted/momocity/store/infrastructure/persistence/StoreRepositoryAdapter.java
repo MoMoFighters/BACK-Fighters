@@ -17,8 +17,8 @@ public class StoreRepositoryAdapter implements StoreRepository {
     private final SpringDataStoreRepository springDataStoreRepository;
 
     @Override
-    public List<Store> getProductList(Pageable pageable) {
-        return springDataStoreRepository.findAll(pageable)
+    public List<Store> getProductList(int page, int size) {
+        return springDataStoreRepository.findAll(PageRequest.of(page - 1, size))
                 .stream()
                 .map(StoreJpaEntity::toDomain)
                 .toList();

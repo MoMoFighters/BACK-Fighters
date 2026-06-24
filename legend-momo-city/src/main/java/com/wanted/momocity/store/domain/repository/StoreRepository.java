@@ -8,7 +8,7 @@ import java.util.List;
 public interface StoreRepository {
 
     // 전체 상품 목록 조회
-    List<Store> getProductList(Pageable pageable);
+    List<Store> getProductList(int page, int size);
 
     // 페이지네이션 페이지 수
     long countProductList();
