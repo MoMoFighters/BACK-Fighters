@@ -8,11 +8,13 @@ import com.wanted.momocity.community.infrastructure.persistence.PostJpaEntity;
 import com.wanted.momocity.community.infrastructure.persistence.PostJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 /*
@@ -73,4 +75,31 @@ public class PostRepositoryAdapter implements PostRepository {
                                 .toList()
                 ));
     }
+
+    // 유저별 게시글 커서 기반 조회
+    @Override
+    public List<Post> findByUserIdWithCursor(Long userId, Long cursor, int size) {
+        return postJpaRepository.findByUserIdWithCursor(
+                        userId, cursor, PageRequest.of(0, size)
+                )
+                .stream()
+                .map(PostJpaEntity::toDomain)
+                .toList();
+    }
+
+    @Override
+    public int countByUserId(Long userId) {
+        return postJpaRepository.countByUserId(userId);
+    }
+
+    @Override
+    public int sumViewCountByUserId(Long userId) {
+        return postJpaRepository.sumViewCountByUserId(userId);
+    }
+
+    @Override
+    public int sumLikeCountByUserId(Long userId) {
+        return postJpaRepository.sumLikeCountByUserId(userId);
+    }
+
 }

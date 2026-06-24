@@ -10,6 +10,7 @@ import com.wanted.momocity.calendar.presentation.api.response.MemoResponse;
 import com.wanted.momocity.calendar.presentation.api.response.TodoResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,21 +30,14 @@ import java.time.LocalDate;
 @Service
 @Slf4j
 @Transactional
+@RequiredArgsConstructor
 public class CalendarCommandService implements CalendarCommandUseCase {
 
     private final CalendarRepository calendarRepository;
-    private final StringRedisTemplate stringRedisTemplate;
-
-    public CalendarCommandService(
-            CalendarRepository calendarRepository,
-            StringRedisTemplate stringRedisTemplate
-    ) {
-        this.calendarRepository = calendarRepository;
-        this.stringRedisTemplate = stringRedisTemplate;
-    }
 
     // Todo
     @Override
+    @CacheEvict(value = "calendar", key = "#command.userId() + ':' + #command.start().year + ':' + #command.start().monthValue", cacheManager = "redisCacheManager")
     public TodoResponse handle(CreateTodoCommand command) {
 
         // 도메인 메서드로 Todo 생성
@@ -55,7 +49,6 @@ public class CalendarCommandService implements CalendarCommandUseCase {
 
         // 저장
         Calendar saved = calendarRepository.save(calendar);
-        evictCalendarCache(command.userId(), command.start());
 
         log.info("[Calendar] Todo 생성 완료 | userId={}, calendarId={}",
                 command.userId(), saved.getId());
@@ -67,6 +60,7 @@ public class CalendarCommandService implements CalendarCommandUseCase {
     }
 
     @Override
+    @CacheEvict(value = "calendar", key = "#command.userId() + ':' + #command.start().year + ':' + #command.start().monthValue", cacheManager = "redisCacheManager")
     public TodoResponse handle(UpdateTodoCommand command) {
 
         // 조회
@@ -83,7 +77,6 @@ public class CalendarCommandService implements CalendarCommandUseCase {
 
         // 저장
         Calendar saved = calendarRepository.save(calendar);
-        evictCalendarCache(command.userId(), command.start());
 
         log.info("[Calendar] Todo 수정 완료 | userId={}, calendarId={}",
                 command.userId(), saved.getId());
@@ -95,6 +88,7 @@ public class CalendarCommandService implements CalendarCommandUseCase {
     }
 
     @Override
+    @CacheEvict(value = "calendar", key = "#command.userId() + ':' + #command.start().year + ':' + #command.start().monthValue", cacheManager = "redisCacheManager")
     public void handle(DeleteTodoCommand command) {
 
         // 조회
@@ -108,13 +102,13 @@ public class CalendarCommandService implements CalendarCommandUseCase {
 
         // 삭제
         calendarRepository.delete(command.calendarId());
-        evictCalendarCache(command.userId(), calendar.getStart());
 
         log.info("[Calendar] Todo 삭제 완료 | userId={}, calendarId={}",
                 command.userId(), command.calendarId());
     }
 
     @Override
+    @CacheEvict(value = "calendar", key = "#command.userId() + ':' + #command.start().year + ':' + #command.start().monthValue", cacheManager = "redisCacheManager")
     public TodoResponse handle(CheckTodoCommand command) {
 
         // 조회
@@ -131,7 +125,6 @@ public class CalendarCommandService implements CalendarCommandUseCase {
 
         // 저장
         Calendar saved = calendarRepository.save(calendar);
-        evictCalendarCache(command.userId(), saved.getStart());
 
         log.info("[Calendar] Todo 체크 변경 완료 | userId={}, calendarId={}, isCompleted={}",
                 command.userId(), saved.getId(), saved.isCompleted());
@@ -144,6 +137,7 @@ public class CalendarCommandService implements CalendarCommandUseCase {
 
     // Memo
     @Override
+    @CacheEvict(value = "calendar", key = "#command.userId() + ':' + #command.start().year + ':' + #command.start().monthValue", cacheManager = "redisCacheManager")
     public MemoResponse handle(CreateMemoCommand command) {
 
         // 도메인 메서드로 Memo 생성
@@ -157,7 +151,6 @@ public class CalendarCommandService implements CalendarCommandUseCase {
 
         // 저장
         Calendar saved = calendarRepository.save(calendar);
-        evictCalendarCache(command.userId(), command.start());
 
         log.info("[Calendar] Memo 생성 완료 | userId={}, calendarId={}",
                 command.userId(), saved.getId());
@@ -169,6 +162,7 @@ public class CalendarCommandService implements CalendarCommandUseCase {
     }
 
     @Override
+    @CacheEvict(value = "calendar", key = "#command.userId() + ':' + #command.start().year + ':' + #command.start().monthValue", cacheManager = "redisCacheManager")
     public MemoResponse handle(UpdateMemoCommand command) {
 
         // 조회
@@ -185,7 +179,6 @@ public class CalendarCommandService implements CalendarCommandUseCase {
 
         // 저장
         Calendar saved = calendarRepository.save(calendar);
-        evictCalendarCache(command.userId(), command.start());
 
         log.info("[Calendar] Memo 수정 완료 | userId={}, calendarId={}",
                 command.userId(), saved.getId());
@@ -197,6 +190,7 @@ public class CalendarCommandService implements CalendarCommandUseCase {
     }
 
     @Override
+    @CacheEvict(value = "calendar", key = "#command.userId() + ':' + #command.start().year + ':' + #command.start().monthValue", cacheManager = "redisCacheManager")
     public void handle(DeleteMemoCommand command) {
 
         // 조회
@@ -210,32 +204,9 @@ public class CalendarCommandService implements CalendarCommandUseCase {
 
         // 삭제
         calendarRepository.delete(command.calendarId());
-        evictCalendarCache(command.userId(), calendar.getStart());
 
         log.info("[Calendar] Memo 삭제 완료 | userId={}, calendarId={}",
                 command.userId(), command.calendarId());
-    }
-    
-    /*
-     * comment.
-     *  캘린더 월별 캐시 무효화
-     *  -
-     *  캐시 키 : "calendar::{userId}:{year}:{month}" 삭제
-     *  -> Todo/Memo 작성/수정/삭제/체크 변경 시 호출
-     *  -
-     *  예외처리
-     *  - 캐시 무효화 실패 시 -> 로그만 남기고 서비스 계속 진행
-     * */
-
-    private void evictCalendarCache(Long userId, LocalDate date) {
-        try {
-            String cacheKey = "calendar::" + userId + ":" + date.getYear() + ":" + date.getMonthValue();
-            stringRedisTemplate.delete(cacheKey);
-            log.debug("[Calendar] 월별 캐시 무효화 완료 | key={}", cacheKey);
-        } catch (Exception e) {
-            log.warn("[Calendar] 월별 캐시 무효화 실패 | 예외={}", e.getMessage());
-        }
-
     }
 
 }

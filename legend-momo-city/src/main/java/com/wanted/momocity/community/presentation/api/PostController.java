@@ -359,4 +359,53 @@ public class PostController {
         ));
     }
 
+    // 마이페이지 - 내 게시글 목록 기반
+    // GET api/v2/posts/me?cursor={lastPostId}&size=10
+    @Operation(summary = "마이페이지 게시글 목록", description = "내 게시글 목록을 조회합니다.")
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UserPostListResponse>> getMyPosts(
+            @RequestParam(required = false) Long cursor,
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long userId = userDetails.getUserId();
+        return ResponseEntity.ok(ApiResponse.success(
+                CommunityResponseCode.POST_LIST_FOUND,
+                "내 게시글 목록 조회에 성공했습니다.",
+                postQueryUseCase.getMyPosts(userId, cursor, size)
+        ));
+    }
+
+    // 상대방 페이지 - 상대방 게시글 목록
+    // GET api/v2/posts/users/{targetUserId}?cursor={lastPostId}&size=10
+    @Operation(summary = "상대방 게시글 목록", description = "상대방 게시글 목록을 조회합니다.")
+    @GetMapping("/users/{targetUserId}")
+    public ResponseEntity<ApiResponse<UserPostListResponse>> getUserPosts(
+            @PathVariable Long targetUserId,
+            @RequestParam(required = false) Long cursor,
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(
+                CommunityResponseCode.POST_LIST_FOUND,
+                "게시글 목록 조회에 성공했습니다.",
+                postQueryUseCase.getUserPosts(targetUserId, cursor, size)
+        ));
+    }
+
+    // 대시보드 - 내 게시글 통계
+    // GET api/v2/posts/dashboard
+    @Operation(summary = "대시보드", description = "내 게시글 통계를 조회합니다.")
+    @GetMapping("/dashboard")
+    public ResponseEntity<ApiResponse<DashboardResponse>> getDashboard(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long userId = userDetails.getUserId();
+        return ResponseEntity.ok(ApiResponse.success(
+                CommunityResponseCode.POST_LIST_FOUND,
+                "대시보드 조회에 성공했습니다.",
+                postQueryUseCase.getDashboard(userId)
+        ));
+
+    }
 }
