@@ -1,7 +1,8 @@
 package com.wanted.momocity.message.application.command;
 
-public record ReadMessageCommand(
+public record SendMessageCommand(
         Long roomId,
-        Long userId //로그인 유저
+        Long senderId,
+        String content
 ) {
 }

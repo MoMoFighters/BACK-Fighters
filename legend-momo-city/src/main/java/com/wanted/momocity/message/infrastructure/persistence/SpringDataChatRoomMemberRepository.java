@@ -21,6 +21,9 @@ public interface SpringDataChatRoomMemberRepository extends JpaRepository<ChatRo
     //메시지 전송(로그인한 유저가 해당 채팅방의 멤버인지 확인)
     boolean existsByRoomId_IdAndUserId_Id(Long roomId, Long userId);
 
+    //채팅방 조회 및 개설: 일대일 채팅방 연계를 위함(두 유저가 포함되고 방이름 없는 일대일 채팅방 정보 가져오기)
+    List<ChatRoomMemberJpaEntity> findByUserId_IdInAndRoomId_RoomTitleIsNull(List<Long> userId);
+
 //    //로그인한 유저가 참여하는 방중 가장 먼저 만들어진 방 찾기(나와의 채팅방)
 //    Long findFirstRoomIdByUserId(Long userId);
 }

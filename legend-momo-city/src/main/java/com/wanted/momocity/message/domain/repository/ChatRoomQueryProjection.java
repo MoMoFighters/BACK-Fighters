@@ -9,6 +9,8 @@ import java.time.LocalDateTime;
 //->∵ 메시지 기능은 하나지만 chat_room, chat_room_member, message 테이블로 나뉘므로 같은 기능의 정보를 담기위한 그릇
 public record ChatRoomQueryProjection(
         Long roomId,
-        MessageJpaEntity lastMessage //마지막 메시지
+        String roomTitle, //채팅방 제목
+        MessageJpaEntity lastMessage, //마지막 메시지
+        LocalDateTime roomCreatedAt //메시지, 안내 문구 둘다 없다면 채팅방 개설 시간
 ) {
 }

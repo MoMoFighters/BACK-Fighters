@@ -32,12 +32,14 @@ public class NotificationJpaEntity {
     @Column(name = "message")
     private String message;
 
+    //추후
+    //v2
+    @Column(name = "is_read")
+    private Boolean isRead;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    //추후
-//    @Column(name = "is_read")
-//    private boolean isRead;
 
     //알림 행 추가(순수 도메인 모델을 JPA 엔티티로 맵핑해주는 부분
     public static NotificationJpaEntity toEntity(Notification domain, UserWithFMJpaEntity userJpaEntity) {
@@ -50,6 +52,12 @@ public class NotificationJpaEntity {
         //추후 주석 해제
 //        entity.isRead = domain.isRead;
         entity.createdAt = LocalDateTime.now();
+
+        if ("MESSAGE".equals(domain.getType())) {
+            entity.isRead = null;
+        } else {
+            entity.isRead = domain.getIsRead();
+        }
         return entity;
     }
 
@@ -59,6 +67,7 @@ public class NotificationJpaEntity {
         this.createdAt = createdAt;
         //추후 isRead 생기면 주석 해제
 //        this.isRead = false;
+        //메시지 관련 읽음 여부는 message_read 테이블로 연계
     }
 
     //JPA 엔티티를 순수 도메인 모델로 복원해주는 기계
@@ -68,7 +77,8 @@ public class NotificationJpaEntity {
                 this.userId.getId(),
                 this.type,
                 this.refId,
-                this.message
+                this.message,
+                this.isRead
         );
     }
 

@@ -1,23 +1,38 @@
 package com.wanted.momocity.message.application.usecase;
 
+import com.wanted.momocity.message.application.command.CreateChatRoomCommand;
+import com.wanted.momocity.message.application.command.LeaveChatRoomCommand;
+import com.wanted.momocity.message.application.command.ReadMessageCommand;
+import com.wanted.momocity.message.application.command.SendMessageCommand;
+
 import java.time.LocalDateTime;
+import java.util.List;
 
 public interface MessageCommandUseCase {
 
     //채팅방 조회 및 개설
-    CreateRoomView createChatRoomCommandHandle(Long userId, Long targetUserId);
+    CreateRoomView createChatRoomCommandHandle(CreateChatRoomCommand command);
 
     record CreateRoomView(
             boolean isExisting, //기존 방 존재 여부
+            RoomInfo roomInfo,
+            List<MemberInfo> memberInfo
+    ) {}
+    record RoomInfo(
             Long roomId,
-            Long targetUserId,
+            String roomTitle,
+            Long inMemberCount
+    ) {}
+    record MemberInfo(
+            Long userId,
+            String name,
             String nickname,
             String role,
             String status
     ) {}
 
     //메시지 전송
-    SendView sendMessageCommandHandle(Long senderId, Long roomId, String content);
+    SendView sendMessageCommandHandle(SendMessageCommand command);
 
     record SendView(
             Long roomId,
@@ -30,7 +45,7 @@ public interface MessageCommandUseCase {
     ) {}
 
     //메시지 읽음
-    ReadView readMessageCommandHandle(Long roomId, Long userId);
+    ReadView readMessageCommandHandle(ReadMessageCommand command);
 
     record ReadView(
             Long roomId,
@@ -40,7 +55,7 @@ public interface MessageCommandUseCase {
     ) {}
 
     //채팅방 나가기
-    LeaveChatRoomView leaveChatRoomCommandHandle(Long roomId, Long userId);
+    LeaveChatRoomView leaveChatRoomCommandHandle(LeaveChatRoomCommand command);
 
     record LeaveChatRoomView(
             boolean isLastMember, //마지막 남은 사람이었는지 여부

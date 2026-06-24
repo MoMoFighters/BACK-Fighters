@@ -22,7 +22,7 @@ Content-Type: application/json
 
 {
   "email": "seolim8203@naver.com",
-  "code": "993239"
+  "code": "336572"
 }
 
 ### 로그인
@@ -30,8 +30,8 @@ POST localhost:8080/api/v1/auth/login
 Content-Type: application/json
 
 {
-  "email" : "seolim8203@naver.com",
-  "password": "password123!"
+  "email" : "student1@momo.city",
+  "password": "password123"
 }
 
 > {%
@@ -42,31 +42,61 @@ Content-Type: application/json
 GET localhost:8080/api/v1/messages/rooms
 Authorization: Bearer {{auth_token}}
 
-### 채팅방 조회 및 개설
-POST localhost:8080/api/v1/messages/chatrooms/create/1
+### v2 채팅방 목록
+GET localhost:8080/api/v2/messages/chatrooms
 Authorization: Bearer {{auth_token}}
 
-### 메시지 전송
-POST localhost:8080/api/v1/messages/send/20
+### 채팅방 조회 및 개설
+POST localhost:8080/api/v1/messages/chatrooms/create/4
+Authorization: Bearer {{auth_token}}
+
+### v2 - 채팅방 조회 및 개설(일대일)
+POST localhost:8080/api/v2/messages/chatrooms/create
 Authorization: Bearer {{auth_token}}
 Content-Type: application/json
 
 {
-    "content" : "안뇽"
+  "chatMember": [10]
 }
 
-### 메시지 읽음 처리
-PATCH localhost:8080/api/v1/messages/read/10
+### v2 - 채팅방 조회 및 개설(다대다)
+POST localhost:8080/api/v2/messages/chatrooms/create?roomTitle=다 나가고 전송 안됨 테스트방
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "chatMember": [3]
+}
+
+### 메시지 전송(v2 url 동일)
+POST localhost:8080/api/v1/messages/send/15
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+    "content" : "다 나간 방 전송 실패 테스트"
+}
+
+### 메시지 읽음 처리(v2 url 동일)
+PATCH localhost:8080/api/v1/messages/read/16
 Authorization: Bearer {{auth_token}}
 
 ### 메시지 내역 조회(20개씩)-최초 진입
-GET localhost:8080/api/v1/messages/history/2
+GET localhost:8080/api/v1/messages/history/8
+Authorization: Bearer {{auth_token}}
+
+### v2 - 메시지 내역 조회(20개씩)-최초 진입
+GET localhost:8080/api/v2/messages/history/1
 Authorization: Bearer {{auth_token}}
 
 ### 메시지 내역 조회(20개씩)-스크롤
-GET localhost:8080/api/v1/messages/history/2?lastMessageId=4
+GET localhost:8080/api/v1/messages/history/8?lastMessageId=10
 Authorization: Bearer {{auth_token}}
 
-### 채팅방 나가기
-DELETE localhost:8080/api/v1/messages/chatRooms/leave/1
+### v2 - 메시지 내역 조회(20개씩)-스크롤
+GET localhost:8080/api/v2/messages/history/16?lastMessageId=67
+Authorization: Bearer {{auth_token}}
+
+### 채팅방 나가기(v2 url 동일)
+DELETE localhost:8080/api/v1/messages/chatRooms/leave/9
 Authorization: Bearer {{auth_token}}

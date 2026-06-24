@@ -15,12 +15,12 @@ public class Message {
     private final Long roomId;
     private final Long senderId;
     private final String content;
-    private final Boolean isRead;
+//    private final Boolean isRead;
     private final LocalDateTime createdAt;
 
     //새 메시지 발송할 때의 도메인 생성 규칙
     public static Message create(Long roomId, Long senderId, String content) {
-        return new Message(null, roomId, senderId, content, false, LocalDateTime.now());
+        return new Message(null, roomId, senderId, content, LocalDateTime.now());
     }
 
 }

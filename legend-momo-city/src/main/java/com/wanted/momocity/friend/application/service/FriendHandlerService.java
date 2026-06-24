@@ -1,6 +1,7 @@
 package com.wanted.momocity.friend.application.service;
 
 import com.wanted.momocity.friend.application.policy.FriendEligibilityPolicy;
+import com.wanted.momocity.friend.domain.event.TeacherStudentAutoFriendPublishedEvent;
 import com.wanted.momocity.friend.domain.model.Friend;
 import com.wanted.momocity.friend.fmexception.FMResourceNotFoundException;
 import com.wanted.momocity.friend.infrastructure.catalog.CatalogFriendAdapter;
@@ -13,6 +14,7 @@ import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationExc
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +28,7 @@ public class FriendHandlerService {
     private final FriendSideUserRepository friendSideUserRepository;
     private final CatalogFriendAdapter catalogFriendAdapter;
     private final FriendSideLectureRepository friendSideLectureRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     //친구 쪽으로 발행된 이벤트를 핸들링하는 서비스
     public void createAndSaveTeacherFriendRelation(Long studentId, Long lectureId) {
@@ -70,6 +73,14 @@ public class FriendHandlerService {
 
         catalogFriendAdapter.save(newFriendRelation);
         log.info("[FriendHandlerService] 중복 없음 확인 완료 - 어댑터를 통해 friend 테이블에 강사-학생 자동 친구 행 추가 완료");
+
+        eventPublisher.publishEvent(new TeacherStudentAutoFriendPublishedEvent(
+                studentId,
+                teacherId,
+                teacher.getName(),
+                teacher.getNickname()
+        ));
+        log.info("[FriendHandlerService] 강사-학생 자동 친구 추가 완료 - notification 테이블에 행 추가 이벤트 발행");
     }
 
 }
