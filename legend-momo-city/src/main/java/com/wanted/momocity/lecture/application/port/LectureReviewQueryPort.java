@@ -15,7 +15,7 @@ public interface LectureReviewQueryPort {
     // 리뷰 통계 DTO
     record ReviewStats(
             // 평균 평점
-            double avarageRating,
+            double averageRating,
             // 리뷰 개수
             int reviewCount
     ) {}
@@ -25,7 +25,7 @@ public interface LectureReviewQueryPort {
             Long reviewId,
             Long userId,
             String userName,
-            String profileImaginUrl,
+            String profileImageUrl,
             String content,
             int rating,
             LocalDateTime createdAt
