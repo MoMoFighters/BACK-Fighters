@@ -45,12 +45,6 @@ public class ReviewQueryService implements ReviewQueryUseCase {
                 pageable
         );
 
-        // 해당 강의의 평균 평점 조회
-        double averageRating = reviewJpaRepository.findAverageRatingByLectureId(query.lectureId());
-
-        // 해당 강의의 전체 수강평 개수 조회
-        long reviewCount = reviewJpaRepository.countByLectureId(query.lectureId());
-
         // 수강평 목록 조회 응답
         return new ReviewListResponse(reviewPage.getContent().stream() // 현재 페이지의 수강평 목록을 스트림으로 변환
                 .map(this::toReviewItemResponse) // ReviewJpaEntity를 ReviewItemResponse로 변환
