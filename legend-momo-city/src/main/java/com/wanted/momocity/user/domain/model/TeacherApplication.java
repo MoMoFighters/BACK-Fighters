@@ -49,7 +49,8 @@ public record TeacherApplication(
 
     // 증빙자료 확장자 추출
     public String fileType(){
-        return proof.substring(proof.lastIndexOf('.')+1).toLowerCase();
+        String path = proof.contains("?") ? proof.substring(0, proof.indexOf('?')) : proof;
+        return path.substring(path.lastIndexOf('.')+1).toLowerCase();
     }
 
     public TeacherApplication withPresignedUrl(String url){
