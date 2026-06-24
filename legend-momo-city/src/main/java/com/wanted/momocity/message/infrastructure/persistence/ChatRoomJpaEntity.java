@@ -40,5 +40,11 @@ public class ChatRoomJpaEntity {
     public void registRoomTitle(String roomTitle) {
         this.roomTitle = roomTitle;
     }
+
+    //채팅방 이름 수정
+    public void updateRoomTitle(String newRoomTitle) {
+        this.roomTitle = newRoomTitle;
+        this.updatedAt = LocalDateTime.now();
+    }
 }
 

@@ -69,12 +69,12 @@ Content-Type: application/json
 }
 
 ### 메시지 전송(v2 url 동일)
-POST localhost:8080/api/v1/messages/send/15
+POST localhost:8080/api/v1/messages/send/1
 Authorization: Bearer {{auth_token}}
 Content-Type: application/json
 
 {
-    "content" : "다 나간 방 전송 실패 테스트"
+    "content" : "나와의 채팅방 알림 테스트"
 }
 
 ### 메시지 읽음 처리(v2 url 동일)
@@ -86,7 +86,7 @@ GET localhost:8080/api/v1/messages/history/8
 Authorization: Bearer {{auth_token}}
 
 ### v2 - 메시지 내역 조회(20개씩)-최초 진입
-GET localhost:8080/api/v2/messages/history/1
+GET localhost:8080/api/v2/messages/history/7
 Authorization: Bearer {{auth_token}}
 
 ### 메시지 내역 조회(20개씩)-스크롤
@@ -98,5 +98,14 @@ GET localhost:8080/api/v2/messages/history/16?lastMessageId=67
 Authorization: Bearer {{auth_token}}
 
 ### 채팅방 나가기(v2 url 동일)
-DELETE localhost:8080/api/v1/messages/chatRooms/leave/9
+DELETE localhost:8080/api/v1/messages/chatRooms/leave/14
 Authorization: Bearer {{auth_token}}
+
+### v2 - 다대다 채팅 이름 수정
+PATCH localhost:8080/api/v2/message/chatroom/modify/7
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "roomTitle" : "다대다 방이름 변경 시도"
+}
