@@ -23,6 +23,7 @@ public class CommunityResponseCode {
     // 좋아요
     public static final String LIKE_CREATED          = "COMMUNITY-LIKE-CREATED";
     public static final String LIKE_DELETED          = "COMMUNITY-LIKE-DELETED";
+    public static final String LIKE_FOUND            = "COMMUNITY-LIKE-FOUND";
 
     // 댓글
     public static final String COMMENT_CREATED       = "COMMUNITY-COMMENT-CREATED";

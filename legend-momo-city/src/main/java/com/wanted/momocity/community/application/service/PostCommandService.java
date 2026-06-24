@@ -3,10 +3,8 @@ package com.wanted.momocity.community.application.service;
 import com.wanted.momocity.auth.domain.model.User;
 import com.wanted.momocity.community.application.command.PostContentCommand;
 import com.wanted.momocity.community.application.port.UserInfoPort;
-import com.wanted.momocity.community.application.result.CommentCreateResult;
 import com.wanted.momocity.community.application.result.LikeResult;
 import com.wanted.momocity.community.application.result.PostCreateResult;
-import com.wanted.momocity.community.application.result.ReplyCreateResult;
 import com.wanted.momocity.community.application.usecase.PostCommandUseCase;
 import com.wanted.momocity.community.domain.event.CommentCreatedEvent;
 import com.wanted.momocity.community.domain.event.PostLikedEvent;
@@ -254,7 +252,7 @@ public class PostCommandService implements PostCommandUseCase {
 
     // 댓글 작성
     @Override
-    public CommentCreateResult createComment(Long userId, Long postId, String content) {
+    public void createComment(Long userId, Long postId, String content) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CommunityNotFoundException("게시글을 찾을 수 없습니다."));
 
@@ -277,15 +275,15 @@ public class PostCommandService implements PostCommandUseCase {
 
         log.info("[Community] 댓글 작성 완료 | userId={}, postId={}, commentId={}",
                 userId, postId, saved.getId());
-        return new CommentCreateResult(
-                saved.getId(),
-                saved.getUserId(),
-                saved.getContent(),
-                user.getName(),
-                user.getProfileImageUrl(),
-                user.getRole().name(),
-                saved.getCreatedAt()
-        );
+//        return new CommentCreateResult(
+//                saved.getId(),
+//                saved.getUserId(),
+//                saved.getContent(),
+//                user.getName(),
+//                user.getProfileImageUrl(),
+//                user.getRole().name(),
+//                saved.getCreatedAt()
+//        );
     }
 
     // 댓글 삭제
@@ -311,7 +309,7 @@ public class PostCommandService implements PostCommandUseCase {
     // 대댓글 작성
     // parentId = commentId -> 대댓글에 대댓글 불가
     @Override
-    public ReplyCreateResult createReply(Long userId, Long postId, Long commentId, String content) {
+    public void createReply(Long userId, Long postId, Long commentId, String content) {
         Comment parentComment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new CommunityNotFoundException("댓글을 찾을 수 없습니다."));
 
@@ -346,16 +344,16 @@ public class PostCommandService implements PostCommandUseCase {
 
         log.info("[Community] 대댓글 작성 완료 | userId={}, commentId={}, replyId={}",
                 userId, commentId, saved.getId());
-        return new ReplyCreateResult(
-                saved.getId(),
-                commentId,
-                saved.getUserId(),
-                saved.getContent(),
-                user.getName(),
-                user.getProfileImageUrl(),
-                user.getRole().name(),
-                saved.getCreatedAt()
-        );
+//        return new ReplyCreateResult(
+//                saved.getId(),
+//                commentId,
+//                saved.getUserId(),
+//                saved.getContent(),
+//                user.getName(),
+//                user.getProfileImageUrl(),
+//                user.getRole().name(),
+//                saved.getCreatedAt()
+//        );
 
     }
 
