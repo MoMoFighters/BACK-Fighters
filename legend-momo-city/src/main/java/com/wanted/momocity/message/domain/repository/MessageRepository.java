@@ -101,8 +101,14 @@ public interface MessageRepository {
     Optional<LocalDateTime> findLatestMessageTimeById(Long messageId);
 
     //메시지 전송 웹소켓
-    void flush();
+    void fastSaveChanges();
 
     //채팅방 재입장: 안내 문구 저장(일대일 채팅방 나갔다가 재입장함)
     void saveEnterAnnounce(ChatRoomJpaEntity chatRoom, UserWithFMJpaEntity enterUser, String enterMessage);
+
+    //친구 삭제 핸들러 서비스 - 상대가 나간 채팅방 안내 문구 검증
+    boolean existsAnnounceByRoomIdAndTargetId(ChatRoomJpaEntity room, UserWithFMJpaEntity tagetUser);
+
+    //채팅방 목록 조회 - 상대가 나간 채팅방 안내 문구 검증
+    Optional<UserWithFMJpaEntity> findLatestAnnounceUser(Long roomId);
 }

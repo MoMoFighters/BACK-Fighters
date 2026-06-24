@@ -69,20 +69,20 @@ public class NotificationLifecycleEventHandler {
         log.info("[NotificationLifecycleEventHandler] 메시지 전송 -> 알림 서비스로 이동");
 
         //다대다인 경우 수신자가 null
-        Long receiverId = (event.receiverId() != null) ? event.receiverId().getId() : null;
+        Long receiverId = (event.receiverId() != null) ? event.receiverId() : null;
 
         notificationHandlerService.sendMessageNotification(
                 event.roomId(), //refId용
                 event.roomTitle(), //다대다를 위한 채팅방 이름
                 event.senderId(), //보낸 사람
                 event.senderNickname(), //문구에 들어갈 보낸 사람 닉네임
-                receiverId,
+                event.receiverId(),
                 event.createdAt() //날짜 업데이트용
         );
     }
 
     //강사-학생 자동 친구 학생 쪽 알림 행 추가
-    @Async
+    @Async("domainEventExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleAutoFriend(TeacherStudentAutoFriendPublishedEvent event) {
         log.info("[NotificationLifecycleEventHandler] 강사-학생 자동 친구 행 추가 이벤트 수신 -> 알림 서비스로 이동");

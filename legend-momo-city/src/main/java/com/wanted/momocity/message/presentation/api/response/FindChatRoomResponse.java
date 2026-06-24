@@ -49,7 +49,7 @@ public record FindChatRoomResponse(
                         displayNickname = "나와의 채팅" + "(" + displayNickname + ")";
                         //ACTIVE이면서 친구가 아닌 경우
                     }
-                     else if (!view.isNotActive() && (view.shouldMasked() || displayNickname.isEmpty() || member.isLeftRoom())) {
+                     else if (!member.isNotActive() && (member.shouldMasked() || displayNickname.isEmpty() || member.isLeftRoom())) {
                         //나간 채팅방 처리
                         //원래 닉네임이 있었다면 "홍길동(알 수 없음)", null이었다면 그냥 "(알 수 없음)"이 됩니다!
                         if (displayNickname.isEmpty()) {

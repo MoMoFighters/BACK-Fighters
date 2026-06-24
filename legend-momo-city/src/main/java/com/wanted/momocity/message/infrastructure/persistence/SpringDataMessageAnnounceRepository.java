@@ -1,5 +1,6 @@
 package com.wanted.momocity.message.infrastructure.persistence;
 
+import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDateTime;
@@ -17,4 +18,7 @@ public interface SpringDataMessageAnnounceRepository extends JpaRepository<Messa
 
     //안내 문구 내역 조회(재입장 고려)
     List<MessageAnnounceJpaEntity> findByRoomId_IdAndCreatedAtBetween(Long roomId, LocalDateTime startTimeLine, LocalDateTime endTimeLine);
+
+    //재입장 시 안내 문구 내역도 조회
+    boolean existsAnnounceByRoomId_IdAndTargetId_Id(Long roomId, Long targetId);
 }

@@ -15,6 +15,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Objects;
 
 @Component
 @Slf4j
@@ -53,6 +54,12 @@ public class MessageEligibilityPolicy {
         if (targetUsers == null || targetUsers.isEmpty()) {
             log.warn("[MessageEligibilityPolicy] 대화창 개설 시패 - 초대된 멤버가 없음");
             throw new FMBusinessRuleViolationException("채팅방 멤버는 최소 1명 이상 지정해야 합니다.");
+        }
+
+        //동일 멤버 중복 포함
+        if (targetUsers.stream().map(UserWithFMJpaEntity::getId).distinct().count() != targetUsers.size()) {
+            log.warn("[MessageEligibilityPolicy] 대화창 개설 실패 - 동일 사용자 중복 선택 개설");
+            throw new FMResourceConflictException("동일한 사용자를 중복하여 개설할 수 없습니다.");
         }
 
         //개설할 인원이 1명인데 방 제목을 입력한 경우 차단: 일대일엔 방제목 없음
@@ -140,7 +147,7 @@ public class MessageEligibilityPolicy {
         //targetUser가 로그인한 유저: 상대가 나간 것 or 나와의 채팅
         //isOneToOne이 true: 일대일 채팅방(나와의 채팅방 포함)
         //나와의 채팅: 로그인 유저의 첫 채팅방
-        if (firstRoomId != roomId) {
+        if (!Objects.equals(roomId, firstRoomId)) {
             if (roomMemberCount < 2) {
             log.warn("[MessageEligibilityPolicy] 메시지 전송 실패 - 상대방이 방을 나갔음. 방ID: {}", roomId);
             throw new FMResourceConflictException("상대방이 채팅방을 나갔습니다.");

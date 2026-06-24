@@ -103,7 +103,6 @@ public class MessageController {
             //첫 번째 유저의 닉네임 빼오기
             String targetNickname =  view.memberInfo().get(0).nickname();
             successMessage = String.format("%s님과의 대화창을 개설했습니다. 대화를 시작해보세요!", targetNickname);
-
         }
 
         return ResponseEntity.ok(ApiResponse.created(
@@ -120,7 +119,7 @@ public class MessageController {
                                                                         @Valid @RequestBody SendMessageRequest request) {
         Long userId = userDetails.getUserId();
 
-        SendMessageCommand command = new SendMessageCommand(userId, roomId, request.content());
+        SendMessageCommand command = new SendMessageCommand(roomId, userId, request.content());
 
         SendView view = messageCommandUseCase.sendMessageCommandHandle(command);
 
@@ -134,15 +133,16 @@ public class MessageController {
                 view.createdAt()
         );
 
-        String successMessage = "";
+        String successMessage;
 
         //다대다인 경우
         if(view.targetUserId() == null) {
             successMessage = String.format("'%s' 대화방에 메시지를 성공적으로 전송했습니다.", view.targetNickname());
 
+        } else {
+            //일대일인 경우 동일
+            successMessage = String.format("%s님에게 메시지를 성공적으로 전송했습니다.", view.targetNickname());
         }
-        //일대일인 경우 동일
-        successMessage = String.format("%s님에게 메시지를 성공적으로 전송했습니다.", view.targetNickname());
 
         return ResponseEntity.ok(ApiResponse.created(
                 "SUCCESS",
@@ -249,13 +249,14 @@ public class MessageController {
                 view.status()
         );
 
-        String successMessage = "";
+        String successMessage;
         //남은 사람 여러명, 다대다 채팅이었던 경우
         if (view.userId() == null) {
             successMessage = String.format("%s 대화창에서 나갔습니다.", view.nickname());
+        } else {
+            //남은 사람 한 명, 일대일 채팅이었던 경우
+            successMessage = String.format("%s님과의 대화창을 나갔습니다.", view.nickname());
         }
-        //남은 사람 한 명, 일대일 채팅이었던 경우
-        successMessage = String.format("%s님과의 대화창을 나갔습니다.", view.nickname());
         return ResponseEntity.ok(ApiResponse.success(
                 "SUCCESS",
                 successMessage,

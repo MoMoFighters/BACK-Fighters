@@ -52,6 +52,8 @@ public class MessageHandlerService {
     public void leaveChatRoom(Long userId, Long targetUserId) {
         log.info("[MessageHandlerService] 친구 삭제 이벤트 수신 -> 채팅방 퇴장 처리 시작 - 요청자: {}, 대상자: {}", userId, targetUserId);
 
+        UserWithFMJpaEntity targetUser = messageRepository.getUserWithFMReferenceById(targetUserId);
+
         // 1. 두 유저가 동시에 참여하고 있는 1:1 채팅방 ID 찾아오기
         // (JPA 규칙이나 편의를 위해 member 테이블에서 나(userId)의 방 목록 중 상대방(targetUserId)이 껴있는 방을 조회합니다)
         List<ChatRoomMemberJpaEntity> myRooms = messageRepository.findChatRoomMembersByUserId(userId);
@@ -60,8 +62,12 @@ public class MessageHandlerService {
         for (ChatRoomMemberJpaEntity myRoom : myRooms) {
             Long roomId = myRoom.getRoomId().getId();
 
-            //상대방이 먼저 나간 경우 메시지로 확인
-            boolean hasHistory = messageRepository.existsMessageByRoomIdAndSenderId(roomId, targetUserId);
+            ChatRoomJpaEntity room = messageRepository.findChatRoomById(roomId)
+                    .orElse(null);
+
+            //상대방이 먼저 나간 경우 메시지로 확인(+안내 문구도 같이 확인)
+            boolean hasHistory = messageRepository.existsMessageByRoomIdAndSenderId(roomId, targetUserId)
+                    || messageRepository.existsAnnounceByRoomIdAndTargetId(room, targetUser);
 
             //일대일, 다대다 분기(방제목 유무
             String title = myRoom.getRoomId().getRoomTitle();

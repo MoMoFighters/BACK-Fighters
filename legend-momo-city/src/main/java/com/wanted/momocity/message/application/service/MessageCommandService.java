@@ -101,21 +101,24 @@ public class MessageCommandService implements MessageCommandUseCase {
                     Long candidateRoomId = membership.getRoomId().getId();
                     ChatRoomJpaEntity room = membership.getRoomId(); //방 엔티티 꺼내기
 
+                    //로그인 유저 객체
+                    UserWithFMJpaEntity loginUser = messageRepository.getUserWithFMReferenceById(command.userId());
+
                     //상대방이 참여 중인 그 방의 인원이 혼자인지 확인
                     List<ChatRoomMemberJpaEntity> roomMembers = messageRepository.findMembersByRoomId(candidateRoomId);
 
                     //인원이 1명이면서 방 제목이 없어야 일대일 과거방.
                     if (roomMembers.size() == 1 && (room.getRoomTitle() == null || room.getRoomTitle().trim().isEmpty())) {
                         //상대방이 혼자 남은 방에 로그인 유저가 보낸 메시지가 1개라도 존재하는 지 확인
-                        //로그인 유저가 보낸 메시지가 있다면 로그인 유저가 나간 방
-                        boolean hasMyPastMessage = messageRepository.existsMessageByRoomIdAndSenderId(candidateRoomId, command.userId());
+                        //로그인 유저가 보낸 메시지가 있다면 로그인 유저가 나간 방 + 안내 문구 확인
+                        boolean hasMyPastMessage = messageRepository.existsMessageByRoomIdAndSenderId(candidateRoomId, command.userId())
+                                || messageRepository.existsAnnounceByRoomIdAndTargetId(room, loginUser);
 
                         if (hasMyPastMessage) {
                             finalRoomId = candidateRoomId;
                             log.info("[CreatChatRoomCommandService] 2차 교차 검증 성공 - 로그인 유저가 나갔던 과거 채팅방 발견: {}", finalRoomId);
 
                             //로그인 유저가 나갔던 방이므로 해당 채팅방 멤버로 복구
-                            UserWithFMJpaEntity loginUser = messageRepository.getUserWithFMReferenceById(command.userId());
                             ChatRoomJpaEntity existingRoom = messageRepository.findChatRoomById(finalRoomId)
                                     .orElseThrow(() -> new FMBusinessRuleViolationException("존재하지 않는 채팅방입니다."));
 
@@ -278,7 +281,7 @@ public class MessageCommandService implements MessageCommandUseCase {
                     receiver,
                     isUserInRoom,
                     isUserInRoom,
-                    isUserInRoom
+                    false
             );
             readOtherUsers.add(newUnreadMessage);
         }
@@ -290,7 +293,7 @@ public class MessageCommandService implements MessageCommandUseCase {
 
         //데이터 정합성을 위한 영속성 플러시
         // (새로 데이터를 전송하고 밑에서 채팅방에 머무르는 사람있으면 저장되기 전에 메시지 내역이 호출됨)
-        messageRepository.flush();
+        messageRepository.fastSaveChanges();
 
         //WebSocketConfig에서 설정한 prefix "/sub" 채널로 발송
         String destination = "/sub/chat/room/" + command.roomId();
@@ -302,7 +305,7 @@ public class MessageCommandService implements MessageCommandUseCase {
 
             //메시지 내역 웹소켓
             List<MessageQueryUseCase.MessageHistoryView> historyPayload =
-                    messageQueryUseCase.getMessageHistoryQueryHandle(new GetMessageHistoryQuery(receiver.getId(), command.roomId(), null));
+                    messageQueryUseCase.getMessageHistoryQueryHandle(new GetMessageHistoryQuery(command.roomId(), receiver.getId(), null));
             messagingTemplate.convertAndSendToUser(receiver.getId().toString(), destination, historyPayload);
 
             //채팅방 목록 웹소켓
@@ -313,15 +316,17 @@ public class MessageCommandService implements MessageCommandUseCase {
         log.info("[웹소켓 실시간 발송] QueryService 기존 로직 재활용");
 
         // 🎯 2. 나와의 채팅방이 아닐 때만 상대방(targetUser)에게 알림 이벤트 발행
-        log.info("[SendMessageService] 메시지 전송 성공 - 알림 발행. 방번호: {}", command.roomId());
-        eventPublisher.publishEvent(new SendMessagePublishedEvent(
-                command.roomId(),
-                chatRoom.getRoomTitle(),
-                command.senderId(),
-                sender.getNickname(),   // 발신자 닉네임 추출
-                isOneToOne ? targetUser : null, //일대일이면 상대방 정보 전달, 다대다면 null 처리
-                newMessage.getCreatedAt()
-        ));
+        if (!targetUser.getId().equals(command.senderId())) {
+            log.info("[SendMessageService] 메시지 전송 성공 - 알림 발행. 방번호: {}", command.roomId());
+            eventPublisher.publishEvent(new SendMessagePublishedEvent(
+                    command.roomId(),
+                    chatRoom.getRoomTitle(),
+                    command.senderId(),
+                    sender.getNickname(),   // 발신자 닉네임 추출
+                    isOneToOne ? targetUser.getId() : null, //일대일이면 상대방 정보 전달, 다대다면 null 처리
+                    newMessage.getCreatedAt()
+            ));
+        }
 
         return new SendView(
                 command.roomId(),
@@ -494,7 +499,7 @@ public class MessageCommandService implements MessageCommandUseCase {
 
                 //웹소켓 퇴장 안내 문구(메시지 내역)
                 List<MessageQueryUseCase.MessageHistoryView> historyPayload =
-                        messageQueryUseCase.getMessageHistoryQueryHandle(new GetMessageHistoryQuery(remainingUserId, command.roomId(), null));
+                        messageQueryUseCase.getMessageHistoryQueryHandle(new GetMessageHistoryQuery(command.roomId(), remainingUserId,null));
                 messagingTemplate.convertAndSendToUser(remainingUserId.toString(), destination, historyPayload);
 
                 //웹소켓 채팅방 목록

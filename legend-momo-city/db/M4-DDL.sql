@@ -32,6 +32,7 @@ DROP TABLE IF EXISTS `audit_log`;
 DROP TABLE IF EXISTS `suspension_log`;
 DROP TABLE IF EXISTS `user_oauth`;
 DROP TABLE IF EXISTS `notification`;
+DROP TABLE IF EXISTS `announce_read`;
 DROP TABLE IF EXISTS `purchase_history`;
 DROP TABLE IF EXISTS `market`;
 DROP TABLE IF EXISTS `guestbook`;
@@ -65,14 +66,12 @@ CREATE TABLE `user` (
                         `password`          VARCHAR(255) NULL,
                         `name`              VARCHAR(50)  NOT NULL,
                         `nickname`          VARCHAR(30)  NOT NULL,
-                        `birth`             DATE         NULL,
                         `profile_image_url` VARCHAR(500) NULL,
                         `role`              ENUM('STUDENT','TEACHER','ADMIN')                              NOT NULL DEFAULT 'STUDENT',
                         `status`            ENUM('ACTIVE','PENDING','REJECTED','BANNED','BLACK','DELETED') NOT NULL DEFAULT 'ACTIVE',
                         `category`          ENUM('FITNESS','STUDY','COOK','BEAUTY','ART')                  NULL,
                         `proof`             VARCHAR(500) NULL,
                         `point`             INT          NOT NULL DEFAULT 0,
-                        `is_paid`           BOOLEAN      NOT NULL DEFAULT FALSE,
                         `do_not_disturb`    BOOLEAN      NOT NULL DEFAULT FALSE,
                         `suspension_count`  INT          NOT NULL DEFAULT 0,
                         `suspended_until`   DATETIME     NULL,
@@ -139,15 +138,16 @@ CREATE TABLE `chapter` (
 --  ※ category HEALTH → FITNESS
 -- =====================================================================
 CREATE TABLE `post` (
-                        `id`         BIGINT       NOT NULL AUTO_INCREMENT,
-                        `user_id`    BIGINT       NOT NULL,
-                        `title`      VARCHAR(200) NOT NULL,
-                        `view_count` INT          NOT NULL DEFAULT 0,
-                        `post_like`  INT          NOT NULL DEFAULT 0,
-                        `category`   ENUM('FITNESS','STUDY','COOK','BEAUTY','ART','FREE') NOT NULL,
-                        `created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                        `updated_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                        `deleted_at` DATETIME     NULL,
+                        `id`            BIGINT       NOT NULL AUTO_INCREMENT,
+                        `user_id`       BIGINT       NOT NULL,
+                        `title`         VARCHAR(200) NOT NULL,
+                        `view_count`    INT          NOT NULL DEFAULT 0,
+                        `post_like`     INT          NOT NULL DEFAULT 0,
+                        `category`      ENUM('FITNESS','STUDY','COOK','BEAUTY','ART','FREE') NOT NULL,
+                        `thumbnail_url` VARCHAR(500) NULL,
+                        `created_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        `updated_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        `deleted_at`    DATETIME     NULL,
                         PRIMARY KEY (`id`),
                         KEY `idx_post_user`       (`user_id`),
                         KEY `idx_post_category`   (`category`),
@@ -165,7 +165,8 @@ CREATE TABLE `post_content` (
                                 `post_id`    BIGINT                   NOT NULL,
                                 `order_no`   TINYINT                  NOT NULL DEFAULT 0,
                                 `type`       ENUM('TEXT','IMAGE')      NOT NULL,
-                                `content`    TEXT                     NOT NULL,  -- TEXT면 본문, IMAGE면 S3 URL
+                                `content`    TEXT                     NULL,
+                                `image_url`  varchar(500)             NULL,
                                 `created_at` DATETIME                 NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                 PRIMARY KEY (`id`),
                                 KEY `idx_post_content_post` (`post_id`, `order_no`)
@@ -314,25 +315,27 @@ CREATE TABLE `calendar` (
 -- =====================================================================
 --  12. chat_room
 -- =====================================================================
+
 CREATE TABLE `chat_room` (
-                             `id`         BIGINT       NOT NULL AUTO_INCREMENT,
+                             `id`         BIGINT   NOT NULL AUTO_INCREMENT,
                              `title`      VARCHAR(20) NULL,
-                             `created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                             `updated_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                             `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                             `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                              PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================================
 --  13. chat_room_member
 -- =====================================================================
+
 CREATE TABLE `chat_room_member` (
                                     `id`        BIGINT   NOT NULL AUTO_INCREMENT,
                                     `room_id`   BIGINT   NOT NULL,
                                     `user_id`   BIGINT   NOT NULL,
                                     `joined_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                     PRIMARY KEY (`id`),
-                                    UNIQUE KEY `uq_chat_room_member` (`room_id`, `user_id`),
-                                    KEY `idx_chat_room_member_user` (`user_id`)
+                                    KEY `idx_chat_room_member_user` (`user_id`),
+                                    UNIQUE KEY `uq_chat_room_member` (`room_id`, `user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================================
@@ -354,21 +357,23 @@ CREATE TABLE `message` (
 --  14-1. message_read
 -- =====================================================================
 CREATE TABLE `message_read` (
-                                `id`          BIGINT  NOT NULL AUTO_INCREMENT,
-                                `room_id`     BIGINT  NOT NULL,
-                                `message_id`  BIGINT  NOT NULL,
-                                `user_id`     BIGINT  NOT NULL,
-                                `is_msg_read` BOOLEAN NOT NULL DEFAULT FALSE,
-                                `is_noti_read`BOOLEAN NOT NULL DEFAULT FALSE,
-                                `is_deleted`  BOOLEAN NOT NULL DEFAULT FALSE,
+                                `id`         BIGINT   NOT NULL AUTO_INCREMENT,
+                                `room_id`    BIGINT   NOT NULL,
+                                `message_id` BIGINT   NOT NULL,
+                                `user_id`    BIGINT   NOT NULL, -- 메시지 읽을 사용자
+                                `is_msg_read`BOOLEAN  NOT NULL DEFAULT FALSE,
+                                `is_noti_read`BOOLEAN  NOT NULL DEFAULT FALSE,
+                                `is_deleted`BOOLEAN  NOT NULL DEFAULT FALSE,
                                 PRIMARY KEY (`id`),
+    -- 중복 데이터 방지 (한 유저가 같은 메시지에 대해 레코드를 중복 생성하는 것 차단)
                                 UNIQUE KEY `uq_chat_user_message` (`user_id`, `message_id`),
-                                KEY `idx_msg_read_room`        (`room_id`),
-                                KEY `idx_msg_read_message`     (`message_id`),
-                                KEY `idx_msg_read_target_user` (`user_id`),
-                                CONSTRAINT `fk_msg_read_room_id`    FOREIGN KEY (`room_id`)    REFERENCES `chat_room` (`id`),
-                                CONSTRAINT `fk_msg_read_user_id`    FOREIGN KEY (`user_id`)    REFERENCES `user` (`id`),
-                                CONSTRAINT `fk_msg_read_message_id` FOREIGN KEY (`message_id`) REFERENCES `message` (`id`)
+                                KEY `idx_message_room`   (`room_id`),
+                                KEY `idx_message` (`message_id`),
+                                KEY `idx_message_target_user` (`user_id`),
+
+                                CONSTRAINT `fk_msg_read_room_id` FOREIGN KEY (`room_id`) REFERENCES `chat_room` (`id`) ON DELETE CASCADE,
+                                CONSTRAINT `fk_msg_read_user_id` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`),
+                                CONSTRAINT `fk_msg_read_message_id` FOREIGN KEY (`message_id`) REFERENCES `message` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================================
@@ -377,14 +382,16 @@ CREATE TABLE `message_read` (
 CREATE TABLE `message_announce` (
                                     `id`         BIGINT   NOT NULL AUTO_INCREMENT,
                                     `room_id`    BIGINT   NOT NULL,
-                                    `target_id`  BIGINT   NOT NULL,
+                                    `target_id`  BIGINT   NOT NULL, -- 초대 대상자, 나가기 주체, 수정 주체
                                     `content`    TEXT     NOT NULL,
-                                    `type`       ENUM('LEAVE','INVITE','RENAME') NOT NULL,
-                                    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                    `type`       ENUM('LEAVE', 'INVITE', 'RENAME') NOT NULL,
+                                    `created_at` DATETIME  NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                     PRIMARY KEY (`id`),
+
                                     KEY `idx_announce_room_created` (`room_id`, `created_at` DESC),
                                     KEY `idx_announce_target_user`  (`target_id`),
-                                    CONSTRAINT `fk_announce_room_id`   FOREIGN KEY (`room_id`)   REFERENCES `chat_room` (`id`) ON DELETE CASCADE,
+
+                                    CONSTRAINT `fk_announce_room_id` FOREIGN KEY (`room_id`) REFERENCES `chat_room` (`id`) ON DELETE CASCADE,
                                     CONSTRAINT `fk_announce_target_id` FOREIGN KEY (`target_id`) REFERENCES `user` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -425,14 +432,32 @@ CREATE TABLE `guestbook` (
 CREATE TABLE `notification` (
                                 `id`         BIGINT       NOT NULL AUTO_INCREMENT,
                                 `user_id`    BIGINT       NULL,
-                                `type`       ENUM('NOTICE','APPROVAL','REPORT','FRIEND_REQUEST','MESSAGE','GUESTBOOK','POST','CALENDAR','PAYMENT') NOT NULL,
+                                `type`       ENUM('NOTICE','APPROVAL','REPORT','FRIEND_REQUEST','MESSAGE','GUESTBOOK','POST','CALENDAR') NOT NULL,
                                 `ref_id`     BIGINT       NULL,
                                 `message`    VARCHAR(500) NOT NULL,
-                                `is_read`    BOOLEAN      NULL DEFAULT FALSE,
+                                `is_read`    BOOLEAN      NOT NULL DEFAULT FALSE,
                                 `created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                 PRIMARY KEY (`id`),
                                 KEY `idx_notification_user` (`user_id`),
                                 KEY `idx_notification_type` (`type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================================
+--  17-1. announce_read
+-- =====================================================================
+CREATE TABLE `announce_read` (
+                                 `id`         BIGINT       NOT NULL AUTO_INCREMENT,
+                                 `announ_id`  BIGINT       NOT NULL,
+                                 `user_id`    BIGINT       NOT NULL,
+                                 `created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                 PRIMARY KEY (`id`),
+                                 KEY `idx_announce_read_user` (`user_id`),
+                                 KEY `idx_announce_read_announ` (`announ_id`),
+                                 UNIQUE KEY `udx_user_announ` (`user_id`, `announ_id`),
+
+    -- 기존에 해오시던 방식대로 외래키 조건 추가
+                                 CONSTRAINT `fk_announce_read_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`),
+                                 CONSTRAINT `fk_announce_read_announ` FOREIGN KEY (`announ_id`) REFERENCES `notification` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================================
@@ -594,20 +619,6 @@ CREATE TABLE `purchase_history` (
                                     KEY `idx_purchase_user_created` (`user_id`, `created_at` DESC),
                                     CONSTRAINT `fk_purchase_history_user`   FOREIGN KEY (`user_id`) REFERENCES `user` (`id`),
                                     CONSTRAINT `fk_purchase_history_market` FOREIGN KEY (`item_id`) REFERENCES `market` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- =====================================================================
---  26. payment
--- =====================================================================
-CREATE TABLE `payment` (
-                           `id`      BIGINT   NOT NULL AUTO_INCREMENT,
-                           `user_id` BIGINT   NOT NULL,
-                           `amount`  INT      NOT NULL,
-                           `method`  ENUM('KAKAO','TOSS','CARD','FREE') NOT NULL,
-                           `paid_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                           PRIMARY KEY (`id`),
-                           KEY `idx_payment_user`    (`user_id`),
-                           KEY `idx_payment_paid_at` (`paid_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================================

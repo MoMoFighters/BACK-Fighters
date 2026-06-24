@@ -14,8 +14,8 @@ public interface MessageQueryUseCase {
     record ChatRoomView(
             RoomInfo roomInfo,
             List<MemberInfo> memberInfo,
-            Boolean isNotActive, //ACTIVE아닌 것
-            boolean shouldMasked,
+//            Boolean isNotActive, //ACTIVE아닌 것
+//            boolean shouldMasked,
             LocalDateTime lastestOrderTime //채팅방 목록 정령을 위함
     ) {}
     record RoomInfo(
@@ -34,7 +34,9 @@ public interface MessageQueryUseCase {
             String role,
             String status, //친구 상태
             String profileImageUrl,
-            boolean isLeftRoom
+            boolean isLeftRoom,
+            boolean isNotActive, //개별 멤버 비활성 여부
+            boolean shouldMasked //개별 멤버 닉네임 가공 필요 여부
     ) {}
 
     //메시지 내역 조회
@@ -43,10 +45,10 @@ public interface MessageQueryUseCase {
     record MessageHistoryView(
             RoomInfoView roomInfo,
             List<MemberInfoView> memberInfo,
-            List<MessageDetail> messages,
-            boolean isNotActive, //활성 상태 아닌 것
-            boolean isRead,
-            boolean shouldMasked
+            List<MessageDetail> messages
+//            boolean isNotActive, //활성 상태 아닌 것
+//            boolean isRead
+//            boolean shouldMasked
     ) {}
 
     record RoomInfoView(
@@ -63,7 +65,9 @@ public interface MessageQueryUseCase {
             String role, //강사/학생 구분
             String status, //친구 상태
             String profileImageUrl,
-            Boolean isLeftRoom
+            Boolean isLeftRoom,
+            boolean isNotActive, //개별 멤버 비활성 여부
+            boolean shouldMasked //개별 멤버 닉네임 가공 필요 여부
     ) {}
 
     record MessageDetail(

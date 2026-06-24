@@ -1,6 +1,7 @@
 package com.wanted.momocity.message.presentation.api.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.wanted.momocity.message.application.usecase.MessageQueryUseCase.MemberInfoView;
 import com.wanted.momocity.message.application.usecase.MessageQueryUseCase.MessageHistoryView;
 
 import java.time.LocalDateTime;
@@ -62,6 +63,16 @@ public record GetMessageHistoryResponse(
                         targetName = null;
                     }
 
+                    // 🎯 [핵심 추가] 멤버 목록 닉네임 마스킹 처리
+                    // 활성 유저이면서 마스킹 대상이거나, 이미 방을 나간 상태라면 (알 수 없음) 부여
+                    if (!member.isNotActive() && (member.shouldMasked() || member.isLeftRoom())) {
+                        if (targetNickname == null || targetNickname.isEmpty()) {
+                            targetNickname = "(알 수 없음)";
+                        } else if (!targetNickname.contains("(알 수 없음)")) {
+                            targetNickname += "(알 수 없음)";
+                        }
+                    }
+
                     return new MemberInfo(
                             member.userId(),
                             targetName,
@@ -84,17 +95,37 @@ public record GetMessageHistoryResponse(
                         if (msg.isMine()) {
                             displayNickname = msg.nickname();
                         } else if (!"me".equals(msg.status())) {
-                            //내가 쓴 글이나 나와의 채팅이 아닌, 상대 메시지 가공
-                            if (!view.isNotActive() && (view.shouldMasked() || displayNickname == null || displayNickname.isEmpty() || msg.isLeftRoom())) {
-                                if (displayNickname == null || displayNickname.isEmpty()) {
-                                    //역추적 후에도 나간 상대방 식별 불가
-                                    displayNickname = "(알 수 없음)";
-                                } else {
-                                    //상대방 식별 가능하지만 친구 아니거나 나간 경우
-                                    displayNickname += "(알 수 없음)";
+
+                            // 🎯 var 대신 정확한 UseCase 내부의 레코드 타입을 명시했습니다.
+                            MemberInfoView currentMember = view.memberInfo().stream()
+                                    .filter(m -> m.userId().equals(msg.senderId()))
+                                    .findFirst()
+                                    .orElse(null);
+
+                            if (currentMember != null) {
+
+                                //내가 쓴 글이나 나와의 채팅이 아닌, 상대 메시지 가공
+                                if ((!currentMember.isNotActive()) && (currentMember.shouldMasked() || displayNickname == null || displayNickname.isEmpty() || msg.isLeftRoom())) {
+                                    if (displayNickname == null || displayNickname.isEmpty()) {
+                                        //역추적 후에도 나간 상대방 식별 불가
+                                        displayNickname = "(알 수 없음)";
+                                    } else {
+                                        //상대방 식별 가능하지만 친구 아니거나 나간 경우
+                                        displayNickname += "(알 수 없음)";
+                                    }
                                 }
+                            } else {
+                                //메시지에 있는 유저가 나간 경우
+                                if (displayNickname == null || displayNickname.isEmpty()) {
+                                    displayNickname = "(알 수 없음)";
+                                } else if (msg.isLeftRoom()) {
+                                    if (!displayNickname.contains("(알 수 없음)")) {
+                                        displayNickname += "(알 수 없음)";
+                                    }
+                                }
+
                             }
-                         }
+                        }
                     }
 
                     return new Message(

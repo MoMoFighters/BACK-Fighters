@@ -310,7 +310,7 @@ public class CatalogMessageAdapter implements MessageRepository {
 
     //웹소켓 메시지 내역 조회?(지연 가능성)
     @Override
-    public void flush() {
+    public void fastSaveChanges() {
         springDataMessageReadRepository.flush();
     }
 
@@ -322,11 +322,24 @@ public class CatalogMessageAdapter implements MessageRepository {
                 chatRoom,
                 enterUser,
                 enterMessage,
-                "LEAVE",
+                "INVITE",
                 LocalDateTime.now()
         );
         springDataMessageAnnounceRepository.save(announce);
         log.info("[CatalogMessageAdapter] 일대일 재입장 안내 문구 저장 완료 - ID: {}", announce.getId());
+    }
 
+    //친구 삭제 핸들러 - 상대가 나간 채팅방 안내 문구 검증
+    @Override
+    public boolean existsAnnounceByRoomIdAndTargetId(ChatRoomJpaEntity room, UserWithFMJpaEntity targetUser) {
+        return springDataMessageAnnounceRepository.existsAnnounceByRoomId_IdAndTargetId_Id(room.getId(), targetUser.getId());
+    }
+
+    //채팅방 목록 조회 - 상대가 나간 채팅방 안내 문구 검증
+    @Override
+    public Optional<UserWithFMJpaEntity> findLatestAnnounceUser(Long roomId) {
+        log.info("[CatalogMessageAdapter] 메시지 없는 방 역추적 - 최신 안내 문구 분석 중. 방ID: {}", roomId);
+        return springDataMessageAnnounceRepository.findFirstByRoomId_IdOrderByCreatedAtDesc(roomId)
+                .map(MessageAnnounceJpaEntity::getTargetId);
     }
 }
