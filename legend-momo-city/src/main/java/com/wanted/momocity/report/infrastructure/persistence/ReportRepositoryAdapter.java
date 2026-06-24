@@ -2,7 +2,6 @@ package com.wanted.momocity.report.infrastructure.persistence;
 
 import com.wanted.momocity.report.domain.model.Report;
 import com.wanted.momocity.report.domain.model.ReportReason;
-import com.wanted.momocity.report.domain.model.ReportStatus;
 import com.wanted.momocity.report.domain.model.ReportTargetType;
 import com.wanted.momocity.report.domain.repository.ReportRepository;
 import org.springframework.data.domain.PageRequest;
@@ -10,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 /* comment.
     ReportRepositoryAdapter 정리
@@ -54,8 +54,8 @@ public class ReportRepositoryAdapter implements ReportRepository {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Report> findByStatus(ReportStatus status, int limit) {
-        return repository.findAllByStatusOrderByReportedAtDesc(status.name(), PageRequest.of(0, limit))
+    public List<Report> findByIsRead(boolean isRead, int limit) {
+        return repository.findAllByIsReadOrderByReportedAtDesc(isRead, PageRequest.of(0, limit))
                 .stream()
                 .map(this::toDomain)
                 .toList();
@@ -65,6 +65,15 @@ public class ReportRepositoryAdapter implements ReportRepository {
     @Transactional(readOnly = true)
     public long countAll() {
         return repository.count();
+    }
+
+    // ReportRepository 에 선언만 하고 구현은 되어있지 않음.
+    // 인터페이스를 구현하는 클래스는 선언된 메서드를 모두 구현해야핸다.
+    // Transactional 은 DB 작업을 하나로 묶어버리고, 실패 시 롤백
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Report> findById(Long id) {
+        return repository.findById(id).map(this::toDomain);
     }
 
     // === 변환 메서드 (도메인 ↔ 엔티티) ===
@@ -78,7 +87,7 @@ public class ReportRepositoryAdapter implements ReportRepository {
                 report.getTargetId(),
                 report.getReason().name(),
                 report.getDetail(),
-                report.getStatus().name(),
+                report.isRead(),
                 report.getReportedAt(),
                 report.getHandledAt(),
                 report.getHandlerAdminId()
@@ -94,7 +103,7 @@ public class ReportRepositoryAdapter implements ReportRepository {
                 entity.getTargetId(),
                 ReportReason.valueOf(entity.getReason()),
                 entity.getDetail(),
-                ReportStatus.valueOf(entity.getStatus()),
+                entity.isRead(),
                 entity.getReportedAt(),
                 entity.getHandledAt(),
                 entity.getHandlerAdminId()

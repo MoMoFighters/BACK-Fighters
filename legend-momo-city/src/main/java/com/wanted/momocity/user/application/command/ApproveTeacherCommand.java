@@ -17,7 +17,9 @@ package com.wanted.momocity.user.application.command;
     5. 필드 1개 (userId) 인 이유 : 승인은 *추가 데이터 필요 없음*. userId 만 있으면 끝
  */
 
+import java.util.List;
+
 public record ApproveTeacherCommand(
-        Long userId // 누구인지만 파악하면 된다.
+        List<Long> userId // 누구인지만 파악하면 된다.
 ) {
 }

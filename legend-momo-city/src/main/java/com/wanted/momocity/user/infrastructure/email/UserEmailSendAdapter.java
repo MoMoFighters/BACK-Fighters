@@ -1,6 +1,7 @@
 package com.wanted.momocity.user.infrastructure.email;
 
 import com.wanted.momocity.user.application.port.UserEmailSendPort;
+import com.wanted.momocity.user.domain.model.Status;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -16,9 +17,9 @@ public class UserEmailSendAdapter implements UserEmailSendPort {
 
     @Async
     @Override
-    public void sendTeacherResult(String toEmail, String status, String reason) {
-        String type = "ACTIVE".equals(status) ? "강사 신청 승인" : "강사 신청 반려";
-        String content = "ACTIVE".equals(status)
+    public void sendTeacherResult(String toEmail, Status status, String reason) {
+        String type =  Status.ACTIVE.equals(status) ? "강사 신청 승인" : "강사 신청 반려";
+        String content =  Status.ACTIVE.equals(status)
                 ? "강사 신청이 승인되었습니다.🎉"
                 : "강사 신청이 반려되었습니다.<br><hr>반려 사유: " + reason;
         sendEmail(toEmail, content, type);

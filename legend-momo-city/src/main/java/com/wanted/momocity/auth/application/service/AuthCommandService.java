@@ -131,11 +131,11 @@ public class AuthCommandService implements AuthCommandUsecase {
             throw new InvalidCredentialsException("이메일 또는 비밀번호가 올바르지 않습니다.");
         }
 
-        if (user.getStatus() != Status.ACTIVE) {
+        if (user.getStatus() != Status.ACTIVE && user.getStatus() != Status.REJECTED) {
             log.warn("[login] 비활성 계정 로그인 시도 | email={} | status={}", command.email(), user.getStatus());
             String message = switch (user.getStatus()) {
                 case PENDING -> "강사 승인 대기중입니다.";
-                case REJECTED -> "강사 신청이 반려되었습니다. 증빙자료를 다시 제출해주세요.";
+//                case REJECTED -> "강사 신청이 반려되었습니다. 증빙자료를 다시 제출해주세요.";
                 case BANNED -> "정지된 계정입니다.";
                 default -> "해당 계정은 현재 로그인이 불가능한 상태입니다.";
             };

@@ -1,0 +1,21 @@
+package com.wanted.momocity.enrollment.presentation.endpoint;
+
+import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
+import org.springframework.stereotype.Component;
+
+@Component
+@Endpoint(id="building")
+public class BuildingEndpoint {
+
+    /*comment
+    *  < 건물 획득 누적 횟수 >
+    *   - 건물 획득 = 수강 신청 = 우리의 서비스 활용
+    *   - 우리의 서비스를 사용하는 활성 사용자의 서비스 이용 추이 확인
+    *  < 건물 레벨업 누적 횟수 >
+    *   - 건물 레벨업은 실제로 사용자가 강의를 수강했을 때 이루어짐
+    *   - 이 값을 통해 게이미피케이션이라는 우리 서비스의 기획 의도를 사용자가 얼마나 활용하는지 확인
+    *   - 강의 수강은 실제로 학습했다는 핵심 행동 지표로서 서비스의 실질적인 활성도와 학습 전환률을 판단 */
+
+    // 빌딩 기능 구현 후 진행
+
+}

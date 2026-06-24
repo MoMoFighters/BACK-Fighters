@@ -1,5 +1,6 @@
 package com.wanted.momocity.calendar.application.usecase;
 
+import com.wanted.momocity.calendar.presentation.api.response.DailyCalendarResponse;
 import com.wanted.momocity.calendar.presentation.api.response.MonthlyCalendarResponse;
 
 import java.time.LocalDate;
@@ -16,6 +17,10 @@ import java.time.LocalDate;
 
 public interface CalendarQueryUseCase {
 
+    // 월별 캘린더 조회 (Memo)
     MonthlyCalendarResponse handle(Long userId, LocalDate startDate, LocalDate endDate);
+
+    // 일별 캘린더 조회 (Todo + 오늘 수강 챕터)
+    DailyCalendarResponse handleDaily(Long userId, LocalDate date);
 
 }

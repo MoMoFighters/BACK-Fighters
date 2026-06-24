@@ -1,7 +1,10 @@
-package com.wanted.momocity.enrollment.infrastructure.persistence;
+package com.wanted.momocity.enrollment.infrastructure.adapter;
 
 import com.wanted.momocity.enrollment.domain.model.Enrollment;
 import com.wanted.momocity.enrollment.domain.repository.EnrollmentRepository;
+import com.wanted.momocity.enrollment.infrastructure.persistence.EnrollmentJpaEntity;
+import com.wanted.momocity.enrollment.infrastructure.persistence.EnrollmentJpaRepository;
+import com.wanted.momocity.lecture.domain.model.LectureCategory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -65,5 +68,27 @@ public class EnrollmentRepositoryAdapter implements EnrollmentRepository {
                 .stream()
                 .map(EnrollmentJpaEntity::toDomain)
                 .toList();
+    }
+
+    // 도메인 Repository 요청을 실제 JPA Repository 조회로 연결합니다.
+    @Override
+    public int countCompletedLecturesByUserIdAndCategory(
+            // 조회할 사용자 ID입니다.
+            Long userId,
+
+            // 요청으로 들어온 카테고리 문자열입니다.
+            String category
+    ) {
+        // 문자열 카테고리를 lecture에서 사용하는 LectureCategory enum으로 변환합니다.
+        LectureCategory lectureCategory = LectureCategory.valueOf(category);
+
+        // JPA Repository에서 완료 강의 수를 조회합니다.
+        long completedLectureCount = enrollmentJpaRepository.countCompletedLecturesByUserIdAndCategory(
+                userId,
+                lectureCategory
+        );
+
+        // 서비스에서는 int로 사용하므로 int로 변환해서 반환합니다.
+        return Math.toIntExact(completedLectureCount);
     }
 }

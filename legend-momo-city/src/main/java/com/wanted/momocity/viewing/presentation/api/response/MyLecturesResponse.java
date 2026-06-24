@@ -21,7 +21,7 @@ public record MyLecturesResponse(
             String lectureTitle,
             String thumbnailUrl,
             String category,
-            int totalProgress,
+            int lectureProgress,
             LocalDateTime enrolledAt
     ) {}
 }

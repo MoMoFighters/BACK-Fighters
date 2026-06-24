@@ -1,5 +1,9 @@
 package com.wanted.momocity.user.presentation.api.response;
 
+import com.wanted.momocity.global.domain.model.Category;
+import com.wanted.momocity.user.domain.model.Role;
+import com.wanted.momocity.user.domain.model.Status;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -20,10 +24,11 @@ public record TeacherApplicationDetailResponse(
         String nickname,
         String name,
         String email,
-        LocalDate birth,
         String profileImageUrl,
-        String category,
+        Category category,
         String proof,
-        LocalDateTime appliedAt
+        Status status,
+        Role role,
+        LocalDateTime createdAt
 ) {
 }

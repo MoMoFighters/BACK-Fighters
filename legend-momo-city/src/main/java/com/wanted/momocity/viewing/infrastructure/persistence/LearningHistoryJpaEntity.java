@@ -6,6 +6,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 /*
 * comment.
 *  infrastructure.persistence
@@ -66,6 +68,9 @@ public class LearningHistoryJpaEntity extends BaseTimeEntity {
     @Column(name = "version", nullable = false)
     private Long version;
 
+    @Column(name = "last_watched_at")
+    private LocalDateTime lastWatchedAt;
+
     /*
     * comment.
     *  @Version 이 하는 일
@@ -88,6 +93,7 @@ public class LearningHistoryJpaEntity extends BaseTimeEntity {
         entity.lastPositionSec = domain.getLastPositionSec();
         entity.progressRate = domain.getProgressRate();
         entity.version = domain.getVersion();
+        entity.lastWatchedAt = domain.getLastWatchedAt();
         return entity;
     }
 
@@ -95,7 +101,7 @@ public class LearningHistoryJpaEntity extends BaseTimeEntity {
     public LearningHistory toDomain() {
         return LearningHistory.reconstitute(
                 id, userId,lectureId, chapterId, watchedSeconds,
-                isCompleted, lastPositionSec, progressRate, version
+                isCompleted, lastPositionSec, progressRate, version, lastWatchedAt
         );
     }
 
