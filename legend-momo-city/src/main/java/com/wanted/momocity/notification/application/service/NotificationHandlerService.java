@@ -108,47 +108,4 @@ public class NotificationHandlerService {
         notificationRepository.save(newNotification);
     }
 
-    // 게시글 좋아요 알림
-    public void createPostLikedNotification(Long postOwnerId, String likerName, Long postId) {
-        Notification notification = Notification.createPostLiked(postOwnerId, likerName, postId);
-        notificationRepository.save(notification);
-        log.info("[NotificationHandlerService] 좋아요 알림 저장 완료 | postOwnerId={}", postOwnerId);
-    }
-
-    // 댓글 알림
-    public void createCommentNotification(Long postOwnerId, String commenterName, Long postId) {
-        Notification notification = Notification.createComment(postOwnerId, commenterName, postId);
-        notificationRepository.save(notification);
-        log.info("[NotificationHandlerService] 댓글 알림 저장 완료 | postOwnerId={}", postOwnerId);
-    }
-
-    // 대댓글 알림
-    // 댓글 작성자 + 게시글 작성자 둘 다 알림
-    // 단, 댓글 작성자 = 게시글 작성자면 중복 알림 제외
-    public void createReplyNotification(
-            Long commentOwnerId, Long postOwnerId, String replierName, Long postId) {
-        notificationRepository.save(
-                Notification.createReplyToCommenter(commentOwnerId, replierName, postId));
-
-        if (!commentOwnerId.equals(postOwnerId)) {
-            notificationRepository.save(
-                    Notification.createReplyToPostOwner(postOwnerId, replierName, postId));
-        }
-        log.info("[NotificationHandlerService] 대댓글 알림 저장 완료 | postId={}", postId);
-    }
-
-    // Calendar Todo 알림
-    public void createTodoReminderNotification(Long userId, String title) {
-        Notification notification = Notification.createTodoReminder(userId, title);
-        notificationRepository.save(notification);
-        log.info("[NotificationHandlerService] Todo 알림 저장 완료 | userId={}", userId);
-    }
-
-    // Calendar Memo 알림
-    public void createMemoReminderNotification(Long userId, String title) {
-        Notification notification = Notification.createMemoReminder(userId, title);
-        notificationRepository.save(notification);
-        log.info("[NotificationHandlerService] Memo 알림 저장 완료 | userId={}", userId);
-    }
-
 }
