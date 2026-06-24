@@ -39,7 +39,7 @@ public class ReportQueryService implements ReportQueryUseCase {
 
     @Override
     public ReportList getByIsRead(boolean isRead, int limit) {
-        return new ReportList(reportRepository.findByIsRead(isRead, limit));
+        return new ReportList(reportRepository.findByIsResolved(isRead, limit));
     }
 
     // id 값이 없으면 예외처리를 위한 메서드 재정의
