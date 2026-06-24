@@ -1,5 +1,6 @@
 package com.wanted.momocity.user.infrastructure.persistence;
 
+import com.wanted.momocity.global.domain.model.Category;
 import com.wanted.momocity.user.application.command.UpdateUserInfoCommand;
 import com.wanted.momocity.user.domain.exception.UserNotFoundException;
 import com.wanted.momocity.user.domain.model.*;
@@ -116,7 +117,7 @@ public class UserRepositoryAdapter implements UserRepository {
     }
 
     @Override
-    public void teacherApply(Long userId,String nickname , Category category, String proof) {
+    public void teacherApply(Long userId, String nickname , Category category, String proof) {
         springDataUserRepository.teacherApply(userId,nickname,category,proof);
     }
 
@@ -124,6 +125,14 @@ public class UserRepositoryAdapter implements UserRepository {
     @Override
     public boolean existsByIdAndRoleAndStatus(Long userId, Role role, Status status) {
         return springDataUserRepository.existsByIdAndRoleAndStatus(userId, role, status);
+    }
+
+    // 강사 승인/반려 확인용
+    @Override
+    public Status findStatusById(Long userId) {
+        return springDataUserRepository.findById(userId)
+                .map(UserJpaEntity::getStatus)
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
     }
 
 
@@ -134,7 +143,6 @@ public class UserRepositoryAdapter implements UserRepository {
                 entity.getEmail(),
                 entity.getName(),
                 entity.getNickname(),
-                entity.getBirth(),
                 entity.isTempPwd(),
                 entity.getCreatedAt()
         );
@@ -144,14 +152,17 @@ public class UserRepositoryAdapter implements UserRepository {
     private TeacherApplication toTeacherApplication(UserJpaEntity entity) {
         return new TeacherApplication(
                 entity.getId(),
-                entity.getEmail(),
-                entity.getName(),
                 entity.getNickname(),
-                entity.getBirth(),
+                entity.getName(),
+                entity.getEmail(),
                 entity.getProfileImageUrl(),
-                entity.getCategory() != null ? entity.getCategory().name() : null,
+                entity.getCategory() ,
                 entity.getProof(),
-                entity.getUpdatedAt()
+                entity.getStatus(),
+                entity.getRole(),
+                entity.getSuspensionCount(),
+                entity.getSuspendedUntil(),
+                entity.getCreatedAt()
         );
     }
 

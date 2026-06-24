@@ -5,6 +5,7 @@ import com.wanted.momocity.calendar.application.command.*;
 import com.wanted.momocity.calendar.application.usecase.*;
 import com.wanted.momocity.calendar.presentation.api.common.CalendarResponseCode;
 import com.wanted.momocity.calendar.presentation.api.request.*;
+import com.wanted.momocity.calendar.presentation.api.response.DailyCalendarResponse;
 import com.wanted.momocity.calendar.presentation.api.response.MemoResponse;
 import com.wanted.momocity.calendar.presentation.api.response.MonthlyCalendarResponse;
 import com.wanted.momocity.calendar.presentation.api.response.TodoResponse;
@@ -68,6 +69,29 @@ public class CalendarController {
         ));
     }
 
+    // 일별 캘린더 조회
+    // GET /api/v1/calendar/daily?date=2026-05-26
+    @Operation(summary = "일별 캘린더 조회",
+            description = "해당 날짜의 Todo 와 오늘 수강한 챕터 목록을 반환합니다.")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "날짜 파라미터 누락 또는 형식 오류"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 토큰 만료")
+    })
+    @GetMapping("/daily")
+    public ResponseEntity<ApiResponse<DailyCalendarResponse>> getDailyCalendar(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long userId = userDetails.getUserId();
+
+        return ResponseEntity.ok(ApiResponse.success(
+                CalendarResponseCode.DAILY_CALENDAR_FOUND,
+                "일별 캘린더 데이터를 조회했습니다.",
+                calendarQueryUseCase.handleDaily(userId, date)
+        ));
+    }
+
     // Todo 등록
     // POST /api/v1/calendar/todo
     @Operation(summary = "Todo 등록",
@@ -85,7 +109,6 @@ public class CalendarController {
 
     ) {
 
-//        Long userId = 1L;
         Long userId = userDetails.getUserId();
 
         return ResponseEntity.status(201).body(ApiResponse.created(
@@ -117,7 +140,6 @@ public class CalendarController {
 
     ) {
 
-//        Long userId = 1L;
         Long userId = userDetails.getUserId();
 
         return ResponseEntity.ok(ApiResponse.success(
@@ -146,7 +168,6 @@ public class CalendarController {
             @AuthenticationPrincipal CustomUserDetails userDetails
 
     ) {
-//        Long userId = 1L;
         Long userId = userDetails.getUserId();
 
         calendarCommandUseCase.handle(new DeleteTodoCommand(userId, calendarId));
@@ -176,7 +197,6 @@ public class CalendarController {
 
     ) {
 
-//        Long userId = 1L;
         Long userId = userDetails.getUserId();
 
         return ResponseEntity.ok(ApiResponse.success(
@@ -205,7 +225,6 @@ public class CalendarController {
 
     ) {
 
-//        Long userId = 1L;
         Long userId = userDetails.getUserId();
 
         return ResponseEntity.status(201).body(ApiResponse.created(
@@ -237,7 +256,6 @@ public class CalendarController {
 
     ) {
 
-//        Long userId = 1L;
         Long userId = userDetails.getUserId();
 
         return ResponseEntity.ok(ApiResponse.success(
@@ -267,7 +285,6 @@ public class CalendarController {
 
     ) {
 
-//        Long userId = 1L;
         Long userId = userDetails.getUserId();
 
         calendarCommandUseCase.handle(new DeleteMemoCommand(userId, calendarId));

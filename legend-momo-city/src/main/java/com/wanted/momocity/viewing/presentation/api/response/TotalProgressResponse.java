@@ -7,7 +7,7 @@ package com.wanted.momocity.viewing.presentation.api.response;
 
 public record TotalProgressResponse(
         Long lectureId,
-        int totalProgress,
+        int lectureProgress,
         int completedCount,
         int totalChapterCount
 ) {

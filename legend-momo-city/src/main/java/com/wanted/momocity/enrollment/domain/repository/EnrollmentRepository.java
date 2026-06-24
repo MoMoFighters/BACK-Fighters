@@ -28,4 +28,7 @@ public interface EnrollmentRepository {
 
     // 특정 사용자의 전체 수강신청 목록을 조회
     List<Enrollment> findAllByUserId(Long userId);
+
+    // 특정 사용자가 특정 카테고리에서 완료한 강의 수를 조회합니다.
+    int countCompletedLecturesByUserIdAndCategory(Long userId, String category);
 }

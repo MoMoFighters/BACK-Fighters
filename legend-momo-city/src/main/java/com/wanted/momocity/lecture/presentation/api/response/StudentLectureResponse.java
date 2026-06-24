@@ -1,5 +1,6 @@
 package com.wanted.momocity.lecture.presentation.api.response;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.model.LectureChapter;
 import com.wanted.momocity.lecture.domain.model.VideoStatus;
@@ -134,18 +135,29 @@ public class StudentLectureResponse {
      * 학생 강의 목록에서 강의 1개를 표현하는 응답 DTO
      * 최종 응답의 data.content 배열 안에 들어간다.
      */
+    @JsonInclude(JsonInclude.Include.NON_NULL) // <- Json 응답을 만들 때 null 값은 뺴겠다는 어노테이션
     public record StudentLectureListItemResponse(
             Long lectureId,              // 강의 ID
-            Long teacherId,              // 강사 ID
-            String teacherName,          // 강사 이름
             String title,                // 강의 제목
             String description,          // 강의 설명
             String thumbnailUrl,         // 썸네일 URL
             String category,             // 강의 카테고리
             String lectureStatus,        // 강의 상태
-            int completedUserCount,      // 수강 완료 인원
             double averageRating,        // 평균 평점
             int reviewCount,             // 수강평 개수
+            /* comment
+            *   로그인한 학생이 해당 강의 수강 중이면 enrollment 진행률을 내려준다.(강의 총 진척도)
+            *   비로그인 또는 미수강 강의면 0으로 내려준다
+            * */
+            Integer lectureProgress,
+
+            /* comment
+            *   로그인 한 학생이 해당 강의를 완료했는지 여부 확인
+            *   비로그인 또는 미수강이면 false 값
+            * */
+            Boolean isCompleted,
+
+            int chapterCount,            // 해당 강의 전체 챕터 수
             LocalDateTime createdAt      // 강의 생성일
     ) {
         /* comment
@@ -154,22 +166,24 @@ public class StudentLectureResponse {
          */
         public static StudentLectureListItemResponse from(
                 LectureAggregate lecture,
-                String teacherName,
                 double averageRating,
-                int reviewCount
+                int reviewCount,
+                Integer lectureProgress,
+                Boolean isCompleted,
+                int chapterCount
         ) {
             return new StudentLectureListItemResponse(
                     lecture.getId(),
-                    lecture.getTeacherId(),
-                    teacherName,
                     lecture.getTitle(),
                     lecture.getDescription(),
                     lecture.getThumbnailUrl(),
                     lecture.getCategory().name(),
                     lecture.getStatus().name(),
-                    lecture.getCompletedUserCount(),
                     averageRating,
                     reviewCount,
+                    lectureProgress,
+                    isCompleted,
+                    chapterCount,
                     lecture.getCreatedAt()
             );
         }

@@ -26,6 +26,9 @@ public interface CalendarRepository {
             Long userId, LocalDate start, LocalDate endDate
     );
 
+    // 전체 유저 오늘 날짜 기준 조회 (스케줄러용)
+    List<Calendar> findAllByDate(LocalDate date);
+
     // 삭제
     void delete(Long id);
 

@@ -1,11 +1,13 @@
 package com.wanted.momocity.user.presentation.api.request;
 
-import com.wanted.momocity.user.domain.model.Category;
+import com.wanted.momocity.global.domain.model.Category;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @Schema(description = "강사 수강 신청 요청")
 public record TeacherApplyRequest(

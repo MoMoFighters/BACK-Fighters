@@ -2,11 +2,9 @@ package com.wanted.momocity.auth.presentation.api;
 
 import com.wanted.momocity.auth.application.command.*;
 import com.wanted.momocity.auth.application.port.TokenProviderPort;
-import com.wanted.momocity.auth.domain.exception.MissingProofException;
 import com.wanted.momocity.auth.domain.exception.MissingTokenException;
 import com.wanted.momocity.auth.domain.model.Provider;
 import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
-import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.auth.application.usecase.*;
 import com.wanted.momocity.auth.presentation.api.request.*;
 import com.wanted.momocity.auth.presentation.api.response.*;

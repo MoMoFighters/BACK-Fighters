@@ -12,7 +12,6 @@ import java.util.List;
 public record LectureMetaResponse(
         Long lectureId,
         String lectureTitle,
-        String thumbnailUrl,
         int totalChapterCount,
         Long currentChapterId,
         int currentChapterNo,
@@ -27,10 +26,11 @@ public record LectureMetaResponse(
 
     public record ChapterItem(
             Long chapterId,
+            String chapterThumbnailUrl,
             String title,
             int orderNo,
             int durationSec,
-            int progressRate,
+            int chapterProgress,
             boolean isCompleted,
             boolean isAccessible
     ) {}

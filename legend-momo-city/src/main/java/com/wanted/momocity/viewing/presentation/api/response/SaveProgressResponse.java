@@ -9,9 +9,9 @@ package com.wanted.momocity.viewing.presentation.api.response;
 public record SaveProgressResponse(
         Long chapterId,
         int watchedSeconds,
-        int progressRate,
+        int chapterProgress,
         boolean isCompleted,
-        int totalProgress,
+        int lectureProgress,
         int completedCount
 ) {
 }

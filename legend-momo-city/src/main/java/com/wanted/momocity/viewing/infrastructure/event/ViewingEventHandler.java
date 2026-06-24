@@ -15,14 +15,13 @@ import org.springframework.transaction.event.TransactionalEventListener;
  * → 비즈니스 로직 없는 부가 작업 처리
  *
  * [@Async 이유]
- * → 이벤트 처리를 별도 스레드에서 실행
- * → saveProgress() 응답 속도에 영향 없음
- * → domainEventExecutor 스레드 풀 사용
+ * -> 이벤트 처리를 별도 스레드에서 실행
+ * -> saveProgress() 응답 속도에 영향 없음
+ * -> domainEventExecutor 스레드 풀 사용
  *
  * [@TransactionalEventListener AFTER_COMMIT 이유]
- * → 트랜잭션 커밋 전에 처리하면
- *   DB 저장 실패해도 이벤트 처리될 수 있음
- * → AFTER_COMMIT 으로 저장 성공 후에만 실행 보장
+ * -> 트랜잭션 커밋 전에 처리하면 DB 저장 실패해도 이벤트 처리될 수 있음
+ * -> AFTER_COMMIT 으로 저장 성공 후에만 실행 보장
  */
 
 @Slf4j

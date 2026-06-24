@@ -23,4 +23,7 @@ import com.wanted.momocity.report.domain.model.Report;
 public interface ReportCommandUseCase {
 
     Report submitReport(SubmitReportCommand command);
+
+    // 둘다 신고 BC 의 데이터를 변경하는 Command 작업
+    Report resolveReport(Long reportId, Long adminId);
 }

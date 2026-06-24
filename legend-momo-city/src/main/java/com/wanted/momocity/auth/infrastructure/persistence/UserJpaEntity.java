@@ -5,7 +5,6 @@ import com.wanted.momocity.auth.domain.model.Role;
 import com.wanted.momocity.auth.domain.model.Status;
 import jakarta.persistence.*;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity(name = "AuthUser")
@@ -29,9 +28,6 @@ public class UserJpaEntity {
     @Column
     private String nickname;
 
-    @Column(name = "birth")
-    private LocalDate birth;
-
     @Column(name = "profile_image_url")
     private String profileImageUrl;
 
@@ -52,11 +48,14 @@ public class UserJpaEntity {
     @Column(nullable = true)
     private Long point;
 
-    @Column(name = "is_paid")
-    private boolean isPaid;
-
     @Column(name = "do_not_disturb")
     private boolean doNotDisturb;
+
+    @Column(name = "suspension_count")
+    private Long suspensionCount;
+
+    @Column(name = "suspended_until")
+    private LocalDateTime suspendedUntil;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -73,20 +72,20 @@ public class UserJpaEntity {
 
     protected UserJpaEntity() {}
 
-    public UserJpaEntity(String email, String password, String name, String nickname, LocalDate birth, String profileImageUrl, Role role, Status status, Category category, String proof, Long point, boolean isPaid, boolean doNotDisturb, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, boolean isTempPwd) {
+    public UserJpaEntity(String email, String password, String name, String nickname, String profileImageUrl, Role role, Status status, Category category, String proof, Long point, boolean doNotDisturb, Long suspensionCount, LocalDateTime suspendedUntil, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, boolean isTempPwd) {
         this.email = email;
         this.password = password;
         this.name = name;
         this.nickname = nickname;
-        this.birth = birth;
         this.profileImageUrl = profileImageUrl;
         this.role = role;
         this.status = status;
         this.category = category;
         this.proof = proof;
         this.point = point;
-        this.isPaid = isPaid;
         this.doNotDisturb = doNotDisturb;
+        this.suspensionCount = suspensionCount;
+        this.suspendedUntil = suspendedUntil;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.deletedAt = deletedAt;
@@ -114,10 +113,6 @@ public class UserJpaEntity {
         return nickname;
     }
 
-    public LocalDate getBirth() {
-        return birth;
-    }
-
     public String getProfileImageUrl() {
         return profileImageUrl;
     }
@@ -138,17 +133,17 @@ public class UserJpaEntity {
         return proof;
     }
 
-    public long getPoint() {
+    public Long getPoint() {
         return point;
-    }
-
-    public boolean isPaid() {
-        return isPaid;
     }
 
     public boolean isDoNotDisturb() {
         return doNotDisturb;
     }
+
+    public Long getSuspensionCount() {return suspensionCount;}
+
+    public LocalDateTime getSuspendedUntil(){return suspendedUntil;}
 
     public LocalDateTime getCreatedAt() {
         return createdAt;

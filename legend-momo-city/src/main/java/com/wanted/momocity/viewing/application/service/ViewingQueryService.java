@@ -2,10 +2,7 @@ package com.wanted.momocity.viewing.application.service;
 
 import com.wanted.momocity.viewing.application.policy.EnrollmentAccessPolicy;
 import com.wanted.momocity.viewing.application.policy.SequentialAccessPolicy;
-import com.wanted.momocity.viewing.application.port.ChapterPort;
-import com.wanted.momocity.viewing.application.port.EnrollmentPort;
-import com.wanted.momocity.viewing.application.port.LecturePort;
-import com.wanted.momocity.viewing.application.port.S3Port;
+import com.wanted.momocity.viewing.application.port.*;
 import com.wanted.momocity.viewing.application.usecase.ViewingQueryUseCase;
 import com.wanted.momocity.viewing.domain.model.Chapter;
 import com.wanted.momocity.viewing.domain.model.LearningHistory;
@@ -52,6 +49,11 @@ public class ViewingQueryService implements ViewingQueryUseCase {
         // 챕터 정보 조회
         Chapter chapter = chapterPort.findById(chapterId);
 
+        // lastPositionSec 조회 추가
+        LearningHistory history = learningHistoryRepository
+                .findByUserIdAndChapterId(userId, chapterId)
+                        .orElse(LearningHistory.create(userId, lectureId, chapterId));
+
         // 순차 시청 제한 (Policy)
         sequentialAccessPolicy.ensureSequentialAccess(userId, lectureId, chapterId);
 
@@ -62,8 +64,9 @@ public class ViewingQueryService implements ViewingQueryUseCase {
                 userId, lectureId, chapterId);
 
         return new StreamingUrlResponse(
-                chapter.getId(), presignedUrl, 3600,
-                chapter.getTitle(), chapter.getDurationSec()
+                presignedUrl,
+                3600,
+                history.getLastPositionSec()
         );
     }
 
@@ -122,9 +125,12 @@ public class ViewingQueryService implements ViewingQueryUseCase {
 
                                     return new LectureMetaResponse.ChapterItem(
                                             chapter.getId(),
+//                                            chapter.getChapterThumbnailUrl(),
+                                            null,
                                             chapter.getTitle(),
                                             chapter.getOrderNo(),
                                             chapter.getDurationSec(),
+                                            // chapterProgress
                                             history.getProgressRate(),
                                             history.isCompleted(),
                                             isAccessible
@@ -136,8 +142,8 @@ public class ViewingQueryService implements ViewingQueryUseCase {
                 userId, lectureId);
 
         return new LectureMetaResponse(
-                lecture.getId(), lecture.getTitle(), lecture.getThumbnailUrl(),
-                chapters.size(), currentChapter.getId(), currentChapter.getOrderNo(), currentChapter.getTitle(), chaptersItem
+                lecture.getId(), lecture.getTitle(), chapters.size(), currentChapter.getId(),
+                currentChapter.getOrderNo(), currentChapter.getTitle(), chaptersItem
         );
     }
 
@@ -243,6 +249,7 @@ public class ViewingQueryService implements ViewingQueryUseCase {
                     return new ChapterProgressResponse.ChapterProgressItem(
                             chapter.getId(), chapter.getTitle(), chapter.getOrderNo(),
                             Math.min(history.getWatchedSeconds(), chapter.getDurationSec()), chapter.getDurationSec(),
+//                             chapterProgress,
                             history.getProgressRate(), history.isCompleted(),
                             isAccessible
                     );
@@ -286,7 +293,60 @@ public class ViewingQueryService implements ViewingQueryUseCase {
         return new MyLecturesResponse(lectures);
     }
 
+    public CategoryProgressInfo getCategoryProgress(Long userId, String category) {
 
+        // 수강 신청한 전체 강의 목록 조회
+        List<Long> enrolledLectureIds = enrollmentPort.findAllByUserId(userId)
+                .stream()
+                .map(EnrollmentPort.EnrollmentInfo::lectureId)
+                .toList();
+
+        // 카테고리 필터링
+        List<Long> targetLectureIds = category == null
+                ? enrolledLectureIds
+                : lecturePort.findAllByCategory(category)
+                  .stream()
+                  .map(Lecture::getId)
+                  .filter(enrolledLectureIds::contains)
+                  .toList();
+
+        if(targetLectureIds.isEmpty()) {
+            return new CategoryProgressInfo(0, null, null, null, null, 0);
+        }
+
+        // 전체 진척도 계산 -> 대상 강의들의 진척도 평균
+        int myTotalProgress = (int) Math.round(
+                targetLectureIds.stream()
+                        .mapToInt(lectureId -> calculateTotalProgress(userId, lectureId))
+                        .average()
+                        .orElse(0)
+        );
+
+        // 최근 이어보기 조회 -> 대상 강의들 중 updated_at 기준 가장 최근 시청 목록
+        LearningHistory latestHistory = learningHistoryRepository
+                .findLatestByUserIdAndLectureIds(userId, targetLectureIds)
+                .orElse(null);
+
+        if (latestHistory == null) {
+            return new CategoryProgressInfo(myTotalProgress, null, null, null, null, 0);
+        }
+
+        Lecture lecture = lecturePort.findById(latestHistory.getLectureId());
+        Chapter chapter = chapterPort.findById(latestHistory.getChapterId());
+
+        log.info("[Viewing] 카테고리별 진척도 조회 완료 | userId={}, category={}, myTotalProgress={}",
+                userId, category, myTotalProgress);
+
+        return new CategoryProgressInfo(
+                myTotalProgress,
+                lecture.getId(),
+                lecture.getTitle(),
+                chapter.getId(),
+                chapter.getTitle(),
+                latestHistory.getProgressRate()
+        );
+
+    }
 
     // private 메서드 (내부 로직)
     // enrollment 진척도 재계산 및 저장
