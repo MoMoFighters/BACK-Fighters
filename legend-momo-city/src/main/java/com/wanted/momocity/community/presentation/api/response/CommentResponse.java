@@ -11,10 +11,15 @@ import java.util.List;
 
 public record CommentResponse(
         Long commentId,
+        Long authorId,
         String content,
         String authorName,
         String authorProfileImageUrl,
         String authorRole,
+        // 내가 작성한 댓글인지 확인
+        boolean isMine,
+        // 게시글 작성자가 작성한 댓글인지 확인
+        boolean isPostWriter,
         LocalDateTime createdAt,
         List<CommentResponse> replies
 ) {

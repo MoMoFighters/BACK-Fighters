@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 public record ReplyCreateResult(
         Long replyId,
         Long commentId,
+        Long authorId,
         String content,
         String authorName,
         String authorProfileImageUrl,

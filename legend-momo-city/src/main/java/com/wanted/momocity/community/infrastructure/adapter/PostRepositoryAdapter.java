@@ -1,7 +1,9 @@
 package com.wanted.momocity.community.infrastructure.adapter;
 
+import com.wanted.momocity.community.application.result.PostWithContents;
 import com.wanted.momocity.community.domain.model.Post;
 import com.wanted.momocity.community.domain.repository.PostRepository;
+import com.wanted.momocity.community.infrastructure.persistence.PostContentJpaEntity;
 import com.wanted.momocity.community.infrastructure.persistence.PostJpaEntity;
 import com.wanted.momocity.community.infrastructure.persistence.PostJpaRepository;
 import lombok.RequiredArgsConstructor;
@@ -48,5 +50,27 @@ public class PostRepositoryAdapter implements PostRepository {
     @Transactional
     public int hardDeleteByDeletedAtBefore(LocalDateTime threshold) {
         return postJpaRepository.hardDeleteByDeletedAtBefore(threshold);
+    }
+
+    /*
+    * comment.
+    *  게시글 단건 조회 + contents fetch join
+    *  -
+    *  단건 조회 시 contents 항상 필요
+    *  -> LAZY 로딩 시 N+1 발생 가능 -> fetch join 으로 한 번에 조회
+    *  -
+    *  PostJpaEntity -> Post 도메인 변환 -> PostContentJpaEntity
+    *  -> PostContent 도메인 변환 -> PostWithContents 로 묶어서 반환
+    * */
+
+    @Override
+    public Optional<PostWithContents> findByIdWithContents(Long postId) {
+        return postJpaRepository.findByIdWithContents(postId)
+                .map(entity -> new PostWithContents(
+                        entity.toDomain(),
+                        entity.getContents().stream()
+                                .map(PostContentJpaEntity::toDomain)
+                                .toList()
+                ));
     }
 }

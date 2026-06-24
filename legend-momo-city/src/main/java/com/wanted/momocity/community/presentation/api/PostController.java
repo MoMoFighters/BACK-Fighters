@@ -283,6 +283,7 @@ public class PostController {
                 "댓글이 작성되었습니다.",
                 new CommentCreateResponse(
                         result.commentId(),
+                        result.authorId(),
                         result.content(),
                         result.authorName(),
                         result.authorProfileImageUrl(),
@@ -329,6 +330,7 @@ public class PostController {
                 new ReplyCreateResponse(
                         result.replyId(),
                         result.commentId(),
+                        result.authorId(),
                         result.content(),
                         result.authorName(),
                         result.authorProfileImageUrl(),
@@ -356,4 +358,24 @@ public class PostController {
                 "대댓글이 삭제되었습니다."
         ));
     }
+
+    // 댓글 목록 조회
+    // GET api/v2/posts/{postId}/comments
+    @Operation(summary = "게시글 댓글 조회", description = "게시글 댓글 목록을 조회합니다.")
+    @GetMapping("/{postId}/comments")
+    public ResponseEntity<ApiResponse<PostCommentResponse>> getComments(
+            @PathVariable Long postId,
+            @RequestParam(required = false) Long cursor,
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long userId = userDetails.getUserId();
+
+        return ResponseEntity.ok(ApiResponse.success(
+                CommunityResponseCode.COMMENT_FOUND,
+                "댓글 조회에 성공했습니다.",
+                postQueryUseCase.getComments(userId, postId, cursor, size)
+        ));
+    }
+
 }

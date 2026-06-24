@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 public record CommentCreateResult(
         Long commentId,
+        Long authorId,
         String content,
         String authorName,
         String authorProfileImageUrl,

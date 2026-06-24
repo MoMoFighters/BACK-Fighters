@@ -12,6 +12,11 @@ import java.time.LocalDateTime;
 *  DB 테이블과 1:1 매핑되는 JPA 클래스
 *  -> Domain Model (PostContent) 을 모르고 DB 컬럼 구조만 표현
 *  -> 변환은 PostContentRepositoryAdapter 가 담당
+*  -
+*  연간관계
+*  @ManyToOne post -> PostJpaEntity 와 N:1 관계
+*  insertable = false, update = false : post_id 컬럼은 이미 @Column 으로 관리
+*  -> JPA 가 중복으로 컬럼 관리하지 않도록 방지
 * */
 
 @Getter
@@ -26,6 +31,12 @@ public class PostContentJpaEntity {
 
     @Column(name = "post_id", nullable = false)
     private Long postId;
+
+    // PostJpaEntity 와 N:1
+    // post_id 컬럼은 위 @Column 으로 관리, 연관관계는 조회 전용
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "post_id", insertable = false, updatable = false)
+    private PostJpaEntity post;
 
     @Column(name = "order_no", nullable = false)
     private int orderNo;

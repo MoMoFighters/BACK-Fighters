@@ -5,6 +5,7 @@ import com.wanted.momocity.community.domain.repository.CommentRepository;
 import com.wanted.momocity.community.infrastructure.persistence.CommentJpaEntity;
 import com.wanted.momocity.community.infrastructure.persistence.CommentJpaRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,6 +59,21 @@ public class CommentRepositoryAdapter implements CommentRepository {
                 ));
     }
 
+    @Override
+    public List<Comment> findByPostIdWithCursor(Long postId, Long cursor, int size) {
+        return commentJpaRepository.findByPostIdWithCursor(
+                postId, cursor, PageRequest.of(0, size)
+        )
+                .stream()
+                .map(CommentJpaEntity::toDomain)
+                .toList();
+    }
+
+    @Override
+    public int countByPostId(Long postId) {
+        return commentJpaRepository.countByPostId(postId);
+    }
+
     // 댓글 소프트딜리트
     // deleted_at 업데이트
     @Override
@@ -70,4 +86,5 @@ public class CommentRepositoryAdapter implements CommentRepository {
     public int hardDeleteByDeletedAtBefore(LocalDateTime threshold) {
         return commentJpaRepository.hardDeleteByDeletedAtBefore(threshold);
     }
+
 }

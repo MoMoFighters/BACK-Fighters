@@ -21,6 +21,23 @@ public interface PostJpaRepository extends JpaRepository<PostJpaEntity, Long> {
     // 단건 조회 (소프트딜리트 제외)
     Optional<PostJpaEntity> findByIdAndDeletedAtIsNull(Long PostId);
 
+    /*
+    * comment.
+    *  게시글 단건 조회 + contents fetch join
+    *  -
+    *  단건 조회 시 contents 항상 필요
+    *  -> LAZY 로딩 시 contents 접근할 때마다 추가 쿼리 발생
+    *  -> fetch join 으로 한 번에 조회
+    * */
+
+    @Query("""
+        SELECT DISTINCT p FROM PostJpaEntity p
+        LEFT JOIN FETCH p.contents
+        WHERE p.id = :postId
+        AND p.deletedAt IS NULL
+    """)
+    Optional<PostJpaEntity> findByIdWithContents(@Param("postId") Long postId);
+
     // 목록 조회 (소프트딜리트 제외, 카테고리 필터링)
     @Query("""
         SELECT p FROM PostJpaEntity p

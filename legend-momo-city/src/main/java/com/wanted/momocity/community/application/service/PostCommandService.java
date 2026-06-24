@@ -279,6 +279,7 @@ public class PostCommandService implements PostCommandUseCase {
                 userId, postId, saved.getId());
         return new CommentCreateResult(
                 saved.getId(),
+                saved.getUserId(),
                 saved.getContent(),
                 user.getName(),
                 user.getProfileImageUrl(),
@@ -348,6 +349,7 @@ public class PostCommandService implements PostCommandUseCase {
         return new ReplyCreateResult(
                 saved.getId(),
                 commentId,
+                saved.getUserId(),
                 saved.getContent(),
                 user.getName(),
                 user.getProfileImageUrl(),
