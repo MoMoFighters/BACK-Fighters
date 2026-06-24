@@ -58,7 +58,7 @@ public class ReportCommandService implements ReportCommandUseCase {
     }
 
     @Override
-    public Report resolveReport(Long reportId, Long adminId) {
+    public Report resolveReport(Long reportId) {
         // 1. 신고 단건 조회 (없으면 예외 처리)
         Report report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new ReportNotFoundException(reportId));
