@@ -65,7 +65,9 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
     // 강사 승인 여부에 따른 status 변환
     @Modifying
     @Transactional
-    @Query("UPDATE UserUser u SET u.role = :role, u.status = :status, u.profileImageUrl = :profileImageUrl, u.updatedAt = :updatedAt WHERE u.id = :userId")
+    @Query("UPDATE UserUser u SET u.role = :role, u.status = :status, " +
+            "u.profileImageUrl = CASE WHEN :profileImageUrl IS NOT NULL THEN :profileImageUrl ELSE u.profileImageUrl END, " +
+            "u.updatedAt = :updatedAt WHERE u.id = :userId")
     void updateRoleAndStatus(@Param("userId") Long userId,
                              @Param("role") Role role,
                              @Param("status") Status status,
