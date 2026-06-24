@@ -57,15 +57,19 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
                       @Param("proof") String proof);
 
     // 강사 중복 신청 방지용
-    boolean existsByIdAndRoleAndStatus(Long userId, Role role, Status status);
+    @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM UserUser u WHERE u.id = :userId AND u.role = :role AND u.status IN :status")
+    boolean checkTeacherAvailable(@Param("userId") Long userId,
+                                  @Param("role") Role role,
+                                  @Param("status") List<Status> status);
 
     // 강사 승인 여부에 따른 status 변환
     @Modifying
     @Transactional
-    @Query("UPDATE UserUser u SET u.role = :role, u.status = :status, u.updatedAt = :updatedAt WHERE u.id = :userId")
+    @Query("UPDATE UserUser u SET u.role = :role, u.status = :status, u.profileImageUrl = :profileImageUrl, u.updatedAt = :updatedAt WHERE u.id = :userId")
     void updateRoleAndStatus(@Param("userId") Long userId,
                              @Param("role") Role role,
                              @Param("status") Status status,
+                             @Param("profileImageUrl") String profileImageUrl,
                              @Param("updatedAt") LocalDateTime updatedAt);
 
     // 임시비번을 사용자가 변경했을 때
@@ -128,4 +132,9 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
     @Transactional
     void changeStatus(
             @Param("userId") Long userId,
-            @Param("status") Status status);}
+            @Param("status") Status status);
+
+    // 승인할 강사의 카테고리 가져오기
+    @Query("SELECT u.category FROM UserUser u WHERE u.id = :userId")
+    Category findCategoryById(@Param("userId") Long userId);
+}

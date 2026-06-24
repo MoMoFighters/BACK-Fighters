@@ -3,6 +3,7 @@ package com.wanted.momocity.store.infrastructure.persistence;
 import com.wanted.momocity.store.domain.model.Store;
 import com.wanted.momocity.store.domain.repository.StoreRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;

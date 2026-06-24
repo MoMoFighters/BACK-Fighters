@@ -2,6 +2,7 @@ package com.wanted.momocity.user.application.service;
 
 import com.wanted.momocity.auth.application.port.PasswordEncodePort;
 import com.wanted.momocity.global.application.s3.S3UploadPort;
+import com.wanted.momocity.global.domain.model.Category;
 import com.wanted.momocity.user.domain.event.TeacherApplicationEvent;
 import com.wanted.momocity.user.domain.exception.UserNotFoundException;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
@@ -18,8 +19,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import static com.wanted.momocity.user.domain.model.Status.ACTIVE;
-import static com.wanted.momocity.user.domain.model.Status.REJECTED;
+import java.util.List;
+
 
 @Service
 @Slf4j
@@ -74,8 +75,8 @@ public class UserCommandService implements UserCommandUsecase {
         userRepository.findById(command.userId())
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
 
-        if (userRepository.existsByIdAndRoleAndStatus(command.userId(), Role.TEACHER, Status.PENDING)) {
-            throw new DomainRuleViolationException("이미 강사 신청 중입니다.");
+        if (userRepository.checkTeacherAvailable(command.userId(), Role.TEACHER, List.of(Status.PENDING, Status.ACTIVE))) {
+            throw new DomainRuleViolationException("강사 신청 중이거나 이미 강사입니다.");
         }
 
         // 기존 닉네임이랑 새로운 닉네임이 다르면 policy로 중복 검증
@@ -106,9 +107,12 @@ public class UserCommandService implements UserCommandUsecase {
                 throw new DomainRuleViolationException("강사 신청 중인 사용자가 아닙니다.");
             }
 
-            userRepository.updateRoleAndStatus(userId, Role.TEACHER, ACTIVE);
+            String categoryProfileImage = userRepository.findCategoryById(userId)
+                    .getCategoryProfileImage();
+
+            userRepository.updateAfterApply(userId, Role.TEACHER, Status.ACTIVE,categoryProfileImage);
             log.info("[teacher] 강사 승인 처리 | userId={}", userId);
-            eventPublisher.publishEvent(new TeacherApplicationEvent(email, ACTIVE, null));
+            eventPublisher.publishEvent(new TeacherApplicationEvent(email, Status.ACTIVE, null));
         });
     }
 
@@ -130,9 +134,9 @@ public class UserCommandService implements UserCommandUsecase {
             throw new DomainRuleViolationException("강사 신청 중인 사용자가 아닙니다.");
         }
 
-        userRepository.updateRoleAndStatus(command.userId(), Role.STUDENT, REJECTED);
+        userRepository.updateAfterApply(command.userId(), Role.STUDENT, Status.REJECTED,null);
         log.info("[teacher] 강사 반려 처리 | userId={} | reason={}", command.userId(), command.reason());
-        eventPublisher.publishEvent(new TeacherApplicationEvent(email, REJECTED, command.reason()));
+        eventPublisher.publishEvent(new TeacherApplicationEvent(email, Status.REJECTED, command.reason()));
     }
 
 
@@ -145,6 +149,6 @@ public class UserCommandService implements UserCommandUsecase {
     // 강사 포기
     @Override
     public void teacherGiveup(Long userId) {
-        userRepository.changeStatus(userId,ACTIVE);
+        userRepository.changeStatus(userId,Status.ACTIVE);
     }
 }
