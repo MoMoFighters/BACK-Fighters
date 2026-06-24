@@ -51,7 +51,7 @@ public class ReviewController {
     }
 
     // 강의 삭제
-    @DeleteMapping("/{reviewId}")
+    @DeleteMapping("/reviews/{reviewId}")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')") // 관리자만 삭제 가능
     public ResponseEntity<?> deleteReview(@PathVariable Long reviewId // URL에서 reviewId 추출
     ) { // 메서드 시작
