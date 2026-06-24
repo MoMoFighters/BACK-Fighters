@@ -13,18 +13,8 @@ import java.util.Optional;
 
 /* comment.
     ReportRepositoryAdapter 정리
-    1. 역할 : 도메인 ReportRepository 인터페이스 JPA 로 구현하는 어댑터 역할
-    2. 위치 : 인프라 계층
-    3. 핵심 책임
-       - 도메인 Report 모델 <-> ReportJpaEntity 변환
-       - SpringDataRepository 호출을 감싸 도메인이 인프라를 모르게 격리해버린다.
-    4. WHY 의존 방향 (클린 아키텍처)
-       → SpringDataRepository 주입하고 같은 계층을 호출한다
-       → Report 사용을 하게 된다. 인프라는 도메인을 알아도 괜찮다.
-       → 하지만 도메인은 이 클래스의 존재를 몰라야한다. (오직 인터페이스만 봐야함)
-    5. WHY @Transactional 클래스 레벨 + 메서드 readOnly 오버라이드
-       → 클래스 레벨 : 쓰기 트랜젝션 기본값 save 같이 데이터 변경처럼 민감한 작업의 안정성 보장
-       → 조회 메서드만 오버라이드할 경우 성능 최적화가 가능하기 때문이다.
+    도메인 ReportRepositoryAdapter 를 JPA 로 구현하는 어댑터
+    Report <-> ReportJpaEntity 변환 담당
  */
 @Repository
 @Transactional
@@ -32,10 +22,13 @@ public class ReportRepositoryAdapter implements ReportRepository {
 
     private final SpringDataReportRepository repository;
 
+    // ReportRepository 인터페이스 구현체 / Spring 은 이 클래스를 빈으로 등록해 주입
     public ReportRepositoryAdapter(SpringDataReportRepository repository) {
         this.repository = repository;
     }
 
+    // 도메인 객체 -> 엔티티 변환 후 저장, 저장된 엔티티를 다시 도메인으로 반환하게 된다.
+    // 이때 id 값을 포함한다.
     @Override
     public Report save(Report report) {
         ReportJpaEntity entity = toEntity(report);
@@ -43,70 +36,73 @@ public class ReportRepositoryAdapter implements ReportRepository {
         return toDomain(saved);
     }
 
+    // 최근 N 개를 조회한다. - readOnly 로 성능을 최적화 시켰다.
+    // 페이지네이션 없이 limit 만 사용함
     @Override
     @Transactional(readOnly = true)
     public List<Report> findRecent(int limit) {
-        return repository.findAllByOrderByReportedAtDesc(PageRequest.of(0, limit))
+        // PageRequest.of(0, limit) — 0페이지에서 limit개만 가져오는 방식으로 N개 제한
+        return repository.findAllByOrderByCreatedAtDesc(PageRequest.of(0, limit))
                 .stream()
                 .map(this::toDomain)
                 .toList();
     }
 
+    // 처리 여부(isResolved) 로 필터링한 최근 N 개 조회 로직
     @Override
     @Transactional(readOnly = true)
-    public List<Report> findByIsRead(boolean isRead, int limit) {
-        return repository.findAllByIsReadOrderByReportedAtDesc(isRead, PageRequest.of(0, limit))
+    public List<Report> findByIsResolved(boolean isResolved, int limit) {
+        return repository.findAllByIsResolvedOrderByCreatedAtDesc(isResolved, PageRequest.of(0, limit))
                 .stream()
                 .map(this::toDomain)
                 .toList();
     }
 
+    // 전체 신고 수를 반환한다. (대시보드 통계용 MS-15)
     @Override
     @Transactional(readOnly = true)
     public long countAll() {
         return repository.count();
     }
 
-    // ReportRepository 에 선언만 하고 구현은 되어있지 않음.
-    // 인터페이스를 구현하는 클래스는 선언된 메서드를 모두 구현해야핸다.
-    // Transactional 은 DB 작업을 하나로 묶어버리고, 실패 시 롤백
+    // ID 로 신고 단건 조회 : 없으면 Optional null 값으로 반환
     @Override
     @Transactional(readOnly = true)
     public Optional<Report> findById(Long id) {
         return repository.findById(id).map(this::toDomain);
     }
 
-    // === 변환 메서드 (도메인 ↔ 엔티티) ===
-
-    // 도메인 → 엔티티 (신규 저장 시 id=null, JPA 가 auto-increment 부여)
+    // 도메인 → 엔티티 (신규 저장 시 id=null, JPA가 auto-increment 부여)
     private ReportJpaEntity toEntity(Report report) {
         return new ReportJpaEntity(
                 report.getId(),
                 report.getReporterUserId(),
                 report.getTargetType().name(),
                 report.getTargetId(),
+                report.getReportedUserId(),
+                report.getTargetPath(),
                 report.getReason().name(),
                 report.getDetail(),
-                report.isRead(),
-                report.getReportedAt(),
-                report.getHandledAt(),
-                report.getHandlerAdminId()
+                report.isResolved(),
+                report.getCreatedAt(),
+                report.getResolvedAt()
         );
     }
 
-    // 엔티티 → 도메인 (DB 복원 - Report.restore() 사용)
+    // 엔티티 → 도메인 (DB에서 꺼낸 값을 Report.restore()로 복원)
     private Report toDomain(ReportJpaEntity entity) {
         return Report.restore(
                 entity.getId(),
                 entity.getReporterUserId(),
                 ReportTargetType.valueOf(entity.getTargetType()),
                 entity.getTargetId(),
+                entity.getReportedUserId(),
+                entity.getTargetPath(),
                 ReportReason.valueOf(entity.getReason()),
                 entity.getDetail(),
-                entity.isRead(),
-                entity.getReportedAt(),
-                entity.getHandledAt(),
-                entity.getHandlerAdminId()
+                entity.isResolved(),
+                entity.getCreatedAt(),
+                entity.getResolvedAt()
         );
     }
 }
