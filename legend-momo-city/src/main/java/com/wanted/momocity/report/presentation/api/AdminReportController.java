@@ -1,6 +1,5 @@
 package com.wanted.momocity.report.presentation.api;
 
-import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
 import com.wanted.momocity.report.application.usecase.ReportCommandUseCase;
@@ -14,7 +13,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 /* comment.
@@ -90,18 +88,14 @@ public class AdminReportController {
 
     // MS-3 신고 처리
     @PatchMapping("/{id}/resolve")
-    @Operation(summary = "신고 처리", description = "신고를 처리 완료 상태로 변경한다. isRead=true, handledAt, handlerAdminId 기록.")
+    @Operation(summary = "신고 처리", description = "신고를 처리 완료 상태로 변경한다. isResolved=true, resolvedAt 기록.")
     public ResponseEntity<ApiResponse<Void>> resolveReport(
-            @PathVariable Long id,
-            @AuthenticationPrincipal CustomUserDetails userDetails
+            @PathVariable Long id
     ) {
-        // 1. 인증 principal 에서 처리자 adminId 추출
-        Long adminId = userDetails.getUserId();
+        // 이게 없다면 신고 처리 아무것도 안하고 200만 반환하는 버그 발생
+        reportCommandUseCase.resolveReport(id);
 
-        // 2. UseCase 호출 → 신고 처리 완료
-        reportCommandUseCase.resolveReport(id, adminId);
-
-        // 3. 200 OK 반환 (data=null)
+        // 1. 200 OK 반환 (data=null)
         return ResponseEntity.ok(
                 ApiResponse.success(ApiResponseCode.SUCCESS, "신고 처리 완료", null)
         );

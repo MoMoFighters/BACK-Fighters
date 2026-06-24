@@ -13,22 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /* comment.
     ReportCommandService 정리
-    1. 역할 : ReportCommandUseCase 의 실제 구현체이다. 신고 접수 비즈니스 로직 담당
-    2. 위치 : 응용 계층 - 구현
-    3. WHY @Service + @Transactional (readOnly 아님)
-       → @Service : Spring 이 빈으로 등록, Controller 에 주입됨
-       → @Transactional : 쓰기 트랜젝션 (save 호출 -> DB 변경)
-    4. WHY @RequiredArgsConstructor (Lombok)
-       → final 필드 받는 생성자 자동 생성
-       → 의존성이 늘어나더라도 생성자 코드 건드리지 않게 된다.
-    5. 의존성 1개의 역할
-       - ReportRepository : 도메인 Report 객체 저장
-       (신고자 userId 는 Controller 가 인증 principal 에서 추출해 Command 로 전달 → 외부 BC 조회 불필요)
-    6. submitReport 처리 흐름 4단계
-        a) command.reporterUserId() 로 신고자 id 확보 (인증 principal 출처)
-        b) Report.submit() 정적 팩토리로 도메인 객체 생성 (PENDING + now)
-        c) reportRepository.save() 로 영속화
-        d) 저장된 Report (id 부여됨) 반환
+    신고 관련 쓰기 작업 담당하는 서비스.
+    Controller -> UseCase 인터페이스 -> 구현치 -> Repository 흐름이다.
  */
 @Service
 @RequiredArgsConstructor
@@ -49,6 +35,8 @@ public class ReportCommandService implements ReportCommandUseCase {
                 reporterUserId,
                 command.targetType(),
                 command.targetId(),
+                command.reportedUserId(),
+                command.targetPath(),
                 command.reason(),
                 command.detail()
         );
@@ -76,7 +64,8 @@ public class ReportCommandService implements ReportCommandUseCase {
                 .orElseThrow(() -> new ReportNotFoundException(reportId));
 
         // 2. 도메인 행위 호출 (isRead=true, handledAt=now, handlerAdminId 기록)
-        report.resolve(adminId);
+        // REFACT : Report.resolve()가 파라미터 없어졌으니까 adminId 가 없어져도 된다.
+        report.resolve();
 
         // 3. 변경된 상태 저장하기
         // Report 는 JPA 엔티티가 아니라 순수 도메인 객체이다. 따라서 JPA의 변경감지가 적용되지 않기 때문이다.
