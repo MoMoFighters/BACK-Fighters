@@ -26,6 +26,7 @@ public record SubmitReportRequest(
         Long reportedUserId,
 
         @Schema(description = "신고 대상 URL (nullable)", example = "/lectures/42")
+        @Size(max = 500, message = "메시지는 최대 500자 까지 가능합니다")
         String targetPath,
 
         @Schema(description = "신고 사유", example = "SPAM")

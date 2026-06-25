@@ -16,4 +16,7 @@ public interface SpringDataReportRepository extends JpaRepository<ReportJpaEntit
 
     // 처리 여부 기준 최근 N개 조회 (created_at 내림차순)
     List<ReportJpaEntity> findAllByIsResolvedOrderByCreatedAtDesc(boolean isResolved, Pageable pageable);
+
+    // reportedUserId 는 컬럼 기준으로 해당 유저가 신고 당한 내역을 전부 조회
+    List<ReportJpaEntity> findAllByReportedUserId(Long reportedUserId);
 }

@@ -85,6 +85,7 @@ public class Report {
 
     // 신고 처리 완료 (관리자 검토 후 호출)
     public void resolve() {
+        if (this.isResolved) return ; // 이미 처리된 건은 무시
         this.isResolved = true;
         this.resolvedAt = LocalDateTime.now();
     }

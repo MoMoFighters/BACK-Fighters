@@ -1,5 +1,6 @@
 package com.wanted.momocity.report.presentation.api.response;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.wanted.momocity.report.application.usecase.ReportQueryUseCase;
 import com.wanted.momocity.report.domain.model.Report;
 
