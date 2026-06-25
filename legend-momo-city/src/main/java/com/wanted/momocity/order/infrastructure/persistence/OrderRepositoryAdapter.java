@@ -1,9 +1,11 @@
 package com.wanted.momocity.order.infrastructure.persistence;
 
+import com.wanted.momocity.order.domain.exception.AlreadyOwnedException;
 import com.wanted.momocity.order.domain.model.Reason;
 import com.wanted.momocity.order.domain.model.Type;
 import com.wanted.momocity.order.domain.repositroy.OrderRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,10 +22,12 @@ public class OrderRepositoryAdapter implements OrderRepository {
     @Override
     public void makeOrder(Long userId, Reason reason, Type type, Long amount, Long itemId) {
 
-        OrderJpaEntity entity = new OrderJpaEntity(
-                userId,reason,type,amount,itemId,LocalDateTime.now()
-        );
-        springDataOrderRepository.save(entity);
+        try {
+            OrderJpaEntity entity = new OrderJpaEntity(userId, reason, type, amount, itemId, LocalDateTime.now());
+            springDataOrderRepository.save(entity);
+        } catch (DataIntegrityViolationException e) {
+            throw new AlreadyOwnedException("이미 보유한 상품입니다.");
+        }
 
     }
 

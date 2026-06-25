@@ -19,7 +19,7 @@ public class StoreJpaEntity {
     @Column
     private String url;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String name;
 
     @Column( nullable = false, updatable = false)

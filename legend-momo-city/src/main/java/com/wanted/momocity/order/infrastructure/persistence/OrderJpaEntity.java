@@ -7,7 +7,9 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name="order_history")
+@Table(name = "order_history", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"user_id", "item_id"})
+})
 public class OrderJpaEntity {
 
     @Id
