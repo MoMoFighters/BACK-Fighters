@@ -7,6 +7,7 @@ public record TeacherApplyCommand(
 
         // 강사 신청 할 때
         Long userId,
+        String currentNickname,
         String nickname,
         Category category,
         MultipartFile proof // 증빙자료 url

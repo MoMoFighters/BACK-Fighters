@@ -179,6 +179,11 @@ public class UserController {
     @Operation(
             summary = "관리자 회원 목록 조회",
             description = "파라미터 없으면 탈퇴회원 제외 전체 조회. role=STUDENT/TEACHER 또는 status=DELETED 로 필터링")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "회원 목록 조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한 없음")
+    })
     public ResponseEntity<ApiResponse<UserQueryUsecase.AdminUserListResult>> getUserList(
             @Parameter(description = "회원 역할 필터 (STUDENT / TEACHER), 없으면 전체", example = "TEACHER")
             @RequestParam(required = false) String role,
@@ -195,5 +200,32 @@ public class UserController {
                 userQueryUsecase.getAdminUserList(role, status, page, size)
         ));
     }
+
+
+    @GetMapping("/list/detail/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+            summary = "관리자 회원 1명의 정보 조회")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "회원 상세 조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
+    })
+    public ResponseEntity<ApiResponse<AdminUserDetailResponse>> getUserDetail(
+            @PathVariable Long userId
+    ){
+        AdminUserDetailResponse response = userQueryUsecase.getUserDetail(userId);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                UserResponseCode.SUCCESS,
+                UserResponseMessage.VIEW_SUCCESS,
+                response
+        ));
+
+
+    }
+
+
 
 }
