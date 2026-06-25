@@ -111,4 +111,7 @@ public interface MessageRepository {
 
     //채팅방 목록 조회 - 상대가 나간 채팅방 안내 문구 검증
     Optional<UserWithFMJpaEntity> findLatestAnnounceUser(Long roomId);
+
+    //채팅방 이름 변경 안내 문구
+    void saveRenameAnnounce(ChatRoomJpaEntity chatRoom, UserWithFMJpaEntity loginUser, String announceContent, LocalDateTime updatedAt);
 }

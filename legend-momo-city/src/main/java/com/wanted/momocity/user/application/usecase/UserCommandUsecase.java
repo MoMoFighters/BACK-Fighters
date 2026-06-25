@@ -20,4 +20,6 @@ public interface UserCommandUsecase {
     // 밤티 알림 설정
     boolean setAlarm(Long userId);
 
+    // 강사 포기
+    void teacherGiveup(Long userId);
 }

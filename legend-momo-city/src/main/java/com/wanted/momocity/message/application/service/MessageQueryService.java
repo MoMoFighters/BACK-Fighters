@@ -422,7 +422,7 @@ public class MessageQueryService implements MessageQueryUseCase {
             boolean isLeftRoom = false;
 
             // 나와의 채팅 혹은 상대방 퇴장 방 판별
-            if (targetUser.getId().equals(query.userId()) || allMembers.size() == 1) {
+            if (targetUser.getId().equals(query.userId()) && allMembers.size() == 1) {
 
                 // 목록에서 구한 최초 방 ID 조회 방식을 대용하기 위해, 메시지 역추적 진행
                 Optional<MessageJpaEntity> otherMsgOpt = messageRepository

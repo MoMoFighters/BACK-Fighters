@@ -33,8 +33,8 @@ DROP TABLE IF EXISTS `suspension_log`;
 DROP TABLE IF EXISTS `user_oauth`;
 DROP TABLE IF EXISTS `notification`;
 DROP TABLE IF EXISTS `announce_read`;
-DROP TABLE IF EXISTS `purchase_history`;
-DROP TABLE IF EXISTS `market`;
+DROP TABLE IF EXISTS `order_history`;
+DROP TABLE IF EXISTS `store`;
 DROP TABLE IF EXISTS `guestbook`;
 DROP TABLE IF EXISTS `friend`;
 DROP TABLE IF EXISTS `message_announce`;
@@ -590,35 +590,35 @@ CREATE TABLE `error_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================================
---  25. market
+--  25. store
 -- =====================================================================
-CREATE TABLE `market` (
-                          `id`         BIGINT       NOT NULL AUTO_INCREMENT,
-                          `name`       VARCHAR(500) NOT NULL,
-                          `price`      BIGINT       NOT NULL,
-                          `url`        VARCHAR(500) NOT NULL,
-                          `stock`      BIGINT       NULL,
-                          `created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                          `updated_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                          PRIMARY KEY (`id`),
-                          KEY `idx_market_created_at` (`created_at` DESC)
+CREATE TABLE `store` (
+                         `id`         BIGINT       NOT NULL AUTO_INCREMENT,
+                         `name`       VARCHAR(500) NOT NULL,
+                         `price`      BIGINT       NOT NULL,
+                         `url`        VARCHAR(500) NOT NULL,
+                         `stock`      BIGINT       NULL,
+                         `created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                         `updated_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                         PRIMARY KEY (`id`),
+                         KEY `idx_store_created_at` (`created_at` DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================================
---  25-1. purchase_history
+--  25-1. order_history
 -- =====================================================================
-CREATE TABLE `purchase_history` (
-                                    `id`         BIGINT   NOT NULL AUTO_INCREMENT,
-                                    `user_id`    BIGINT   NOT NULL,
-                                    `reason`     ENUM('COMPLETED','FRIEND','BUY')  NULL,
-                                    `type`       ENUM('GAINED','USED')              NULL,
-                                    `amount`     BIGINT   NOT NULL,
-                                    `item_id`    BIGINT   NULL,
-                                    `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                    PRIMARY KEY (`id`),
-                                    KEY `idx_purchase_user_created` (`user_id`, `created_at` DESC),
-                                    CONSTRAINT `fk_purchase_history_user`   FOREIGN KEY (`user_id`) REFERENCES `user` (`id`),
-                                    CONSTRAINT `fk_purchase_history_market` FOREIGN KEY (`item_id`) REFERENCES `market` (`id`) ON DELETE SET NULL
+CREATE TABLE `order_history` (
+                                 `id`         BIGINT   NOT NULL AUTO_INCREMENT,
+                                 `user_id`    BIGINT   NOT NULL,
+                                 `reason`     ENUM('COMPLETED','FRIEND','BUY')  NULL,
+                                 `type`       ENUM('GAINED','USED')              NULL,
+                                 `amount`     BIGINT   NOT NULL,
+                                 `item_id`    BIGINT   NULL,
+                                 `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                 PRIMARY KEY (`id`),
+                                 KEY `idx_order_user_created` (`user_id`, `created_at` DESC),
+                                 CONSTRAINT `fk_order_history_user`   FOREIGN KEY (`user_id`) REFERENCES `user` (`id`),
+                                 CONSTRAINT `fk_order_history_store` FOREIGN KEY (`item_id`) REFERENCES `store` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================================
@@ -701,9 +701,6 @@ ALTER TABLE `report`
 
 ALTER TABLE `inquiry`
     ADD CONSTRAINT `fk_inquiry_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`);
-
-ALTER TABLE `payment`
-    ADD CONSTRAINT `fk_payment_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`);
 
 SET FOREIGN_KEY_CHECKS = 1;
 

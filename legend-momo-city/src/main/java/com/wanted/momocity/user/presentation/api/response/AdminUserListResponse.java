@@ -1,36 +1,31 @@
 package com.wanted.momocity.user.presentation.api.response;
 
+import com.wanted.momocity.user.domain.model.Role;
+import com.wanted.momocity.user.domain.model.Status;
+
 import java.time.LocalDateTime;
 
 public class AdminUserListResponse {
 
-    // 학생 조회 / 기본 전체 조회
+    // 기본 회원 조회
     public record Default(
             Long id,
             String name,
-            String role,
+            Role role,
             String email,
             LocalDateTime createdAt,
-            String status
-    ) {}
-
-    // 강사조회
-    public record Teacher(
-            Long id,
-            String name,
-            String role,
-            String email,
-            LocalDateTime createdAt,
-            String status,
-            String proof
+            Status status,
+            Long suspensionCount,
+            LocalDateTime suspendedUntil
     ) {}
 
     // 탈퇴한 사용자 조회
     public record Deleted(
             Long id,
             String name,
-            String role,
+            Role role,
             String email,
-            LocalDateTime deletedAt
+            LocalDateTime deletedAt,
+            Status status
     ) {}
 }

@@ -346,4 +346,20 @@ public class CatalogMessageAdapter implements MessageRepository {
         return springDataMessageAnnounceRepository.findFirstByRoomId_IdOrderByCreatedAtDesc(roomId)
                 .map(MessageAnnounceJpaEntity::getTargetId);
     }
+
+    @Override
+    @Transactional
+    public void saveRenameAnnounce(ChatRoomJpaEntity chatRoom, UserWithFMJpaEntity loginUser, String announceContent, LocalDateTime updatedAt) {
+        log.info("[CatalogMessageAdapter] 채팅방 이름 수정 저장 시작 - 방ID:{}, 수정 주체ID: {}", chatRoom.getId(), loginUser.getId());
+        MessageAnnounceJpaEntity announce = MessageAnnounceJpaEntity.createLeaveAnnounce(
+                chatRoom,
+                loginUser,
+                announceContent,
+                "RENAME",
+                updatedAt
+        );
+        springDataMessageAnnounceRepository.save(announce);
+        log.info("[CatalogMessageAdapter] 다대다 방이름 수정 안내 문구 저장 완료 - ID: {}", announce.getId());
+
+    }
 }
