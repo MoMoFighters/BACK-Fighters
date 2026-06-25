@@ -68,9 +68,6 @@ public class TeacherLectureResponse {
             // 강의 ID
             Long lectureId,
 
-            // 강사 ID
-            Long teacherId,
-
             // 강의 제목
             String title,
 
@@ -85,9 +82,6 @@ public class TeacherLectureResponse {
 
             // 강의 상태
             String lectureStatus,
-
-            // 수강 완료 사용자 수
-            int completedUserCount,
 
             // 강의 평점 평균
             double averageRating,
@@ -115,13 +109,11 @@ public class TeacherLectureResponse {
         ) {
             return new TeacherLectureDetailResponse(
                     lecture.getId(),
-                    lecture.getTeacherId(),
                     lecture.getTitle(),
                     lecture.getDescription(),
                     lecture.getThumbnailUrl(),
                     lecture.getCategory().name(),
                     lecture.getStatus().name(),
-                    lecture.getCompletedUserCount(),
                     averageRating,
                     reviewCount,                chapters.stream()
                     .map(TeacherLectureChapterResponse::from)
