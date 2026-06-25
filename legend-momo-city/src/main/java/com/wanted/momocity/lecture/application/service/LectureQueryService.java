@@ -147,23 +147,27 @@ public class LectureQueryService implements
         List<LectureChapter> chapters =
                 chapterRepository.findAllByLectureIdOrderByOrderNoAsc(query.lectureId());
 
-        boolean isEnrolled = lectureEnrollmentQueryPort
-                .findByUserIdAndLectureId(studentId, query.lectureId())
-                .isPresent();
+        // 수강 신청 정보 조회
+        var enrollmentProgress = lectureEnrollmentQueryPort
+                // 학생 Id와 강의ID로 수강 신청 정보 조회
+                .findByUserIdAndLectureId(studentId, query.lectureId());
 
-        User teacher = loadUserPort.findById(lecture.getTeacherId())
-                .orElseThrow(() -> new LectureNotFoundException("강사 정보를 찾을 수 없습니다."));
+        // 수강 신청 정보가 있으면 true, 없으면 null
+        boolean isEnrolled = enrollmentProgress.isPresent();
+
+        // 조회된 수강 신청 정보 Optional 사용
+        Integer lectureProgress = enrollmentProgress
+                .map(LectureEnrollmentQueryPort.EnrollmentProgress::totalProgress).orElse(null);
 
         LectureReviewQueryPort.ReviewStats reviewStats = lectureReviewQueryPort.getReviewStats(lecture.getId());
 
         return StudentLectureDetailResponse.from(
                 lecture,
                 chapters,
-                teacher.getName(),
-                teacher.getProfileImageUrl(),
                 reviewStats.averageRating(),
                 reviewStats.reviewCount(),
-                isEnrolled
+                isEnrolled,
+                lectureProgress
         );
     }
 
