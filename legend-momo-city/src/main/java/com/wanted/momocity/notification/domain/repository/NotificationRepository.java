@@ -3,6 +3,7 @@ package com.wanted.momocity.notification.domain.repository;
 import com.wanted.momocity.notification.domain.model.Notification;
 import com.wanted.momocity.notification.infrastructure.persistence.NotificationJpaEntity;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface NotificationRepository {
@@ -14,4 +15,10 @@ public interface NotificationRepository {
 
     //메시지 전송 - 기존 알림 존재 여부 확인(채팅방 번호, 타입, 보낸 사람 아이디)
     Optional<Notification> findByRefIdAndTypeAndUserId_Id(Long roomId, String message, Long senderId);
+
+    //알림 목록
+    List<Object[]> findAllByUserId(Long aLong);
+
+    //알림 목록 - 방 이름
+    Optional<String> findRoomTitleById(Long roomId);
 }

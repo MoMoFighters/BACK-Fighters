@@ -5,6 +5,7 @@ import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationExc
 import com.wanted.momocity.notification.domain.model.Notification;
 import com.wanted.momocity.notification.infrastructure.persistence.NotificationJpaEntity;
 import com.wanted.momocity.notification.domain.repository.NotificationRepository;
+import com.wanted.momocity.notification.infrastructure.persistence.NotificationSideChatRoomRepository;
 import com.wanted.momocity.notification.infrastructure.persistence.NotificationSideUserRepository;
 import com.wanted.momocity.notification.infrastructure.persistence.SpringDataNotificationRepository;
 import com.wanted.momocity.user.infrastructure.persistence.SpringDataUserRepository;
@@ -13,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -24,6 +26,7 @@ public class CatalogNotificationRepositoryAdapter implements NotificationReposit
     private final SpringDataNotificationRepository springDataNotificationRepository;
     private final SpringDataUserRepository springDataUserRepository;
     private final NotificationSideUserRepository notificationSideUserRepository;
+    private final NotificationSideChatRoomRepository notificationSideChatRoomRepository;
 
     @Override
     public Notification save(Notification notification) {
@@ -60,5 +63,19 @@ public class CatalogNotificationRepositoryAdapter implements NotificationReposit
         // 실제 Spring Data JPA 리포지토리를 호출하여 엔티티를 꺼내온 뒤, 도메인 모델로 복원하여 반환합니다.
         return springDataNotificationRepository.findByRefIdAndTypeAndUserId_Id(roomId, type, senderId)
                 .map(NotificationJpaEntity::toDomain);
+    }
+
+    //알림 목록
+    @Override
+    public List<Object[]> findAllByUserId(Long userId) {
+        log.info("[CatalogNotificationRepositoryAdapter] 한 방 쿼리로 알림 및 읽음 정보 통합 로드 시작 - 유저ID: {}", userId);
+        return springDataNotificationRepository.findAllByUserId(userId);
+    }
+
+    //알림 목록 - 방 이름
+    @Override
+    public Optional<String> findRoomTitleById(Long roomId) {
+        log.info("[CatalogNotificationRepositoryAdapter] 알림용 채팅방 타이틀 조회 - 방ID: {}", roomId);
+        return notificationSideChatRoomRepository.findTitleById(roomId); return Optional.empty();
     }
 }

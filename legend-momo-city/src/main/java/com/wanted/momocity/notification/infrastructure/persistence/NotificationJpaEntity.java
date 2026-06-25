@@ -50,7 +50,7 @@ public class NotificationJpaEntity {
         entity.refId = domain.getRefId();
         entity.message = domain.getMessage();
         //추후 주석 해제
-//        entity.isRead = domain.isRead;
+        entity.isRead = domain.getIsRead();
         entity.createdAt = LocalDateTime.now();
 
         if ("MESSAGE".equals(domain.getType())) {
@@ -65,8 +65,6 @@ public class NotificationJpaEntity {
     public void updateMessageNotification(String message, LocalDateTime createdAt) {
         this.message = message;
         this.createdAt = createdAt;
-        //추후 isRead 생기면 주석 해제
-//        this.isRead = false;
         //메시지 관련 읽음 여부는 message_read 테이블로 연계
     }
 
