@@ -560,7 +560,6 @@ public class MessageCommandService implements MessageCommandUseCase {
         messageEligibilityPolicy.modifyRoomTitle(command.roomId(), command.userId(), command.roomTitle(), chatRoom, members);
 
         chatRoom.updateRoomTitle(command.roomTitle());
-        messageRepository.saveChatRoom(chatRoom);
 
         //message_announce 테이블에 행 추가
         String announceContent = String.format("%s님이 채팅방 이름을 [%s](으)로 변경했습니다.", loginUser.getNickname(), chatRoom.getRoomTitle());
@@ -577,6 +576,77 @@ public class MessageCommandService implements MessageCommandUseCase {
                 loginUser.getRole(),
                 chatRoom.getRoomTitle(),
                 chatRoom.getUpdatedAt()
+        );
+    }
+
+    //다대다 채팅방 멤버 초대하기
+    @Transactional
+    public InviteRoomMemberView inviteRoomMemberCommandHandle(InviteRoomMemberCommand command) {
+        // 본인 초대 불가
+        // 로그인 유저(초대 주체)와 초대 대상자들이 친구인지 검증, 일대일인지 확인, 중복 멤버 확인
+        //컨트롤러에 string 처리한 초대 대상자들 닉네임 가공해서 넘기기
+
+        UserWithFMJpaEntity loginUser = messageRepository.findUserWithFMById(command.userId())
+                .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 사용자입니다."));
+
+        ChatRoomJpaEntity chatRoom = messageRepository.findChatRoomById(command.roomId())
+                .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 채팅방입니다."));
+
+        //기본 검증(접근 권한, 중복 사용자)
+        messageEligibilityPolicy.validateBeforeLoop(chatRoom, command.userId(), command.chatMember());
+
+        // 초대 대상자들 존재 확인
+        List<UserWithFMJpaEntity> invitees = new ArrayList<>();
+        for (Long memberId : command.chatMember()) {
+            //존재하지 않는 사용자가 포함됨
+            UserWithFMJpaEntity invitee = messageRepository.findUserWithFMById(memberId)
+                    .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 사용자가 포함되어 있어 초대할 수 없습니다."));
+
+            //초대 대상자가 이미 멤버인지 여부
+            boolean isExistMember = messageRepository.existsMemberByRoomIdAndUserId(command.roomId(), memberId);
+
+            //초대 대상자에 로그인 유저 포함 여부
+            boolean hasMe = invitee.getId().equals(command.userId());
+
+            //초대 멤버 role 학생 아닌지 여부(관리자, 강사)
+            boolean isNotStudent = !"STUDENT".equals(invitee.getRole());
+
+            //초대 대상자들과 로그인 유저가 친구인지 여부
+            String friendStatus = messageRepository.findFriendRelation(command.userId(), invitee.getId())
+                    .map(FriendJpaEntity::getStatus)
+                    .orElse("none");
+
+            //정책 위임
+            messageEligibilityPolicy.inviteRoomMember(chatRoom, command.userId(), command.chatMember(), hasMe, friendStatus, isExistMember, isNotStudent);
+
+            invitees.add(invitee);
+
+            //초대한 멤버들 저장
+            messageRepository.saveInviteChatRoomMember(chatRoom, invitee, LocalDateTime.now());
+        }
+
+        //컨트롤러에 필요한 초대된 멤버들 닉네임 가공
+        List<String> nicknames = invitees.stream()
+                .map(UserWithFMJpaEntity::getNickname)
+                .toList();
+        String invitedUserNicknames = String.join(",", nicknames);
+
+        //message_announce 테이블에 행 추가
+        String inviteMessage = String.format("%s님이 %s님을 초대했습니다.", loginUser.getNickname(), invitedUserNicknames);
+        messageRepository.saveInviteAnnounce(
+                chatRoom,
+                loginUser,
+                inviteMessage,
+                LocalDateTime.now());
+
+        return new InviteRoomMemberView(
+                chatRoom.getId(),
+                chatRoom.getRoomTitle(),
+                loginUser.getId(),
+                loginUser.getNickname(),
+                loginUser.getRole(), // 예: STUDENT
+                chatRoom.getUpdatedAt(),
+                invitedUserNicknames
         );
     }
 }

@@ -74,4 +74,17 @@ public interface MessageCommandUseCase {
             String roomTitle,
             LocalDateTime createdAt
     ) {}
+
+    //멤버 초대하기(다대다)
+    InviteRoomMemberView inviteRoomMemberCommandHandle(InviteRoomMemberCommand command);
+
+    record InviteRoomMemberView(
+            Long roomId,
+            String roomTitle,
+            Long userId, //초대 주체
+            String nickname, //초대 주체
+            String role,
+            LocalDateTime joinedAt, //초대한 시간
+            String invitedUserNicknames
+    ) {}
 }

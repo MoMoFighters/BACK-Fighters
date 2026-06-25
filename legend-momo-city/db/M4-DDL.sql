@@ -432,7 +432,7 @@ CREATE TABLE `guestbook` (
 CREATE TABLE `notification` (
                                 `id`         BIGINT       NOT NULL AUTO_INCREMENT,
                                 `user_id`    BIGINT       NULL,
-                                `type`       ENUM('NOTICE','APPROVAL','REPORT','FRIEND_REQUEST','MESSAGE','GUESTBOOK','POST','CALENDAR') NOT NULL,
+                                `type`       ENUM('APPROVAL','REPORT','FRIEND_REQUEST','MESSAGE','GUESTBOOK','POST','CALENDAR') NOT NULL,
                                 `ref_id`     BIGINT       NULL,
                                 `message`    VARCHAR(500) NOT NULL,
                                 `is_read`    BOOLEAN      NOT NULL DEFAULT FALSE,
@@ -440,24 +440,6 @@ CREATE TABLE `notification` (
                                 PRIMARY KEY (`id`),
                                 KEY `idx_notification_user` (`user_id`),
                                 KEY `idx_notification_type` (`type`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- =====================================================================
---  17-1. announce_read
--- =====================================================================
-CREATE TABLE `announce_read` (
-                                 `id`         BIGINT       NOT NULL AUTO_INCREMENT,
-                                 `announ_id`  BIGINT       NOT NULL,
-                                 `user_id`    BIGINT       NOT NULL,
-                                 `created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                 PRIMARY KEY (`id`),
-                                 KEY `idx_announce_read_user` (`user_id`),
-                                 KEY `idx_announce_read_announ` (`announ_id`),
-                                 UNIQUE KEY `udx_user_announ` (`user_id`, `announ_id`),
-
-    -- 기존에 해오시던 방식대로 외래키 조건 추가
-                                 CONSTRAINT `fk_announce_read_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`),
-                                 CONSTRAINT `fk_announce_read_announ` FOREIGN KEY (`announ_id`) REFERENCES `notification` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================================
