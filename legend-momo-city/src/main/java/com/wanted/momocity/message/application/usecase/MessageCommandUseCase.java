@@ -1,9 +1,6 @@
 package com.wanted.momocity.message.application.usecase;
 
-import com.wanted.momocity.message.application.command.CreateChatRoomCommand;
-import com.wanted.momocity.message.application.command.LeaveChatRoomCommand;
-import com.wanted.momocity.message.application.command.ReadMessageCommand;
-import com.wanted.momocity.message.application.command.SendMessageCommand;
+import com.wanted.momocity.message.application.command.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -64,5 +61,17 @@ public interface MessageCommandUseCase {
             String nickname, //남겨진 사람 닉네임
             String role,
             String status
+    ) {}
+
+    //채팅방 이름 변경
+    ModifyRoomTitleView modifyRoomTitleCommandHandle(ModifyRoomTitleCommand command);
+
+    record ModifyRoomTitleView(
+            Long roomId,
+            Long userId,
+            String nickname, //바꾼 주체 닉네임
+            String role,
+            String roomTitle,
+            LocalDateTime createdAt
     ) {}
 }

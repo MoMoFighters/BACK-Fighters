@@ -7,6 +7,7 @@ import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 
 import com.wanted.momocity.message.domain.repository.MessageRepository;
+import com.wanted.momocity.message.infrastructure.persistence.ChatRoomJpaEntity;
 import com.wanted.momocity.message.infrastructure.persistence.ChatRoomMemberJpaEntity;
 import com.wanted.momocity.message.infrastructure.persistence.SpringDataChatRoomMemberRepository;
 
@@ -209,6 +210,45 @@ public class MessageEligibilityPolicy {
         if (hasTeacherInRoom) {
             log.warn("[MessageEligibilityPolicy] 강사가 포함된 대화창은 퇴장할 수 없습니다. 요청 유저: {}, 방ID: {}", userId, roomId);
             throw new FMBusinessRuleViolationException("해당 채팅방을 나갈 권한이 없습니다. (강사와의 채팅방은 퇴장 불가)");
+        }
+    }
+
+    //채팅방 이름 변경(다대다)
+    public void modifyRoomTitle(Long roomId, Long userId, String newRoomTitle, ChatRoomJpaEntity chatRoom, List<ChatRoomMemberJpaEntity> members) {
+
+        //해당 방에 멤버인지 권한 확인
+        if (!messageRepository.existsMemberByRoomIdAndUserId(roomId, userId)) {
+            log.warn("[MessageEligibilityPolicy] 채팅방 이름 변경 실패 - 해당 방 멤버가 아님. 방ID:{}, 유저ID:{}", roomId, userId);
+            throw new FMResourceAccessDeniedException("해당 채팅방에 접근할 권한이 없습니다.");
+        }
+        //접근 권한, 다대다 아님, 똑같은 이름, 빈 값, 20자 제한
+        //해당 채팅방이 다대다가 아님
+        //방 이름 없음(일대일)
+        boolean isOneToOne = chatRoom.getRoomTitle() == null || chatRoom.getRoomTitle().trim().isEmpty();
+        //방 멤버수
+        long inMemberCount = members.size();
+        //다대다 아닌 경우: 채팅방 이름이 없는 일대일 방이면서 멤버가 3명 미만
+        if (isOneToOne && inMemberCount < 3) {
+            log.warn("[MessageEligibilityPolicy] 채팅방 이름 변경 실패 - 다대다 채팅방이 아님. 방ID:{}, 멤버수:{}", roomId, inMemberCount);
+            throw new FMBusinessRuleViolationException("해당 채팅방은 채팅방 이름을 설정할 수 없습니다.(단체 채팅방에 한해서 수정 가능)");
+        }
+
+        //빈 값 입력
+        if (newRoomTitle == null || newRoomTitle.trim().isEmpty()) {
+            log.warn("[MessageEligibilityPolicy] 채팅방 이름 변경 실패 - 공백 입력 시도");
+            throw new FMBusinessRuleViolationException("방 제목은 공백일 수 없습니다.");
+        }
+
+        //20자 제한
+        if (newRoomTitle.length() > 20) {
+            log.warn("[MessageEligibilityPolicy] 채팅방 이름 변경 실패 - 20자 제한 초과 입력. 입력된 글자수: {}", newRoomTitle.length());
+            throw new FMBusinessRuleViolationException("방 제목은 최대 20자까지 가능합니다.");
+        }
+
+        //기존 방 이름과 동일
+        if (newRoomTitle.equals(chatRoom.getRoomTitle())) {
+            log.warn("[MessageEligibilityPolicy] 채팅방 이름 변경 실패 - 변동 사항 없음. 기존: {}, 입력: {}", newRoomTitle, chatRoom.getRoomTitle());
+            throw new FMBusinessRuleViolationException("변경 사항이 없어 수정되지 않습니다.");
         }
     }
 }
