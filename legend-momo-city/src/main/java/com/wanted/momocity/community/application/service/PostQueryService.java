@@ -186,11 +186,11 @@ public class PostQueryService implements PostQueryUseCase {
                             ? replies.get(replies.size() - 1).getId()
                             : null;
 
-                    List<CommentResponse> replyResponses = replies.stream()
+                    List<ReplyResponse> replyResponses = replies.stream()
                             .map(r -> {
                                 User replyAuthor = userInfoPort.findById(r.getUserId())
                                         .orElseThrow(() -> new CommunityNotFoundException("사용자를 찾을 수 없습니다."));
-                                return new CommentResponse(
+                                return new ReplyResponse(
                                         r.getId(),
                                         r.getUserId(),
                                         r.getContent(),
@@ -199,10 +199,7 @@ public class PostQueryService implements PostQueryUseCase {
                                         replyAuthor.getRole().name(),
                                         r.getUserId().equals(userId),
                                         r.getUserId().equals(post.getUserId()),
-                                        r.getCreatedAt(),
-                                        List.of(),
-                                        false,
-                                        null
+                                        r.getCreatedAt()
                                 );
                             })
                             .toList();
@@ -246,7 +243,7 @@ public class PostQueryService implements PostQueryUseCase {
      * */
 
     @Override
-    public PostCommentResponse getReplies(Long userId, Long postId, Long commentId, Long cursor, int size) {
+    public PostReplyResponse getReplies(Long userId, Long postId, Long commentId, Long cursor, int size) {
         // 게시글 작성자 확인용
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CommunityNotFoundException("게시글을 찾을 수 없습니다."));
@@ -260,11 +257,11 @@ public class PostQueryService implements PostQueryUseCase {
         List<Comment> replies = commentRepository
                 .findRepliesByCommentIdWithCursor(commentId, cursor, size);
 
-        List<CommentResponse> replyResponses = replies.stream()
+        List<ReplyResponse> replyResponses = replies.stream()
                 .map(r -> {
                     User replyAuthor = userInfoPort.findById(r.getUserId())
                             .orElseThrow(() -> new CommunityNotFoundException("사용자를 찾을 수 없습니다."));
-                    return new CommentResponse(
+                    return new ReplyResponse(
                             r.getId(),
                             r.getUserId(),
                             r.getContent(),
@@ -273,10 +270,7 @@ public class PostQueryService implements PostQueryUseCase {
                             replyAuthor.getRole().name(),
                             r.getUserId().equals(userId),
                             r.getUserId().equals(post.getUserId()),
-                            r.getCreatedAt(),
-                            List.of(),
-                            false,
-                            null
+                            r.getCreatedAt()
                     );
                 })
                 .toList();
@@ -287,7 +281,7 @@ public class PostQueryService implements PostQueryUseCase {
 
         log.info("[Community] 대댓글 조회 완료 | commentId={}, totalCount={}", commentId, totalCount);
 
-        return new PostCommentResponse(totalCount, replyResponses, nextCursor);
+        return new PostReplyResponse(totalCount, replyResponses, nextCursor);
 
     }
 
