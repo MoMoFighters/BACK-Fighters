@@ -61,7 +61,6 @@ public interface CommentJpaRepository extends JpaRepository<CommentJpaEntity, Lo
 
     @Query("""
         SELECT DISTINCT c FROM CommentJpaEntity c
-        LEFT JOIN FETCH c.replies r
         WHERE c.postId = :postId
         AND c.parentId IS NULL
         AND c.deletedAt IS NULL
