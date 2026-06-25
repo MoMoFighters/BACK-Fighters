@@ -59,6 +59,7 @@ public class CommentRepositoryAdapter implements CommentRepository {
                 ));
     }
 
+    // 커서 기반 댓글 목록 조회
     @Override
     public List<Comment> findByPostIdWithCursor(Long postId, Long cursor, int size) {
         return commentJpaRepository.findByPostIdWithCursor(
