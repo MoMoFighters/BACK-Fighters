@@ -35,7 +35,7 @@ public class AdminReportController {
     @GetMapping
     @Operation(
             summary = "관리자 신고 목록 조회",
-            description = "최근 N개의 신고를 조회한다. isRead 파라미터로 읽음 여부 필터링 가능"
+            description = "최근 N개의 신고를 조회한다. isResolved 파라미터로 처리 여부 필터링 가능"
     )
     // Swagger 구성하기 위한 코드
     @ApiResponses({
@@ -49,13 +49,13 @@ public class AdminReportController {
     public ResponseEntity<ApiResponse<ReportListResponse>> getReports(
             @Parameter(description = "조회할 최대 개수", example = "10")
             @RequestParam(defaultValue = "10") int limit,
-            @Parameter(description = "읽음 여부 필터 (선택, false=미읽음, true=읽음)", example = "false")
-            @RequestParam(required = false) Boolean isRead
+            @Parameter(description = "처리 여부 필터 (선택, false=미처리, true=처리완료)", example = "false")
+            @RequestParam(required = false) Boolean isResolved
     ) {
-        // 1. isRead 유무에 따라 UseCase 메서드 선택
-        ReportQueryUseCase.ReportList list = (isRead == null)
+        // 1. isResolved 유무에 따라 UseCase 메서드 선택
+        ReportQueryUseCase.ReportList list = (isResolved == null)
                 ? reportQueryUseCase.getRecent(limit)
-                : reportQueryUseCase.getByIsRead(isRead, limit);
+                : reportQueryUseCase.getByIsResolved(isResolved, limit);
 
         // 2. UseCase 출력 → 응답 DTO 변환
         ReportListResponse response = ReportListResponse.from(list);

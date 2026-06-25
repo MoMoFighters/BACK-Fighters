@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 
 /* comment.
     MS-2 신고 상세 조회 응답용 DTO. ReportListResponse.Item 과 다르게
-    handledAt(처리 시각), handlerAdminId(처리자) 두 필드가 추가되게 된다.
+    resolved(처리 시각) 이 추가된 형태이다.
  */
 
 public record ReportDetailResponse(
@@ -16,9 +16,9 @@ public record ReportDetailResponse(
         Long targetId,
         String reason,
         String detail,
-        boolean isRead,
-        LocalDateTime reportedAt,
-        LocalDateTime handledAt
+        boolean isResolved,
+        LocalDateTime createdAt,
+        LocalDateTime resolvedAt
 ) {
 
     public static ReportDetailResponse from(Report report) {
