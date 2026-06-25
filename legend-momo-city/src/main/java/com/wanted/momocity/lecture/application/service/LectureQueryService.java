@@ -7,12 +7,7 @@ import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationExc
 import com.wanted.momocity.lecture.application.port.LectureEnrollmentQueryPort;
 import com.wanted.momocity.lecture.application.port.LectureReviewQueryPort;
 import com.wanted.momocity.lecture.application.port.TeacherAccountPort;
-import com.wanted.momocity.lecture.application.query.LectureQuery.GetAdminLectureDetailQuery;
-import com.wanted.momocity.lecture.application.query.LectureQuery.GetAdminLecturesQuery;
-import com.wanted.momocity.lecture.application.query.LectureQuery.GetLecturesQuery;
-import com.wanted.momocity.lecture.application.query.LectureQuery.GetStudentLectureDetailQuery;
-import com.wanted.momocity.lecture.application.query.LectureQuery.GetTeacherLectureDetailQuery;
-import com.wanted.momocity.lecture.application.query.LectureQuery.GetTeacherLecturesQuery;
+import com.wanted.momocity.lecture.application.query.LectureQuery.*;
 import com.wanted.momocity.lecture.application.usecase.LectureQueryUseCases.AdminLectureQueryUseCase;
 import com.wanted.momocity.lecture.application.usecase.LectureQueryUseCases.LectureQueryUseCase;
 import com.wanted.momocity.lecture.domain.exception.LectureNotFoundException;
@@ -36,6 +31,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 강의 조회 기능을 처리하는 Application Service.
@@ -115,8 +111,16 @@ public class LectureQueryService implements
 
         Long finalStudentId = studentId;
 
-        List<StudentLectureListItemResponse> content = lecturePage.content().stream()
-                .map(lecture -> toStudentListItemResponse(lecture, finalStudentId))
+        // 현재 페이지 강의들의 리뷰 통계를 한 번에 조회
+        Map<Long, LectureReviewQueryPort.ReviewStats> reviewStatsMap = lectureReviewQueryPort.getReviewStatsMap(
+                lecturePage.content().stream()
+                        // 강의 Id만 추출
+                        .map(LectureAggregate::getId)
+                        .toList()
+        );
+
+        List<StudentLectureListItemResponse> content = lecturePage.content().stream() // 현재 페이지 강의 목록을 스트림으로 변환
+                .map(lecture -> toStudentListItemResponse(lecture, finalStudentId, reviewStatsMap)) // 리뷰 통계 Map을 함께 넘겨 응답 DTO 생성
                 .toList();
 
         return new StudentLecturePageResponse(
@@ -166,6 +170,7 @@ public class LectureQueryService implements
     // 강사 기준 본인 강의 목록 조회.
     @Override
     public TeacherLecturePageResponse getTeacherLectures(GetTeacherLecturesQuery query) {
+
         Long teacherId = teacherAccountPort.getTeacherId(query.teacherId());
 
         var lecturePage = lectureRepository.findTeacherLectures(
@@ -176,11 +181,20 @@ public class LectureQueryService implements
                 query.size()
         );
 
+        Map<Long, LectureReviewQueryPort.ReviewStats> reviewStatsMap = lectureReviewQueryPort.getReviewStatsMap(
+                lecturePage.content().stream()
+                        .map(LectureAggregate::getId)
+                        .toList()
+        );
+
         // 현재 페이지 강의 목록 스트림
         List<TeacherLectureListItemResponse> content = lecturePage.content().stream()
                 .map(lecture -> {
                     // 해당 강의의 평균 평점과 수강평 개수 조회
-                    LectureReviewQueryPort.ReviewStats reviewStats = lectureReviewQueryPort.getReviewStats(lecture.getId());
+                    LectureReviewQueryPort.ReviewStats reviewStats = reviewStatsMap.getOrDefault(
+                            lecture.getId(),
+                            new LectureReviewQueryPort.ReviewStats(0.0, 0)
+                    );
 
                     // 강사 강의 목록 아이템 응답 DTO
                     return TeacherLectureListItemResponse.from(
@@ -241,9 +255,18 @@ public class LectureQueryService implements
                 query.size()
         );
 
+        Map<Long, LectureReviewQueryPort.ReviewStats> reviewStatsMap = lectureReviewQueryPort.getReviewStatsMap(
+                lecturePage.content().stream()
+                        .map(LectureAggregate::getId)
+                        .toList()
+        );
+
         List<AdminLectureListItemResponse> content = lecturePage.content().stream()
                 .map(lecture -> {
-                    LectureReviewQueryPort.ReviewStats reviewStats = lectureReviewQueryPort.getReviewStats(lecture.getId());
+                    LectureReviewQueryPort.ReviewStats reviewStats = reviewStatsMap.getOrDefault(
+                            lecture.getId(),
+                            new LectureReviewQueryPort.ReviewStats(0.0, 0)
+                    );
 
                     return  AdminLectureListItemResponse.from(
                             lecture,
@@ -302,11 +325,18 @@ public class LectureQueryService implements
     // 학생 강의 목록용 응답 객체로 변환
     private StudentLectureListItemResponse toStudentListItemResponse(
             LectureAggregate lecture,
-            Long studentId
+            Long studentId,
+            Map<Long, LectureReviewQueryPort.ReviewStats> reviewStatsMap
     ) {
 
         // 강의평 관련 (강의 평점 평균, 강의평 개수)
-        LectureReviewQueryPort.ReviewStats reviewStats = lectureReviewQueryPort.getReviewStats(lecture.getId());
+        // 현재 강의 ID에 대해 해당하는 리뷰 통계 조회
+        // getOrDefault : 보통 값을 가지고 오지만 , 없다면 기본값을 사용
+        LectureReviewQueryPort.ReviewStats reviewStats = reviewStatsMap.getOrDefault(
+                lecture.getId(),
+                // 리뷰가 없다면 기본값 사용
+                new LectureReviewQueryPort.ReviewStats(0.0, 0)
+        );
         double averageRating = reviewStats.averageRating();
         int reviewCount = reviewStats.reviewCount();
 
