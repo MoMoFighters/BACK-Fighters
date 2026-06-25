@@ -39,4 +39,11 @@ public class StoreJpaEntity {
         return new Store(id, price, url, name, createdAt);
     }
 
+    public Long getId() {
+        return id;
+    }
+
+    public Long getPrice() {
+        return price;
+    }
 }

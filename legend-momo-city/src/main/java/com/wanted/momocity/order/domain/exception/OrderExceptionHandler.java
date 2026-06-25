@@ -1,11 +1,13 @@
 package com.wanted.momocity.order.domain.exception;
 
 import com.wanted.momocity.global.presentation.api.common.ApiErrorResponse;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+@Order(0)
 @RestControllerAdvice
 public class OrderExceptionHandler {
 

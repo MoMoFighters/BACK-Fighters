@@ -6,8 +6,7 @@ import com.wanted.momocity.order.domain.model.Type;
 public record MakeOrderCommand(
         Long userId,
         Reason reason,
-        Long itemId,
-        Long amount
+        String itemName
 ) {
     public Type type() { return Type.USED; }
 }

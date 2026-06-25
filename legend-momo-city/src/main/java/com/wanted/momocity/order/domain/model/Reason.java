@@ -1,5 +1,5 @@
 package com.wanted.momocity.order.domain.model;
 
 public enum Reason {
-    COMPLETE, REVIEW, PROFILE, FRIEND, BUS, GUESTBOOK,
+    COMPLETE, REVIEW, PROFILE, BUS, GUESTBOOK,
 }

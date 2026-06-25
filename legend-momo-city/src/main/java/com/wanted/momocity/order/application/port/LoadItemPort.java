@@ -1,7 +1,9 @@
 package com.wanted.momocity.order.application.port;
 
+import com.wanted.momocity.order.domain.model.CheckItem;
+
 public interface LoadItemPort {
 
-    // 해당 상품이 실제로 있는지 판단
-    boolean isRealItem(Long itemId);
+    // 아이템 이름으로 id찾기
+    CheckItem findByName(String itemName);
 }
