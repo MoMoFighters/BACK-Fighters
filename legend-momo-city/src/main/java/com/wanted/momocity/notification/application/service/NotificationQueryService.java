@@ -6,6 +6,7 @@ import com.wanted.momocity.message.infrastructure.persistence.MessageReadJpaEnti
 import com.wanted.momocity.notification.application.manager.NotificationSessionManager;
 import com.wanted.momocity.notification.application.query.GetMainTotalCountsQuery;
 import com.wanted.momocity.notification.application.query.GetNotificationQuery;
+import com.wanted.momocity.notification.application.query.GetPhoneAppCountsQuery;
 import com.wanted.momocity.notification.application.usecase.NotificationQueryUseCase;
 import com.wanted.momocity.notification.domain.repository.NotificationRepository;
 import com.wanted.momocity.notification.infrastructure.persistence.NotificationJpaEntity;
@@ -38,7 +39,7 @@ public class NotificationQueryService implements NotificationQueryUseCase {
             return Collections.emptyList();
         }
 
-        log.info("[NotificationQueryService] 알림 목록 조회 시작 - 유저ID:{}", query.userId());
+        log.info("[GetNotificationQueryService] 알림 목록 조회 시작 - 유저ID:{}", query.userId());
 
         // 1. 개발자님이 완성하신 명칭과 조인 쿼리로 DB에서 데이터를 싹 들고옵니다.
         List<Object[]> rawLogs = notificationRepository.findAllByUserId(query.userId());
@@ -97,7 +98,7 @@ public class NotificationQueryService implements NotificationQueryUseCase {
             // DB에서 룸 타이틀 조회
             String roomTitle = notificationRepository.findRoomTitleById(roomId).orElse(null);
             // 🚨 [문구 가공]: notification 테이블의 userId(발신자)를 꺼내서 닉네임들을 조립
-            String finalCombinedMessage;
+            String finalCombinedMessage = latestNoti.getMessage();
             if (roomRows.size() > 1) {
                 //다대다이면서 발신인 1명 이상
                 if (!(roomTitle == null || roomTitle.isEmpty())) {
@@ -109,19 +110,9 @@ public class NotificationQueryService implements NotificationQueryUseCase {
                         // 딱 2명일 때: [방이름] 누구, 누구님이 메시지를 보냈습니다.
                         String topSenders = String.join(", ", senders);
                         finalCombinedMessage = String.format("[%s] %s님이 메시지를 보냈습니다.", roomTitle, topSenders);
-                    } else {
-                        // 🌟 [버그 해결]: 다대다 방인데 쌓인 알림이 1개거나 발신자가 1명인 경우
-                        // [방이름] 누구님이 메시지를 보냈습니다. (혹은 최신 메시지 내용 노출)
-                        finalCombinedMessage = String.format("[%s] %s", roomTitle, latestNoti.getMessage());
                     }
-                } else {
-                    // 2) 일대일 방이거나 한 명이 연속으로 보낸 경우 -> 원래 세팅된 메시지 포맷 그대로 유지
-                    finalCombinedMessage = latestNoti.getMessage();
                 }
-            } else {
-                // 🌟 [버그 수정 포인트 1]: 알림 행이 딱 1개 왔을 때는 가공하지 않고 원본 포맷 적용
-                finalCombinedMessage = latestNoti.getMessage();
-            } // 👈 [버그 수정 포인트 2]: if (roomRows.size() > 1) 조건문 단추를 여기서 확실하게 닫아줍니다!
+            }
 
 
             // 한 줄로 압축 완성된 메시지 알림을 최종 결과창에 골인
@@ -148,7 +139,7 @@ public class NotificationQueryService implements NotificationQueryUseCase {
     //메인페이지 종 총 알림 개수
     @Override
     public MainTotalCountsView getMainTotalCountsQueryHandle(GetMainTotalCountsQuery query) {
-        log.info("[NotificationQueryService] 전체 알림 개수 조회 시작 - 유저ID:{}", query.userId());
+        log.info("[GetMainTotalCountsQueryService] 전체 알림 개수 조회 시작 - 유저ID:{}", query.userId());
 
         // 1. 일반 알림(MESSAGE 제외) 중 안 읽은 개수 (α)
         long generalCount = notificationRepository.countUnreadGeneral(query.userId());
@@ -165,8 +156,44 @@ public class NotificationQueryService implements NotificationQueryUseCase {
         messagingTemplate.convertAndSendToUser(query.userId().toString(), "/sub/notice/total-counts", response);
         log.info("[알림 쿼리 웹소켓] 유저 {}번에게 안읽은 총 알림 개수({}) 실시간 전송 완료", query.userId(), totalCount);
 
-        log.info("[NotificationQueryService] 조회 완료 - 일반 알림 줄수: {}, 메시지 안읽은 방수: {}, 총 배지수: {}",
+        log.info("[GetMainTotalCountsQueryService] 조회 완료 - 일반 알림 줄수: {}, 메시지 안읽은 방수: {}, 총 배지수: {}",
                 generalCount, messageRoomCount, totalCount);
         return new MainTotalCountsView(totalCount);
+    }
+
+    //휴대폰 속 앱별 알림 개수(친구+메시지, 캘린더, 커뮤니티)
+    @Override
+    public PhoneAppCountsView getPhoneAppCountsQueryHandle(GetPhoneAppCountsQuery query) {
+        log.info("[GetPhoneAppCountsQueryService] 휴대폰 속 앱별 알림 개수 실제 DB 조회 시작 - 유저ID:{}", query.userId());
+
+        Long userId = query.userId();
+
+        // 1. 캘린더 알림 개수 (type = 'CALENDAR' 이면서 내 것)
+        long calendarCount = notificationRepository.countByUserIdAndType(userId, "CALENDAR");
+
+        // 2. 커뮤니티 알림 개수 (type = 'POST' 이면서 내 것)
+        long communityCount = notificationRepository.countByUserIdAndType(userId, "POST");
+
+        // 3. 친구 요청 알림 개수 (type = 'FRIEND_REQUEST' 이면서 내 것)
+        long friendRequestCount = notificationRepository.countByUserIdAndType(userId, "FRIEND_REQUEST");
+
+        // 4. 🔥 안 읽은 메시지 전체 개수 (message_read 테이블에서 isMsgRead = false 인 건수)
+        // 💡 룸 개수가 아니라 '쌓인 메시지 총 개수'를 가져오는 포트/어댑터 메서드로 매핑합니다.
+        long totalUnreadMessageCount = notificationRepository.countTotalUnreadMessages(userId);
+
+        // 5. 최종 메시지 + 친구 요청 합산
+        long totalMsgFriendCount = totalUnreadMessageCount + friendRequestCount;
+
+        log.info("[GetPhoneAppCountsQueryService] 앱별 알림 조회 완료 -> 메시지(총 {}건)+친구({}건): {}, 캘린더: {}, 커뮤니티: {}",
+                totalUnreadMessageCount, friendRequestCount, totalMsgFriendCount, calendarCount, communityCount);
+
+        // 🎯 [반환 객체 생성 및 변수 통일]
+        PhoneAppCountsView response = new PhoneAppCountsView(totalMsgFriendCount, calendarCount, communityCount);
+
+        // 🎯 [핵심 웹소켓 실시간 발송]: 정형화된 채널 주소(/sub/notice/app-counts)로 가공 데이터를 브로드캐스팅합니다.
+        messagingTemplate.convertAndSendToUser(userId.toString(), "/sub/notice/app-counts", response);
+        log.info("[알림 쿼리 웹소켓] 유저 {}번에게 각 휴대폰 앱별 안읽은 알림 데이터 실시간 전송 완료", userId);
+
+        return response;
     }
 }

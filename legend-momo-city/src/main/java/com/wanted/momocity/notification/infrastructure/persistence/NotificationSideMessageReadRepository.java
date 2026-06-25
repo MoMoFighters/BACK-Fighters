@@ -15,4 +15,8 @@ public interface NotificationSideMessageReadRepository extends JpaRepository<Mes
             "AND mr.isNotiRead = false " +
             "AND mr.isDeleted = false")
     long countUnreadMessageRooms(@Param("userId") Long userId);
+
+    //휴대폰 속 앱별 알림 개수(메시지) - isMsgRead가 false인 것.
+    @Query("SELECT COUNT(mr) FROM MessageReadJpaEntity mr WHERE mr.userId.id = :userId AND mr.isMsgRead = false")
+    long countByUserIdAndIsMsgReadFalse(@Param("userId") Long userId);
 }

@@ -27,4 +27,10 @@ public interface NotificationRepository {
 
     //(메인 페이지 종)안읽고 삭제하지 않은 메시지의 채팅방 개수
     long countUnreadMessageRooms(Long userId);
+
+    //휴대폰 속 앱별 알림 개수(캘린더, 커뮤니티, 친구)
+    long countByUserIdAndType(Long userId, String type);
+
+    //휴대폰 속 앱별 알림 개수(메시지)
+    long countTotalUnreadMessages(Long userId);
 }

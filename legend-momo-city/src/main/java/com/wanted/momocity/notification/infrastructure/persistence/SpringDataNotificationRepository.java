@@ -28,4 +28,8 @@ public interface SpringDataNotificationRepository extends JpaRepository<Notifica
             "AND n.type != 'MESSAGE' " +
             "AND n.isRead = false")
     long countUnreadGeneralNotifications(@Param("userId") Long userId);
+
+    //휴대폰 속 앱별 알림 개수(캘린더, 커뮤니티, 친구)
+    @Query("SELECT COUNT(n) FROM NotificationJpaEntity n WHERE n.userId.id = :userId AND n.type = :type AND n.isRead = false")
+    long countByUserIdAndType(@Param("userId") Long userId, @Param("type") String type);
 }

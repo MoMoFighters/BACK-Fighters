@@ -2,6 +2,8 @@ package com.wanted.momocity.notification.application.usecase;
 
 import com.wanted.momocity.notification.application.query.GetMainTotalCountsQuery;
 import com.wanted.momocity.notification.application.query.GetNotificationQuery;
+import com.wanted.momocity.notification.application.query.GetPhoneAppCountsQuery;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -25,5 +27,14 @@ public interface NotificationQueryUseCase {
 
     record MainTotalCountsView(
             Long totalCount
+    ) {}
+
+    //휴대폰 속 앱별 알림 개수
+    PhoneAppCountsView getPhoneAppCountsQueryHandle(GetPhoneAppCountsQuery query);
+
+    record PhoneAppCountsView(
+            Long totalMsgFriendCount,
+            Long calendarCount,
+            Long communityCount
     ) {}
 }

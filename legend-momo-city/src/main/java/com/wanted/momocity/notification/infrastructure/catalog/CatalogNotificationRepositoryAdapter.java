@@ -88,4 +88,16 @@ public class CatalogNotificationRepositoryAdapter implements NotificationReposit
     public long countUnreadMessageRooms(Long userId) {
         return notificationSideMessageReadRepository.countUnreadMessageRooms(userId);
     }
+
+    //휴대폰 속 앱별 알림 개수(캘린더, 커뮤니티, 친구)
+    @Override
+    public long countByUserIdAndType(Long userId, String type) {
+        return springDataNotificationRepository.countByUserIdAndType(userId, type);
+    }
+
+    //휴대폰 속 앱별 알림 개수(메시지)
+    @Override
+    public long countTotalUnreadMessages(Long userId) {
+        return notificationSideMessageReadRepository.countByUserIdAndIsMsgReadFalse(userId);
+    }
 }

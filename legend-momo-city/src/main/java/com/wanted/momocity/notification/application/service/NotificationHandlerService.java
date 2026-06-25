@@ -90,7 +90,7 @@ public class NotificationHandlerService {
         if (roomTitle == null || roomTitle.isEmpty()) {
             message = String.format("%s님이 메시지를 보냈습니다.", senderNickname);
         } else {
-            message = String.format("'%s' 대화창에 %s님이 메시지를 보냈습니다.", roomTitle, senderNickname);
+            message = String.format("[%s] %s님이 메시지를 보냈습니다.", roomTitle, senderNickname);
         }
 
         //기존 알림이 존재하는 경우 ->시간만 업데이트, 읽지 않음 처리

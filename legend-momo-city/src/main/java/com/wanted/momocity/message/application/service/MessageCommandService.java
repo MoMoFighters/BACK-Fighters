@@ -312,17 +312,27 @@ public class MessageCommandService implements MessageCommandUseCase {
         }
         log.info("[웹소켓 실시간 발송] QueryService 기존 로직 재활용");
 
-        // 🎯 2. 나와의 채팅방이 아닐 때만 상대방(targetUser)에게 알림 이벤트 발행
-        if (!targetUser.getId().equals(command.senderId())) {
-            log.info("[SendMessageService] 메시지 전송 성공 - 알림 발행. 방번호: {}", command.roomId());
-            eventPublisher.publishEvent(new SendMessagePublishedEvent(
-                    command.roomId(),
-                    chatRoom.getRoomTitle(),
-                    command.senderId(),
-                    sender.getNickname(),   // 발신자 닉네임 추출
-                    isOneToOne ? targetUser.getId() : null, //일대일이면 상대방 정보 전달, 다대다면 null 처리
-                    newMessage.getCreatedAt()
-            ));
+        //위에서 상대가 화면에 머무르는지 여부로 읽음 여부를 설정했으므로 재활용
+        // 🎯 [컴파일 버그 수정 완료]: 수신자들 중 '안 읽은 사람(방에 없는 사람)'이 한 명이라도 존재하는지 검증
+        boolean hasUnreadReceiver = readOtherUsers.stream()
+                .anyMatch(mr -> !mr.isMsgRead()); // 하나라도 안 읽었으면(false) true 반환
+
+        //웹소켓으로 채팅방에 머무르는 사람이 없을 때만 notification테이블에 행 생성
+        if (hasUnreadReceiver) {
+            // 🎯 2. 나와의 채팅방이 아닐 때만 상대방(targetUser)에게 알림 이벤트 발행
+            if (!targetUser.getId().equals(command.senderId())) {
+                log.info("[SendMessageService] 메시지 전송 성공 - 알림 발행. 방번호: {}", command.roomId());
+                eventPublisher.publishEvent(new SendMessagePublishedEvent(
+                        command.roomId(),
+                        chatRoom.getRoomTitle(),
+                        command.senderId(),
+                        sender.getNickname(),   // 발신자 닉네임 추출
+                        isOneToOne ? targetUser.getId() : null, //일대일이면 상대방 정보 전달, 다대다면 null 처리
+                        newMessage.getCreatedAt()
+                ));
+            }
+        } else {
+            log.info("[SendMessageService] 모든 참여자가 방에 상주 중이므로 알림 생성을 건너뜁니다.");
         }
 
         return new SendView(
