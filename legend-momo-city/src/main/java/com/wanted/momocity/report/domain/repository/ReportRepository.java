@@ -20,8 +20,8 @@ public interface ReportRepository {
     // 최근 신고 N개 (reportedAt DESC)
     List<Report> findRecent(int limit);
 
-    // 읽음 여부 기준 최근 신고 N개 (false=미읽음, true=읽음)
-    List<Report> findByIsRead(boolean isRead, int limit);
+    // 처리 여부 기준 최근 신고 N개 (false=미처리, true=처리완료)
+    List<Report> findByIsResolved(boolean isResolved, int limit);
 
     // 전체 신고 수 (대시보드 통계용 - ReportStatsAdapter 가 호출)
     long countAll();

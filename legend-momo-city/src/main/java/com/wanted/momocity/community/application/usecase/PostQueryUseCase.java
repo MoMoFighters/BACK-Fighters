@@ -21,7 +21,7 @@ public interface PostQueryUseCase {
     PostCommentResponse getComments(Long userId, Long postId, Long cursor, int size);
 
     // 게시글 대댓글 목록 조회 (커서 기반 페이지네이션)
-    PostCommentResponse getReplies(Long userId, Long postId, Long commentId, Long cursor, int size);
+    PostReplyResponse getReplies(Long userId, Long postId, Long commentId, Long cursor, int size);
 
     // 좋아요 누른 사용자 목록 조회
     PostLikeListResponse getLikes(Long postId);

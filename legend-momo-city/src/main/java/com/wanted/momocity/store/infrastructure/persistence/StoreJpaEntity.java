@@ -19,7 +19,7 @@ public class StoreJpaEntity {
     @Column
     private String url;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String name;
 
     @Column( nullable = false, updatable = false)
@@ -39,4 +39,11 @@ public class StoreJpaEntity {
         return new Store(id, price, url, name, createdAt);
     }
 
+    public Long getId() {
+        return id;
+    }
+
+    public Long getPrice() {
+        return price;
+    }
 }

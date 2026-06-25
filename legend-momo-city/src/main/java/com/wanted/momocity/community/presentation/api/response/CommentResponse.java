@@ -21,7 +21,7 @@ public record CommentResponse(
         // 게시글 작성자가 작성한 댓글인지 확인
         boolean isPostWriter,
         LocalDateTime createdAt,
-        List<CommentResponse> replies,
+        List<ReplyResponse> replies,
         // 대댓글 추가 여부 (5개 초과 시 true)
         boolean hasMoreReplies,
         // 다음 대댓글 커서 (없으면 null)
