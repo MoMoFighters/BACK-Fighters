@@ -1,7 +1,5 @@
 package com.wanted.momocity.community.application.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wanted.momocity.auth.domain.model.User;
 import com.wanted.momocity.community.application.port.UserInfoPort;
 import com.wanted.momocity.community.application.result.PostWithContents;
@@ -10,7 +8,6 @@ import com.wanted.momocity.community.domain.exception.CommunityNotFoundException
 import com.wanted.momocity.community.domain.model.Comment;
 import com.wanted.momocity.community.domain.model.Post;
 import com.wanted.momocity.community.domain.repository.CommentRepository;
-import com.wanted.momocity.community.domain.repository.PostContentRepository;
 import com.wanted.momocity.community.domain.repository.PostLikeRepository;
 import com.wanted.momocity.community.domain.repository.PostRepository;
 import com.wanted.momocity.community.presentation.api.response.*;
@@ -20,14 +17,11 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -177,11 +171,20 @@ public class PostQueryService implements PostQueryUseCase {
                     User commentAuthor = userInfoPort.findById(c.getUserId())
                             .orElseThrow(() -> new CommunityNotFoundException("사용자를 찾을 수 없습니다."));
 
+                    // 대댓글 첫 5개만 조회
                     List<Comment> replies = commentRepository
-                            .findAllByPostId(postId)
-                            .stream()
-                            .filter(r -> r.isReply() && r.getParentId().equals(c.getId()))
-                            .toList();
+                            .findRepliesByCommentIdWithCursor(c.getId(), null, 5);
+
+                    // 대댓글 5개 초과 여부 확인
+                    // size + 1 개 조회 후 5개 초과 시 hasMoreReplies = true
+                    boolean hasMoreReplies = replies.size() == 5 &&
+                            !commentRepository.findRepliesByCommentIdWithCursor(
+                                    c.getId(), replies.get(replies.size() - 1).getId(), 1
+                            ).isEmpty();
+
+                    Long nextReplyCursor = hasMoreReplies
+                            ? replies.get(replies.size() - 1).getId()
+                            : null;
 
                     List<CommentResponse> replyResponses = replies.stream()
                             .map(r -> {
@@ -197,7 +200,9 @@ public class PostQueryService implements PostQueryUseCase {
                                         r.getUserId().equals(userId),
                                         r.getUserId().equals(post.getUserId()),
                                         r.getCreatedAt(),
-                                        List.of()
+                                        List.of(),
+                                        false,
+                                        null
                                 );
                             })
                             .toList();
@@ -212,7 +217,9 @@ public class PostQueryService implements PostQueryUseCase {
                             c.getUserId().equals(userId),
                             c.getUserId().equals(post.getUserId()),
                             c.getCreatedAt(),
-                            replyResponses
+                            replyResponses,
+                            hasMoreReplies,
+                            nextReplyCursor
                     );
                 })
                 .toList();
@@ -226,6 +233,61 @@ public class PostQueryService implements PostQueryUseCase {
         log.info("[Community] 게시글 댓글 조회 완료 | postId={}, totalCount={}", postId, totalCount);
 
         return new PostCommentResponse(totalCount, commentResponses, nextCursor);
+
+    }
+
+    /*
+     * comment.
+     *  대댓글 목록 조회
+     *  isPostWriter 계산 위해 post 조회 필요
+     *  - nextCursor
+     *  조회된 대댓글 수 == size -> 다음 페이지 존재
+     *  조회된 대댓글 수 < size -> 마지막 페이지 -> NULL
+     * */
+
+    @Override
+    public PostCommentResponse getReplies(Long userId, Long postId, Long commentId, Long cursor, int size) {
+        // 게시글 작성자 확인용
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new CommunityNotFoundException("게시글을 찾을 수 없습니다."));
+
+        // 전체 대댓글 수
+        int totalCount = commentRepository
+                .findRepliesByCommentIdWithCursor(commentId, null, Integer.MAX_VALUE)
+                .size();
+
+        // 커서 기반 대댓글 조회
+        List<Comment> replies = commentRepository
+                .findRepliesByCommentIdWithCursor(commentId, cursor, size);
+
+        List<CommentResponse> replyResponses = replies.stream()
+                .map(r -> {
+                    User replyAuthor = userInfoPort.findById(r.getUserId())
+                            .orElseThrow(() -> new CommunityNotFoundException("사용자를 찾을 수 없습니다."));
+                    return new CommentResponse(
+                            r.getId(),
+                            r.getUserId(),
+                            r.getContent(),
+                            replyAuthor.getName(),
+                            replyAuthor.getProfileImageUrl(),
+                            replyAuthor.getRole().name(),
+                            r.getUserId().equals(userId),
+                            r.getUserId().equals(post.getUserId()),
+                            r.getCreatedAt(),
+                            List.of(),
+                            false,
+                            null
+                    );
+                })
+                .toList();
+
+        Long nextCursor = replies.size() == size
+                ? replies.get(replies.size() - 1).getId()
+                : null;
+
+        log.info("[Community] 대댓글 조회 완료 | commentId={}, totalCount={}", commentId, totalCount);
+
+        return new PostCommentResponse(totalCount, replyResponses, nextCursor);
 
     }
 
