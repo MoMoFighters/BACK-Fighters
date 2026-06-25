@@ -5,6 +5,7 @@ import com.wanted.momocity.auth.domain.model.User;
 import com.wanted.momocity.enrollment.application.port.StudentAccountPort;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.lecture.application.port.LectureEnrollmentQueryPort;
+import com.wanted.momocity.lecture.application.port.LectureReviewQueryPort;
 import com.wanted.momocity.lecture.application.port.TeacherAccountPort;
 import com.wanted.momocity.lecture.application.query.LectureQuery.GetAdminLectureDetailQuery;
 import com.wanted.momocity.lecture.application.query.LectureQuery.GetAdminLecturesQuery;
@@ -62,6 +63,9 @@ public class LectureQueryService implements
 
     // 수강 신청 정보 조회 포트
     private final LectureEnrollmentQueryPort lectureEnrollmentQueryPort;
+
+    // 강의별 수강평 평균 평점과 수강평 개수 조회
+    private final LectureReviewQueryPort lectureReviewQueryPort;
 
     // 강사 이름, 프로필 이미지 조회를 위한 auth 포트
     private final LoadUserPort loadUserPort;
@@ -146,13 +150,15 @@ public class LectureQueryService implements
         User teacher = loadUserPort.findById(lecture.getTeacherId())
                 .orElseThrow(() -> new LectureNotFoundException("강사 정보를 찾을 수 없습니다."));
 
+        LectureReviewQueryPort.ReviewStats reviewStats = lectureReviewQueryPort.getReviewStats(lecture.getId());
+
         return StudentLectureDetailResponse.from(
                 lecture,
                 chapters,
                 teacher.getName(),
                 teacher.getProfileImageUrl(),
-                0.0,
-                0,
+                reviewStats.averageRating(),
+                reviewStats.reviewCount(),
                 isEnrolled
         );
     }
@@ -170,13 +176,20 @@ public class LectureQueryService implements
                 query.size()
         );
 
+        // 현재 페이지 강의 목록 스트림
         List<TeacherLectureListItemResponse> content = lecturePage.content().stream()
-                .map(lecture -> TeacherLectureListItemResponse.from(
-                        lecture,
-                        0.0,
-                        0
-                ))
-                .toList();
+                .map(lecture -> {
+                    // 해당 강의의 평균 평점과 수강평 개수 조회
+                    LectureReviewQueryPort.ReviewStats reviewStats = lectureReviewQueryPort.getReviewStats(lecture.getId());
+
+                    // 강사 강의 목록 아이템 응답 DTO
+                    return TeacherLectureListItemResponse.from(
+                            lecture,
+                            reviewStats.averageRating(),
+                            reviewStats.reviewCount()
+                    );
+                }).toList();
+
 
         return new TeacherLecturePageResponse(
                 content,
@@ -202,11 +215,13 @@ public class LectureQueryService implements
         List<LectureChapter> chapters =
                 chapterRepository.findAllByLectureIdOrderByOrderNoAsc(query.lectureId());
 
+        LectureReviewQueryPort.ReviewStats reviewStats = lectureReviewQueryPort.getReviewStats(lecture.getId());
+
         return TeacherLectureDetailResponse.from(
                 lecture,
                 chapters,
-                0.0,
-                0
+                reviewStats.averageRating(),
+                reviewStats.reviewCount()
         );
     }
 
@@ -227,11 +242,15 @@ public class LectureQueryService implements
         );
 
         List<AdminLectureListItemResponse> content = lecturePage.content().stream()
-                .map(lecture -> AdminLectureListItemResponse.from(
-                        lecture,
-                        0.0,
-                        0
-                ))
+                .map(lecture -> {
+                    LectureReviewQueryPort.ReviewStats reviewStats = lectureReviewQueryPort.getReviewStats(lecture.getId());
+
+                    return  AdminLectureListItemResponse.from(
+                            lecture,
+                            reviewStats.averageRating(),
+                            reviewStats.reviewCount()
+                    );
+                })
                 .toList();
 
         return new AdminLecturePageResponse(
@@ -257,11 +276,13 @@ public class LectureQueryService implements
         List<LectureChapter> chapters =
                 chapterRepository.findAllByLectureIdOrderByOrderNoAsc(query.lectureId());
 
+        LectureReviewQueryPort.ReviewStats reviewStats = lectureReviewQueryPort.getReviewStats(lecture.getId());
+
         return AdminLectureDetailResponse.from(
                 lecture,
                 chapters,
-                0.0,
-                0
+                reviewStats.averageRating(),
+                reviewStats.reviewCount()
         );
     }
 
@@ -283,8 +304,11 @@ public class LectureQueryService implements
             LectureAggregate lecture,
             Long studentId
     ) {
-        double averageRating = 0.0;
-        int reviewCount = 0;
+
+        // 강의평 관련 (강의 평점 평균, 강의평 개수)
+        LectureReviewQueryPort.ReviewStats reviewStats = lectureReviewQueryPort.getReviewStats(lecture.getId());
+        double averageRating = reviewStats.averageRating();
+        int reviewCount = reviewStats.reviewCount();
 
         // 현재 강의의 전체 챕터 수를 조회
         int chapterCount = chapterRepository.countByLectureId(lecture.getId());
