@@ -42,7 +42,7 @@ public interface ReportQueryUseCase {
      */
     record ReportList(
             List<Report> reports
-    ) { }
+    ) {}
 
     // 해당 UseCase 가 어떤 것을 반환하는지 확인가능하기 때문에 여기에 둔다.
     record ReportDetail(
