@@ -34,7 +34,7 @@ public class NotificationController {
         Long userId = userDetails.getUserId();
 
         GetNotificationQuery query = new GetNotificationQuery(userId);
-        List<NotiView> view = notificiationQueryUseCase.getNotificationQueryHandle(query);
+        List<NotiView> view = notificationQueryUseCase.getNotificationQueryHandle(query);
 
         //채팅방이 한개도 없을 때
         if (view.isEmpty()) {
