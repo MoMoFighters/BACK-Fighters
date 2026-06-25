@@ -1,4 +1,10 @@
 package com.wanted.momocity.order.infrastructure.persistence;
 
-public interface SpringDataOrderRepository {
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface SpringDataOrderRepository extends JpaRepository<OrderJpaEntity,Long> {
+
+    // 이미 구매한 상품인지 확인
+    boolean existsByUserIdAndItemId(Long userId, Long itemId);
 }
