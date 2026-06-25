@@ -1,6 +1,5 @@
 package com.wanted.momocity.report.presentation.api;
 
-import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
 import com.wanted.momocity.report.application.usecase.ReportCommandUseCase;
@@ -14,7 +13,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 /* comment.
@@ -37,7 +35,7 @@ public class AdminReportController {
     @GetMapping
     @Operation(
             summary = "관리자 신고 목록 조회",
-            description = "최근 N개의 신고를 조회한다. isRead 파라미터로 읽음 여부 필터링 가능"
+            description = "최근 N개의 신고를 조회한다. isResolved 파라미터로 처리 여부 필터링 가능"
     )
     // Swagger 구성하기 위한 코드
     @ApiResponses({
@@ -51,13 +49,13 @@ public class AdminReportController {
     public ResponseEntity<ApiResponse<ReportListResponse>> getReports(
             @Parameter(description = "조회할 최대 개수", example = "10")
             @RequestParam(defaultValue = "10") int limit,
-            @Parameter(description = "읽음 여부 필터 (선택, false=미읽음, true=읽음)", example = "false")
-            @RequestParam(required = false) Boolean isRead
+            @Parameter(description = "처리 여부 필터 (선택, false=미처리, true=처리완료)", example = "false")
+            @RequestParam(required = false) Boolean isResolved
     ) {
-        // 1. isRead 유무에 따라 UseCase 메서드 선택
-        ReportQueryUseCase.ReportList list = (isRead == null)
+        // 1. isResolved 유무에 따라 UseCase 메서드 선택
+        ReportQueryUseCase.ReportList list = (isResolved == null)
                 ? reportQueryUseCase.getRecent(limit)
-                : reportQueryUseCase.getByIsRead(isRead, limit);
+                : reportQueryUseCase.getByIsResolved(isResolved, limit);
 
         // 2. UseCase 출력 → 응답 DTO 변환
         ReportListResponse response = ReportListResponse.from(list);
@@ -90,18 +88,14 @@ public class AdminReportController {
 
     // MS-3 신고 처리
     @PatchMapping("/{id}/resolve")
-    @Operation(summary = "신고 처리", description = "신고를 처리 완료 상태로 변경한다. isRead=true, handledAt, handlerAdminId 기록.")
+    @Operation(summary = "신고 처리", description = "신고를 처리 완료 상태로 변경한다. isResolved=true, resolvedAt 기록.")
     public ResponseEntity<ApiResponse<Void>> resolveReport(
-            @PathVariable Long id,
-            @AuthenticationPrincipal CustomUserDetails userDetails
+            @PathVariable Long id
     ) {
-        // 1. 인증 principal 에서 처리자 adminId 추출
-        Long adminId = userDetails.getUserId();
+        // 이게 없다면 신고 처리 아무것도 안하고 200만 반환하는 버그 발생
+        reportCommandUseCase.resolveReport(id);
 
-        // 2. UseCase 호출 → 신고 처리 완료
-        reportCommandUseCase.resolveReport(id, adminId);
-
-        // 3. 200 OK 반환 (data=null)
+        // 1. 200 OK 반환 (data=null)
         return ResponseEntity.ok(
                 ApiResponse.success(ApiResponseCode.SUCCESS, "신고 처리 완료", null)
         );
