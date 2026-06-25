@@ -1,5 +1,6 @@
 package com.wanted.momocity.order.infrastructure.persistence;
 
+import com.wanted.momocity.order.domain.model.ListResult;
 import com.wanted.momocity.order.domain.model.Reason;
 import com.wanted.momocity.order.domain.model.Type;
 import jakarta.persistence.*;
@@ -71,4 +72,9 @@ public class OrderJpaEntity {
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
+
+    public ListResult toDomain() {
+        return new ListResult(type, reason, createdAt, amount);
+    }
+
 }
