@@ -3,11 +3,8 @@ package com.wanted.momocity.notification.infrastructure.catalog;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.notification.domain.model.Notification;
-import com.wanted.momocity.notification.infrastructure.persistence.NotificationJpaEntity;
+import com.wanted.momocity.notification.infrastructure.persistence.*;
 import com.wanted.momocity.notification.domain.repository.NotificationRepository;
-import com.wanted.momocity.notification.infrastructure.persistence.NotificationSideChatRoomRepository;
-import com.wanted.momocity.notification.infrastructure.persistence.NotificationSideUserRepository;
-import com.wanted.momocity.notification.infrastructure.persistence.SpringDataNotificationRepository;
 import com.wanted.momocity.user.infrastructure.persistence.SpringDataUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +24,7 @@ public class CatalogNotificationRepositoryAdapter implements NotificationReposit
     private final SpringDataUserRepository springDataUserRepository;
     private final NotificationSideUserRepository notificationSideUserRepository;
     private final NotificationSideChatRoomRepository notificationSideChatRoomRepository;
+    private final NotificationSideMessageReadRepository notificationSideMessageReadRepository;
 
     @Override
     public Notification save(Notification notification) {
@@ -76,6 +74,18 @@ public class CatalogNotificationRepositoryAdapter implements NotificationReposit
     @Override
     public Optional<String> findRoomTitleById(Long roomId) {
         log.info("[CatalogNotificationRepositoryAdapter] 알림용 채팅방 타이틀 조회 - 방ID: {}", roomId);
-        return notificationSideChatRoomRepository.findTitleById(roomId); return Optional.empty();
+        return notificationSideChatRoomRepository.findTitleById(roomId);
+    }
+
+    //(메인 페이지 종)안읽은 전체 알림 개수(메시지 알림 제외)
+    @Override
+    public long countUnreadGeneral(Long userId) {
+        return springDataNotificationRepository.countUnreadGeneralNotifications(userId);
+    }
+
+    //(메인 페이지 종)안읽고 삭제하지 않은 메시지의 채팅방 개수
+    @Override
+    public long countUnreadMessageRooms(Long userId) {
+        return notificationSideMessageReadRepository.countUnreadMessageRooms(userId);
     }
 }

@@ -3,10 +3,13 @@ package com.wanted.momocity.notification.presentation.api;
 
 import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
+import com.wanted.momocity.notification.application.query.GetMainTotalCountsQuery;
 import com.wanted.momocity.notification.application.query.GetNotificationQuery;
 import com.wanted.momocity.notification.application.usecase.NotificationCommandUseCase;
 import com.wanted.momocity.notification.application.usecase.NotificationQueryUseCase;
 import com.wanted.momocity.notification.application.usecase.NotificationQueryUseCase.NotiView;
+import com.wanted.momocity.notification.application.usecase.NotificationQueryUseCase.MainTotalCountsView;
+import com.wanted.momocity.notification.presentation.api.response.GetMainTotalCountsResponse;
 import com.wanted.momocity.notification.presentation.api.response.GetNotificationResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -56,6 +59,30 @@ public class NotificationController {
                 responseData
         ));
     }
+
+    //메인페이지 종에 띄울 총 알림
+    @GetMapping("/api/v2/notice/total-counts")
+    @Operation(summary = "전체 알림 개수", description = "로그인 후 메인 페이지의 상단 종에 띄워질 총 알림 개수")
+    public ResponseEntity<ApiResponse<GetMainTotalCountsResponse>> getMainTotalCounts(@AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        Long userId = userDetails.getUserId();
+
+        // 1. 쿼리 조립 및 유스케이스 실행
+        GetMainTotalCountsQuery query = new GetMainTotalCountsQuery(userId);
+        MainTotalCountsView view = notificationQueryUseCase.getMainTotalCountsQueryHandle(query);
+
+        // 2. DTO 변환
+        GetMainTotalCountsResponse responseData = new GetMainTotalCountsResponse(view.totalCount());
+
+        // 3. 성공 공통 응답 반환
+        return ResponseEntity.ok(ApiResponse.success(
+                "SUCCESS",
+                "전체 메시지 및 친구 요청 알림 개수 조회 성공",
+                responseData
+        ));
+    }
+
+
 
 //    //v2 -> 다대다 확장으로 개설 대상자들 리스트로
 //    @PostMapping("/api/v2/messages/chatrooms/create")

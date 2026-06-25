@@ -21,4 +21,10 @@ public interface NotificationRepository {
 
     //알림 목록 - 방 이름
     Optional<String> findRoomTitleById(Long roomId);
+
+    //(메인 페이지 종)안읽은 전체 알림 개수(메시지 알림 제외)
+    long countUnreadGeneral(Long userId);
+
+    //(메인 페이지 종)안읽고 삭제하지 않은 메시지의 채팅방 개수
+    long countUnreadMessageRooms(Long userId);
 }

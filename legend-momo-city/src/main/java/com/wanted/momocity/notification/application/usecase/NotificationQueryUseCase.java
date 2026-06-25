@@ -1,5 +1,6 @@
 package com.wanted.momocity.notification.application.usecase;
 
+import com.wanted.momocity.notification.application.query.GetMainTotalCountsQuery;
 import com.wanted.momocity.notification.application.query.GetNotificationQuery;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,5 +18,12 @@ public interface NotificationQueryUseCase {
             Boolean isRead,
             Long refId,
             LocalDateTime createdAt
+    ) {}
+
+    //메인페이지 종에 띄울 총 알림 개수
+    MainTotalCountsView getMainTotalCountsQueryHandle(GetMainTotalCountsQuery query);
+
+    record MainTotalCountsView(
+            Long totalCount
     ) {}
 }

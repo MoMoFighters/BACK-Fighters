@@ -526,6 +526,24 @@ public class MessageCommandService implements MessageCommandUseCase {
                 announceContent,
                 chatRoom.getUpdatedAt());
 
+        //웹소켓으로 현재 존재하는 방 멤버에게 메시지 내역 띄움
+        // 🌟 [추가]: 변경 내역 방 전원에게 실시간 웹소켓 푸시
+        String destination = "/sub/chat/room/" + chatRoom.getId();
+        for (ChatRoomMemberJpaEntity member : members) {
+            Long targetMemberId = member.getUserId().getId();
+
+            // 메시지 내역(공지 문구 포함) 갱신 발송
+            List<MessageQueryUseCase.MessageHistoryView> historyPayload =
+                    messageQueryUseCase.getMessageHistoryQueryHandle(new GetMessageHistoryQuery(chatRoom.getId(), targetMemberId, null));
+            messagingTemplate.convertAndSendToUser(targetMemberId.toString(), destination, historyPayload);
+
+            // 채팅방 목록(변경된 이름 반영) 갱신 발송
+            List<MessageQueryUseCase.ChatRoomView> chatRoomListPayload =
+                    messageQueryUseCase.getChatRoomQueryHandle(new FindChatRoomQuery(targetMemberId));
+            messagingTemplate.convertAndSendToUser(targetMemberId.toString(), "/sub/chat/rooms", chatRoomListPayload);
+        }
+        log.info("[웹소켓 실시간 발송] 채팅방 이름 변경에 따른 전원 대화방/목록 갱신 완료");
+
         return new ModifyRoomTitleView(
                 chatRoom.getId(),
                 loginUser.getId(),
@@ -595,6 +613,26 @@ public class MessageCommandService implements MessageCommandUseCase {
                 loginUser,
                 inviteMessage,
                 LocalDateTime.now());
+
+        //웹소켓으로 방에 있는 멤버들에게 안내 문구 보내기
+        // 🌟 [추가]: 새로 초대된 사람을 포함하여 현재 방에 속한 '최신 멤버 목록'을 가져와 전원에게 웹소켓 푸시
+        List<ChatRoomMemberJpaEntity> updatedMembers = messageRepository.findMembersByRoomId(chatRoom.getId());
+        String inviteDestination = "/sub/chat/room/" + chatRoom.getId();
+
+        for (ChatRoomMemberJpaEntity member : updatedMembers) {
+            Long targetMemberId = member.getUserId().getId();
+
+            // 대화 내역 발송 (새로 초대된 사람도 과거 대화 내역 링크나 안내 문구를 즉시 받음)
+            List<MessageQueryUseCase.MessageHistoryView> historyPayload =
+                    messageQueryUseCase.getMessageHistoryQueryHandle(new GetMessageHistoryQuery(chatRoom.getId(), targetMemberId, null));
+            messagingTemplate.convertAndSendToUser(targetMemberId.toString(), inviteDestination, historyPayload);
+
+            // 채팅방 목록 발송 (새로 초대된 유저 목록 리스트에 이 방이 즉시 추가되어 나타남)
+            List<MessageQueryUseCase.ChatRoomView> chatRoomListPayload =
+                    messageQueryUseCase.getChatRoomQueryHandle(new FindChatRoomQuery(targetMemberId));
+            messagingTemplate.convertAndSendToUser(targetMemberId.toString(), "/sub/chat/rooms", chatRoomListPayload);
+        }
+        log.info("[웹소켓 실시간 발송] 멤버 초대로 인한 신규 유저 포함 전원 갱신 완료");
 
         return new InviteRoomMemberView(
                 chatRoom.getId(),

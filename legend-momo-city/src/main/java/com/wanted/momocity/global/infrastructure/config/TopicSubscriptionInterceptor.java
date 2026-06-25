@@ -4,6 +4,7 @@ import com.wanted.momocity.auth.application.port.LoadUserPort;
 import com.wanted.momocity.auth.domain.model.User;
 
 import com.wanted.momocity.message.application.manager.ChatRoomSessionManager;
+import com.wanted.momocity.notification.application.manager.NotificationSessionManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
@@ -21,7 +22,13 @@ import java.security.Principal;
 public class TopicSubscriptionInterceptor implements ChannelInterceptor {
 
     //웹소켓
+    /*채팅방 관련
+    * -(메시지 내역 - 실시간 전송 시 내역, 말풍선별 안읽은 사람 수, 나가기 안내 문구)
+    * -(채팅방 목록 - 메시지, 채팅방별 안읽음 개수, 날짜, 정렬, 방이름, 닉네임)
+    */
     private final ChatRoomSessionManager sessionManager;
+    //알림 관련 - 메인 페이지 종 모양에 띄워질 총 알림 개수
+    private final NotificationSessionManager notificationSessionManager;
     private final LoadUserPort loadUserPort;
 
     @Override
@@ -41,6 +48,13 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
                 //세션 매니저에 "이 유저 들어왔다"고 기록
                 sessionManager.enterRoom(userId, roomId);
                 log.info("[웹소켓 인터셉터] 유저 {}번이 {}번 채팅방에 입장했습니다.", userId, roomId);
+
+                // 알림 개수 채널 구독 처리
+                // 프론트가 /user/sub/notice/total-counts로 구독 시, 내장 브러커 통과 경로 매칭
+                if (destination.contains("/sub/notice/total-counts")) {
+                    notificationSessionManager.enterNotificationChannel(userId);
+                    log.info("[웹소켓 인터셉터] 유저 {}번이 실시간 알림 개수 채널을 구독했습니다.", userId);
+                }
             }
         }
 
@@ -58,12 +72,17 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
                 destination = simpDestination.toString();
             }
 
-            if (userId != null) {
+            if (userId != null && destination != null) {
                 // 실제 채팅방 상세 채널(/sub/chat/room/)을 나갈 때만 세션에서 제거!
-                if (destination != null && destination.startsWith("/sub/chat/room/")) {
+                if (destination.startsWith("/sub/chat/room/")) {
                     sessionManager.leaveRoom(userId);
                     log.info("[웹소켓 인터셉터] 유저 {}번이 채팅방({}) 구독을 취소하여 세션에서 제거되었습니다.", userId, destination);
-                } else {
+                } // 2) 알림 채널 구독 해제
+                else if (destination.contains("/sub/notice/total-counts")) {
+                    notificationSessionManager.leaveNotificationChannel(userId);
+                    log.info("[웹소켓 인터셉터] 유저 {}번이 실시간 알림 개수 채널 구독을 취소했습니다.", userId);
+                }
+                else {
                     log.info("[웹소켓 인터셉터] 일반 채널 구독 취소이므로 방 세션을 유지합니다. (경로: {})", destination);
                 }
             }
@@ -75,6 +94,8 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
             if (userId != null) {
                 // 연결이 완전히 끊기는 것은 방을 나가는 것이 맞으므로 무조건 제거
                 sessionManager.leaveRoom(userId);
+
+                notificationSessionManager.leaveNotificationChannel(userId);
                 log.info("[웹소켓 인터셉터] 유저 {}번의 웹소켓 연결이 종료되어 세션에서 완전히 제거되었습니다.", userId);
             }
         }

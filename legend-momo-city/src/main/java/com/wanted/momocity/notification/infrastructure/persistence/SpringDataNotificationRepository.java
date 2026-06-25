@@ -17,8 +17,15 @@ public interface SpringDataNotificationRepository extends JpaRepository<Notifica
 
     //알림 목록
     @Query("SELECT n, mr FROM NotificationJpaEntity n " +
-            "LEFT JOIN MessageReadJpaEntity mr ON n.refId = mr.roomId.id AND mr.userId = :userId AND mr.isDeleted = false " +
+            "LEFT JOIN MessageReadJpaEntity mr ON n.refId = mr.roomId.id AND mr.userId.id = :userId AND mr.isDeleted = false " +
             "WHERE (n.type != 'MESSAGE' AND n.userId.id = :userId) " + // 일반 알림은 수신자가 나인 것
             "   OR (n.type = 'MESSAGE' AND n.userId.id != :userId)")  // 메시지 알림은 발신자가 내가 아닌 것 (즉, 남이 보낸 것)
     List<Object[]> findAllByUserId(@Param("userId") Long userId);
+
+    //메시지를 제외한 모든 알림 개수
+    @Query("SELECT COUNT(n) FROM NotificationJpaEntity n " +
+            "WHERE n.userId.id = :userId " +
+            "AND n.type != 'MESSAGE' " +
+            "AND n.isRead = false")
+    long countUnreadGeneralNotifications(@Param("userId") Long userId);
 }

@@ -432,7 +432,7 @@ CREATE TABLE `guestbook` (
 CREATE TABLE `notification` (
                                 `id`         BIGINT       NOT NULL AUTO_INCREMENT,
                                 `user_id`    BIGINT       NULL,
-                                `type`       ENUM('APPROVAL','REPORT','FRIEND_REQUEST','MESSAGE','GUESTBOOK','POST','CALENDAR') NOT NULL,
+                                `type`       ENUM('APPROVAL','FRIEND_REQUEST','MESSAGE','GUESTBOOK','POST','CALENDAR') NOT NULL,
                                 `ref_id`     BIGINT       NULL,
                                 `message`    VARCHAR(500) NOT NULL,
                                 `is_read`    BOOLEAN      NOT NULL DEFAULT FALSE,
