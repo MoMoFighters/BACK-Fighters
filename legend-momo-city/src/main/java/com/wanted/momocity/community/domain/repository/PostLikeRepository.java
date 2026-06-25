@@ -2,6 +2,7 @@ package com.wanted.momocity.community.domain.repository;
 
 import com.wanted.momocity.community.domain.model.PostLike;
 
+import java.util.List;
 import java.util.Optional;
 
 /*
@@ -17,6 +18,8 @@ public interface PostLikeRepository {
 
     // 좋아요 여부 확인
     Optional<PostLike> findByPostIdAndUserId(Long postId, Long userId);
+
+    List<PostLike> findAllByPostId(Long postId);
 
     // 좋아요 삭제
     void delete(PostLike postLike);
