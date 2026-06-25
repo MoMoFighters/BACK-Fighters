@@ -8,6 +8,7 @@ import com.wanted.momocity.order.domain.repositroy.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,7 +44,7 @@ public class OrderRepositoryAdapter implements OrderRepository {
     // 포인트 내역 조회
     @Override
     public List<ListResult> getOrderHistory(Long userId, int page, int size) {
-        return springDataOrderRepository.findByUserId(userId,PageRequest.of(page - 1, size))
+        return springDataOrderRepository.findByUserIdOrderByCreatedAtDesc(userId, PageRequest.of(page - 1, size))
                 .stream()
                 .map(OrderJpaEntity::toDomain)
                 .toList();

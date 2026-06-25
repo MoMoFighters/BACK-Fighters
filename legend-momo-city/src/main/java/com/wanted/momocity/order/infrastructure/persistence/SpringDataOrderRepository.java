@@ -12,7 +12,7 @@ public interface SpringDataOrderRepository extends JpaRepository<OrderJpaEntity,
     boolean existsByUserIdAndItemId(Long userId, Long itemId);
 
     // 한 사용자의 포인트 변동 내역 조회
-    List<OrderJpaEntity> findByUserId(Long userId, Pageable pageable);
+    List<OrderJpaEntity> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
 
     // 페이지네이션
     long countByUserId(Long userId);
