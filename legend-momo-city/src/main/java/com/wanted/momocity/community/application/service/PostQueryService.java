@@ -7,6 +7,7 @@ import com.wanted.momocity.community.application.usecase.PostQueryUseCase;
 import com.wanted.momocity.community.domain.exception.CommunityNotFoundException;
 import com.wanted.momocity.community.domain.model.Comment;
 import com.wanted.momocity.community.domain.model.Post;
+import com.wanted.momocity.community.domain.model.PostLike;
 import com.wanted.momocity.community.domain.repository.CommentRepository;
 import com.wanted.momocity.community.domain.repository.PostLikeRepository;
 import com.wanted.momocity.community.domain.repository.PostRepository;
@@ -289,6 +290,30 @@ public class PostQueryService implements PostQueryUseCase {
 
         return new PostCommentResponse(totalCount, replyResponses, nextCursor);
 
+    }
+
+    // 좋아요 누른 사용자 목록 조회
+    // userId 포함 -> 클릭 시 해당 사용자 페이지로 이동
+    @Override
+    public PostLikeListResponse getLikes(Long postId) {
+        List<PostLike> likes = postLikeRepository.findAllByPostId(postId);
+
+        List<PostLikeListResponse.LikeUserItem> users = likes.stream()
+                .map(like -> {
+                    User user = userInfoPort.findById(like.getUserId())
+                            .orElseThrow(() -> new CommunityNotFoundException("사용자를 찾을 수 없습니다."));
+                    return new PostLikeListResponse.LikeUserItem(
+                            user.getId(),
+                            user.getName(),
+                            user.getProfileImageUrl(),
+                            user.getRole().name()
+                    );
+                })
+                .toList();
+
+        log.info("[Community] 좋아요 목록 조회 완료 | postId={}, totalCount={}", postId, likes.size());
+
+        return new PostLikeListResponse(likes.size(), users);
     }
 
     // 마이페이지 - 내 게시글 목록

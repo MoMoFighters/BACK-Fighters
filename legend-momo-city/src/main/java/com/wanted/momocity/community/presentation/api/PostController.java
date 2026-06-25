@@ -246,6 +246,21 @@ public class PostController {
         ));
     }
 
+    // 좋아요 누른 사용자 목록 조회
+    // GET / api/v2/posts/{postId}/likes
+    @Operation(summary = "좋아요 목록 조회", description = "게시글에 좋아요를 누른 사용자 목록을 조회합니다.")
+    @GetMapping("/{postId}/likes")
+    public ResponseEntity<ApiResponse<PostLikeListResponse>> getLikes(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(
+                CommunityResponseCode.LIKE_LIST_FOUND,
+                "좋아요 목록 조회에 성공했습니다.",
+                postQueryUseCase.getLikes(postId)
+        ));
+    }
+
     // 좋아요 취소
     // DELETE /api/v2/posts/{postId}/likes
     @Operation(summary = "좋아요 취소", description = "게시글 좋아요를 취소합니다.")
