@@ -5,10 +5,7 @@ import com.wanted.momocity.friend.fmexception.FMBusinessRuleViolationException;
 import com.wanted.momocity.friend.fmexception.FMResourceNotFoundException;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
-import com.wanted.momocity.message.application.command.CreateChatRoomCommand;
-import com.wanted.momocity.message.application.command.LeaveChatRoomCommand;
-import com.wanted.momocity.message.application.command.ReadMessageCommand;
-import com.wanted.momocity.message.application.command.SendMessageCommand;
+import com.wanted.momocity.message.application.command.*;
 import com.wanted.momocity.message.application.manager.ChatRoomSessionManager;
 import com.wanted.momocity.message.application.policy.MessageEligibilityPolicy;
 import com.wanted.momocity.message.application.query.FindChatRoomQuery;
@@ -542,6 +539,44 @@ public class MessageCommandService implements MessageCommandUseCase {
                 //남은 인원이 한 명이고 채팅방 이름 없음(일대일)이면 그 사람 닉네임, 아니면 채팅방 이름
                 remainingCount == 1? targetUser.getRole() : null,
                 remainingCount == 1? friendStatus : null
+        );
+    }
+
+    //다대다일 때 채팅방 이름 바꾸기
+    @Override
+    public ModifyRoomTitleView modifyRoomTitleCommandHandle(ModifyRoomTitleCommand command) {
+
+        //존재하지 않는 사용자
+        UserWithFMJpaEntity loginUser = messageRepository.findUserWithFMById(command.userId())
+                .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 사용자입니다."));
+
+        //존재하지 않는 채팅방
+        ChatRoomJpaEntity chatRoom = messageRepository.findChatRoomById(command.roomId())
+                .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 채팅방입니다."));
+
+        List<ChatRoomMemberJpaEntity> members = messageRepository.findMembersByRoomId(command.roomId());
+
+        //정책 위임(접근 권한, 다대다 아님, 똑같은 이름, 빈 값, 20자 제한)
+        messageEligibilityPolicy.modifyRoomTitle(command.roomId(), command.userId(), command.roomTitle(), chatRoom, members);
+
+        chatRoom.updateRoomTitle(command.roomTitle());
+        messageRepository.saveChatRoom(chatRoom);
+
+        //message_announce 테이블에 행 추가
+        String announceContent = String.format("%s님이 채팅방 이름을 [%s](으)로 변경했습니다.", loginUser.getNickname(), chatRoom.getRoomTitle());
+        messageRepository.saveRenameAnnounce(
+                chatRoom,
+                loginUser,
+                announceContent,
+                chatRoom.getUpdatedAt());
+
+        return new ModifyRoomTitleView(
+                chatRoom.getId(),
+                loginUser.getId(),
+                loginUser.getNickname(),
+                loginUser.getRole(),
+                chatRoom.getRoomTitle(),
+                chatRoom.getUpdatedAt()
         );
     }
 }

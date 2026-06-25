@@ -3,16 +3,18 @@ package com.wanted.momocity.message.presentation.api;
 import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.message.application.command.*;
+import com.wanted.momocity.message.application.usecase.*;
 import com.wanted.momocity.message.application.query.FindChatRoomQuery;
 import com.wanted.momocity.message.application.query.GetMessageHistoryQuery;
-import com.wanted.momocity.message.application.usecase.*;
 import com.wanted.momocity.message.application.usecase.MessageCommandUseCase.CreateRoomView;
 import com.wanted.momocity.message.application.usecase.MessageQueryUseCase.ChatRoomView;
 import com.wanted.momocity.message.application.usecase.MessageCommandUseCase.ReadView;
 import com.wanted.momocity.message.application.usecase.MessageCommandUseCase.SendView;
 import com.wanted.momocity.message.application.usecase.MessageQueryUseCase.MessageHistoryView;
 import com.wanted.momocity.message.application.usecase.MessageCommandUseCase.LeaveChatRoomView;
+import com.wanted.momocity.message.application.usecase.MessageCommandUseCase.ModifyRoomTitleView;
 import com.wanted.momocity.message.presentation.api.request.CreateChatRoomRequest;
+import com.wanted.momocity.message.presentation.api.request.ModifyRoomTitleRequest;
 import com.wanted.momocity.message.presentation.api.request.SendMessageRequest;
 import com.wanted.momocity.message.presentation.api.response.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -263,4 +265,39 @@ public class MessageController {
                 responseData
         ));
     }
+
+    //채팅방 이름 수정
+    @PatchMapping("/api/v2/message/chatroom/modify/{roomId}")
+    @Operation(summary = "채팅방 이름 수정하기", description = "다대다인 경우에만 채팅방 이름 수정 가능")
+    public ResponseEntity<ApiResponse<ModifyRoomTitleResponse>> modifyRoomTitle(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                                                @PathVariable Long roomId,
+                                                                                @RequestBody ModifyRoomTitleRequest request) {
+
+        Long userId = userDetails.getUserId();
+
+        //command 생성
+        ModifyRoomTitleCommand command = new ModifyRoomTitleCommand(roomId, userId, request.roomTitle());
+
+        //서비스 비즈니스 로직 실행
+        ModifyRoomTitleView view = messageCommandUseCase.modifyRoomTitleCommandHandle(command);
+
+        //response 조립
+        ModifyRoomTitleResponse responseData = new ModifyRoomTitleResponse(
+                view.roomId(),
+                view.userId(),
+                view.nickname(),
+                view.role(),
+                view.roomTitle(),
+                view.createdAt()
+        );
+
+        String successMessage = String.format("채팅방 이름을 %s로 변경했습니다.", view.roomTitle());
+
+        return ResponseEntity.ok(ApiResponse.success(
+                "SUCCESS",
+                successMessage,
+                responseData
+        ));
+    }
+
 }

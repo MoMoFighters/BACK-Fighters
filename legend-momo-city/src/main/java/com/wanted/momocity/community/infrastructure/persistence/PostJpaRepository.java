@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 /*
@@ -49,6 +50,48 @@ public interface PostJpaRepository extends JpaRepository<PostJpaEntity, Long> {
             @Param("category") String category,
             Pageable pageable
     );
+
+    // 유저별 게시글 커서 기반 조회
+    // cursor = null -> 첫 페이지, cursor != null -> 해당 postId 보다 작은 데이터 조회
+    @Query("""
+    SELECT p FROM PostJpaEntity p
+    WHERE p.userId = :userId
+    AND p.deletedAt IS NULL
+    AND (:cursor IS NULL OR p.id < :cursor)
+    ORDER BY p.id DESC
+""")
+    List<PostJpaEntity> findByUserIdWithCursor(
+            @Param("userId") Long userId,
+            @Param("cursor") Long cursor,
+            Pageable pageable
+    );
+
+    // 유저별 게시글 수 조회
+    @Query("""
+    SELECT COUNT(p)
+    FROM PostJpaEntity p
+    WHERE p.userId = :userId
+    AND p.deletedAt IS NULL
+""")
+    int countByUserId(@Param("userId") Long userId);
+
+    // 유저별 총 조회수 합산
+    @Query("""
+    SELECT COALESCE(SUM(p.viewCount), 0)
+    FROM PostJpaEntity p
+    WHERE p.userId = :userId
+    AND p.deletedAt IS NULL
+""")
+    int sumViewCountByUserId(@Param("userId") Long userId);
+
+    // 유저별 총 좋아요 수 합산
+    @Query("""
+    SELECT COALESCE(SUM(p.likeCount), 0)
+    FROM PostJpaEntity p
+    WHERE p.userId = :userId
+    AND p.deletedAt IS NULL
+""")
+    int sumLikeCountByUserId(@Param("userId") Long userId);
 
     // 하드딜리트 (스케줄러용)
     // deletedAt IS NOT NULL : 소프트딜리트된 게시글만 대상
