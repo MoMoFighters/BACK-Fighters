@@ -5,11 +5,13 @@ import com.wanted.momocity.user.domain.model.Role;
 import com.wanted.momocity.user.domain.model.Status;
 import com.wanted.momocity.user.domain.model.User;
 import jakarta.persistence.*;
+import lombok.Getter;
 
 import java.time.LocalDateTime;
 
 @Entity(name = "UserUser")
 @Table(name="`user`")
+@Getter
 public class UserJpaEntity {
 
     // 직접 user 테이블을 다루는 엔티티 클래스
@@ -71,11 +73,12 @@ public class UserJpaEntity {
     private boolean isTempPwd;
 
 
-    protected UserJpaEntity() {}
+    protected UserJpaEntity() {
+    }
 
     // id 포함 생성자 추가
-    public UserJpaEntity(Long id,String email, String password, String name, String nickname, String profileImageUrl, Role role,Status status,Category category, String proof, Long point, boolean doNotDisturb, Long suspensionCount, LocalDateTime suspendedUntil, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, boolean isTempPwd) {
-        this.id=id;
+    public UserJpaEntity(Long id, String email, String password, String name, String nickname, String profileImageUrl, Role role, Status status, Category category, String proof, Long point, boolean doNotDisturb, Long suspensionCount, LocalDateTime suspendedUntil, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, boolean isTempPwd) {
+        this.id = id;
         this.email = email;
         this.password = password;
         this.name = name;
@@ -87,7 +90,7 @@ public class UserJpaEntity {
         this.proof = proof;
         this.point = point;
         this.doNotDisturb = doNotDisturb;
-        this.suspensionCount =suspensionCount;
+        this.suspensionCount = suspensionCount;
         this.suspendedUntil = suspendedUntil;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -120,71 +123,13 @@ public class UserJpaEntity {
         );
     }
 
-    public Long getId() {
-        return id;
+    // 포인트 차감
+    public void decreasePoint(Long amount) {
+        this.point -= amount;
     }
 
-    public String getEmail() {
-        return email;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getNickname() {
-        return nickname;
-    }
-
-    public String getProfileImageUrl() {
-        return profileImageUrl;
-    }
-
-    public Role getRole() {
-        return role;
-    }
-
-    public Status getStatus() {
-        return status;
-    }
-
-    public Category getCategory() {
-        return category;
-    }
-
-    public String getProof() {
-        return proof;
-    }
-
-    public Long getPoint() {
-        return point;
-    }
-
-    public boolean isDoNotDisturb() {
-        return doNotDisturb;
-    }
-
-    public Long getSuspensionCount() { return suspensionCount; }
-
-    public LocalDateTime getSuspendedUntil() { return suspendedUntil; }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public LocalDateTime getDeletedAt() {
-        return deletedAt;
-    }
-
-    public boolean isTempPwd() {
-        return isTempPwd;
+    // 포인트 추가
+    public void increasePoint(Long amount) {
+        this.point += amount;
     }
 }
