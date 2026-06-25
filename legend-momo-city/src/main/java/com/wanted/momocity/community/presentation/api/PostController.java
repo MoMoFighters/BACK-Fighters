@@ -363,7 +363,7 @@ public class PostController {
     // GET /api/v2/posts/{postId}/comments/{commentId}/replies
     @Operation(summary = "대댓글 목록 조회", description = "댓글의 대댓글 목록을 조회합니다.")
     @GetMapping("/{postId}/comments/{commentId}/replies")
-    public ResponseEntity<ApiResponse<PostCommentResponse>> getReplies(
+    public ResponseEntity<ApiResponse<PostReplyResponse>> getReplies(
             @PathVariable Long postId,
             @PathVariable Long commentId,
             @RequestParam(required = false) Long cursor,
@@ -414,9 +414,9 @@ public class PostController {
     }
 
     // 대시보드 - 내 게시글 통계
-    // GET api/v2/posts/dashboard
+    // GET api/v2/posts/me/dashboard
     @Operation(summary = "대시보드", description = "내 게시글 통계를 조회합니다.")
-    @GetMapping("/dashboard")
+    @GetMapping("/me/dashboard")
     public ResponseEntity<ApiResponse<DashboardResponse>> getDashboard(
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
@@ -427,5 +427,20 @@ public class PostController {
                 postQueryUseCase.getDashboard(userId)
         ));
 
+    }
+
+    // 상대방 대시보드
+    // GET /api/v2/posts/users/{targetUserId}/dashboard
+    @Operation(summary = "상대방 대시보드", description = "상대방 게시글 통계를 조회합니다.")
+    @GetMapping("/users/{targetUserId}/dashboard")
+    public ResponseEntity<ApiResponse<DashboardResponse>> getUserDashboard(
+            @PathVariable Long targetUserId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(
+                CommunityResponseCode.POST_LIST_FOUND,
+                "대시보드 조회에 성공했습니다.",
+                postQueryUseCase.getDashboard(targetUserId)
+        ));
     }
 }
