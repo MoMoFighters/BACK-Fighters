@@ -14,6 +14,7 @@ import com.wanted.momocity.friend.fmexception.FMResourceConflictException;
 import com.wanted.momocity.friend.fmexception.FMResourceNotFoundException;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
+import com.wanted.momocity.message.application.policy.MessageEligibilityPolicy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -32,6 +33,7 @@ public class FriendCommandService implements FriendCommandUseCase {
     private final ApplicationEventPublisher eventPublisher; //스프링 이벤트 발행기
     //비즈니스 정책 주입
     private final FriendEligibilityPolicy friendEligibilityPolicy;
+    private final MessageEligibilityPolicy messageEligibilityPolicy;
 
     //친구 요청
     @Override
@@ -93,28 +95,11 @@ public class FriendCommandService implements FriendCommandUseCase {
         //두 사람 사이의 친구 관계 행 조회
         Optional<FriendJpaEntity> relationOpt = friendRepository.findRelationBetween(command.userId(), command.targetUserId());
 
-        //404 사용자 없음(두 사람 사이에 아무런 요청 내역이 없을 때)
-        if (relationOpt.isEmpty()) {
-            log.warn("[CancelRequestFriendService] 철회 실패 - 요청 내역이 존재하지 않음");
-            throw new FMResourceNotFoundException("철회할 요청 내역이 존재하지 않습니다.");
-        }
-
         //relationOpt가 비어있지 않다는 걸 확인했으므로 주머니 속 진짜 객체를 꺼내 변수에 담기
         FriendJpaEntity relation = relationOpt.get();
 
-        //403 권한 없음(내가 보낸 요청이 아닐 때)
-        //기존 행의 fromUserId가 로그인한 유저가 아닐 때
-        if (!relation.getFromUserId().getId().equals(command.userId())) {
-            log.warn("[CancelRequestFriendService] 철회 실패 - 본인의 요청이 아님");
-            throw new FMResourceAccessDeniedException("본인의 요청만 철회할 수 있습니다.");
-        }
-
-        //409 상태 모순(이미 수락 or 거절)
-        //오직 SENT일 때만 철회 가능
-        if (!"SENT".equals(relation.getStatus())) {
-            log.warn("[CancelRequestFriendService] 철회 실패 - 이미 대기 상태가 아님 (현재 상태: {})", relation.getStatus());
-            throw new FMResourceConflictException("이미 수락되거나 거절된 요청입니다. 취소할 수 없습니다.");
-        }
+        //정책 클래스 위임
+        friendEligibilityPolicy.cancelRequest(relationOpt, relation, command.userId());
 
         //friend 테이블에서 해당하는 행 삭제
         friendRepository.delete(relation);
@@ -148,10 +133,11 @@ public class FriendCommandService implements FriendCommandUseCase {
         //두 사람 사이의 친구 관계 조회(from/to 방향 확인)
         Optional<FriendJpaEntity> relationOpt = friendRepository.findRelationBetween(command.fromUserId(), command.userId());
 
-        //검증은 policy에게 전달 위임(409 대응)
-        friendEligibilityPolicy.ensureAcceptable(relationOpt);
-
         FriendJpaEntity relation = relationOpt.get();
+
+        //검증은 policy에게 전달 위임(409 대응)
+        friendEligibilityPolicy.ensureAcceptable(relationOpt, command.userId());
+
 
         //403 권한 없음(나에게 온 요청이 아닐 때)
         //행이 toUserId가 현재 로그인한 사용자가 아니라면 수락 권한 없음
@@ -197,16 +183,10 @@ public class FriendCommandService implements FriendCommandUseCase {
         //두 사람 사이의 관계 조회
         Optional<FriendJpaEntity> relationOpt = friendRepository.findRelationBetween(command.fromUserId(), command.userId());
 
-        //404/409 검증 정책 위임
-        friendEligibilityPolicy.ensureRejectable(relationOpt);
-
         FriendJpaEntity relation = relationOpt.get();
 
-        //403(나에게 온 요청이 아닌 경우)
-        if (!relation.getToUserId().getId().equals(command.userId())) {
-            log.warn("[RejectRequestFriendCommandService] 거절 실패 - 본인에게 온 요청이 아님");
-            throw new FMResourceAccessDeniedException("본인에게 온 요청만 거절할 수 있습니다.");
-        }
+        //404/409 검증 정책 위임
+        friendEligibilityPolicy.ensureRejectable(relationOpt, command.userId());
 
         //거절 시 관계 행 완전 삭제
         Long targetFriendId = relation.getId();

@@ -1,5 +1,7 @@
 package com.wanted.momocity.friend.application.usecase;
 
+import com.wanted.momocity.friend.application.query.*;
+
 import java.util.List;
 
 //포트가 만들어준 문
@@ -7,7 +9,7 @@ public interface FriendQueryUseCase {
 
     //친구 목록 조회
     //로그인한 유저 ID 받아서 친구 목록 List 반환
-    List<FriendView> getFriendQueryHandle(Long userId);
+    List<FriendView> getFriendQueryHandle(GetFriendQuery query);
 
     //응답용 데이터 객체(레코드)
     record FriendView(
@@ -23,7 +25,7 @@ public interface FriendQueryUseCase {
     }
 
     //사용자 검색
-    List<FindView> findUserQueryHandle(Long userId, String nickname);
+    List<FindView> findUserQueryHandle(FindUserQuery query);
 
     record FindView(
             Long userId,
@@ -37,7 +39,7 @@ public interface FriendQueryUseCase {
     ) {}
 
     //보낸 친구 요청 목록
-    List<SentRequestView> getSentRequestFriendQueryHandle(Long userId);
+    List<SentRequestView> getSentRequestFriendQueryHandle(SentRequestQuery query);
 
     record SentRequestView(
             Long userId,
@@ -49,7 +51,7 @@ public interface FriendQueryUseCase {
     ) {}
 
     //받은 친구 요청 목록
-    List<ReceivedRequestView> getReceivedRequestFriendQueryHandle(Long userId);
+    List<ReceivedRequestView> getReceivedRequestFriendQueryHandle(ReceivedRequestQuery query);
 
     record ReceivedRequestView(
             Long userId, //요청자(fromUserId)
@@ -61,7 +63,7 @@ public interface FriendQueryUseCase {
     ) {}
 
     //친구 차단 목록 조회
-    List<BlockedView> getBlockedFriendQueryHandle(Long userId);
+    List<BlockedView> getBlockedFriendQueryHandle(BlockedFriendQuery query);
 
     record BlockedView(
             Long userId,
@@ -69,6 +71,17 @@ public interface FriendQueryUseCase {
             String role,
             String status,
             Boolean isNotActive,
+            String profileImageUrl
+    ) {}
+
+    //강사, 비활성 유저 제외 친구 목록
+    List<StudentFriendsView> getStudentFriendsQueryHandle(GetStudentFriendsQuery query);
+
+    record StudentFriendsView(
+            Long userId,
+            String nickname,
+            String role,
+            String status,
             String profileImageUrl
     ) {}
 }

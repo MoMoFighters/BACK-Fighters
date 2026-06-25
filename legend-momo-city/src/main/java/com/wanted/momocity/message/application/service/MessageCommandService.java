@@ -336,49 +336,6 @@ public class MessageCommandService implements MessageCommandUseCase {
         );
     }
 
-//    // 🎯 웹소켓 전송용 가벼운 내부 레코드(DTO) 생성
-//    public record WebSocketMessageDto(
-//            RoomInfoWebsocket roomInfo
-//    ) {}
-//
-//    //웹소켓 방 정보(멤버, 메시지)
-//    public record RoomInfoWebsocket(
-//            Long roomId,
-//            Long inMemberCount,
-//            String roomTitle, //일대일이면 null
-//            List<MemberInfoWebSocket> memberInfo,
-//            List<MessagesWebsocket> messages
-//    ) {}
-//
-//    //엡소켓 멤버 정보
-//    public record MemberInfoWebSocket(
-//            Long userId,
-//            String name, //강사 아니면 null
-//            String nickname,
-//            String lectureTitle, //강사와의 대화아니면 null
-//            String role,
-//            String status, //친구 상태
-//            String profileImageUrl,
-//            boolean isLeftRoom
-//    ) {}
-//
-//    //웹소켓 메시지 정보
-//    public record MessagesWebsocket(
-//            Long messageId,
-//            Long senderId,
-//            String name,
-//            String nickname,
-//            String role,
-//            String status,
-//            String content,
-//            LocalDateTime createdAt,
-//            Long unreadCount, //말풍선 안읽은 사람 수
-//            Boolean isMine,
-//            Boolean isLeftRoom,
-//            String profileImageUrl,
-//            Long targetUserId,
-//            String type
-//    ) {}
 
     //메시지 읽음
     @Override
@@ -608,8 +565,8 @@ public class MessageCommandService implements MessageCommandUseCase {
             //초대 대상자에 로그인 유저 포함 여부
             boolean hasMe = invitee.getId().equals(command.userId());
 
-            //초대 멤버 role 학생 아닌지 여부(관리자, 강사)
-            boolean isNotStudent = !"STUDENT".equals(invitee.getRole());
+            //초대 멤버 role 학생 아닌지 여부(관리자, 강사) 또는 비활성 유저
+            boolean isNotStudentOrActive = !"STUDENT".equals(invitee.getRole()) || !"ACTIVE".equals(invitee.getStatus());
 
             //초대 대상자들과 로그인 유저가 친구인지 여부
             String friendStatus = messageRepository.findFriendRelation(command.userId(), invitee.getId())
@@ -617,7 +574,7 @@ public class MessageCommandService implements MessageCommandUseCase {
                     .orElse("none");
 
             //정책 위임
-            messageEligibilityPolicy.inviteRoomMember(chatRoom, command.userId(), command.chatMember(), hasMe, friendStatus, isExistMember, isNotStudent);
+            messageEligibilityPolicy.inviteRoomMember(chatRoom, command.userId(), command.chatMember(), hasMe, friendStatus, isExistMember, isNotStudentOrActive);
 
             invitees.add(invitee);
 
