@@ -17,12 +17,34 @@ public class ChatRoomJpaEntity {
     @Column(name = "id")
     private Long id;
 
+    @Column(name = "title")
+    private String roomTitle;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     //채팅방 신설 시 생성 시간 주입
     public void changeCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
 
+    //채팅방 개설 시 업데이트 시간 주입
+    public void changeUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    //채팅방 이름 등록
+    public void registRoomTitle(String roomTitle) {
+        this.roomTitle = roomTitle;
+    }
+
+    //채팅방 이름 수정
+    public void updateRoomTitle(String newRoomTitle) {
+        this.roomTitle = newRoomTitle;
+        this.updatedAt = LocalDateTime.now();
+    }
 }
+

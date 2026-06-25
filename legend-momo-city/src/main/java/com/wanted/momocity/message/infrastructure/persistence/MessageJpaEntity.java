@@ -29,9 +29,6 @@ public class MessageJpaEntity {
     @Column(name = "content")
     private String content;
 
-    @Column(name = "is_read")
-    private Boolean isRead;
-
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -50,19 +47,19 @@ public class MessageJpaEntity {
     }
 
     //메시지 전송
-    public static MessageJpaEntity createNewMessage(ChatRoomJpaEntity roomId, UserWithFMJpaEntity senderId, String content, boolean isRead) {
+    public static MessageJpaEntity createNewMessage(ChatRoomJpaEntity roomId, UserWithFMJpaEntity senderId, String content) {
         MessageJpaEntity entity = new MessageJpaEntity();
         entity.roomId = roomId;
         entity.senderId = senderId;
         entity.content = content;
-        entity.isRead = isRead;
         entity.createdAt = LocalDateTime.now();
         entity.updatedAt = LocalDateTime.now();
         return entity;
     }
 
     //메시지 읽음 처리
-    public void changeIsRead(boolean isRead) {
-        this.isRead = isRead;
-    }
+//    public void changeIsRead(boolean isRead) {
+//        this.isRead = isRead;
+//    }
+    //message_read 테이블로 연계
 }

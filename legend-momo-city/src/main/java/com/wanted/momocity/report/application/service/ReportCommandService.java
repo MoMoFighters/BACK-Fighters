@@ -2,6 +2,7 @@ package com.wanted.momocity.report.application.service;
 
 import com.wanted.momocity.report.application.command.SubmitReportCommand;
 import com.wanted.momocity.report.application.usecase.ReportCommandUseCase;
+import com.wanted.momocity.report.domain.exception.ReportNotFoundException;
 import com.wanted.momocity.report.domain.model.Report;
 import com.wanted.momocity.report.domain.repository.ReportRepository;
 import lombok.RequiredArgsConstructor;
@@ -66,5 +67,19 @@ public class ReportCommandService implements ReportCommandUseCase {
         );
 
         return saved;
+    }
+
+    @Override
+    public Report resolveReport(Long reportId, Long adminId) {
+        // 1. 신고 단건 조회 (없으면 예외 처리)
+        Report report = reportRepository.findById(reportId)
+                .orElseThrow(() -> new ReportNotFoundException(reportId));
+
+        // 2. 도메인 행위 호출 (isRead=true, handledAt=now, handlerAdminId 기록)
+        report.resolve(adminId);
+
+        // 3. 변경된 상태 저장하기
+        // Report 는 JPA 엔티티가 아니라 순수 도메인 객체이다. 따라서 JPA의 변경감지가 적용되지 않기 때문이다.
+        return reportRepository.save(report);
     }
 }

@@ -39,8 +39,8 @@ public interface UserRepository {
     // 변경된 user를 db에 저장
     void save(User user);
 
-    // 강사 승인 여부에 따른 status 업데이트
-    void updateRoleAndStatus(Long userId, Role role, Status status);
+    // 강사 승인/반려
+    void updateAfterApply(Long userId, Role role, Status status, String url);
 
     // 관리자 회원관리에서 사용자 조회
     List<User> findAllForAdmin(Role role, Status status, int page, int size);
@@ -53,6 +53,15 @@ public interface UserRepository {
     // 강사 신청
     void teacherApply(Long userId, String nickname, Category category, String proof);
 
-    // 강사 중복 신청 확인용
-    boolean existsByIdAndRoleAndStatus(Long userId, Role role, Status status);
+    // 강사 중복 신청 확인/ 강사 role 확인 용
+    boolean checkTeacherAvailable(Long userId, Role role, List<Status> status);
+
+    // 강사 승인/반려 확인용
+    Status findStatusById(Long userId);
+
+    // 강사 포기
+    void changeStatus(Long userId, Status status);
+
+    // 승인할 강사의 프사 가져오기
+    Category findCategoryById(Long userId);
 }

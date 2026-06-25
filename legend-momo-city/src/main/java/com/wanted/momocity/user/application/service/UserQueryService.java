@@ -1,13 +1,13 @@
 package com.wanted.momocity.user.application.service;
 
-import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
+import com.wanted.momocity.global.application.s3.S3PresignedUrlPort;
+import com.wanted.momocity.user.application.port.UserReportListPort;
+import com.wanted.momocity.user.domain.exception.UserNotFoundException;
 import com.wanted.momocity.user.application.policy.UserPolicy;
 import com.wanted.momocity.user.application.usecase.UserQueryUsecase;
-import com.wanted.momocity.user.domain.model.Role;
-import com.wanted.momocity.user.domain.model.Status;
-import com.wanted.momocity.user.domain.model.TeacherApplication;
-import com.wanted.momocity.user.domain.model.User;
+import com.wanted.momocity.user.domain.model.*;
 import com.wanted.momocity.user.domain.repository.UserRepository;
+import com.wanted.momocity.user.presentation.api.response.AdminUserDetailResponse;
 import com.wanted.momocity.user.presentation.api.response.AdminUserListResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,12 +22,14 @@ public class UserQueryService implements UserQueryUsecase {
 
     private final UserRepository userRepository;
     private final UserPolicy userPolicy;
+    private final S3PresignedUrlPort s3PresignedUrlPort;
+    private final UserReportListPort userReportListPort;
 
     // 마이페이지 내 정보 조회용
     @Override
     public UserDetailView userDetail(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(()->new DomainRuleViolationException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(()->new UserNotFoundException("사용자를 찾을 수 없습니다."));
 
         return new UserDetailView(
                 user.getProfileImageUrl(),
@@ -44,6 +46,19 @@ public class UserQueryService implements UserQueryUsecase {
         userPolicy.nicknamePolicy(nickname);
     }
 
+    // 관리자가 조회할 회원 1명의 정보
+    @Override
+    public AdminUserDetailResponse getUserDetail(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(()->new UserNotFoundException("사용자를 찾을 수 없습니다."));
+
+        List<ReportInfo> reports = userReportListPort.getReportsByUserId(userId); // 신고내역 가져오기
+
+        return new AdminUserDetailResponse(user.getEmail(),user.getRole(),user.getCreatedAt()
+                ,user.getCategory(),user.getName(),user.getSuspensionCount()
+                ,reports);
+    }
+
 
     // 대기 강사 전체 조회
     @Override
@@ -57,14 +72,18 @@ public class UserQueryService implements UserQueryUsecase {
     // 대기 강사 상세 조회
     @Override
     public TeacherApplication getApplicationDetail(Long userId) {
-        return userRepository.findTeacherApplicationById(userId)
-                .orElseThrow(() -> new DomainRuleViolationException("해당 강사 신청자를 찾을 수 없습니다."));
+
+        TeacherApplication app = userRepository.findTeacherApplicationById(userId)
+                .orElseThrow(()-> new UserNotFoundException("해당 강사 신청자를 찾을 수 없습니다."));
+
+        // presignedUrl 생성
+        String presignedUrl = s3PresignedUrlPort.generatePresignedUrl(app.proof());
+        return app.withPresignedUrl(presignedUrl);
     }
 
     // 관리자 회원관리용 회원 조회
     @Override
     public AdminUserListResult getAdminUserList(String role, String status, int page, int size) {
-        // role이랑 status가 컨트롤러에서 String으로 넘어와서 서비스에서 enum 타입으로 변환
         Role roleEnum = role != null ? Role.valueOf(role) : null;
         Status statusEnum = status != null ? Status.valueOf(status) : null;
 
@@ -73,15 +92,11 @@ public class UserQueryService implements UserQueryUsecase {
                 .map(user -> {
                     if (statusEnum == Status.DELETED) {
                         return new AdminUserListResponse.Deleted(
-                                user.getId(), user.getName(), user.getRole().name(), user.getEmail(), user.getDeletedAt());
-                    } else if (user.getRole() == Role.TEACHER) {
-                        return new AdminUserListResponse.Teacher(
-                                user.getId(), user.getName(), user.getRole().name(), user.getEmail(),
-                                user.getCreatedAt(), user.getStatus().name(), user.getProof());
+                                user.getId(), user.getName(), user.getRole(), user.getEmail(), user.getDeletedAt(), user.getStatus());
                     } else {
                         return new AdminUserListResponse.Default(
-                                user.getId(), user.getName(), user.getRole().name(), user.getEmail(),
-                                user.getCreatedAt(), user.getStatus().name());
+                                user.getId(), user.getName(), user.getRole(), user.getEmail(),
+                                user.getCreatedAt(), user.getStatus(), user.getSuspensionCount(),user.getSuspendedUntil());
                     }
                 })
                 .toList();

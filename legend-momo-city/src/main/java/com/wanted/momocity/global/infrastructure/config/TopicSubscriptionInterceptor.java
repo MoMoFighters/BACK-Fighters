@@ -20,6 +20,7 @@ import java.security.Principal;
 @Slf4j
 public class TopicSubscriptionInterceptor implements ChannelInterceptor {
 
+    //웹소켓
     private final ChatRoomSessionManager sessionManager;
     private final LoadUserPort loadUserPort;
 
@@ -44,10 +45,38 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
         }
 
         //프론트엔드가 웹소켓 연결을 끊거나 방을 나갈 때
-        if (StompCommand.DISCONNECT.equals(accessor.getCommand())) {
+        //채팅방 주소 구독을 취소하거나(UNSUBSCRIBE = 뒤로가기), 웹소켓 연결 자체가 끊어질 때(DISCONNECT = 앱 종료)
+        // 1. UNSUBSCRIBE 처리 (뒤로가기 등으로 특정 채널 구독 해제할 때)
+        if (StompCommand.UNSUBSCRIBE.equals(command)) {
             Long userId = getUserIdFromAccessor(accessor);
-            sessionManager.leaveRoom(userId);
-            log.info("[웹소켓 인터셉터] 유저 {}이 채팅방에서 퇴장했습니다.", userId);
+
+            // 🎯 [핵심] STOMP 명세상 accessor.getDestination()이 null이어도,
+            // 네이티브 메시지 헤더 내부에는 원래 구독 주소 정보가 남아있습니다.
+            String destination = null;
+            Object simpDestination = accessor.getMessageHeaders().get("simpDestination");
+            if (simpDestination != null) {
+                destination = simpDestination.toString();
+            }
+
+            if (userId != null) {
+                // 실제 채팅방 상세 채널(/sub/chat/room/)을 나갈 때만 세션에서 제거!
+                if (destination != null && destination.startsWith("/sub/chat/room/")) {
+                    sessionManager.leaveRoom(userId);
+                    log.info("[웹소켓 인터셉터] 유저 {}번이 채팅방({}) 구독을 취소하여 세션에서 제거되었습니다.", userId, destination);
+                } else {
+                    log.info("[웹소켓 인터셉터] 일반 채널 구독 취소이므로 방 세션을 유지합니다. (경로: {})", destination);
+                }
+            }
+        }
+
+        // 2. DISCONNECT 처리 (앱 종료, 웹소켓 연결 자체가 끊길 때)
+        if (StompCommand.DISCONNECT.equals(command)) {
+            Long userId = getUserIdFromAccessor(accessor);
+            if (userId != null) {
+                // 연결이 완전히 끊기는 것은 방을 나가는 것이 맞으므로 무조건 제거
+                sessionManager.leaveRoom(userId);
+                log.info("[웹소켓 인터셉터] 유저 {}번의 웹소켓 연결이 종료되어 세션에서 완전히 제거되었습니다.", userId);
+            }
         }
         return message;
     }

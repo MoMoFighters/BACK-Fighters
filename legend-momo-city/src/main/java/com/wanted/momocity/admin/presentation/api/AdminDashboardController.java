@@ -7,6 +7,7 @@ import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,13 +33,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1")
 @PreAuthorize("hasRole('ADMIN')")
 @Tag(name = "Admin - 대시보드", description = "관리자 대시보드 통계 (회원/신고/강의 수)")
+@RequiredArgsConstructor
 public class AdminDashboardController {
 
     private final AdminDashboardQueryUseCase dashboardQueryUseCase;
-
-    public AdminDashboardController(AdminDashboardQueryUseCase dashboardQueryUseCase) {
-        this.dashboardQueryUseCase = dashboardQueryUseCase;
-    }
 
     /* comment.
         getDashboardSummary 처리 흐름 3단계 :
