@@ -124,6 +124,7 @@ public class PostCommandService implements PostCommandUseCase {
 
         validateAuthor(post.getUserId(), userId);
         validateImageCount(contents);
+        validateContents(contents);
 
         // 썸네일 업데이트
         post.updateThumbnail(thumbnailUrl);
@@ -171,6 +172,11 @@ public class PostCommandService implements PostCommandUseCase {
     public LikeResult likePost(Long userId, Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CommunityNotFoundException("게시글을 찾을 수 없습니다."));
+
+        // 삭제된 게시글 좋아요 방지
+        if (post.isDeleted()) {
+            throw new CommunityAccessDeniedException("삭제된 게시글에는 좋아요를 누를 수 없습니다.");
+        }
 
         postLikeRepository.findByPostIdAndUserId(postId, userId)
                 .ifPresent(like -> {
@@ -349,6 +355,18 @@ public class PostCommandService implements PostCommandUseCase {
                 .count();
         if (imageCount > 5) {
             throw new IllegalArgumentException("이미지는 최대 5장까지 업로드 가능합니다.");
+        }
+    }
+
+    // TEXT / IMAGE 타입 null 검증
+    private void validateContents(List<PostContentCommand> contents) {
+        for (PostContentCommand cmd : contents) {
+            if ("TEXT".equals(cmd.type()) && (cmd.content() == null || cmd.content().isBlank())) {
+                throw new IllegalArgumentException("TEXT 타입은 content 가 필수입니다.");
+            }
+            if ("IMAGE".equals(cmd.type()) && (cmd.imageUrl() == null || cmd.imageUrl().isBlank())) {
+                throw new IllegalArgumentException("IMAGE 타입은 imageUrl 이 필수입니다.");
+            }
         }
     }
 

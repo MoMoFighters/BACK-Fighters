@@ -31,23 +31,27 @@ public class PostRepositoryAdapter implements PostRepository {
 
     private final PostJpaRepository postJpaRepository;
 
+    // 게시글 저장 (생성, 수정)
     @Override
     public Post save(Post post) {
         return postJpaRepository.save(PostJpaEntity.from(post)).toDomain();
     }
 
+    // 게시글 단건 조회
     @Override
     public Optional<Post> findById(Long postId) {
         return postJpaRepository.findByIdAndDeletedAtIsNull(postId)
                 .map(PostJpaEntity::toDomain);
     }
 
+    // 카테고리별 게시글 페이징 조회
     @Override
     public Page<Post> findAll(String category, Pageable pageable) {
         return postJpaRepository.findAllByCategory(category, pageable)
                 .map(PostJpaEntity:: toDomain);
     }
 
+    // 게시글 하드딜리트
     @Override
     @Transactional
     public int hardDeleteByDeletedAtBefore(LocalDateTime threshold) {
@@ -87,21 +91,25 @@ public class PostRepositoryAdapter implements PostRepository {
                 .toList();
     }
 
+    // 작성한 총 게시글 수 조회
     @Override
     public int countByUserId(Long userId) {
         return postJpaRepository.countByUserId(userId);
     }
 
+    // 총 게시글 조회수 합산
     @Override
     public int sumViewCountByUserId(Long userId) {
         return postJpaRepository.sumViewCountByUserId(userId);
     }
 
+    // 총 게시글 좋아요 수 합산
     @Override
     public int sumLikeCountByUserId(Long userId) {
         return postJpaRepository.sumLikeCountByUserId(userId);
     }
 
+    // 키워드 검색 (커서 기반 페이징 적용)
     @Override
     public List<Post> searchByKeyword(String keyword, Long cursor, int size) {
         return postJpaRepository.searchByKeyword(keyword, cursor, PageRequest.of(0, size))
@@ -110,6 +118,7 @@ public class PostRepositoryAdapter implements PostRepository {
                 .toList();
     }
 
+    // 검색 결과 총 개수 조회 (페이징 카운트)
     @Override
     public int countByKeyword(String keyword) {
         return postJpaRepository.countByKeyword(keyword);

@@ -470,7 +470,7 @@ public class PostQueryService implements PostQueryUseCase {
                 post.getUserId(), postId, topPostIds, 2
         );
 
-        // topPosts → RecommendItem 변환
+        // topPosts -> RecommendItem 변환
         List<PostRecommendationResponse.RecommendItem> topItems = topPosts.stream()
                 .map(p -> {
                     User author = userInfoPort.findById(p.getUserId())
@@ -489,7 +489,7 @@ public class PostQueryService implements PostQueryUseCase {
                 })
                 .toList();
 
-        // authorPosts → RecommendItem 변환
+        // authorPosts -> RecommendItem 변환
         List<PostRecommendationResponse.RecommendItem> authorItems = authorPosts.stream()
                 .map(p -> {
                     User author = userInfoPort.findById(p.getUserId())
