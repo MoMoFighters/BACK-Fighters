@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +32,9 @@ public class EnrollmentQueryService implements EnrollmentQueryUsecase {
     // 수강신청 정보를 조회하는 도메인 Repository입니다.
     private final EnrollmentRepository enrollmentRepository;
 
+    // S3 빌딩 건물 기본 경로를 상수로 둔다
+    private static final String BUILDING_IMAGE_BASE_URL = "https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/building";
+
     @Override
     public List<RenderingBuildingsView> userBuildingInfo(Long userId) {
         return buildingRepository.findByUserId(userId)
@@ -38,9 +42,15 @@ public class EnrollmentQueryService implements EnrollmentQueryUsecase {
                 .map(building -> new RenderingBuildingsView(
                         building.getCategory(),
                         building.getPosition(),
-                        building.getLevel()
+                        building.getLevel(),
+                        buildBuildingUrl(building.getCategory(), building.getLevel()) // 카테고리와 레벨로 이미지 URL 만들어서 응답
                 ))
                 .toList();
+    }
+
+    private String buildBuildingUrl(Category category, Integer level) {
+        String categoryPath = category.name().toLowerCase(Locale.ROOT); // ENUM 값 소문자로 바꾸기
+        return BUILDING_IMAGE_BASE_URL + "/" + categoryPath + "/level-" + level + ".png";
     }
 
     // 학습 진척도 조회

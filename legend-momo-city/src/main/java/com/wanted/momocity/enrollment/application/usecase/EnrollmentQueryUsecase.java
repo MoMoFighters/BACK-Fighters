@@ -20,8 +20,9 @@ public interface EnrollmentQueryUsecase {
     record RenderingBuildingsView(
     Category category,
     Long position,
-    Integer level
-
+    Integer level,
+    // 카테고리에 맞는 빌딩 이미지 생성
+    String buildingUrl
     ){}
 
 
