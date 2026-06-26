@@ -18,6 +18,7 @@ import com.wanted.momocity.lecture.domain.model.LectureStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -136,7 +137,15 @@ public class EnrollmentCommandService implements EnrollmentCommandUseCase {
                 position
         );
 
-        buildingRepository.save(building);
+        // 동시 요청으로 같은 카테고리 건물이 먼저 생성 될 수 있으므로 예외 처리
+        try {
+            // 신규 건물 저장 시도
+            buildingRepository.save(building);
+            // unique 제약 위반이 발생한 경우
+        } catch (DataIntegrityViolationException exception) {
+            // 중복 생성 상황을 로그로 남김
+            log.info("이미 생성된 카테고리 건물이 있어서 건물 생성을 건너 뜁니다. userId={}, category={}", userId, buildingCategory);
+        }
     }
 
     private void validateBuildingPosition(Long position) {

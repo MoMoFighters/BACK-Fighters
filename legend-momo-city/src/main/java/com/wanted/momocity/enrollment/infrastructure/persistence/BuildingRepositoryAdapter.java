@@ -44,7 +44,7 @@ public class BuildingRepositoryAdapter implements BuildingRepository {
     @Override
     public Building save(Building building) {
         BuildingJpaEntity entity = BuildingJpaEntity.from(building); // 도메인 모델을 JPA 엔티티로 변환
-        BuildingJpaEntity savedEntity = springDataBuildingRepository.save(entity); // Jpa Repository 저장
+        BuildingJpaEntity savedEntity = springDataBuildingRepository.saveAndFlush(entity); // DB에 즉시 반영해서 유니크 제약 위반을 이 시점에 발생시킴
         return toDomain(savedEntity);
     }
 
