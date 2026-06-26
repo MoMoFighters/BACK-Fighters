@@ -2,12 +2,16 @@ package com.wanted.momocity.message.application.service;
 
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import com.wanted.momocity.message.application.policy.MessageEligibilityPolicy;
+import com.wanted.momocity.message.application.query.FindChatRoomQuery;
+import com.wanted.momocity.message.application.query.GetMessageHistoryQuery;
+import com.wanted.momocity.message.application.usecase.MessageQueryUseCase;
 import com.wanted.momocity.message.domain.repository.MessageRepository;
 import com.wanted.momocity.message.infrastructure.persistence.*;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +26,10 @@ public class MessageHandlerService {
 
     private final MessageRepository messageRepository;
     private final MessageEligibilityPolicy messageEligibilityPolicy;
+
+    //친구 삭제로 채팅방 나가기 안내 문구 웹소켓
+    private final MessageQueryUseCase messageQueryUseCase; // 웹소켓용 페이로드 조회를 위한 유스케이스
+    private final SimpMessagingTemplate messagingTemplate; // 실시간 웹소켓 발송을 위한 템플릿
 
     //회원가입 성공 후 날라온 이벤트로 나와의 채팅방 최초 1회 생성
     //v2 -> 결제 완료 시 나와의 채팅방 생성으로 변경?
@@ -138,7 +146,21 @@ public class MessageHandlerService {
 
         //채팅방 나갔다는 안내 문구 message_announce 테이블에 행추가
         messageRepository.saveLeaveAnnounce(chatRoom, loginUser, loginUser.getNickname() + "님이 나갔습니다.");
-
         log.info("[MessageHandlerService] 친구 삭제로 채팅방 나가기 이벤트 발행 -> message_announce 테이블에 안내 문구 추가. 방ID: {}", foundRoomId);
+
+        // 🌟 [추가] 시간 낭비 없이 웹소켓 버그만 해결하기!
+        // 상대방(targetUserId) 화면에 실시간으로 반영되도록 템플릿으로 쏴버립니다.
+        String destination = "/sub/chat/room/" + foundRoomId;
+
+        // 1) 상대방 채팅방 내부 메시지 내역 새로고침 데이터 발송
+        List<MessageQueryUseCase.MessageHistoryView> historyPayload =
+                messageQueryUseCase.getMessageHistoryQueryHandle(new GetMessageHistoryQuery(foundRoomId, targetUserId, null));
+        messagingTemplate.convertAndSendToUser(targetUserId.toString(), destination, historyPayload);
+
+        // 2) 상대방 전체 채팅방 리스트 화면 새로고침 데이터 발송
+        List<MessageQueryUseCase.ChatRoomView> chatRoomListPayload =
+                messageQueryUseCase.getChatRoomQueryHandle(new FindChatRoomQuery(targetUserId));
+        messagingTemplate.convertAndSendToUser(targetUserId.toString(), "/sub/chat/rooms", chatRoomListPayload);
+        log.info("[MessageHandlerService] 친구 삭제로 채팅방 나가기 완료 및 상대방(ID:{})에게 웹소켓 전송 완료", targetUserId);
     }
 }

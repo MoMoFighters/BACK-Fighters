@@ -105,7 +105,7 @@ public class UserController {
             @RequestBody @Valid UpdateUserInfoRequest request){
 
         userCommandUsecase.updateUserInfo(new UpdateUserInfoCommand(
-                userDetails.getUserId(),request.profileImageUrl(),request.nickname(),request.currentPassword(),request.password()
+                userDetails.getUserId(),request.itemName(),request.nickname(),request.currentPassword(),request.password()
         ));
 
         boolean isPwdChanged = request.password() != null;
@@ -224,6 +224,34 @@ public class UserController {
         ));
 
 
+    }
+
+    @PatchMapping("/delete")
+    @Operation(summary = "회원탈퇴",
+                description = "탈퇴할 땐 status랑 nickname만 바꾸고 3개월 뒤 이벤트 발행해서 사용자 정보 하드 딜리트")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "회원탈퇴 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)")
+    })
+    public ResponseEntity<ApiResponse<Void>> deleteUser(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestHeader("Authorization") String bearerToken) {
+
+        userCommandUsecase.softDeleteUser(userDetails.getUserId());
+
+        // 토큰 무효화
+        String accessToken = bearerToken.substring(7);
+        long remaining = tokenProviderPort.getRemainingMillis(accessToken);
+        if (remaining > 0) {
+            blacklistPort.addBlacklist(accessToken, remaining);
+        }
+        redisRefreshTokenPort.deleteByUserId(String.valueOf(userDetails.getUserId()));
+
+        return ResponseEntity.ok(ApiResponse.success(
+                UserResponseCode.USER_SOFT_DELETED,
+                UserResponseMessage.USER_SOFT_DELETED,
+                null
+        ));
     }
 
 

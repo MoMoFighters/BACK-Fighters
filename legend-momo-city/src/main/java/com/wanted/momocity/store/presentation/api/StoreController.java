@@ -9,6 +9,7 @@ import com.wanted.momocity.store.presentation.api.common.StoreResponseMessage;
 import com.wanted.momocity.store.presentation.api.response.StoreListResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -29,6 +30,10 @@ public class StoreController {
 
     @GetMapping("/product/list")
     @Operation(summary = "상점에 있는 모든 항목 조회")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "상품 목록 조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)")
+    })
     public ResponseEntity<ApiResponse<StoreListResponse>> getStoreProductList(
             @Parameter(description = "페이지 번호 (1-base)", example = "1")
             @RequestParam(defaultValue = "1") int page,

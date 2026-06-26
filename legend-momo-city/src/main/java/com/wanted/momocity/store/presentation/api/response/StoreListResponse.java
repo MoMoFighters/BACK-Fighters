@@ -2,6 +2,7 @@ package com.wanted.momocity.store.presentation.api.response;
 
 import com.wanted.momocity.store.domain.model.Store;
 import com.wanted.momocity.store.domain.model.StoreListResult;
+import com.wanted.momocity.store.domain.model.Type;
 
 import java.util.List;
 
@@ -16,14 +17,16 @@ public record StoreListResponse(
             Long id,
             String name,
             Long price,
-            String url
+            String url,
+            Type type
     ) {
         public static Product toResponse(Store store) {
             return new Product(
                     store.getId(),
                     store.getName(),
                     store.getPrice(),
-                    store.getUrl()
+                    store.getUrl(),
+                    store.getType()
             );
         }
     }

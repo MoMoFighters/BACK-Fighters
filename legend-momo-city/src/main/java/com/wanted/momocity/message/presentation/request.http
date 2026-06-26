@@ -98,14 +98,23 @@ GET localhost:8080/api/v2/messages/history/16?lastMessageId=67
 Authorization: Bearer {{auth_token}}
 
 ### 채팅방 나가기(v2 url 동일)
-DELETE localhost:8080/api/v1/messages/chatRooms/leave/14
+DELETE localhost:8080/api/v1/messages/chatRooms/leave/7
 Authorization: Bearer {{auth_token}}
 
 ### v2 - 다대다 채팅 이름 수정
-PATCH localhost:8080/api/v2/message/chatroom/modify/7
+PATCH localhost:8080/api/v2/message/chatrooms/modify/7
 Authorization: Bearer {{auth_token}}
 Content-Type: application/json
 
 {
   "roomTitle" : "다대다 방이름 변경 시도"
+}
+
+### v2 - 다대다 채팅 멤버 초대하기
+POST localhost:8080/api/v2/message/chatrooms/invite/7
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "chatMember": []
 }

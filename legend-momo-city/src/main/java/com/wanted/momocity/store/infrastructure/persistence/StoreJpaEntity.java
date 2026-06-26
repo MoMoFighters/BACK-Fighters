@@ -1,6 +1,7 @@
 package com.wanted.momocity.store.infrastructure.persistence;
 
 import com.wanted.momocity.store.domain.model.Store;
+import com.wanted.momocity.store.domain.model.Type;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
@@ -19,6 +20,9 @@ public class StoreJpaEntity {
     @Column
     private String url;
 
+    @Enumerated(EnumType.STRING)
+    private Type type;
+
     @Column(nullable = false, unique = true)
     private String name;
 
@@ -27,16 +31,17 @@ public class StoreJpaEntity {
 
     public StoreJpaEntity() {}
 
-    public StoreJpaEntity(Long id, Long price, String url, String name, LocalDateTime createdAt) {
+    public StoreJpaEntity(Long id, Long price, String url,  Type type,String name, LocalDateTime createdAt) {
         this.id = id;
         this.price = price;
         this.url = url;
+        this.type = type;
         this.name = name;
         this.createdAt = createdAt;
     }
 
     public Store toDomain() {
-        return new Store(id, price, url, name, createdAt);
+        return new Store(id, price, url, type, name, createdAt);
     }
 
     public Long getId() {
@@ -45,5 +50,17 @@ public class StoreJpaEntity {
 
     public Long getPrice() {
         return price;
+    }
+
+    public Type getType() {
+        return type;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public String getName() {
+        return name;
     }
 }
