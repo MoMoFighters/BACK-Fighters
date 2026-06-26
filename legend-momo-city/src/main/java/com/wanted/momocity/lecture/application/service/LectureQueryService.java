@@ -25,6 +25,8 @@ import com.wanted.momocity.lecture.presentation.api.response.StudentLectureRespo
 import com.wanted.momocity.lecture.presentation.api.response.TeacherLectureResponse.TeacherLectureDetailResponse;
 import com.wanted.momocity.lecture.presentation.api.response.TeacherLectureResponse.TeacherLectureListItemResponse;
 import com.wanted.momocity.lecture.presentation.api.response.TeacherLectureResponse.TeacherLecturePageResponse;
+import com.wanted.momocity.viewing.application.port.ChapterProgressInfo;
+import com.wanted.momocity.viewing.application.port.LectureChapterProgressPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -65,6 +67,9 @@ public class LectureQueryService implements
 
     // 강사 이름, 프로필 이미지 조회를 위한 auth 포트
     private final LoadUserPort loadUserPort;
+
+    // 학생 상세 조회에서 챕터별 진척도 조회
+    private final LectureChapterProgressPort lectureChapterProgressPort;
 
     // 학생/비로그인 기준 강의 목록 조회.
     @Override
@@ -147,23 +152,41 @@ public class LectureQueryService implements
         List<LectureChapter> chapters =
                 chapterRepository.findAllByLectureIdOrderByOrderNoAsc(query.lectureId());
 
-        boolean isEnrolled = lectureEnrollmentQueryPort
-                .findByUserIdAndLectureId(studentId, query.lectureId())
-                .isPresent();
+        // 수강 신청 정보 조회
+        var enrollmentProgress = lectureEnrollmentQueryPort
+                // 학생 Id와 강의ID로 수강 신청 정보 조회
+                .findByUserIdAndLectureId(studentId, query.lectureId());
 
-        User teacher = loadUserPort.findById(lecture.getTeacherId())
-                .orElseThrow(() -> new LectureNotFoundException("강사 정보를 찾을 수 없습니다."));
+        // 수강 신청 정보가 있으면 true, 없으면 null
+        boolean isEnrolled = enrollmentProgress.isPresent();
+
+        // 조회된 수강 신청 정보 Optional 사용
+        Integer lectureProgress = enrollmentProgress
+                .map(LectureEnrollmentQueryPort.EnrollmentProgress::totalProgress).orElse(null);
+
+        // 수강 중인 강의인지 확인
+        Map<Long, ChapterProgressInfo> chapterProgressMap = isEnrolled
+                // 수강 중이면 챕터별 진척도 목록 조회
+                ? lectureChapterProgressPort.getLectureChapterProgress(studentId, query.lectureId())
+                // chapterId 기준으로 Map으로 변환
+                  .stream().collect(java.util.stream.Collectors.toMap(
+                          // Map key는 chapterId
+                          ChapterProgressInfo::chapterId,
+                        // Map value는 챕터 진척도 정보 전체
+                        progressInfo -> progressInfo
+                        // 미수강이면  빈 Map 사용
+                )) : Map.of();
 
         LectureReviewQueryPort.ReviewStats reviewStats = lectureReviewQueryPort.getReviewStats(lecture.getId());
 
         return StudentLectureDetailResponse.from(
                 lecture,
                 chapters,
-                teacher.getName(),
-                teacher.getProfileImageUrl(),
                 reviewStats.averageRating(),
                 reviewStats.reviewCount(),
-                isEnrolled
+                isEnrolled,
+                lectureProgress,
+                chapterProgressMap
         );
     }
 

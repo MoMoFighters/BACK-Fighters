@@ -63,13 +63,11 @@ public class AdminLectureResponse {
     // 관리자 강의 상세 조회 응답 DTO
     public record AdminLectureDetailResponse(
             Long lectureId,
-            Long teacherId,
             String title,
             String description,
             String thumbnailUrl,
             String category,
             String lectureStatus,
-            int completedUserCount,
             double averageRating,
             int reviewCount,
             List<AdminLectureChapterResponse> chapters,
@@ -86,13 +84,11 @@ public class AdminLectureResponse {
         ) {
             return new AdminLectureDetailResponse(
                     lecture.getId(),
-                    lecture.getTeacherId(),
                     lecture.getTitle(),
                     lecture.getDescription(),
                     lecture.getThumbnailUrl(),
                     lecture.getCategory().name(),
                     lecture.getStatus().name(),
-                    lecture.getCompletedUserCount(),
                     averageRating,
                     reviewCount,
                     chapters.stream()

@@ -5,10 +5,13 @@ import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.order.application.command.MakeOrderCommand;
 import com.wanted.momocity.order.application.usecase.OrderCommandUsecase;
 import com.wanted.momocity.order.application.usecase.OrderQueryUsecase;
+import com.wanted.momocity.order.domain.model.OrderHistoryList;
 import com.wanted.momocity.order.presentation.api.common.OrderResponseCode;
 import com.wanted.momocity.order.presentation.api.common.OrderResponseMessage;
 import com.wanted.momocity.order.presentation.api.request.MakeOrderRequest;
+import com.wanted.momocity.order.presentation.api.response.OrderHistoryResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -49,6 +52,32 @@ public class OrderController {
                         OrderResponseMessage.ORDER_SUCCESS,
                         null
                 ));
+    }
+
+
+    @GetMapping("/list")
+    @Operation(summary = "개인별 구매 내역 조회")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)")
+    })
+    public ResponseEntity<ApiResponse<OrderHistoryResponse>> getOrderHistoryList(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Parameter(description = "페이지 번호 (1-base)", example = "1")
+            @RequestParam(defaultValue = "1") int page,
+            @Parameter(description = "페이지 크기", example = "20")
+            @RequestParam(defaultValue = "5") int size){
+
+        OrderHistoryList list = orderQueryUsecase.getOrderHistory(userDetails.getUserId(),page,size);
+        OrderHistoryResponse response = OrderHistoryResponse.toResponse(list);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        OrderResponseCode.LIST_FETCHED,
+                        OrderResponseMessage.LIST_FETCHED,
+                        response
+                ));
+
     }
 
     }
