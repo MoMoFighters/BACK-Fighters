@@ -4,6 +4,8 @@ public record CreateEnrollmentCommand(
         // 학생 Id
         Long studentId,
         // 강의 Id
-        Long lectureId
+        Long lectureId,
+        // 건물 위치
+        Long position
 ) {
 }

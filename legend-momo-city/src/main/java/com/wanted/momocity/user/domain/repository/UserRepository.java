@@ -20,7 +20,7 @@ public interface UserRepository {
     boolean existsByNickname(String nickname);
 
     // 사용자 정보 수정
-    void updateUserInfo(UpdateUserInfoCommand command);
+    void updateUserInfo(UpdateUserInfoData data);
 
     // 임시비밀번호 죽이기 - 임시비번으로 로그인 해서 비번 바꾸면 is_tempPwd false로 변경
     void clearTempPwd(Long userId);
