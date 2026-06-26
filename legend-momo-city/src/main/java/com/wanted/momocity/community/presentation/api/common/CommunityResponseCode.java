@@ -19,6 +19,8 @@ public class CommunityResponseCode {
     public static final String POST_UPDATED          = "COMMUNITY-POST-UPDATED";
     public static final String POST_CONTENT_UPDATED  = "COMMUNITY-POST-CONTENT-UPDATED";
     public static final String POST_DELETED          = "COMMUNITY-POST-DELETED";
+    public static final String POST_SEARCH_FOUND     = "COMMUNITY-POST-SEARCH-FOUND";
+    public static final String POST_RECOMMENDATIONS_FOUND = "COMMUNITY-POST-RECOMMENDATIONS-FOUND";
 
     // 좋아요
     public static final String LIKE_CREATED          = "COMMUNITY-LIKE-CREATED";

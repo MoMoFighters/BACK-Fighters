@@ -179,6 +179,15 @@ public class ViewingController {
     ) {
         Long userId = userDetails.getUserId();
         CategoryProgressInfo info = viewingQueryUseCase.getCategoryProgress(userId, category);
+
+        if (info.lectureId() == null) {
+            return ResponseEntity.ok(ApiResponse.success(
+                    ViewingResponseCode.CONTINUE_LEARNING_FOUND,
+                    "이어볼 강의가 없습니다.",
+                    null
+            ));
+        }
+
         return ResponseEntity.ok(ApiResponse.success(
                 ViewingResponseCode.CONTINUE_LEARNING_FOUND,
                 "이어보기 정보를 조회했습니다.",
@@ -189,6 +198,7 @@ public class ViewingController {
                         info.chapterTitle(),
                         info.chapterProgress()
                 )
+
         ));
     }
 
