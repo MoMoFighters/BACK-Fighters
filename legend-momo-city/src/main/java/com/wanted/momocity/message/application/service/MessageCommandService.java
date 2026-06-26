@@ -292,26 +292,6 @@ public class MessageCommandService implements MessageCommandUseCase {
         // (새로 데이터를 전송하고 밑에서 채팅방에 머무르는 사람있으면 저장되기 전에 메시지 내역이 호출됨)
         messageRepository.fastSaveChanges();
 
-        //WebSocketConfig에서 설정한 prefix "/sub" 채널로 발송
-        String destination = "/sub/chat/room/" + command.roomId();
-
-        //방에 있는 모든 사람 찾기(로그인 유저 포함)
-        for (ChatRoomMemberJpaEntity member: members) {
-            //수신자
-            UserWithFMJpaEntity receiver = member.getUserId();
-
-            //메시지 내역 웹소켓
-            List<MessageQueryUseCase.MessageHistoryView> historyPayload =
-                    messageQueryUseCase.getMessageHistoryQueryHandle(new GetMessageHistoryQuery(command.roomId(), receiver.getId(), null));
-            messagingTemplate.convertAndSendToUser(receiver.getId().toString(), destination, historyPayload);
-
-            //채팅방 목록 웹소켓
-            List<MessageQueryUseCase.ChatRoomView> chatRoomListPayload =
-                    messageQueryUseCase.getChatRoomQueryHandle(new FindChatRoomQuery(receiver.getId()));
-            messagingTemplate.convertAndSendToUser(receiver.getId().toString(), "/sub/chat/rooms", chatRoomListPayload);
-        }
-        log.info("[웹소켓 실시간 발송] QueryService 기존 로직 재활용");
-
         //위에서 상대가 화면에 머무르는지 여부로 읽음 여부를 설정했으므로 재활용
         // 🎯 [컴파일 버그 수정 완료]: 수신자들 중 '안 읽은 사람(방에 없는 사람)'이 한 명이라도 존재하는지 검증
         boolean hasUnreadReceiver = readOtherUsers.stream()
@@ -334,6 +314,28 @@ public class MessageCommandService implements MessageCommandUseCase {
         } else {
             log.info("[SendMessageService] 모든 참여자가 방에 상주 중이므로 알림 생성을 건너뜁니다.");
         }
+
+
+        //WebSocketConfig에서 설정한 prefix "/sub" 채널로 발송
+        String destination = "/sub/chat/room/" + command.roomId();
+
+        //방에 있는 모든 사람 찾기(로그인 유저 포함)
+        for (ChatRoomMemberJpaEntity member: members) {
+            //수신자
+            UserWithFMJpaEntity receiver = member.getUserId();
+
+            //메시지 내역 웹소켓
+            List<MessageQueryUseCase.MessageHistoryView> historyPayload =
+                    messageQueryUseCase.getMessageHistoryQueryHandle(new GetMessageHistoryQuery(command.roomId(), receiver.getId(), null));
+            messagingTemplate.convertAndSendToUser(receiver.getId().toString(), destination, historyPayload);
+
+            //채팅방 목록 웹소켓
+            List<MessageQueryUseCase.ChatRoomView> chatRoomListPayload =
+                    messageQueryUseCase.getChatRoomQueryHandle(new FindChatRoomQuery(receiver.getId()));
+            messagingTemplate.convertAndSendToUser(receiver.getId().toString(), "/sub/chat/rooms", chatRoomListPayload);
+        }
+        log.info("[웹소켓 실시간 발송] QueryService 기존 로직 재활용");
+
 
         return new SendView(
                 command.roomId(),
@@ -393,6 +395,30 @@ public class MessageCommandService implements MessageCommandUseCase {
         } else {
             log.info("[ReadMessageCommandService] 읽을 메시지가 존재하지 않아 기존 상태 유지");
         }
+
+        // 🎯 [웹소켓 실시간 발송 추가]
+        // 1. 상태 변경 사항을 DB와 완전히 동기화 시키기 위해 영속성 플러시 실행
+        messageRepository.fastSaveChanges();
+
+        // 2. 현재 이 방에 참여하고 있는 전체 멤버 정보를 긁어옵니다 (나 포함)
+        List<ChatRoomMemberJpaEntity> members = messageRepository.findMembersByRoomId(command.roomId());
+        String destination = "/sub/chat/room/" + command.roomId();
+
+        // 3. 방에 속한 전원에게 새로 가공된 데이터 실시간 배달 (카톡 숫자 실시간 차감 효과)
+        for (ChatRoomMemberJpaEntity member : members) {
+            UserWithFMJpaEntity roomUser = member.getUserId();
+
+            // 💬 각 유저의 눈에 보이는 메시지 내역(숫자 읽음 상태 반영) 갱신 발송
+            List<MessageQueryUseCase.MessageHistoryView> historyPayload =
+                    messageQueryUseCase.getMessageHistoryQueryHandle(new GetMessageHistoryQuery(command.roomId(), roomUser.getId(), null));
+            messagingTemplate.convertAndSendToUser(roomUser.getId().toString(), destination, historyPayload);
+
+            // 🗂️ 각 유저의 채팅방 목록(안읽은 숫자 배지 차감 반영) 갱신 발송
+            List<MessageQueryUseCase.ChatRoomView> chatRoomListPayload =
+                    messageQueryUseCase.getChatRoomQueryHandle(new FindChatRoomQuery(roomUser.getId()));
+            messagingTemplate.convertAndSendToUser(roomUser.getId().toString(), "/sub/chat/rooms", chatRoomListPayload);
+        }
+        log.info("[웹소켓 실시간 발송] 방 진입/읽음에 따른 전원 대화방(숫자 차감) 및 목록 갱신 완료");
 
         return new ReadView(
                 command.roomId(),

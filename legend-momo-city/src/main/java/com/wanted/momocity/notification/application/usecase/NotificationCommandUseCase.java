@@ -7,5 +7,6 @@ import java.util.List;
 
 public interface NotificationCommandUseCase {
 
-
+    //알림 읽기
+    void readNotificationCommandHandle(ReadNotificationCommand command);
 }

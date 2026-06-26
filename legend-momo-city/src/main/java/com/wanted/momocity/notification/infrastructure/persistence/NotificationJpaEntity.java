@@ -80,4 +80,8 @@ public class NotificationJpaEntity {
         );
     }
 
+    //일반 알림 읽기(메시지 제외)
+    public void markAsRead() {
+        this.isRead = true;
+    }
 }

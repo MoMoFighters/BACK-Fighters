@@ -2,6 +2,7 @@ package com.wanted.momocity.notification.infrastructure.catalog;
 
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
+import com.wanted.momocity.message.infrastructure.persistence.MessageReadJpaEntity;
 import com.wanted.momocity.notification.domain.model.Notification;
 import com.wanted.momocity.notification.infrastructure.persistence.*;
 import com.wanted.momocity.notification.domain.repository.NotificationRepository;
@@ -27,6 +28,7 @@ public class CatalogNotificationRepositoryAdapter implements NotificationReposit
     private final NotificationSideMessageReadRepository notificationSideMessageReadRepository;
 
     @Override
+    @Transactional
     public Notification save(Notification notification) {
         log.info("[CatalogNotificationRepositoryAdapter] 알림 테이블 새 행 삽입 시도 - 대상자ID: {}, 타입: {}",
                 notification.getUserId(), notification.getType());
@@ -99,5 +101,40 @@ public class CatalogNotificationRepositoryAdapter implements NotificationReposit
     @Override
     public long countTotalUnreadMessages(Long userId) {
         return notificationSideMessageReadRepository.countByUserIdAndIsMsgReadFalse(userId);
+    }
+
+    //알림 읽기 - 요청온 알림이 notification 테이블에 존재하는지.
+    @Override
+    public List<NotificationJpaEntity> findAllByIdIn(List<Long> targetId) {
+        return springDataNotificationRepository.findAllByIdIn(targetId);
+    }
+
+    //알림 읽기 - 메시지 알림의 refId(roomId)에 로그인 유저가 속하는지 검증
+    @Override
+    public List<MessageReadJpaEntity> findMessageReadsByRoomIds(List<Long> messageRoomIds) {
+        return notificationSideMessageReadRepository.findByRoomId_IdIn(messageRoomIds);
+    }
+
+    //알림 읽기 - 일반 알림 읽음 상태 저장
+    @Override
+    @Transactional
+    public void saveAll(List<NotificationJpaEntity> generalNotisToUpdate) {
+        springDataNotificationRepository.saveAll(generalNotisToUpdate);
+    }
+
+
+    //알림 읽기 - 메시지 알림 읽음 상태 저장
+    @Override
+    @Transactional
+    public void bulkMarkMessageNotificationsAsRead(List<Long> messageRoomIds, Long userId) {
+        log.info("[Adapter] 메시지 알림 벌크 업데이트 쿼리 실행 - 방 개수: {}", messageRoomIds.size());
+        notificationSideMessageReadRepository.bulkUpdateNotiReadTrue(messageRoomIds, userId);
+    }
+
+
+    //알림 읽음 상태 빠른 저장(읽음 개수 웹소켓)
+    @Override
+    public void fastSaveChanges() {
+
     }
 }

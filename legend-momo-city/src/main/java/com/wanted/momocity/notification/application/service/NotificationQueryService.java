@@ -33,12 +33,6 @@ public class NotificationQueryService implements NotificationQueryUseCase {
     //알림 목록
     @Override
     public List<NotiView> getNotificationQueryHandle(GetNotificationQuery query) {
-        // 🎯 [여기 딱 한 줄만 차단!]: 알림 목록 가공은 무거우니까 유저가 화면에 없을 때만 연산 자체를 컷합니다.
-        if (!notificationSessionManager.isUserSubscribed(query.userId())) {
-            log.info("[알림 쿼리] 유저 {}번이 구독 중이 아니므로 무거운 가공 연산을 스킵합니다.", query.userId());
-            return Collections.emptyList();
-        }
-
         log.info("[GetNotificationQueryService] 알림 목록 조회 시작 - 유저ID:{}", query.userId());
 
         // 1. 개발자님이 완성하신 명칭과 조인 쿼리로 DB에서 데이터를 싹 들고옵니다.
@@ -130,8 +124,12 @@ public class NotificationQueryService implements NotificationQueryUseCase {
         finalResultList.sort((a, b) -> b.createdAt().compareTo(a.createdAt()));
 
         // 🎯 [핵심]: 조회된 알림 목록을 즉시 웹소켓 채널로 발송! (순서, 내용, 시간 다 가공된 상태)
-        messagingTemplate.convertAndSendToUser(query.userId().toString(), "/sub/notice/list", finalResultList);
-        log.info("[알림 쿼리 웹소켓] 유저 {}번에게 가공된 알림 목록 실시간 전송 완료", query.userId());
+        if (notificationSessionManager.isUserSubscribed(query.userId())) {
+            messagingTemplate.convertAndSendToUser(query.userId().toString(), "/sub/notice/list", finalResultList);
+            log.info("[알림 쿼리 웹소켓] 유저 {}번에게 가공된 알림 목록 실시간 전송 완료", query.userId());
+        } else {
+            log.info("[알림 쿼리 웹소켓] 유저 {}번이 오프라인(비구독)이므로 실시간 웹소켓 발송만 스킵합니다. (DB 조회 데이터는 정상 반환)", query.userId());
+        }
 
         return finalResultList;
     }

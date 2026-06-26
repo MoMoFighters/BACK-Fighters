@@ -1,5 +1,6 @@
 package com.wanted.momocity.notification.domain.repository;
 
+import com.wanted.momocity.message.infrastructure.persistence.MessageReadJpaEntity;
 import com.wanted.momocity.notification.domain.model.Notification;
 import com.wanted.momocity.notification.infrastructure.persistence.NotificationJpaEntity;
 
@@ -33,4 +34,20 @@ public interface NotificationRepository {
 
     //휴대폰 속 앱별 알림 개수(메시지)
     long countTotalUnreadMessages(Long userId);
+
+    //알림 읽기 - 요청온 알림이 notification 테이블에 존재하는지.
+    List<NotificationJpaEntity> findAllByIdIn(List<Long> targetId);
+
+    //알림 읽기 - 메시지 알림의 refId(roomId)에 로그인 유저가 속하는지 검증
+    List<MessageReadJpaEntity> findMessageReadsByRoomIds(List<Long> messageRoomIds);
+
+    //알림 읽기 - 일반 알림 읽음 상태 저장
+    void saveAll(List<NotificationJpaEntity> generalNotisToUpdate);
+
+    //알림 읽기 - 메시지 알림 읽음 상태 저장
+    void bulkMarkMessageNotificationsAsRead(List<Long> messageRoomIds, Long userId);
+
+    //알림 읽음 상태 빠른 저장(읽음 개수 웹소켓)
+    void fastSaveChanges();
+
 }
