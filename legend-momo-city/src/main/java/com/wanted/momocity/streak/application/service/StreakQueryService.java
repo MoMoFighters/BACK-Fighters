@@ -53,4 +53,10 @@ public class StreakQueryService implements StreakQueryUseCase {
 
         return new StreakMonthlyResponse(startDate.getYear(), startDate.getMonthValue(), streakResponses);
     }
+
+    // 친구 잔디 월간 조회
+    @Override
+    public StreakMonthlyResponse getFriendMonthlyStreak(Long targetUserId, LocalDate startDate, LocalDate endDate) {
+        return getMonthlyStreak(targetUserId, startDate, endDate);
+    }
 }

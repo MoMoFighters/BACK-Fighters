@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +32,9 @@ public class EnrollmentQueryService implements EnrollmentQueryUsecase {
     // 수강신청 정보를 조회하는 도메인 Repository입니다.
     private final EnrollmentRepository enrollmentRepository;
 
+    // S3 빌딩 건물 기본 경로를 상수로 둔다
+    private static final String BUILDING_IMAGE_BASE_URL = "https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/building";
+
     @Override
     public List<RenderingBuildingsView> userBuildingInfo(Long userId) {
         return buildingRepository.findByUserId(userId)
@@ -38,9 +42,15 @@ public class EnrollmentQueryService implements EnrollmentQueryUsecase {
                 .map(building -> new RenderingBuildingsView(
                         building.getCategory(),
                         building.getPosition(),
-                        building.getLevel()
+                        building.getLevel(),
+                        buildBuildingUrl(building.getCategory(), building.getLevel()) // 카테고리와 레벨로 이미지 URL 만들어서 응답
                 ))
                 .toList();
+    }
+
+    private String buildBuildingUrl(Category category, Integer level) {
+        String categoryPath = category.name().toLowerCase(Locale.ROOT); // ENUM 값 소문자로 바꾸기
+        return BUILDING_IMAGE_BASE_URL + "/" + categoryPath + "/level-" + level + ".png";
     }
 
     // 학습 진척도 조회
@@ -62,6 +72,7 @@ public class EnrollmentQueryService implements EnrollmentQueryUsecase {
                     null,
                     null,
                     null,
+                    null,
                     null
             );
         }
@@ -75,14 +86,30 @@ public class EnrollmentQueryService implements EnrollmentQueryUsecase {
                 category
         );
 
+        // 해당 카테고리 건물 유무 확인
+        String buildingUrl = building == null ? null
+                // 건물이 있다면 카테고리와 레벨로 S3 이미지 url 생성
+                : createBuildingUrl(category, building.getLevel());
+
         // category가 있으면 카테고리 진척도와 건물 정보를 함께 내려준다.
         return new EnrollmentProgressResponse(
                 null,
                 progressInfo.myTotalProgress(),
                 building == null ? null : building.getLevel(),
                 building == null ? null : calculateCurrentExp(completedLectureCount),
-                building == null ? null : calculateTotalExp()
+                building == null ? null : calculateTotalExp(),
+                buildingUrl
         );
+    }
+
+    // 카테고리와 레벨로 S3 건물 이미지 url 생성
+    private String createBuildingUrl(String category, Integer level) {
+        // S3 버킷 Url
+        String baseUrl = "https://momocity-bucket.s3.ap-northeast-2.amazonaws.com";
+        // ENUM 문자열을 소문자로 지정
+        String lowerCategory = category.toLowerCase();
+        // 최종 건물 이미지 URL 반환
+        return baseUrl + "/building" + lowerCategory + "/level-" + level + ".png";
     }
 
     // 사용자 건물 중 category에 해당하는 건물을 찾습니다.

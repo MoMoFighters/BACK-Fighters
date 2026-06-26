@@ -246,6 +246,21 @@ public class PostController {
         ));
     }
 
+    // 좋아요 누른 사용자 목록 조회
+    // GET / api/v2/posts/{postId}/likes
+    @Operation(summary = "좋아요 목록 조회", description = "게시글에 좋아요를 누른 사용자 목록을 조회합니다.")
+    @GetMapping("/{postId}/likes")
+    public ResponseEntity<ApiResponse<PostLikeListResponse>> getLikes(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(
+                CommunityResponseCode.LIKE_LIST_FOUND,
+                "좋아요 목록 조회에 성공했습니다.",
+                postQueryUseCase.getLikes(postId)
+        ));
+    }
+
     // 좋아요 취소
     // DELETE /api/v2/posts/{postId}/likes
     @Operation(summary = "좋아요 취소", description = "게시글 좋아요를 취소합니다.")
@@ -363,7 +378,7 @@ public class PostController {
     // GET /api/v2/posts/{postId}/comments/{commentId}/replies
     @Operation(summary = "대댓글 목록 조회", description = "댓글의 대댓글 목록을 조회합니다.")
     @GetMapping("/{postId}/comments/{commentId}/replies")
-    public ResponseEntity<ApiResponse<PostCommentResponse>> getReplies(
+    public ResponseEntity<ApiResponse<PostReplyResponse>> getReplies(
             @PathVariable Long postId,
             @PathVariable Long commentId,
             @RequestParam(required = false) Long cursor,
@@ -414,9 +429,9 @@ public class PostController {
     }
 
     // 대시보드 - 내 게시글 통계
-    // GET api/v2/posts/dashboard
+    // GET api/v2/posts/me/dashboard
     @Operation(summary = "대시보드", description = "내 게시글 통계를 조회합니다.")
-    @GetMapping("/dashboard")
+    @GetMapping("/me/dashboard")
     public ResponseEntity<ApiResponse<DashboardResponse>> getDashboard(
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
@@ -427,5 +442,20 @@ public class PostController {
                 postQueryUseCase.getDashboard(userId)
         ));
 
+    }
+
+    // 상대방 대시보드
+    // GET /api/v2/posts/users/{targetUserId}/dashboard
+    @Operation(summary = "상대방 대시보드", description = "상대방 게시글 통계를 조회합니다.")
+    @GetMapping("/users/{targetUserId}/dashboard")
+    public ResponseEntity<ApiResponse<DashboardResponse>> getUserDashboard(
+            @PathVariable Long targetUserId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(
+                CommunityResponseCode.POST_LIST_FOUND,
+                "대시보드 조회에 성공했습니다.",
+                postQueryUseCase.getDashboard(targetUserId)
+        ));
     }
 }

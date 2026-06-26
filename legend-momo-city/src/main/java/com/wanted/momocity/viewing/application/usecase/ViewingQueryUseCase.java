@@ -1,5 +1,6 @@
 package com.wanted.momocity.viewing.application.usecase;
 
+import com.wanted.momocity.viewing.application.port.CategoryProgressInfo;
 import com.wanted.momocity.viewing.presentation.api.response.*;
 
 /*
@@ -30,4 +31,6 @@ public interface ViewingQueryUseCase {
     ChapterProgressResponse getChapterProgress(Long userId, Long lectureId);
 
     MyLecturesResponse getMyLectures(Long userId);
+
+    CategoryProgressInfo getCategoryProgress(Long userId, String category);
 }
