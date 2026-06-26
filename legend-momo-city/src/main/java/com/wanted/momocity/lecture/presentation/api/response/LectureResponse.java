@@ -35,8 +35,8 @@ public class LectureResponse {
             int orderNo,
             String videoUrl,
             Long videoSizeBytes,
+            String chapterThumbnailUrl,
             Integer durationSec,
-            String videoStatus,
             String originalFilename,
             LocalDateTime createdAt,
             LocalDateTime updatedAt
@@ -51,8 +51,8 @@ public class LectureResponse {
                     chapter.getOrderNo(),
                     chapter.getVideoUrl(),
                     chapter.getVideoSizeBytes(),
+                    chapter.getChapterThumbnailUrl(),
                     chapter.getDurationSec(),
-                    chapter.getVideoStatus().name(),
                     chapter.getOriginalFilename(),
                     chapter.getCreatedAt(),
                     chapter.getUpdatedAt()
@@ -153,8 +153,8 @@ public class LectureResponse {
             int orderNo,
             String videoUrl,
             Long videoSizeBytes,
+            String chapterThumbnailUrl,
             Integer durationSec,
-            String videoStatus,
             String originalFilename,
             LocalDateTime updatedAt
     ) {
@@ -168,8 +168,8 @@ public class LectureResponse {
                     chapter.getOrderNo(),
                     chapter.getVideoUrl(),
                     chapter.getVideoSizeBytes(),
+                    chapter.getChapterThumbnailUrl(),
                     chapter.getDurationSec(),
-                    chapter.getVideoStatus().name(),
                     chapter.getOriginalFilename(),
                     chapter.getUpdatedAt()
             );

@@ -39,8 +39,8 @@ public class AdminLectureResponse {
             int orderNo,
             String videoUrl,
             Long videoSizeBytes,
+            String chapterThumbnailUrl,
             Integer durationSec,
-            String videoStatus,
             String originalFilename
     ) {
 
@@ -53,8 +53,8 @@ public class AdminLectureResponse {
                     chapter.getOrderNo(),
                     chapter.getVideoUrl(),
                     chapter.getVideoSizeBytes(),
+                    chapter.getChapterThumbnailUrl(),
                     chapter.getDurationSec(),
-                    chapter.getVideoStatus().name(),
                     chapter.getOriginalFilename()
             );
         }
