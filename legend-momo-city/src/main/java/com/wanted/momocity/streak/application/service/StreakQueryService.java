@@ -7,6 +7,7 @@ import com.wanted.momocity.streak.presentation.api.response.StreakMonthlyRespons
 import com.wanted.momocity.streak.presentation.api.response.StreakResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,7 +29,21 @@ public class StreakQueryService implements StreakQueryUseCase {
 
     private final StreakRepository streakRepository;
 
+    /*
+    * comment.
+    *  월간 잔디 조회
+    *  @Cacheabel -> StreakRedisCacheConfig 의 streakCacheConfiguration 사용
+    *  -> Jackson2JsonRedisSerialzer<StreakMonthlyResponse> 로 타입 명시
+    *  - 캐시 키 : "streak::{userId}:{year}:{month}"
+    *  - 무효화 : StreakCommandService.accumulate() 호출 시 해당 날짜 캐시 무효화
+    * */
+
     @Override
+    @Cacheable(
+            value = "streak",
+            key = "#userId + ':' + #startDate.year + ':' + #startDate.monthValue",
+            cacheManager = "redisCacheManager"
+    )
     public StreakMonthlyResponse getMonthlyStreak(Long userId, LocalDate startDate, LocalDate endDate) {
 
         // 단일 월 범위 검증

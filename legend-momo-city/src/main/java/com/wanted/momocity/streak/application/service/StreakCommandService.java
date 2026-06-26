@@ -5,6 +5,7 @@ import com.wanted.momocity.streak.domain.model.Streak;
 import com.wanted.momocity.streak.domain.repository.StreakRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,7 +29,20 @@ public class StreakCommandService implements StreakCommandUseCase {
 
     private final StreakRepository streakRepository;
 
+    /*
+    * comment.
+    *  잔디 누적
+    *  - 캐시 무효화
+    *  accumulate() 호출 시 해당 userId + year + month 캐시 무효화
+    *  -> 잔디 변경 시 캐시 즉시 삭제 -> 다음 조회 시 DB 에서 최신 데이터 반환
+    * */
+
     @Override
+    @CacheEvict(
+            value = "streak",
+            key = "#userId + ':' + #date.year + ':' + #date.monthValue",
+            cacheManager = "redisCacheManager"
+    )
     public void accumulate(Long userId, LocalDate date, int watchedSeconds) {
 
         // 오늘 잔디 조회 -> 있으면 누적, 없으면 신규 생성
