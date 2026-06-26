@@ -298,12 +298,17 @@ public class FriendQueryService implements FriendQueryUseCase {
         List<StudentFriendsView> result = new ArrayList<>();
 
         for (FriendJpaEntity friend : friends) {
+            // FRIEND 상태는 쿼리 단계에서 보장되나 명시적 안전장치 유지 가능
+            if (!"FRIEND".equals(friend.getStatus())) {
+                continue;
+            }
+
             UserWithFMJpaEntity friendUser = friend.getFromUserId().getId().equals(query.userId())
                     ? friend.getToUserId()
                     : friend.getFromUserId();
 
             //강사 제외하기
-            if ("TEACHER".equals(friendUser.getRole())) {
+            if (!"STUDENT".equals(friendUser.getRole())) {
                 continue;
             }
             //비활성 유저 제외(다대다에서 비활성 유저 개설/초대 불가, 친구 도시 놀러가기)

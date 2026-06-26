@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface SpringDataGuestBookRepository  extends JpaRepository<GuestBookJpaEntity, Long> {
@@ -15,4 +16,15 @@ public interface SpringDataGuestBookRepository  extends JpaRepository<GuestBookJ
             "WHERE g.ownerId.id = :ownerId " +
             "ORDER BY g.createdAt DESC")
     List<GuestBookJpaEntity> findAllByOwnerIdWithWriter(@Param("ownerId") Long ownerId);
+
+    //방명록 작성 1일1제한
+    @Query("SELECT COUNT(g) > 0 FROM GuestBookJpaEntity g " +
+            "WHERE g.writerId.id = :userId " +
+            "AND g.ownerId.id = :ownerId " +
+            "AND DATE(g.createdAt) = :today")
+    boolean existsWrittenToday(
+            @Param("userId") Long userId,
+            @Param("ownerId") Long ownerId,
+            @Param("today") LocalDate today
+    );
 }

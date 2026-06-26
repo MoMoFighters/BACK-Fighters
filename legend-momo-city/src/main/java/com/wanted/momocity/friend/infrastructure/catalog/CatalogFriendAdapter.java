@@ -13,6 +13,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.swing.text.html.Option;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -139,6 +140,25 @@ public class CatalogFriendAdapter implements FriendRepository {
     @Override
     public List<GuestBookJpaEntity> findAllByOwnerIdWithWriter(Long userId) {
         return springDataGuestBookRepository.findAllByOwnerIdWithWriter(userId);
+    }
+
+    //방명록 작성 1일1제한
+    @Override
+    public boolean existsGuestBookWrittenToday(Long userId, Long ownerId) {
+        log.info("[CatalogFriendAdapter] 1일 1회 방명록 작성 제약 조건 검사 수행 - 작성자: {}, 주인: {}", userId, ownerId);
+        // 오늘 날짜 구하기
+        LocalDate today = LocalDate.now();
+
+        // 🎯 깔끔하게 쿼리 메서드 호출
+        return springDataGuestBookRepository.existsWrittenToday(userId, ownerId, today);
+    }
+
+    //방명록 저장
+    @Override
+    @Transactional
+    public GuestBookJpaEntity saveGuestBook(GuestBookJpaEntity newBook) {
+        log.info("[CatalogFriendAdapter] 새 방명록 엔티티 영속화 시도");
+        return springDataGuestBookRepository.save(newBook);
     }
 
 }

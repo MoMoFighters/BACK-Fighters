@@ -304,7 +304,7 @@ public class MessageController {
 
     //사용자 초대하기
     @PostMapping("/api/v2/message/chatrooms/invite/{roomId}")
-    @Operation(summary = "채팅방 이름 수정하기", description = "다대다인 경우에만 채팅방 이름 수정 가능")
+    @Operation(summary = "채팅방 멤버 초대하기", description = "다대다 채팅방에 친구 상태인 활성 학생을 초대한다.")
     public ResponseEntity<ApiResponse<InviteRoomMemberResponse>> inviteRoomMember(@AuthenticationPrincipal CustomUserDetails userDetails,
                                                                                   @PathVariable Long roomId,
                                                                                   @RequestBody InviteRoomMemberRequest request) {

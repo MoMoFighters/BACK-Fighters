@@ -30,4 +30,15 @@ public class GuestBookJpaEntity {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    //방명록 작성
+    public static GuestBookJpaEntity create(UserWithFMJpaEntity loginUser, UserWithFMJpaEntity ownerUser, String content, LocalDateTime now) {
+        GuestBookJpaEntity gb = new GuestBookJpaEntity();
+        gb.writerId = loginUser;
+        gb.ownerId = ownerUser;
+        gb.content = content;
+        gb.createdAt = now;
+
+        return gb;
+    }
 }

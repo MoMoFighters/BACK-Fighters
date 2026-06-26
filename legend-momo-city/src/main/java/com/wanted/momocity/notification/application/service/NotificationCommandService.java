@@ -33,17 +33,19 @@ public class NotificationCommandService implements NotificationCommandUseCase {
     //알림 읽기
     @Override
     public void readNotificationCommandHandle(ReadNotificationCommand command) {
-
-        log.info("[ReadNotificationCommandService] 알림 읽음 처리 시작 - 유저ID: {}, 대상 알림개수: {}", command.userId(), command.targetId().size());
-
         // 🎯 [정책 위임 변경]: 400 빈 값 검증 정책을 최상단에서 호출하여 공회전 방지!
         notificationEligibilityPolicy.validateReadRequest(command.targetId());
 
+        log.info("[ReadNotificationCommandService] 알림 읽음 처리 시작 - 유저ID: {}, 대상 알림개수: {}", command.userId(), command.targetId().size());
+
+        // 🎯 2. 중복이 섞여 들어온 targetId 리스트를 여기서 순수 고유 ID 리스트로 변환 (정규화)
+        List<Long> uniqueTargetIds = command.targetId().stream().distinct().toList();
+
         // 1. 요청된 알림 마스터(NotificationJpaEntity)들 한 번에 조회
-        List<NotificationJpaEntity> notifications = notificationRepository.findAllByIdIn(command.targetId());
+        List<NotificationJpaEntity> notifications = notificationRepository.findAllByIdIn(uniqueTargetIds);
 
         // ❌ 실패 4 — 404 미존재 검증 (요청한 개수와 DB에서 찾은 개수가 다르면 없는 게 섞여 있음)
-        if (notifications.size() != command.targetId().size()) {
+        if (notifications.size() != uniqueTargetIds.size()) {
             throw new FMResourceNotFoundException("존재하지 않는 알림이 포함되어 있습니다.");
         }
 
@@ -81,14 +83,17 @@ public class NotificationCommandService implements NotificationCommandUseCase {
         if (!messageRoomIds.isEmpty()) {
             // 🎯 notification의 refId(방 ID 목록)를 기준으로 관련 message_read 테이블 행들을 전부 조회
             List<MessageReadJpaEntity> roomMessageReads = notificationRepository
-                    .findMessageReadsByRoomIds(messageRoomIds); // ✨ 유저 아이디 조건 없이 방 기준으로만 조회
+                    .findMessageReadsByRoomIdsAndUserId(messageRoomIds, command.userId()); // ✨ 유저 아이디 조건 없이 방 기준으로만 조회
 
-            // 🎯 [메시지 알림 권한 검증]:
-            // 조회된 전체 행 중에서 message_read의 userId가 로그인 유저인 건이 '하나라도' 존재하는지 불린 검증
-            // 🎯 [메시지 알림 권한 판별]: 내 아이디가 룸 멤버 목록에 존재하는지 체크 후 플래그 반영
-            hasMsgNotiAccess = roomMessageReads.stream()
-                    .anyMatch(mr -> mr.getUserId().getId().equals(command.userId()));
+            // 🎯 [수정]: 읽기에서도 권한을 가진 방의 개수를 정확히 집계 (anyMatch 차단)
+            long myAuthorizedRoomCount = roomMessageReads.stream()
+                    .map(mr -> mr.getRoomId().getId())
+                    .distinct()
+                    .count();
 
+            // 🎯 요청한 고유 방 개수와 조회된 내 방 개수가 '전부 일치'해야 승인
+            long requestedRoomCount = messageRoomIds.stream().distinct().count();
+            hasMsgNotiAccess = (myAuthorizedRoomCount == requestedRoomCount);
         }
 
         notificationEligibilityPolicy.readNotification(hasGeneralAccess, hasMsgNotiAccess); // false면 정책에서 403 예외 발생
@@ -121,16 +126,19 @@ public class NotificationCommandService implements NotificationCommandUseCase {
     //알림 삭제
     @Override
     public void removeNotificationCommandHandle(RemoveNotificationCommand command) {
-        log.info("[RemoveNotificationCommandService] 알림 삭제 처리 시작 - 유저ID: {}, 대상 알림개수: {}", command.userId(), command.targetId().size());
-
         // 🎯 [정책 위임 변경]: 400 빈 값 검증 정책을 최상단에서 호출하여 공회전 방지!
         notificationEligibilityPolicy.validateRemoveRequest(command.targetId());
 
+        log.info("[RemoveNotificationCommandService] 알림 삭제 처리 시작 - 유저ID: {}, 대상 알림개수: {}", command.userId(), command.targetId().size());
+
+        // 🎯 2. 중복이 섞여 들어온 targetId 리스트를 여기서 순수 고유 ID 리스트로 변환 (정규화)
+        List<Long> uniqueTargetIds = command.targetId().stream().distinct().toList();
+
         // 1. 요청된 알림 마스터(NotificationJpaEntity)들 한 번에 조회
-        List<NotificationJpaEntity> notifications = notificationRepository.findAllByIdIn(command.targetId());
+        List<NotificationJpaEntity> notifications = notificationRepository.findAllByIdIn(uniqueTargetIds);
 
         // ❌ 실패 4 — 404 미존재 검증 (요청한 개수와 DB에서 찾은 개수가 다르면 없는 게 섞여 있음)
-        if (notifications.size() != command.targetId().size()) {
+        if (notifications.size() != uniqueTargetIds.size()) {
             throw new FMResourceNotFoundException("존재하지 않는 알림이 포함되어 있습니다.");
         }
 
@@ -161,16 +169,18 @@ public class NotificationCommandService implements NotificationCommandUseCase {
         }
 
         if (!messageRoomIds.isEmpty()) {
-            // 🎯 notification의 refId(방 ID 목록)를 기준으로 관련 message_read 테이블 행들을 전부 조회
-            List<MessageReadJpaEntity> roomMessageReads = notificationRepository
-                    .findMessageReadsByRoomIds(messageRoomIds); // ✨ 유저 아이디 조건 없이 방 기준으로만 조회
+            // 1. 레포지토리 조회할 때 내 유저 ID도 함께 전달
+            List<MessageReadJpaEntity> myRoomMessageReads = notificationRepository
+                    .findMessageReadsByRoomIdsAndUserId(messageRoomIds, command.userId());
 
-            // 🎯 [메시지 알림 권한 검증]:
-            // 조회된 전체 행 중에서 message_read의 userId가 로그인 유저인 건이 '하나라도' 존재하는지 불린 검증
-            // 🎯 [메시지 알림 권한 판별]: 내 아이디가 룸 멤버 목록에 존재하는지 체크 후 플래그 반영
-            hasMsgNotiAccess = roomMessageReads.stream()
-                    .anyMatch(mr -> mr.getUserId().getId().equals(command.userId()));
+            // 2. 내가 권한을 가진 방의 개수 계산
+            long myAuthorizedRoomCount = myRoomMessageReads.stream()
+                    .map(MessageReadJpaEntity::getRoomId) // 방 ID 추출
+                    .distinct()
+                    .count();
 
+            // 3. 요청한 고유 방 개수와 내가 실제 권한을 가진 방 개수가 '전부 일치(All)'해야만 권한 허용!
+            hasMsgNotiAccess = (myAuthorizedRoomCount == messageRoomIds.stream().distinct().count());
         }
 
         notificationEligibilityPolicy.removeNotification(hasGeneralAccess, hasMsgNotiAccess); // false면 정책에서 403 예외 발생

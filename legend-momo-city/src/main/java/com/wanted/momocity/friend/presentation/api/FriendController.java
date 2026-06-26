@@ -18,6 +18,7 @@ import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase.Block
 import com.wanted.momocity.friend.application.usecase.FriendQueryUseCase.BlockedView;
 import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase.UnblockView;
 import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase.DeleteView;
+import com.wanted.momocity.friend.presentation.api.request.RegisterGuestBookRequest;
 import com.wanted.momocity.friend.presentation.api.response.*;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -435,5 +436,41 @@ public class FriendController {
         ));
     }
 
+    //방명록 작성
+    @PostMapping("/api/v2/friends/guests/register/{ownerId}")
+    @Operation(summary = "방명록 작성", description = "userId는 도시 주인 아이디이며 친구 상태에서만 작성 가능하고 1일 1회 제한된다.")
+    public ResponseEntity<ApiResponse<RegisterGuestBookResponse>> registerGuestBook(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                           @PathVariable Long ownerId,
+                                                           @RequestBody RegisterGuestBookRequest request) {
+
+        Long userId = userDetails.getUserId();
+
+        // 1. 커맨드 객체 조립
+        RegisterGuestBookCommand command = new RegisterGuestBookCommand(
+                ownerId,
+                userId,
+                request.content()
+        );
+
+        // 2. 서비스 레이어 핸들러 호출
+        FriendCommandUseCase.RegisterGuestBookView view = friendCommandUseCase.registerGuestBookCommandHandle(command);
+
+        // 3. 공통 응답 규격인 ApiResponse 포맷에 맞추어 반환
+        RegisterGuestBookResponse response = new RegisterGuestBookResponse(
+                view.bookId(),
+                view.ownerId(),
+                view.nickname(),
+                request.content(),
+                view.createdAt()
+        );
+
+        String successMessage = String.format("%s님의 도시에 방명록을 남겼습니다.", view.nickname());
+
+        return ResponseEntity.ok(ApiResponse.success(
+                "SUCCESS",
+                successMessage,
+                response
+        ));
+    }
 
 }

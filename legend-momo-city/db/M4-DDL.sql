@@ -488,7 +488,7 @@ CREATE TABLE `report` (
                           PRIMARY KEY (`id`),
                           KEY `idx_report_reporter`        (`reporter_user_id`),
                           KEY `idx_report_target_created`  (`target_type`, `target_id`, `created_at` DESC),
-                          KEY `idx_report_is_read_created` (`is_resolved`, `created_at` DESC)
+                          KEY `idx_report_is_resolved_created` (`is_resolved`, `created_at` DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================================
