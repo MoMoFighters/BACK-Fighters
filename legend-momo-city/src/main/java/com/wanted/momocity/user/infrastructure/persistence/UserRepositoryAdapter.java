@@ -1,7 +1,6 @@
 package com.wanted.momocity.user.infrastructure.persistence;
 
 import com.wanted.momocity.global.domain.model.Category;
-import com.wanted.momocity.user.application.command.UpdateUserInfoCommand;
 import com.wanted.momocity.user.domain.exception.UserNotFoundException;
 import com.wanted.momocity.user.domain.model.*;
 import com.wanted.momocity.user.domain.repository.UserRepository;
@@ -39,12 +38,12 @@ public class UserRepositoryAdapter implements UserRepository {
     }
 
     @Override
-    public void updateUserInfo(UpdateUserInfoCommand command) {
+    public void updateUserInfo(UpdateUserInfoData data) {
         springDataUserRepository.updateUserInfo(
-                command.userId(),
-                command.nickname(),
-                command.profileImageUrl(),
-                command.password()
+                data.userId(),
+                data.nickname(),
+                data.profileImageUrl(),
+                data.password()
         );
     }
 

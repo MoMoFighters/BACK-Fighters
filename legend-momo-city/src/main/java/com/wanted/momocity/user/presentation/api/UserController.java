@@ -105,7 +105,7 @@ public class UserController {
             @RequestBody @Valid UpdateUserInfoRequest request){
 
         userCommandUsecase.updateUserInfo(new UpdateUserInfoCommand(
-                userDetails.getUserId(),request.profileImageUrl(),request.nickname(),request.currentPassword(),request.password()
+                userDetails.getUserId(),request.itemName(),request.nickname(),request.currentPassword(),request.password()
         ));
 
         boolean isPwdChanged = request.password() != null;
