@@ -6,5 +6,6 @@ public final class OrderResponseMessage {
 
     public static final String ORDER_SUCCESS = "구매가 완료되었습니다.";
     public static final String LIST_FETCHED = "포인트 사용 내역이 조회되었습니다.";
+    public static final String AVAILABLE_LIST_FETCHED = "포인트 사용 내역이 조회되었습니다.";
 }
 

@@ -136,7 +136,8 @@ public class AuthCommandService implements AuthCommandUsecase {
             String message = switch (user.getStatus()) {
                 case PENDING -> "강사 승인 대기중입니다.";
 //                case REJECTED -> "강사 신청이 반려되었습니다. 증빙자료를 다시 제출해주세요.";
-                case BANNED -> "정지된 계정입니다.";
+                case BANNED -> "정지된 계정입니다. 문의 사항이 있다면 yourmomocity@gmail.com 으로 문의 주시길 바람니다.";
+                case BLACK -> "정지 3회 누적으로 인해 계정이 영구적으로 정지 되었습니다.";
                 default -> "해당 계정은 현재 로그인이 불가능한 상태입니다.";
             };
             throw new InactiveUserException(message, user.getStatus());
