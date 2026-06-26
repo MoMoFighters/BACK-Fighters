@@ -5,8 +5,8 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record UpdateUserInfoRequest(
-        @Schema(description = "변경할 프로필 이미지")
-        String profileImageUrl,  // 지금은 변경 못 함 -> 모듈 4에서 id로 고를 수 있게 할 예정
+        @Schema(description = "변경할 프로필 이미지 item 이름 ")
+        String itemName,
 
         @Schema(description = "변경할 닉네임")
         @Size(min = 1,  message = "닉네임은 최소 1글자입니다.")

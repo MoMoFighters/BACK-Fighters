@@ -2,7 +2,7 @@ package com.wanted.momocity.user.application.service;
 
 import com.wanted.momocity.auth.application.port.PasswordEncodePort;
 import com.wanted.momocity.global.application.s3.S3UploadPort;
-import com.wanted.momocity.global.domain.model.Category;
+import com.wanted.momocity.user.application.port.GetItemUrlPort;
 import com.wanted.momocity.user.domain.event.TeacherApplicationEvent;
 import com.wanted.momocity.user.domain.exception.UserNotFoundException;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
@@ -12,6 +12,7 @@ import com.wanted.momocity.user.application.usecase.UserCommandUsecase;
 import com.wanted.momocity.user.domain.exception.InvalidReasonException;
 import com.wanted.momocity.user.domain.model.Role;
 import com.wanted.momocity.user.domain.model.Status;
+import com.wanted.momocity.user.domain.model.UpdateUserInfoData;
 import com.wanted.momocity.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +34,7 @@ public class UserCommandService implements UserCommandUsecase {
     private final PasswordEncodePort passwordEncodePort;
     private final S3UploadPort s3UploadPort;
     private final ApplicationEventPublisher eventPublisher;
+    private final GetItemUrlPort getItemUrlPort;
 
 
     @Override
@@ -45,6 +47,10 @@ public class UserCommandService implements UserCommandUsecase {
 
     @Override
     public void updateUserInfo(UpdateUserInfoCommand command) {
+
+        // 프사 이름으로 프사 url 가져오기
+        String url = getItemUrlPort.getItemUrl(command.itemName(),command.userId());
+
         // 닉네임 있으면 중복 확인
         if (command.nickname() != null) {
             userPolicy.nicknamePolicy(command.nickname());
@@ -59,11 +65,10 @@ public class UserCommandService implements UserCommandUsecase {
             log.info("[user] 비밀번호 변경 완료 | userId={}", command.userId());
         }
 
-        userRepository.updateUserInfo(new UpdateUserInfoCommand(
+        userRepository.updateUserInfo(new UpdateUserInfoData(
                 command.userId(),
-                command.profileImageUrl(),
+                url,
                 command.nickname(),
-                null,//현재 비번은 저장 안 함
                 encodedPassword
         ));
     }
