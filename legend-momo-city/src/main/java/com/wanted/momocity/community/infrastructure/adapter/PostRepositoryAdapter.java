@@ -102,4 +102,37 @@ public class PostRepositoryAdapter implements PostRepository {
         return postJpaRepository.sumLikeCountByUserId(userId);
     }
 
+    @Override
+    public List<Post> searchByKeyword(String keyword, Long cursor, int size) {
+        return postJpaRepository.searchByKeyword(keyword, cursor, PageRequest.of(0, size))
+                .stream()
+                .map(PostJpaEntity::toDomain)
+                .toList();
+    }
+
+    @Override
+    public int countByKeyword(String keyword) {
+        return postJpaRepository.countByKeyword(keyword);
+    }
+
+    // 같은 카테고리 인기 게시글 조회
+    // PageRequest.of(0, size) 로 상위 N개만 조회
+    @Override
+    public List<Post> findTopPostsByCategory(String category, Long postId, int size) {
+        return postJpaRepository.findTopPostsByCategory(category, postId, PageRequest.of(0, size))
+                .stream()
+                .map(PostJpaEntity::toDomain)
+                .toList();
+    }
+
+    // 같은 작성자의 최신 게시글 조회
+    // excludeIds 비어있으면 빈 리스트 처리
+    @Override
+    public List<Post> findLatestPostsByAuthor(Long userId, Long postId, List<Long> excludeIds, int size) {
+        List<Long> safeExcludeIds = excludeIds.isEmpty() ? List.of(-1L) : excludeIds;
+        return postJpaRepository.findLatestPostsByAuthor(userId, postId, safeExcludeIds, PageRequest.of(0, size))
+                .stream()
+                .map(PostJpaEntity::toDomain)
+                .toList();
+    }
 }

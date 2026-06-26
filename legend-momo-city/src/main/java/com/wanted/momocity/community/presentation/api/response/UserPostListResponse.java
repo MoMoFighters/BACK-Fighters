@@ -25,6 +25,10 @@ public record UserPostListResponse(
             int likeCount,
             int commentCount,
             String thumbnailUrl,
+            Long authorId,
+            String authorName,
+            String authorProfileImageUrl,
+            String authorRole,
             LocalDateTime createdAt
     ) {}
 

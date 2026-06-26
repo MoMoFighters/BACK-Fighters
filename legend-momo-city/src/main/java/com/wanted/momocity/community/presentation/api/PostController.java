@@ -458,4 +458,41 @@ public class PostController {
                 postQueryUseCase.getDashboard(targetUserId)
         ));
     }
+
+    // 게시글 키워드 검색
+    // GET /api/v2/posts/search?keyword={keyword}&cursor={lastPostId}&size=10
+    @Operation(summary = "게시글 검색", description = "키워드로 게시글을 검색합니다.")
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<UserPostListResponse>> searchPosts(
+            @RequestParam String keyword,
+            @RequestParam(required = false) Long cursor,
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        if (keyword == null || keyword.isBlank()) {
+            throw new IllegalArgumentException("검색 키워드를 입력해주세요.");
+        }
+
+        return ResponseEntity.ok(ApiResponse.success(
+                CommunityResponseCode.POST_SEARCH_FOUND,
+                "게시글 검색에 성공했습니다.",
+                postQueryUseCase.searchPosts(keyword, cursor, size)
+        ));
+    }
+
+    // 연관 게시글 추천
+    // GET /api/v2/posts/{postId}/recommendations
+    @Operation(summary = "연관 게시글 추천", description = "같은 카테고리 인기글 + 작성자의 다른 글을 추천합니다.")
+    @GetMapping("/{postId}/recommendations")
+    public ResponseEntity<ApiResponse<PostRecommendationResponse>> getRecommendations(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(
+                CommunityResponseCode.POST_RECOMMENDATIONS_FOUND,
+                "연관 게시글 조회에 성공했습니다.",
+                postQueryUseCase.getRecommendations(postId)
+        ));
+    }
+
 }
