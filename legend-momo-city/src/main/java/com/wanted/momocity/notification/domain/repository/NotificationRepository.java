@@ -50,4 +50,9 @@ public interface NotificationRepository {
     //알림 읽음 상태 빠른 저장(읽음 개수 웹소켓)
     void fastSaveChanges();
 
+    //알림 삭제 - 일반 알림
+    void deleteAllInBatch(List<NotificationJpaEntity> generalNotisToDelete);
+
+    //알림 삭제 - 메시지 알림
+    void bulkMarkMessageNotificationsAsDeleted(List<Long> messageRoomIds, Long userId);
 }

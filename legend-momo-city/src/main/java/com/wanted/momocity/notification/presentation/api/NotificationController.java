@@ -4,6 +4,7 @@ package com.wanted.momocity.notification.presentation.api;
 import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.notification.application.command.ReadNotificationCommand;
+import com.wanted.momocity.notification.application.command.RemoveNotificationCommand;
 import com.wanted.momocity.notification.application.query.GetMainTotalCountsQuery;
 import com.wanted.momocity.notification.application.query.GetNotificationQuery;
 import com.wanted.momocity.notification.application.query.GetPhoneAppCountsQuery;
@@ -13,6 +14,7 @@ import com.wanted.momocity.notification.application.usecase.NotificationQueryUse
 import com.wanted.momocity.notification.application.usecase.NotificationQueryUseCase.MainTotalCountsView;
 import com.wanted.momocity.notification.application.usecase.NotificationQueryUseCase.PhoneAppCountsView;
 import com.wanted.momocity.notification.presentation.api.request.ReadNotificationRequest;
+import com.wanted.momocity.notification.presentation.api.request.RemoveNotificationRequest;
 import com.wanted.momocity.notification.presentation.api.response.GetMainTotalCountsResponse;
 import com.wanted.momocity.notification.presentation.api.response.GetNotificationResponse;
 import com.wanted.momocity.notification.presentation.api.response.GetPhoneAppCountsResponse;
@@ -128,6 +130,26 @@ public class NotificationController {
         return ResponseEntity.ok(ApiResponse.success(
                 "SUCCESS",
                 "알림을 성공적으로 읽었습니다.",
+                null
+        ));
+    }
+
+    //알림 삭제
+    @DeleteMapping("/api/v2/notice/remove")
+    @Operation(summary = "알림 삭제", description = "알림 목록 하나 클릭 또는 일괄 삭제 처리를 한다.")
+    public ResponseEntity<ApiResponse<Void>> removeNotification(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                              @RequestBody RemoveNotificationRequest request) {
+        Long userId = userDetails.getUserId();
+
+        // 1. 커맨드 객체 맵핑 및 서비스 호출
+        notificationCommandUseCase.removeNotificationCommandHandle(
+                new RemoveNotificationCommand(userId, request.targetId())
+        );
+
+        // 2. 200 OK 스펙 규격에 맞춰 빈 데이터 반환
+        return ResponseEntity.ok(ApiResponse.success(
+                "SUCCESS",
+                "알림을 성공적으로 삭제했습니다.",
                 null
         ));
     }

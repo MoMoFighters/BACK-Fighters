@@ -37,4 +37,12 @@ public interface NotificationSideMessageReadRepository extends JpaRepository<Mes
             "  AND mr.isDeleted = false")
     void bulkUpdateNotiReadTrue(@Param("roomIds") List<Long> roomIds, @Param("userId") Long userId);
 
+    // 알림 삭제 - 메시지 알림의 상응하는 방 데이터를 삭제(Soft Delete) 처리
+    @Modifying
+    @Query("UPDATE MessageReadJpaEntity mr " +
+            "SET mr.isDeleted = true " + // 🎯 삭제 플래그 True 변경
+            "WHERE mr.roomId.id IN :roomIds " +
+            "  AND mr.userId.id = :userId " +
+            "  AND mr.isDeleted = false") // 이미 삭제된 건 제외
+    void bulkUpdateIsDeletedTrue(@Param("roomIds") List<Long> roomIds, @Param("userId") Long userId);
 }

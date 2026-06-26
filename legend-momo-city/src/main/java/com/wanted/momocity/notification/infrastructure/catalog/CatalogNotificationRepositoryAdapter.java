@@ -137,4 +137,16 @@ public class CatalogNotificationRepositoryAdapter implements NotificationReposit
     public void fastSaveChanges() {
 
     }
+
+    //알림 삭제 - 일반 알림
+    @Override
+    public void deleteAllInBatch(List<NotificationJpaEntity> generalNotisToDelete) {
+        springDataNotificationRepository.deleteAllInBatch(generalNotisToDelete);
+    }
+
+    //알림 삭제 - 메시지 알림
+    @Override
+    public void bulkMarkMessageNotificationsAsDeleted(List<Long> messageRoomIds, Long userId) {
+        notificationSideMessageReadRepository.bulkUpdateIsDeletedTrue(messageRoomIds, userId);
+    }
 }
