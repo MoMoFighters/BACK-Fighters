@@ -36,7 +36,7 @@ public class MessageAnnounceJpaEntity {
     private LocalDateTime createdAt;
 
     //채팅방 나가기 안내 문구 저장
-    public static MessageAnnounceJpaEntity createLeaveAnnounce(ChatRoomJpaEntity chatRoom, UserWithFMJpaEntity targetId, String content, String type, LocalDateTime createdAt) {
+    public static MessageAnnounceJpaEntity createAnnounce(ChatRoomJpaEntity chatRoom, UserWithFMJpaEntity targetId, String content, String type, LocalDateTime createdAt) {
         MessageAnnounceJpaEntity a = new MessageAnnounceJpaEntity();
         a.roomId = chatRoom;
         a.targetId = targetId;

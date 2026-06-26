@@ -2,11 +2,13 @@ package com.wanted.momocity.friend.presentation.api;
 
 import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.friend.application.command.*;
+import com.wanted.momocity.friend.application.query.*;
 import com.wanted.momocity.friend.application.usecase.*;
 import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase.CancelRequestFriendView;
 import com.wanted.momocity.friend.application.usecase.FriendQueryUseCase.FindView;
 import com.wanted.momocity.friend.application.usecase.FriendQueryUseCase.FriendView;
 import com.wanted.momocity.friend.application.usecase.FriendQueryUseCase.SentRequestView;
+import com.wanted.momocity.friend.application.usecase.FriendQueryUseCase.StudentFriendsView;
 import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase.RequestFriendView;
 import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase.AcceptView;
 import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase.RejectView;
@@ -26,7 +28,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/friends")
 @RequiredArgsConstructor
 public class FriendController {
 
@@ -36,7 +37,7 @@ public class FriendController {
     //커맨드(친구 요청, 친구 요청 철회, 친구 요청 수락, 친구 요청 거절, 친구 차단, 친구 차단 해제, 친구 삭제)
     private final FriendCommandUseCase friendCommandUseCase;
 
-    @GetMapping
+    @GetMapping("/api/v1/friends")
     @Operation(
             summary = "친구 목록 조회",
             description = "로그인한 사용자의 내 친구 목록을 불러온다."
@@ -45,8 +46,10 @@ public class FriendController {
 
         Long userId = userDetails.getUserId();
 
+        GetFriendQuery query = new GetFriendQuery(userId);
+
         //서비스를 통해 가공된 친구 목록 받아오기
-        List<FriendView> friends = friendQueryUseCase.getFriendQueryHandle(userId);
+        List<FriendView> friends = friendQueryUseCase.getFriendQueryHandle(query);
 
         //빈 배열일 때
         if (friends.isEmpty()) {
@@ -68,14 +71,16 @@ public class FriendController {
         ));
     }
 
-    @GetMapping("/find")
+    @GetMapping("/api/v1/friends/find")
     @Operation(summary = "사용자 검색", description = "닉네임(포함)을 통해 사용자를 검색한다. (차단 유저 제외)")
     public ResponseEntity<ApiResponse<List<FindUserResponse>>> findUser(@AuthenticationPrincipal CustomUserDetails userDetails, @RequestParam("nickname") String findNickname) {
 
         Long userId = userDetails.getUserId();
 
+        FindUserQuery query = new FindUserQuery(userId, findNickname);
+
         //순수한 검색 결과를 내부 주머니로 받아옴(FindView)
-        List<FindView> findResults = friendQueryUseCase.findUserQueryHandle(userId, findNickname);
+        List<FindView> findResults = friendQueryUseCase.findUserQueryHandle(query);
 
         //검색 결과가 없을 때
         if (findResults.isEmpty()) {
@@ -98,7 +103,7 @@ public class FriendController {
         ));
     }
 
-    @PostMapping("/request/{userId}")
+    @PostMapping("/api/v1/friends/request/{userId}")
     @Operation(summary = "친구 요청", description = "상대방에게 친구 요청을 보내고 알림을 생성한다.")
     public ResponseEntity<ApiResponse<RequestFriendResponse>> sentFriend(@AuthenticationPrincipal CustomUserDetails userDetails, @PathVariable("userId") Long targetUserId) {
 
@@ -124,7 +129,7 @@ public class FriendController {
         ));
     }
 
-    @DeleteMapping("/request/{userId}")
+    @DeleteMapping("/api/v1/friends/request/{userId}")
     @Operation(summary = "친구 요청 철회", description = "보낸 친구 요청을 철회한다.")
     public ResponseEntity<ApiResponse<CancelRequestFriendResponse>> cancelRequestFriend(@AuthenticationPrincipal CustomUserDetails userDetails, @PathVariable("userId") Long targetUserId) {
 
@@ -149,14 +154,16 @@ public class FriendController {
         ));
     }
 
-    @GetMapping("/sent")
+    @GetMapping("/api/v1/friends/sent")
     @Operation(summary = "보낸 친구 요청 목록 조회", description = "로그인한 사용자가 타인에게 보낸 친구 요청 중 SENT 상태인 목록을 조회한다.")
     public ResponseEntity<ApiResponse<List<SentRequestResponse>>> sentList(@AuthenticationPrincipal CustomUserDetails userDetails) {
 
         Long userId = userDetails.getUserId();
 
+        SentRequestQuery query = new SentRequestQuery(userId);
+
         //유스케이스 레이어 호출하여 데이터 도출
-        List<SentRequestView> sentRequests = friendQueryUseCase.getSentRequestFriendQueryHandle(userId);
+        List<SentRequestView> sentRequests = friendQueryUseCase.getSentRequestFriendQueryHandle(query);
 
         //보낸 친구 요청이 아예 없을 때(200)
         if (sentRequests.isEmpty()) {
@@ -179,7 +186,7 @@ public class FriendController {
         ));
     }
 
-    @PatchMapping("/received/{userId}/accept")
+    @PatchMapping("/api/v1/friends/received/{userId}/accept")
     @Operation(summary = "친구 요청 수락", description = "받은 친구 요청을 수락하고 관계를 맺는다.")
     public ResponseEntity<ApiResponse<AcceptRequestFriendResponse>> acceptRequestFriend(@AuthenticationPrincipal CustomUserDetails userDetails, @PathVariable("userId") Long fromUserId) {
 
@@ -204,7 +211,7 @@ public class FriendController {
         ));
     }
 
-    @DeleteMapping("/received/{userId}/reject")
+    @DeleteMapping("/api/v1/friends/received/{userId}/reject")
     @Operation(summary = "친구 요청 거절", description = "친구 요청을 거절하고 friend 테이블에서 행 삭제")
     public ResponseEntity<ApiResponse<RejectRequestFriendResponse>> rejectRequestFriend(@AuthenticationPrincipal CustomUserDetails userDetails, @PathVariable("userId") Long fromUserId) {
 
@@ -229,14 +236,16 @@ public class FriendController {
         ));
     }
 
-    @GetMapping("/received")
+    @GetMapping("/api/v1/friends/received")
     @Operation(summary = "받은 친구 요청 목록", description = "로그인한 사용자가 toUserId이면서 SENT 상태인 목록을 조회한다.")
     public ResponseEntity<ApiResponse<List<ReceivedRequestResponse>>> receivedList(@AuthenticationPrincipal CustomUserDetails userDetails) {
 
         Long userId = userDetails.getUserId();
 
+        ReceivedRequestQuery query = new ReceivedRequestQuery(userId);
+
         //유스케이스 view 도출
-        List<ReceivedRequestView> receivedRequests = friendQueryUseCase.getReceivedRequestFriendQueryHandle(userId);
+        List<ReceivedRequestView> receivedRequests = friendQueryUseCase.getReceivedRequestFriendQueryHandle(query);
 
         //받은 요청이 없을 때
         if (receivedRequests.isEmpty()) {
@@ -259,7 +268,7 @@ public class FriendController {
         ));
     }
 
-    @PatchMapping("/block/{userId}")
+    @PatchMapping("/api/v1/friends/block/{userId}")
     @Operation(summary = "친구 차단", description = "선택한 친구를 차단한다.")
     public ResponseEntity<ApiResponse<BlockFriendResponse>> blockFriend(@AuthenticationPrincipal CustomUserDetails userDetails, @PathVariable("userId") Long targetUserId) {
 
@@ -283,14 +292,16 @@ public class FriendController {
         ));
     }
 
-    @GetMapping("/blocked")
+    @GetMapping("/api/v1/friends/blocked")
     @Operation(summary = "친구 차단한 목록", description = "로그인 유저가 차단한 목록을 조회한다.")
     public ResponseEntity<ApiResponse<List<BlockedFriendResponse>>> blockedList(@AuthenticationPrincipal CustomUserDetails userDetails) {
 
         Long userId = userDetails.getUserId();
 
+        BlockedFriendQuery query = new BlockedFriendQuery(userId);
+
         //차단 뷰 목록 획득
-        List<BlockedView> blockedViews = friendQueryUseCase.getBlockedFriendQueryHandle(userId);
+        List<BlockedView> blockedViews = friendQueryUseCase.getBlockedFriendQueryHandle(query);
 
         //차단한 목록이 없을 때
         if (blockedViews.isEmpty()) {
@@ -313,7 +324,7 @@ public class FriendController {
         ));
     }
 
-    @PatchMapping("/unblock/{userId}")
+    @PatchMapping("/api/v1/friends/unblock/{userId}")
     @Operation(summary = "친구 차단 해제", description = "친구 차단을 해제하여 다시 친구 상태로 만든다.")
     public ResponseEntity<ApiResponse<UnblockFriendResponse>> unblockFriend(@AuthenticationPrincipal CustomUserDetails userDetails, @PathVariable("userId") Long targetUserId) {
 
@@ -338,7 +349,7 @@ public class FriendController {
         ));
     }
 
-    @DeleteMapping("/delete/{userId}")
+    @DeleteMapping("/api/v1/friends/delete/{userId}")
     @Operation(summary = "친구 삭제", description = "친구 상태이면서 강사가 아닌 친구를 삭제한다.")
     public ResponseEntity<ApiResponse<DeleteFriendResponse>> deleteFriend(@AuthenticationPrincipal CustomUserDetails userDetails, @PathVariable("userId") Long targetUserId) {
 
@@ -363,4 +374,26 @@ public class FriendController {
         ));
     }
 
+    //v2-다대다, 친구 도시 놀러가기 시의 강사 제외 친구 목록
+    @GetMapping("/api/v2/studentfriends")
+    @Operation(summary = "강사, 비활성 유저 제외 친구 목록", description = "다대다 채팅 개설/초대, 친구 도시 놀러가기 시 사용한다")
+    public ResponseEntity<ApiResponse<List<GetStudentFriendsResponse>>> getStudentFriends(@AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        Long userId = userDetails.getUserId();
+
+        GetStudentFriendsQuery query = new GetStudentFriendsQuery(userId);
+
+        List<StudentFriendsView> view = friendQueryUseCase.getStudentFriendsQueryHandle(query);
+
+        if (view.isEmpty()) {
+            return ResponseEntity.ok(ApiResponse.success(
+                    "SUCCESS",
+                    "선택 가능한 친구 목록이 없습니다.",
+                    List.of()
+            ));
+        }
+
+        List<GetStudentFriendsResponse> responseList = view.stream().map(GetStudentFriendsResponse::from).toList();
+        return ResponseEntity.ok(ApiResponse.success("SUCCESS", "강사, 비활성 유저 제외 친구 목록 불러오기 성공", responseList));
+    }
 }

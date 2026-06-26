@@ -13,7 +13,9 @@ import com.wanted.momocity.message.application.usecase.MessageCommandUseCase.Sen
 import com.wanted.momocity.message.application.usecase.MessageQueryUseCase.MessageHistoryView;
 import com.wanted.momocity.message.application.usecase.MessageCommandUseCase.LeaveChatRoomView;
 import com.wanted.momocity.message.application.usecase.MessageCommandUseCase.ModifyRoomTitleView;
+import com.wanted.momocity.message.application.usecase.MessageCommandUseCase.InviteRoomMemberView;
 import com.wanted.momocity.message.presentation.api.request.CreateChatRoomRequest;
+import com.wanted.momocity.message.presentation.api.request.InviteRoomMemberRequest;
 import com.wanted.momocity.message.presentation.api.request.ModifyRoomTitleRequest;
 import com.wanted.momocity.message.presentation.api.request.SendMessageRequest;
 import com.wanted.momocity.message.presentation.api.response.*;
@@ -267,7 +269,7 @@ public class MessageController {
     }
 
     //채팅방 이름 수정
-    @PatchMapping("/api/v2/message/chatroom/modify/{roomId}")
+    @PatchMapping("/api/v2/message/chatrooms/modify/{roomId}")
     @Operation(summary = "채팅방 이름 수정하기", description = "다대다인 경우에만 채팅방 이름 수정 가능")
     public ResponseEntity<ApiResponse<ModifyRoomTitleResponse>> modifyRoomTitle(@AuthenticationPrincipal CustomUserDetails userDetails,
                                                                                 @PathVariable Long roomId,
@@ -294,6 +296,38 @@ public class MessageController {
         String successMessage = String.format("채팅방 이름을 %s로 변경했습니다.", view.roomTitle());
 
         return ResponseEntity.ok(ApiResponse.success(
+                "SUCCESS",
+                successMessage,
+                responseData
+        ));
+    }
+
+    //사용자 초대하기
+    @PostMapping("/api/v2/message/chatrooms/invite/{roomId}")
+    @Operation(summary = "채팅방 이름 수정하기", description = "다대다인 경우에만 채팅방 이름 수정 가능")
+    public ResponseEntity<ApiResponse<InviteRoomMemberResponse>> inviteRoomMember(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                                                  @PathVariable Long roomId,
+                                                                                  @RequestBody InviteRoomMemberRequest request) {
+        Long userId = userDetails.getUserId();
+
+        //command 생성
+        InviteRoomMemberCommand command = new InviteRoomMemberCommand(roomId, userId, request.chatMember());
+
+        InviteRoomMemberView view = messageCommandUseCase.inviteRoomMemberCommandHandle(command);
+
+        //response 매핑
+        InviteRoomMemberResponse responseData = new InviteRoomMemberResponse(
+                view.roomId(),
+                view.roomTitle(),
+                view.userId(),
+                view.nickname(),
+                view.role(),
+                view.joinedAt()
+        );
+
+        String successMessage = view.invitedUserNicknames() + "님을 초대했습니다.";
+
+        return ResponseEntity.ok(ApiResponse.created(
                 "SUCCESS",
                 successMessage,
                 responseData

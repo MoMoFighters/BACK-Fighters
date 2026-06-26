@@ -40,4 +40,15 @@ public class ChatRoomMemberJpaEntity {
         membership.joinedAt = LocalDateTime.now();
         return membership;
     }
+
+    //다대다 채팅방 멤버 초대
+    public static ChatRoomMemberJpaEntity createInviteMembership(ChatRoomJpaEntity room, UserWithFMJpaEntity invitedUser, LocalDateTime joinedAt) {
+        ChatRoomMemberJpaEntity member = new ChatRoomMemberJpaEntity();
+        member.roomId = room;
+
+        member.userId = invitedUser;
+
+        member.joinedAt = joinedAt;
+        return member;
+    }
 }

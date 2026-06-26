@@ -2,6 +2,7 @@ package com.wanted.momocity.friend.infrastructure.catalog;
 
 
 import com.wanted.momocity.friend.domain.repository.FriendRepository;
+import com.wanted.momocity.friend.enrollment.EnrollmentWithFMJpaEntity;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendSideEnrollmentRepository;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendSideUserRepository;
@@ -59,6 +60,13 @@ public class CatalogFriendAdapter implements FriendRepository {
     public List<FriendJpaEntity> findAllMyRelations(Long userId) {
         log.info("[CatalogFriendAdapter] 로그인한 유저와 연관된 모든 친구 관계 조회 - 유저ID: {}", userId);
         return springDataFriendRepository.findByFromUserId_IdOrToUserId_Id(userId, userId);
+    }
+
+    //수강 목록
+    @Override
+    public List<EnrollmentWithFMJpaEntity> findEnrollmentsByUserId(Long userId) {
+        log.info("[CatalogFriendAdapter] 유저의 수강 신청 내역 DB 조회 - 유저ID: {}", userId);
+        return friendSideEnrollmentRepository.findByUserId_Id(userId);
     }
 
     //친구 요청

@@ -2,6 +2,7 @@ package com.wanted.momocity.friend.domain.repository;
 
 
 import com.wanted.momocity.friend.application.usecase.FriendQueryUseCase.FriendView;
+import com.wanted.momocity.friend.enrollment.EnrollmentWithFMJpaEntity;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
@@ -19,6 +20,9 @@ public interface FriendRepository {
     //사용자 검색 기능
     //사용자 검색을 위한 순수 유저 데이터 가져오기(친구가 아니어도 긁어옴)
     List<UserWithFMJpaEntity> findUsersByNicknameKeyword(String findNickname);
+
+    //수강 정보
+    List<EnrollmentWithFMJpaEntity> findEnrollmentsByUserId(Long userId);
 
     //로그인한 유저와 관련된 모든 친구 관계 행 가져오기(status 상태용)
     List<FriendJpaEntity> findAllMyRelations(Long userId);

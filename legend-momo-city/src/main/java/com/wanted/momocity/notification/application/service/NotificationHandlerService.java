@@ -2,6 +2,9 @@ package com.wanted.momocity.notification.application.service;
 
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.message.application.policy.MessageEligibilityPolicy;
+import com.wanted.momocity.notification.application.query.GetMainTotalCountsQuery;
+import com.wanted.momocity.notification.application.query.GetNotificationQuery;
+import com.wanted.momocity.notification.application.usecase.NotificationQueryUseCase;
 import com.wanted.momocity.notification.domain.model.Notification;
 import com.wanted.momocity.notification.infrastructure.persistence.NotificationJpaEntity;
 import com.wanted.momocity.notification.domain.repository.NotificationRepository;
@@ -20,6 +23,8 @@ import java.util.Optional;
 public class NotificationHandlerService {
 
     private final NotificationRepository notificationRepository;
+    //웹소켓으로 실시간 알림 전송 받는 거 처리
+    private final NotificationQueryUseCase notificationQueryUseCase;
 
     /**
      * 친구 요청 알림 생성 및 저장 비즈니스 로직
@@ -37,6 +42,11 @@ public class NotificationHandlerService {
         //도메인 규격 리포지토리를 통해 저장 수행
         Notification saved = notificationRepository.save(newNotification);
         log.info("[NotificationHandlerService] notification 테이블 행 추가 완료 - 생성된 알림ID: {}", saved.getId());
+
+        // 현재 화면에 붙어있는 유저라면 즉시 가공해서 푸시!
+        notificationQueryUseCase.getMainTotalCountsQueryHandle(new GetMainTotalCountsQuery(toUserId));
+        notificationQueryUseCase.getNotificationQueryHandle(new GetNotificationQuery(toUserId));
+        log.info("[알림 핸들러 -> 쿼리 연동] 온라인 유저 {}번에게 실시간 알림 웹소켓 전송 완료", toUserId);
     }
 
     //친구 요청 철회 시 친구 요청으로 들어간 notification 행 삭제
@@ -80,7 +90,7 @@ public class NotificationHandlerService {
         if (roomTitle == null || roomTitle.isEmpty()) {
             message = String.format("%s님이 메시지를 보냈습니다.", senderNickname);
         } else {
-            message = String.format("'%s' 대화창에 %s님이 메시지를 보냈습니다.", roomTitle, senderNickname);
+            message = String.format("[%s] %s님이 메시지를 보냈습니다.", roomTitle, senderNickname);
         }
 
         //기존 알림이 존재하는 경우 ->시간만 업데이트, 읽지 않음 처리
