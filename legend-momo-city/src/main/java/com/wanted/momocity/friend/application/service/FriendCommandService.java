@@ -12,6 +12,7 @@ import com.wanted.momocity.friend.fmexception.FMResourceNotFoundException;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 import com.wanted.momocity.friend.infrastructure.persistence.GuestBookJpaEntity;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
+import com.wanted.momocity.global.application.point.AddOrderHistory;
 import com.wanted.momocity.global.application.point.PointChange;
 import com.wanted.momocity.message.application.policy.MessageEligibilityPolicy;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+
+import static com.wanted.momocity.order.domain.model.Reason.GUESTBOOK;
+import static com.wanted.momocity.order.domain.model.Type.GAINED;
 
 @Service
 @Transactional
@@ -36,7 +40,7 @@ public class FriendCommandService implements FriendCommandUseCase {
     private final MessageEligibilityPolicy messageEligibilityPolicy;
     //포인트 주입
     private final PointChange pointChange;
-    //private final AddOrderHistory addOrderHistory;
+    private final AddOrderHistory addOrderHistory;
 
     //친구 요청
     @Override
@@ -349,7 +353,7 @@ public class FriendCommandService implements FriendCommandUseCase {
         //포인트 +10
         pointChange.gainPoint(command.userId(), 10L);
         //추후 포트 생기면 주석 해제
-        //addOrderHistory.saveOrderHistory(command.userId(), "GUESTBOOK", "GAINED", 10L);
+        addOrderHistory.saveOrderHistory(command.userId(), GUESTBOOK, GAINED, 10L);
 
         // 7. 알림 도메인 시스템과의 느슨한 결합을 위한 비동기 알림 생성 이벤트 발행
         // 스펙 명세: "{nickname}님이 회원님의 도시에 방명록을 남겼습니다."
