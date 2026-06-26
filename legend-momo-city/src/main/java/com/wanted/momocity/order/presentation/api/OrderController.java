@@ -6,10 +6,12 @@ import com.wanted.momocity.order.application.command.MakeOrderCommand;
 import com.wanted.momocity.order.application.usecase.OrderCommandUsecase;
 import com.wanted.momocity.order.application.usecase.OrderQueryUsecase;
 import com.wanted.momocity.order.domain.model.OrderHistoryList;
+import com.wanted.momocity.order.domain.model.ProfileItemResult;
 import com.wanted.momocity.order.presentation.api.common.OrderResponseCode;
 import com.wanted.momocity.order.presentation.api.common.OrderResponseMessage;
 import com.wanted.momocity.order.presentation.api.request.MakeOrderRequest;
 import com.wanted.momocity.order.presentation.api.response.OrderHistoryResponse;
+import com.wanted.momocity.order.presentation.api.response.ProfileItemListResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -20,6 +22,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -56,7 +60,7 @@ public class OrderController {
 
 
     @GetMapping("/list")
-    @Operation(summary = "개인별 구매 내역 조회")
+    @Operation(summary = "포인트 사용 내역 조회")
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)")
@@ -80,4 +84,26 @@ public class OrderController {
 
     }
 
+    @GetMapping("/profile/list")
+    @Operation(summary = "사용자가 사용 가능한  프사 목록",
+            description = "전체 프사 목록 중 사용 가능한 것과 아닌 것을 구분하여 출력")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)")
+    })
+    public ResponseEntity<ApiResponse<ProfileItemListResponse>> getAvailableProfile(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        List<ProfileItemResult> results = orderQueryUsecase.getAvailableProfile(userDetails.getUserId());
+        ProfileItemListResponse response = ProfileItemListResponse.toResponse(results);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        OrderResponseCode.LIST_FETCHED,
+                        OrderResponseMessage.LIST_FETCHED,
+                        response
+                ));
     }
+}
+
+

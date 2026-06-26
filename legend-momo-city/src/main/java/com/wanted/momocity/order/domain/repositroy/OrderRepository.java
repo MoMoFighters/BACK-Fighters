@@ -5,6 +5,7 @@ import com.wanted.momocity.order.domain.model.Reason;
 import com.wanted.momocity.order.domain.model.Type;
 
 import java.util.List;
+import java.util.Set;
 
 public interface OrderRepository {
 
@@ -19,5 +20,9 @@ public interface OrderRepository {
 
     // 페이지네이션용
     long countByUserId(Long userId);
+
+    // 소유한 프사 목록 조회
+    List<Long> findOwnedItemIdsByUserIdAndReason(Long userId, Reason profile);
+//    Set<Long> findOwnedItemIdsByUserIdAndReason(Long userId, Reason reason);
 
 }

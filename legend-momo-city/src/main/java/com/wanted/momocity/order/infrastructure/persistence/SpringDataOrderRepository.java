@@ -1,8 +1,11 @@
 package com.wanted.momocity.order.infrastructure.persistence;
 
 
+import com.wanted.momocity.order.domain.model.Reason;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -17,4 +20,8 @@ public interface SpringDataOrderRepository extends JpaRepository<OrderJpaEntity,
 
     // 페이지네이션
     long countByUserId(Long userId);
+
+    // 사용 가능한 프사 목록
+    @Query("SELECT o.itemId FROM OrderJpaEntity o WHERE o.userId = :userId AND o.reason = :reason")
+    List<Long> findOwnedItemIdsByUserIdAndReason(@Param("userId") Long userId, @Param("reason") Reason reason);
 }
