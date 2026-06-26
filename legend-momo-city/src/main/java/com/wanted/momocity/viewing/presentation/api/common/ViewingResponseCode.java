@@ -20,6 +20,7 @@ public class ViewingResponseCode {
     public static final String PROGRESS_SAVED        = "VIEWING-PROGRESS-SAVED";
     public static final String TOTAL_PROGRESS_FOUND  = "VIEWING-TOTAL-PROGRESS-FOUND";
     public static final String CHAPTER_PROGRESS_FOUND = "VIEWING-CHAPTER-PROGRESS-FOUND";
+    public static final String CONTINUE_LEARNING_FOUND = "VIEWING-CONTINUE-LEARNING-FOUND";
 
     // 내 강의
     public static final String MY_LECTURES_FOUND     = "VIEWING-MY-LECTURES-FOUND";

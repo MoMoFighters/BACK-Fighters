@@ -34,7 +34,9 @@ public class EnrollmentController {
     @PostMapping("/{lectureId}/enrollments")
     public ResponseEntity<ApiResponse<CreateEnrollmentResponse>> createEnrollment(
             Authentication authentication,
-            @PathVariable Long lectureId
+            @PathVariable Long lectureId,
+            // 건물 없을 때 사용할 위치 값, 있으면 사용 X
+            @RequestParam(required = false) Long position
     ) {
         // Authorization 토큰에서 꺼낸 로그인 사용자 email
         Long studentId = Long.parseLong(authentication.getName());
@@ -42,7 +44,8 @@ public class EnrollmentController {
         // 수강신청에 필요한 값을 Command로 묶는다.
         CreateEnrollmentCommand command = new CreateEnrollmentCommand(
                 studentId,
-                lectureId
+                lectureId,
+                position
         );
 
         // 수강신청 비즈니스 로직을 실행

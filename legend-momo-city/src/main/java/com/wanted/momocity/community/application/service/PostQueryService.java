@@ -7,6 +7,7 @@ import com.wanted.momocity.community.application.usecase.PostQueryUseCase;
 import com.wanted.momocity.community.domain.exception.CommunityNotFoundException;
 import com.wanted.momocity.community.domain.model.Comment;
 import com.wanted.momocity.community.domain.model.Post;
+import com.wanted.momocity.community.domain.model.PostLike;
 import com.wanted.momocity.community.domain.repository.CommentRepository;
 import com.wanted.momocity.community.domain.repository.PostLikeRepository;
 import com.wanted.momocity.community.domain.repository.PostRepository;
@@ -186,11 +187,11 @@ public class PostQueryService implements PostQueryUseCase {
                             ? replies.get(replies.size() - 1).getId()
                             : null;
 
-                    List<CommentResponse> replyResponses = replies.stream()
+                    List<ReplyResponse> replyResponses = replies.stream()
                             .map(r -> {
                                 User replyAuthor = userInfoPort.findById(r.getUserId())
                                         .orElseThrow(() -> new CommunityNotFoundException("사용자를 찾을 수 없습니다."));
-                                return new CommentResponse(
+                                return new ReplyResponse(
                                         r.getId(),
                                         r.getUserId(),
                                         r.getContent(),
@@ -199,10 +200,7 @@ public class PostQueryService implements PostQueryUseCase {
                                         replyAuthor.getRole().name(),
                                         r.getUserId().equals(userId),
                                         r.getUserId().equals(post.getUserId()),
-                                        r.getCreatedAt(),
-                                        List.of(),
-                                        false,
-                                        null
+                                        r.getCreatedAt()
                                 );
                             })
                             .toList();
@@ -246,7 +244,7 @@ public class PostQueryService implements PostQueryUseCase {
      * */
 
     @Override
-    public PostCommentResponse getReplies(Long userId, Long postId, Long commentId, Long cursor, int size) {
+    public PostReplyResponse getReplies(Long userId, Long postId, Long commentId, Long cursor, int size) {
         // 게시글 작성자 확인용
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CommunityNotFoundException("게시글을 찾을 수 없습니다."));
@@ -260,11 +258,11 @@ public class PostQueryService implements PostQueryUseCase {
         List<Comment> replies = commentRepository
                 .findRepliesByCommentIdWithCursor(commentId, cursor, size);
 
-        List<CommentResponse> replyResponses = replies.stream()
+        List<ReplyResponse> replyResponses = replies.stream()
                 .map(r -> {
                     User replyAuthor = userInfoPort.findById(r.getUserId())
                             .orElseThrow(() -> new CommunityNotFoundException("사용자를 찾을 수 없습니다."));
-                    return new CommentResponse(
+                    return new ReplyResponse(
                             r.getId(),
                             r.getUserId(),
                             r.getContent(),
@@ -273,10 +271,7 @@ public class PostQueryService implements PostQueryUseCase {
                             replyAuthor.getRole().name(),
                             r.getUserId().equals(userId),
                             r.getUserId().equals(post.getUserId()),
-                            r.getCreatedAt(),
-                            List.of(),
-                            false,
-                            null
+                            r.getCreatedAt()
                     );
                 })
                 .toList();
@@ -287,8 +282,32 @@ public class PostQueryService implements PostQueryUseCase {
 
         log.info("[Community] 대댓글 조회 완료 | commentId={}, totalCount={}", commentId, totalCount);
 
-        return new PostCommentResponse(totalCount, replyResponses, nextCursor);
+        return new PostReplyResponse(totalCount, replyResponses, nextCursor);
 
+    }
+
+    // 좋아요 누른 사용자 목록 조회
+    // userId 포함 -> 클릭 시 해당 사용자 페이지로 이동
+    @Override
+    public PostLikeListResponse getLikes(Long postId) {
+        List<PostLike> likes = postLikeRepository.findAllByPostId(postId);
+
+        List<PostLikeListResponse.LikeUserItem> users = likes.stream()
+                .map(like -> {
+                    User user = userInfoPort.findById(like.getUserId())
+                            .orElseThrow(() -> new CommunityNotFoundException("사용자를 찾을 수 없습니다."));
+                    return new PostLikeListResponse.LikeUserItem(
+                            user.getId(),
+                            user.getName(),
+                            user.getProfileImageUrl(),
+                            user.getRole().name()
+                    );
+                })
+                .toList();
+
+        log.info("[Community] 좋아요 목록 조회 완료 | postId={}, totalCount={}", postId, likes.size());
+
+        return new PostLikeListResponse(likes.size(), users);
     }
 
     // 마이페이지 - 내 게시글 목록

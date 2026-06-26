@@ -4,8 +4,6 @@ import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.enrollment.application.usecase.EnrollmentQueryUsecase;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
-import com.wanted.momocity.global.presentation.api.common.ApiResponseMessage;
-import com.wanted.momocity.user.presentation.api.response.UserResponseCode;
 import com.wanted.momocity.user.presentation.api.response.UserResponseMessage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -41,7 +39,7 @@ public class BuildingController {
 
         return ResponseEntity.ok(ApiResponse.success(
                 ApiResponseCode.SUCCESS,
-                ApiResponseMessage.SUCCESS,
+                UserResponseMessage.VIEW_BUILDING_INFO,
                 enrollmentQueryUsecase.userBuildingInfo(userDetails.getUserId())
         ));
     }

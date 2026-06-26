@@ -5,13 +5,9 @@ import com.wanted.momocity.auth.domain.model.User;
 import com.wanted.momocity.enrollment.application.port.StudentAccountPort;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.lecture.application.port.LectureEnrollmentQueryPort;
+import com.wanted.momocity.lecture.application.port.LectureReviewQueryPort;
 import com.wanted.momocity.lecture.application.port.TeacherAccountPort;
-import com.wanted.momocity.lecture.application.query.LectureQuery.GetAdminLectureDetailQuery;
-import com.wanted.momocity.lecture.application.query.LectureQuery.GetAdminLecturesQuery;
-import com.wanted.momocity.lecture.application.query.LectureQuery.GetLecturesQuery;
-import com.wanted.momocity.lecture.application.query.LectureQuery.GetStudentLectureDetailQuery;
-import com.wanted.momocity.lecture.application.query.LectureQuery.GetTeacherLectureDetailQuery;
-import com.wanted.momocity.lecture.application.query.LectureQuery.GetTeacherLecturesQuery;
+import com.wanted.momocity.lecture.application.query.LectureQuery.*;
 import com.wanted.momocity.lecture.application.usecase.LectureQueryUseCases.AdminLectureQueryUseCase;
 import com.wanted.momocity.lecture.application.usecase.LectureQueryUseCases.LectureQueryUseCase;
 import com.wanted.momocity.lecture.domain.exception.LectureNotFoundException;
@@ -29,12 +25,15 @@ import com.wanted.momocity.lecture.presentation.api.response.StudentLectureRespo
 import com.wanted.momocity.lecture.presentation.api.response.TeacherLectureResponse.TeacherLectureDetailResponse;
 import com.wanted.momocity.lecture.presentation.api.response.TeacherLectureResponse.TeacherLectureListItemResponse;
 import com.wanted.momocity.lecture.presentation.api.response.TeacherLectureResponse.TeacherLecturePageResponse;
+import com.wanted.momocity.viewing.application.port.ChapterProgressInfo;
+import com.wanted.momocity.viewing.application.port.LectureChapterProgressPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 강의 조회 기능을 처리하는 Application Service.
@@ -63,8 +62,14 @@ public class LectureQueryService implements
     // 수강 신청 정보 조회 포트
     private final LectureEnrollmentQueryPort lectureEnrollmentQueryPort;
 
+    // 강의별 수강평 평균 평점과 수강평 개수 조회
+    private final LectureReviewQueryPort lectureReviewQueryPort;
+
     // 강사 이름, 프로필 이미지 조회를 위한 auth 포트
     private final LoadUserPort loadUserPort;
+
+    // 학생 상세 조회에서 챕터별 진척도 조회
+    private final LectureChapterProgressPort lectureChapterProgressPort;
 
     // 학생/비로그인 기준 강의 목록 조회.
     @Override
@@ -111,8 +116,16 @@ public class LectureQueryService implements
 
         Long finalStudentId = studentId;
 
-        List<StudentLectureListItemResponse> content = lecturePage.content().stream()
-                .map(lecture -> toStudentListItemResponse(lecture, finalStudentId))
+        // 현재 페이지 강의들의 리뷰 통계를 한 번에 조회
+        Map<Long, LectureReviewQueryPort.ReviewStats> reviewStatsMap = lectureReviewQueryPort.getReviewStatsMap(
+                lecturePage.content().stream()
+                        // 강의 Id만 추출
+                        .map(LectureAggregate::getId)
+                        .toList()
+        );
+
+        List<StudentLectureListItemResponse> content = lecturePage.content().stream() // 현재 페이지 강의 목록을 스트림으로 변환
+                .map(lecture -> toStudentListItemResponse(lecture, finalStudentId, reviewStatsMap)) // 리뷰 통계 Map을 함께 넘겨 응답 DTO 생성
                 .toList();
 
         return new StudentLecturePageResponse(
@@ -139,27 +152,48 @@ public class LectureQueryService implements
         List<LectureChapter> chapters =
                 chapterRepository.findAllByLectureIdOrderByOrderNoAsc(query.lectureId());
 
-        boolean isEnrolled = lectureEnrollmentQueryPort
-                .findByUserIdAndLectureId(studentId, query.lectureId())
-                .isPresent();
+        // 수강 신청 정보 조회
+        var enrollmentProgress = lectureEnrollmentQueryPort
+                // 학생 Id와 강의ID로 수강 신청 정보 조회
+                .findByUserIdAndLectureId(studentId, query.lectureId());
 
-        User teacher = loadUserPort.findById(lecture.getTeacherId())
-                .orElseThrow(() -> new LectureNotFoundException("강사 정보를 찾을 수 없습니다."));
+        // 수강 신청 정보가 있으면 true, 없으면 null
+        boolean isEnrolled = enrollmentProgress.isPresent();
+
+        // 조회된 수강 신청 정보 Optional 사용
+        Integer lectureProgress = enrollmentProgress
+                .map(LectureEnrollmentQueryPort.EnrollmentProgress::totalProgress).orElse(null);
+
+        // 수강 중인 강의인지 확인
+        Map<Long, ChapterProgressInfo> chapterProgressMap = isEnrolled
+                // 수강 중이면 챕터별 진척도 목록 조회
+                ? lectureChapterProgressPort.getLectureChapterProgress(studentId, query.lectureId())
+                // chapterId 기준으로 Map으로 변환
+                  .stream().collect(java.util.stream.Collectors.toMap(
+                          // Map key는 chapterId
+                          ChapterProgressInfo::chapterId,
+                        // Map value는 챕터 진척도 정보 전체
+                        progressInfo -> progressInfo
+                        // 미수강이면  빈 Map 사용
+                )) : Map.of();
+
+        LectureReviewQueryPort.ReviewStats reviewStats = lectureReviewQueryPort.getReviewStats(lecture.getId());
 
         return StudentLectureDetailResponse.from(
                 lecture,
                 chapters,
-                teacher.getName(),
-                teacher.getProfileImageUrl(),
-                0.0,
-                0,
-                isEnrolled
+                reviewStats.averageRating(),
+                reviewStats.reviewCount(),
+                isEnrolled,
+                lectureProgress,
+                chapterProgressMap
         );
     }
 
     // 강사 기준 본인 강의 목록 조회.
     @Override
     public TeacherLecturePageResponse getTeacherLectures(GetTeacherLecturesQuery query) {
+
         Long teacherId = teacherAccountPort.getTeacherId(query.teacherId());
 
         var lecturePage = lectureRepository.findTeacherLectures(
@@ -170,13 +204,29 @@ public class LectureQueryService implements
                 query.size()
         );
 
+        Map<Long, LectureReviewQueryPort.ReviewStats> reviewStatsMap = lectureReviewQueryPort.getReviewStatsMap(
+                lecturePage.content().stream()
+                        .map(LectureAggregate::getId)
+                        .toList()
+        );
+
+        // 현재 페이지 강의 목록 스트림
         List<TeacherLectureListItemResponse> content = lecturePage.content().stream()
-                .map(lecture -> TeacherLectureListItemResponse.from(
-                        lecture,
-                        0.0,
-                        0
-                ))
-                .toList();
+                .map(lecture -> {
+                    // 해당 강의의 평균 평점과 수강평 개수 조회
+                    LectureReviewQueryPort.ReviewStats reviewStats = reviewStatsMap.getOrDefault(
+                            lecture.getId(),
+                            new LectureReviewQueryPort.ReviewStats(0.0, 0)
+                    );
+
+                    // 강사 강의 목록 아이템 응답 DTO
+                    return TeacherLectureListItemResponse.from(
+                            lecture,
+                            reviewStats.averageRating(),
+                            reviewStats.reviewCount()
+                    );
+                }).toList();
+
 
         return new TeacherLecturePageResponse(
                 content,
@@ -202,11 +252,13 @@ public class LectureQueryService implements
         List<LectureChapter> chapters =
                 chapterRepository.findAllByLectureIdOrderByOrderNoAsc(query.lectureId());
 
+        LectureReviewQueryPort.ReviewStats reviewStats = lectureReviewQueryPort.getReviewStats(lecture.getId());
+
         return TeacherLectureDetailResponse.from(
                 lecture,
                 chapters,
-                0.0,
-                0
+                reviewStats.averageRating(),
+                reviewStats.reviewCount()
         );
     }
 
@@ -226,12 +278,25 @@ public class LectureQueryService implements
                 query.size()
         );
 
+        Map<Long, LectureReviewQueryPort.ReviewStats> reviewStatsMap = lectureReviewQueryPort.getReviewStatsMap(
+                lecturePage.content().stream()
+                        .map(LectureAggregate::getId)
+                        .toList()
+        );
+
         List<AdminLectureListItemResponse> content = lecturePage.content().stream()
-                .map(lecture -> AdminLectureListItemResponse.from(
-                        lecture,
-                        0.0,
-                        0
-                ))
+                .map(lecture -> {
+                    LectureReviewQueryPort.ReviewStats reviewStats = reviewStatsMap.getOrDefault(
+                            lecture.getId(),
+                            new LectureReviewQueryPort.ReviewStats(0.0, 0)
+                    );
+
+                    return  AdminLectureListItemResponse.from(
+                            lecture,
+                            reviewStats.averageRating(),
+                            reviewStats.reviewCount()
+                    );
+                })
                 .toList();
 
         return new AdminLecturePageResponse(
@@ -257,11 +322,13 @@ public class LectureQueryService implements
         List<LectureChapter> chapters =
                 chapterRepository.findAllByLectureIdOrderByOrderNoAsc(query.lectureId());
 
+        LectureReviewQueryPort.ReviewStats reviewStats = lectureReviewQueryPort.getReviewStats(lecture.getId());
+
         return AdminLectureDetailResponse.from(
                 lecture,
                 chapters,
-                0.0,
-                0
+                reviewStats.averageRating(),
+                reviewStats.reviewCount()
         );
     }
 
@@ -281,10 +348,20 @@ public class LectureQueryService implements
     // 학생 강의 목록용 응답 객체로 변환
     private StudentLectureListItemResponse toStudentListItemResponse(
             LectureAggregate lecture,
-            Long studentId
+            Long studentId,
+            Map<Long, LectureReviewQueryPort.ReviewStats> reviewStatsMap
     ) {
-        double averageRating = 0.0;
-        int reviewCount = 0;
+
+        // 강의평 관련 (강의 평점 평균, 강의평 개수)
+        // 현재 강의 ID에 대해 해당하는 리뷰 통계 조회
+        // getOrDefault : 보통 값을 가지고 오지만 , 없다면 기본값을 사용
+        LectureReviewQueryPort.ReviewStats reviewStats = reviewStatsMap.getOrDefault(
+                lecture.getId(),
+                // 리뷰가 없다면 기본값 사용
+                new LectureReviewQueryPort.ReviewStats(0.0, 0)
+        );
+        double averageRating = reviewStats.averageRating();
+        int reviewCount = reviewStats.reviewCount();
 
         // 현재 강의의 전체 챕터 수를 조회
         int chapterCount = chapterRepository.countByLectureId(lecture.getId());

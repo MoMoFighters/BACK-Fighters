@@ -2,6 +2,7 @@ package com.wanted.momocity.enrollment.infrastructure.adapter;
 
 import com.wanted.momocity.enrollment.application.port.EnrollmentLecturePort;
 import com.wanted.momocity.enrollment.domain.exception.EnrollmentLectureNotFoundException;
+import com.wanted.momocity.lecture.domain.model.LectureCategory;
 import com.wanted.momocity.lecture.domain.model.LectureStatus;
 import com.wanted.momocity.lecture.infrastructure.persistence.LectureJpaEntity;
 import com.wanted.momocity.lecture.infrastructure.persistence.SpringDataLectureRepository;
@@ -23,5 +24,14 @@ public class LectureEnrollmentAdapter implements EnrollmentLecturePort {
                 .orElseThrow(() -> new EnrollmentLectureNotFoundException("강의를 찾을 수 없습니다."));
 
         return lecture.getStatus();
+    }
+
+    @Override
+    public LectureCategory getLectureCategory(Long lectureId) {
+
+        LectureJpaEntity lecture = lectureRepository.findById(lectureId)
+                .orElseThrow(() -> new EnrollmentLectureNotFoundException("강의를 찾을 수 없습니다."));
+
+        return lecture.getCategory();
     }
 }

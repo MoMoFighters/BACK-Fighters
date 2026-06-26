@@ -16,7 +16,9 @@ public record EnrollmentProgressResponse(
         // 건물 현재 경험치
         Integer buildingCurrentExp,
         // 건물 필요 경험치
-        Integer buildingTotalExp
+        Integer buildingTotalExp,
+        // 카테고리 O, 해당 카테고리 건물 url
+        String buildingUrl
 ) {
 
 }

@@ -7,13 +7,18 @@ import com.wanted.momocity.enrollment.application.usecase.EnrollmentCommandUseCa
 import com.wanted.momocity.enrollment.domain.event.EnrollmentCompletedEvent;
 import com.wanted.momocity.enrollment.domain.exception.DuplicateEnrollmentException;
 import com.wanted.momocity.enrollment.domain.exception.InvalidEnrollmentLectureStatusException;
+import com.wanted.momocity.enrollment.domain.model.Building;
 import com.wanted.momocity.enrollment.domain.model.Enrollment;
+import com.wanted.momocity.enrollment.domain.repository.BuildingRepository;
 import com.wanted.momocity.enrollment.domain.repository.EnrollmentRepository;
-import com.wanted.momocity.enrollment.infrastructure.metrics.EnrollmentMetrics;
+import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
+import com.wanted.momocity.global.domain.model.Category;
+import com.wanted.momocity.lecture.domain.model.LectureCategory;
 import com.wanted.momocity.lecture.domain.model.LectureStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +41,9 @@ public class EnrollmentCommandService implements EnrollmentCommandUseCase {
     // 수강신청 완료 이벤트를 발행하기 위한 Spring 이벤트 발행기
     private final ApplicationEventPublisher eventPublisher;
 
+    // 수강신청 시 카테고리 건물 존재 여부 확인
+    private final BuildingRepository buildingRepository;
+
     @Override
     public Enrollment createEnrollment(CreateEnrollmentCommand command) {
 
@@ -46,6 +54,9 @@ public class EnrollmentCommandService implements EnrollmentCommandUseCase {
 
             // 수강신청 대상 강의의 현재 상태를 조회
             LectureStatus lectureStatus = enrollmentLecturePort.getLectureStatus(command.lectureId());
+
+            // 수강신청할 강의의 카테고리 조회
+            LectureCategory lectureCategory = enrollmentLecturePort.getLectureCategory(command.lectureId());
 
             // 같은 학생이 같은 강의를 이미 수강신청했는지 확인
             boolean alreadyEnrolled = enrollmentRepository.existsByUserIdAndLectureId(
@@ -62,6 +73,13 @@ public class EnrollmentCommandService implements EnrollmentCommandUseCase {
             if (lectureStatus != LectureStatus.ACTIVE) {
                 throw new InvalidEnrollmentLectureStatusException("진행 중인 강의만 수강신청할 수 있습니다.");
             }
+
+            // 해당 카테고리 건물이 없으면 새 건물 생성
+            createBuildingIfAbsent(
+                    userId,
+                    lectureCategory,
+                    command.position()
+            );
 
             // 수강신청 도메인 객체를 생성
             Enrollment enrollment = Enrollment.create(
@@ -91,5 +109,54 @@ public class EnrollmentCommandService implements EnrollmentCommandUseCase {
             // 저장된 수강신청 도메인 객체를 반환
             return savedEnrollment;
 
+    }
+
+    private void createBuildingIfAbsent(
+            Long userId,
+            LectureCategory lectureCategory,
+            Long position
+    ) {
+        Category buildingCategory = Category.valueOf(lectureCategory.name());
+        // 사용자가 해당 카테고리 건물을 가지고 있는지 확인
+        boolean hasBuilding = buildingRepository.existsByUserIdAndCategory(
+                userId,
+                buildingCategory
+        );
+
+        // 만약 건물을 이미 가지고 있으면 생성 X
+        if (hasBuilding) {
+            return;
+        }
+
+        // position 값 검증
+        validateBuildingPosition(position);
+
+        Building building = Building.create(
+                userId,
+                buildingCategory,
+                position
+        );
+
+        // 동시 요청으로 같은 카테고리 건물이 먼저 생성 될 수 있으므로 예외 처리
+        try {
+            // 신규 건물 저장 시도
+            buildingRepository.save(building);
+            // unique 제약 위반이 발생한 경우
+        } catch (DataIntegrityViolationException exception) {
+            // 중복 생성 상황을 로그로 남김
+            log.info("이미 생성된 카테고리 건물이 있어서 건물 생성을 건너 뜁니다. userId={}, category={}", userId, buildingCategory);
+        }
+    }
+
+    private void validateBuildingPosition(Long position) {
+
+        // 새 건물을 생성해야 되는데 position이 없으면
+        if (position == null) {
+            throw new DomainRuleViolationException("건물 값은 필수입니다.");
+        }
+
+        if (position < 1 || position > 5) {
+            throw new DomainRuleViolationException("건물 위치 값은 1부터 5까지만 가능합니다.");
+        }
     }
 }
