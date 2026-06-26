@@ -80,7 +80,7 @@ public class TeacherApplicationController {
             @AuthenticationPrincipal CustomUserDetails userDetails){
 
         userCommandUsecase.teacherApply(
-                new TeacherApplyCommand(userDetails.getUserId(), request.nickname(), request.category(), request.proof())
+                new TeacherApplyCommand(userDetails.getUserId(),request.currentNickname(), request.nickname(), request.category(), request.proof())
         );
 
         return ResponseEntity.status(HttpStatus.OK)
@@ -91,6 +91,26 @@ public class TeacherApplicationController {
                 ));
     }
 
+    @PatchMapping("/application-giveup")
+    @Operation(description = "Rejected+student = 강사 신청 했다가 반려된 사람이 더이상 강사 신청을 하지 않고 " +
+            "Active+student 가 되도록 ")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "강사 포기 처리 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
+    })
+    public ResponseEntity<ApiResponse<Void>> teacherGiveup(
+            @AuthenticationPrincipal CustomUserDetails userDetails){
+
+        userCommandUsecase.teacherGiveup(userDetails.getUserId());
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        TeacherResponseCode.SUCCESS,
+                        TeacherResponseMessage.TEACHER_GIVEUP,
+                        null
+                ));
+    }
 
     @GetMapping("/teacher-applications")
     @PreAuthorize("hasRole('ADMIN')")
@@ -219,7 +239,8 @@ public class TeacherApplicationController {
                 app.proof(),
                 app.status(),
                 app.role(),
-                app.createdAt()
+                app.createdAt(),
+                app.fileType()
         );
     }
 }

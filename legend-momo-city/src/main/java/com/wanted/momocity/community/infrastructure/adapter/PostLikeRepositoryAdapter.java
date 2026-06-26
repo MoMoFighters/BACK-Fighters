@@ -7,6 +7,7 @@ import com.wanted.momocity.community.infrastructure.persistence.PostLikeJpaRepos
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 
 /*
@@ -30,6 +31,14 @@ public class PostLikeRepositoryAdapter implements PostLikeRepository {
     public Optional<PostLike> findByPostIdAndUserId(Long postId, Long userId) {
         return postLikeJpaRepository.findByPostIdAndUserId(postId, userId)
                 .map(PostLikeJpaEntity::toDomain);
+    }
+
+    @Override
+    public List<PostLike> findAllByPostId(Long postId) {
+        return postLikeJpaRepository.findAllByPostId(postId)
+                .stream()
+                .map(PostLikeJpaEntity::toDomain)
+                .toList();
     }
 
     @Override

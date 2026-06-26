@@ -88,8 +88,8 @@ public class UserRepositoryAdapter implements UserRepository {
     }
 
     @Override
-    public void updateRoleAndStatus(Long userId, Role role, Status status) {
-        springDataUserRepository.updateRoleAndStatus(userId, role, status, LocalDateTime.now());
+    public void updateAfterApply(Long userId, Role role, Status status, String url) {
+        springDataUserRepository.updateRoleAndStatus(userId, role, status,url, LocalDateTime.now());
     }
 
     // 관리자 회원관리용 회원 목록 조회 - role/status 조건에 따라
@@ -123,8 +123,8 @@ public class UserRepositoryAdapter implements UserRepository {
 
     // 강사 중복 신청 확인용
     @Override
-    public boolean existsByIdAndRoleAndStatus(Long userId, Role role, Status status) {
-        return springDataUserRepository.existsByIdAndRoleAndStatus(userId, role, status);
+    public boolean checkTeacherAvailable(Long userId, Role role, List<Status> status) {
+        return springDataUserRepository.checkTeacherAvailable(userId, role, status);
     }
 
     // 강사 승인/반려 확인용
@@ -133,6 +133,17 @@ public class UserRepositoryAdapter implements UserRepository {
         return springDataUserRepository.findById(userId)
                 .map(UserJpaEntity::getStatus)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
+    }
+
+    @Override
+    public void changeStatus(Long userId, Status status) {
+        springDataUserRepository.changeStatus(userId, status);
+    }
+
+    // 승인할 강사의 카테고리 가져오기
+    @Override
+    public Category findCategoryById(Long userId) {
+        return springDataUserRepository.findCategoryById(userId);
     }
 
 

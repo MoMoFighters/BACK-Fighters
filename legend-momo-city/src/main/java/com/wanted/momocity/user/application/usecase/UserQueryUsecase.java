@@ -1,6 +1,7 @@
 package com.wanted.momocity.user.application.usecase;
 
 import com.wanted.momocity.user.domain.model.TeacherApplication;
+import com.wanted.momocity.user.presentation.api.response.AdminUserDetailResponse;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -11,6 +12,8 @@ public interface UserQueryUsecase {
     UserDetailView userDetail(Long userId);
 
     void checkNickname(String nickname);
+
+    AdminUserDetailResponse getUserDetail(Long userId);
 
     record UserDetailView(
             String profileImageUrl,

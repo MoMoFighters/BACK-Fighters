@@ -3,10 +3,8 @@ package com.wanted.momocity.community.application.service;
 import com.wanted.momocity.auth.domain.model.User;
 import com.wanted.momocity.community.application.command.PostContentCommand;
 import com.wanted.momocity.community.application.port.UserInfoPort;
-import com.wanted.momocity.community.application.result.CommentCreateResult;
 import com.wanted.momocity.community.application.result.LikeResult;
 import com.wanted.momocity.community.application.result.PostCreateResult;
-import com.wanted.momocity.community.application.result.ReplyCreateResult;
 import com.wanted.momocity.community.application.usecase.PostCommandUseCase;
 import com.wanted.momocity.community.domain.event.CommentCreatedEvent;
 import com.wanted.momocity.community.domain.event.PostLikedEvent;
@@ -23,9 +21,10 @@ import com.wanted.momocity.community.domain.repository.PostLikeRepository;
 import com.wanted.momocity.community.domain.repository.PostRepository;
 import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.global.infrastructure.cloudfront.CloudFrontUrlConverter;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,7 +32,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /*
 * comment.
@@ -41,17 +39,12 @@ import java.util.Set;
 *  - 게시글 생성, 수정, 삭제
 *  - 콘텐츠 업로드, 수정
 *  - 좋아요, 댓글, 대댓글
-*  -
-*  Redis 캐시 무효화 전략
-*  @CacheEvict 대신 StringRedisTemplate 직접 사용
-*  -> PostQueryService 가 StringRedisTemplate 으로 posts 캐시 저장
-*  -> @CacheEvict 는 RedisCacheManager 경유 → 직렬화 충돌 발생
-*  -> evictPostsCache() 로 "posts::*" 패턴 키 전체 삭제
 * */
 
 @Slf4j
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class PostCommandService implements PostCommandUseCase {
 
     private final PostRepository postRepository;
@@ -63,41 +56,14 @@ public class PostCommandService implements PostCommandUseCase {
     private final S3UploadPort s3UploadPort;
     private final ApplicationEventPublisher eventPublisher;
 
-    // posts 캐시 무효화 시 "posts::*" 패턴 키 직접 삭제
-    // -> @CacheEvict 대신 사용
-    private final StringRedisTemplate stringRedisTemplate;
-
-    public PostCommandService(
-            PostRepository postRepository,
-            PostContentRepository postContentRepository,
-            PostLikeRepository postLikeRepository,
-            CommentRepository commentRepository,
-            UserInfoPort userInfoPort,
-            CloudFrontUrlConverter cloudFrontUrlConverter,
-            S3UploadPort s3UploadPort,
-            ApplicationEventPublisher eventPublisher,
-            StringRedisTemplate stringRedisTemplate
-    ) {
-        this.postRepository = postRepository;
-        this.postContentRepository = postContentRepository;
-        this.postLikeRepository = postLikeRepository;
-        this.commentRepository = commentRepository;
-        this.userInfoPort = userInfoPort;
-        this.cloudFrontUrlConverter = cloudFrontUrlConverter;
-        this.s3UploadPort = s3UploadPort;
-        this.eventPublisher = eventPublisher;
-        this.stringRedisTemplate = stringRedisTemplate;
-    }
-
     // 게시글 생성
     // title, category 만 저장 -> postId 반환 후 콘텐츠 업로드 API 호출
-    // 캐시 무효화
-    // 게시글 추가 시 목록 캐시 전체 무효화 -> evictPostsCache() 호출
+    // 게시글 추가 시 목록 캐시 전체 무효화
     @Override
+    @CacheEvict(value = "posts", allEntries = true, cacheManager = "redisCacheManager")
     public PostCreateResult createPost(Long userId, String title, String category) {
         Post post = Post.create(userId, title, category);
         Post saved = postRepository.save(post);
-        evictPostsCache();
 
         log.info("[Community] 게시글 생성 완료 | userId={}, postId={}", userId, saved.getId());
         return new PostCreateResult(saved.getId());
@@ -134,9 +100,9 @@ public class PostCommandService implements PostCommandUseCase {
     }
 
     // 게시글 제목 / 카테고리 수정
-    // 캐시 무효화
-    // 제목 / 카테고리 수정 시 목록 캐시 전체 무효화 -> evictPostCache() 호출
+    // 제목 / 카테고리 수정 시 목록 캐시 전체 무효화
     @Override
+    @CacheEvict(value = "posts", allEntries = true, cacheManager = "redisCacheManager")
     public void updatePost(Long userId, Long postId, String title, String category) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CommunityNotFoundException("게시글을 찾을 수 없습니다."));
@@ -144,16 +110,14 @@ public class PostCommandService implements PostCommandUseCase {
         validateAuthor(post.getUserId(), userId);
         post.update(title, category);
         postRepository.save(post);
-        evictPostsCache();
 
         log.info("[Community] 게시글 수정 완료 | postId={}", postId);
     }
 
     // 게시글 콘텐츠 수정 (PUT)
     // 기준 콘텐츠 전체 소프트딜리트 후 새 콘텐츠 저장 -> 트랜잭션으로 한번에 처리
-    // 캐시 무효화
-    // thumbnailUrl 변경 시 목록 캐시에 영향 -> evictPostCache() 호출
     @Override
+    @CacheEvict(value = "posts", allEntries = true, cacheManager = "redisCacheManager")
     public void updateContents(Long userId, Long postId, String thumbnailUrl, List<PostContentCommand> contents) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CommunityNotFoundException("게시글을 찾을 수 없습니다."));
@@ -181,15 +145,14 @@ public class PostCommandService implements PostCommandUseCase {
 
         }
         postContentRepository.saveAll(postContents);
-        evictPostsCache();
         log.info("[Community] 콘텐츠 수정 완료 | postId={}, count={}", postId, postContents.size());
     }
 
     // 게시글 삭제
     // post 소프트딜리트 -> post_content 소프트딜리트
-    // 캐시 무효화
-    // 게시글 삭제 시 목록 캐시 전체 무효화 -> evictPostCache() 호출
+    // 게시글 삭제 시 목록 캐시 전체 무효화
     @Override
+    @CacheEvict(value = "posts", allEntries = true, cacheManager = "redisCacheManager")
     public void deletePost(Long userId, Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CommunityNotFoundException("게시글을 찾을 수 없습니다."));
@@ -198,7 +161,6 @@ public class PostCommandService implements PostCommandUseCase {
         post.delete();
         postRepository.save(post);
         postContentRepository.deleteAllByPostId(postId);
-        evictPostsCache();
 
         log.info("[Community] 게시글 삭제 완료 | postId={}", postId);
     }
@@ -252,7 +214,7 @@ public class PostCommandService implements PostCommandUseCase {
 
     // 댓글 작성
     @Override
-    public CommentCreateResult createComment(Long userId, Long postId, String content) {
+    public void createComment(Long userId, Long postId, String content) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CommunityNotFoundException("게시글을 찾을 수 없습니다."));
 
@@ -275,14 +237,6 @@ public class PostCommandService implements PostCommandUseCase {
 
         log.info("[Community] 댓글 작성 완료 | userId={}, postId={}, commentId={}",
                 userId, postId, saved.getId());
-        return new CommentCreateResult(
-                saved.getId(),
-                saved.getContent(),
-                user.getName(),
-                user.getProfileImageUrl(),
-                user.getRole().name(),
-                saved.getCreatedAt()
-        );
     }
 
     // 댓글 삭제
@@ -308,7 +262,7 @@ public class PostCommandService implements PostCommandUseCase {
     // 대댓글 작성
     // parentId = commentId -> 대댓글에 대댓글 불가
     @Override
-    public ReplyCreateResult createReply(Long userId, Long postId, Long commentId, String content) {
+    public void createReply(Long userId, Long postId, Long commentId, String content) {
         Comment parentComment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new CommunityNotFoundException("댓글을 찾을 수 없습니다."));
 
@@ -343,15 +297,6 @@ public class PostCommandService implements PostCommandUseCase {
 
         log.info("[Community] 대댓글 작성 완료 | userId={}, commentId={}, replyId={}",
                 userId, commentId, saved.getId());
-        return new ReplyCreateResult(
-                saved.getId(),
-                commentId,
-                saved.getContent(),
-                user.getName(),
-                user.getProfileImageUrl(),
-                user.getRole().name(),
-                saved.getCreatedAt()
-        );
 
     }
 
@@ -386,36 +331,6 @@ public class PostCommandService implements PostCommandUseCase {
             postRepository.save(post);
             log.info("[Community] 조회수 증가 완료 | postId={}", postId);
         });
-    }
-
-    /*
-     * comment.
-     *  posts 캐시 전체 무효화
-     *  -
-     *  무효화 대상
-     *  -> "posts::*" 패턴으로 저장된 모든 게시글 목록 캐시 삭제
-     *  -> category, page, size 조합별로 저장된 키 전체 삭제
-     *  -
-     *  PostQueryService 가 StringRedisTemplate 으로 posts 캐시 저장
-     *  -> @CacheEvict 는 RedisCacheManager 경유
-     *  -> RedisCacheManager 와 StringRedisTemplate 은 서로 다른 키 네임스페이스 사용
-     *  -> @CacheEvict 로는 StringRedisTemplate 으로 저장된 키 삭제 불가
-     *  -
-     *  예외 처리
-     *  캐시 무효화 실패 시 → 로그만 남기고 서비스 계속 진행
-     *  -> 캐시 장애가 쓰기 작업 실패로 이어지지 않도록 방어
-     */
-
-    private void evictPostsCache() {
-        try {
-            Set<String> keys = stringRedisTemplate.keys("posts::*");
-            if (keys != null && !keys.isEmpty()) {
-                stringRedisTemplate.delete(keys);
-                log.debug("[Community] posts 캐시 무효화 완료 | 삭제 키 수={}", keys.size());
-            }
-        } catch (Exception e) {
-            log.warn("[Community] posts 캐시 무효화 실패 | 예외={}", e.getMessage());
-        }
     }
 
     // 작성자 검증

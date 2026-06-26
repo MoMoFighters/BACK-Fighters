@@ -28,4 +28,7 @@ public final class TeacherResponseMessage {
     public static final String APPLICATION_DETAIL_FETCHED = "강사 신청자 상세 정보가 조회되었습니다.";
     public static final String APPROVED = "강사 승인 처리가 완료되었습니다.";
     public static final String REJECTED = "강사 반려 처리가 완료되었습니다.";
+
+
+    public static final String TEACHER_GIVEUP = "강사 포기 완료";
 }

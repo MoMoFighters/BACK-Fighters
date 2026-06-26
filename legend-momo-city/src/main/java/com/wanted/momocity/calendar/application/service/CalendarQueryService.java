@@ -11,6 +11,7 @@ import com.wanted.momocity.calendar.presentation.api.response.MonthlyCalendarRes
 import com.wanted.momocity.calendar.presentation.api.response.TodoResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,22 +29,21 @@ import java.util.List;
  */
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class CalendarQueryService implements CalendarQueryUseCase {
 
     private final CalendarRepository calendarRepository;
     private final TodayChapterPort todayChapterPort;
 
     @Override
+    @Cacheable(value = "calendar", key = "#userId + ':' + #startDate.year + ':' + #startDate.monthValue", cacheManager = "redisCacheManager")
     public MonthlyCalendarResponse handle(Long userId, LocalDate startDate, LocalDate endDate) {
 
-        // 해당 월 전체 조회 (Memo)
         List<Calendar> calendars = calendarRepository
                 .findByUserIdAndDateBetween(userId, startDate, endDate);
 
-        // Memo 분리
         List<MemoResponse> memos = calendars.stream()
                 .filter(c -> c.getCategory() == Calendar.Category.MEMO)
                 .map(c -> new MemoResponse(
@@ -58,13 +58,15 @@ public class CalendarQueryService implements CalendarQueryUseCase {
         return new MonthlyCalendarResponse(startDate, endDate, memos);
     }
 
+    // 일별 캘린더 조회
+    // 오늘 수강 챕터 실시간 반영 필요
     @Override
     public DailyCalendarResponse handleDaily(Long userId, LocalDate date) {
 
         List<Calendar> calendars = calendarRepository
                 .findByUserIdAndDateBetween(userId, date, date);
 
-        // Todo 분리
+        // Todo
         List<TodoResponse> todos = calendars.stream()
                 .filter(c -> c.getCategory() == Calendar.Category.TODO)
                 .map(c -> new TodoResponse(
@@ -82,4 +84,5 @@ public class CalendarQueryService implements CalendarQueryUseCase {
         return new DailyCalendarResponse(date, todos, todayChapters);
 
     }
+
 }

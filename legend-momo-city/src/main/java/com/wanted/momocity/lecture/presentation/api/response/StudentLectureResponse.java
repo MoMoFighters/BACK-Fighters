@@ -4,9 +4,11 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.model.LectureChapter;
 import com.wanted.momocity.lecture.domain.model.VideoStatus;
+import com.wanted.momocity.viewing.application.port.ChapterProgressInfo;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 public class StudentLectureResponse {
 
@@ -28,36 +30,47 @@ public class StudentLectureResponse {
             Integer durationSec,
 
             // 동영상 처리 상태. 예: UPLOADING, ENCODING, READY, FAILED
-            String videoStatus
+            String videoStatus,
+
+            // 챕터별 진척도
+            Integer chapterProgress,
+
+            // 챕터 완료 여부
+            Boolean isCompleted,
+
+            // 챕터 접근 가능 여부
+            Boolean isAccessible
 
     ) {
 
         // LectureChapter 도메인 객체를 학생용 챕터 응답 DTO로 변환
-        public static StudentLectureChapterResponse from(LectureChapter chapter) {
+        public static StudentLectureChapterResponse from(
+                LectureChapter chapter,
+                ChapterProgressInfo progressInfo
+        ) {
             return new StudentLectureChapterResponse(
                     chapter.getId(),
                     chapter.getTitle(),
                     chapter.getOrderNo(),
                     chapter.getDurationSec(),
-                    chapter.getVideoStatus().name()
+                    chapter.getVideoStatus().name(),
+                    // 챕터 진척도
+                    // null ? null : -> progressInfo가 없으면 null, 있으면 안에 있느 값을 꺼내라
+                    progressInfo == null ? null : progressInfo.ProgressRate(),
+                    // 완료 여부
+                    progressInfo == null ? null : progressInfo.isCompleted(),
+                    // 접근 가능 여부
+                    progressInfo == null ? null : progressInfo.isAccessible()
             );
         }
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     // 학생 강의 상세 조회 응답 DTO
     public record StudentLectureDetailResponse(
 
             // 강의 ID
             Long lectureId,
-
-            // 강사 ID
-            Long teacherId,
-
-            // 강사 이름
-            String teacherName,
-
-            // 강사 프로필 이미지 URL
-            String teacherProfileImageUrl,
 
             // 강의 제목
             String title,
@@ -74,9 +87,6 @@ public class StudentLectureResponse {
             // 강의 상태입니다. 학생 상세 조회에서는 ACTIVE만 조회 가능
             String lectureStatus,
 
-            // 강의를 완료한 사용자 수
-            int completedUserCount,
-
             // 리뷰 평균 평점
             double averageRating,
 
@@ -85,6 +95,9 @@ public class StudentLectureResponse {
 
             // 로그인한 학생이 이 강의를 수강신청했는지 여부
             boolean isEnrolled,
+
+            // 수강 중인 학생의 강의 전체 진척도, 미수강이면 null
+            Integer lectureProgress,
 
             // 강의에 포함된 챕터 목록
             List<StudentLectureChapterResponse> chapters,
@@ -101,29 +114,29 @@ public class StudentLectureResponse {
         public static StudentLectureDetailResponse from(
                 LectureAggregate lecture,
                 List<LectureChapter> chapters,
-                String teacherName,
-                String teacherProfileImageUrl,
                 double averageRating,
                 int reviewCount,
-                boolean isEnrolled
+                boolean isEnrolled,
+                Integer lectureProgress,
+                Map<Long, ChapterProgressInfo> chapterProgressMap
         ) {
             return new StudentLectureDetailResponse(
                     lecture.getId(),
-                    lecture.getTeacherId(),
-                    teacherName,
-                    teacherProfileImageUrl,
                     lecture.getTitle(),
                     lecture.getDescription(),
                     lecture.getThumbnailUrl(),
                     lecture.getCategory().name(),
                     lecture.getStatus().name(),
-                    lecture.getCompletedUserCount(),
                     averageRating,
                     reviewCount,
                     isEnrolled,
+                    lectureProgress,
                     chapters.stream()
                             .filter(chapter -> chapter.getVideoStatus() == VideoStatus.READY)
-                            .map(StudentLectureChapterResponse::from)
+                            .map(chapter -> StudentLectureChapterResponse.from(
+                                    chapter,
+                                    chapterProgressMap.get(chapter.getId())
+                            ))
                             .toList(),
                     lecture.getCreatedAt(),
                     lecture.getUpdatedAt()

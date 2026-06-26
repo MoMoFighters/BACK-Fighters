@@ -46,4 +46,17 @@ public record TeacherApplication(
             throw new DomainRuleViolationException("강사 신청서 식별자(userId)는 필수입니다.");
         }
     }
+
+    // 증빙자료 확장자 추출
+    public String fileType(){
+        String path = proof.contains("?") ? proof.substring(0, proof.indexOf('?')) : proof;
+        return path.substring(path.lastIndexOf('.')+1).toLowerCase();
+    }
+
+    public TeacherApplication withPresignedUrl(String url){
+        return new TeacherApplication(
+                userId,nickname,name,email,profileImageUrl,category,url,
+                status,role,suspensionCount,suspendedUntil,createdAt
+        );
+    }
 }

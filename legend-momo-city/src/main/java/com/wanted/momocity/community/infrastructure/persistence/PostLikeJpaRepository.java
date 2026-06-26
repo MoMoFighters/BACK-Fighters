@@ -2,6 +2,7 @@ package com.wanted.momocity.community.infrastructure.persistence;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 /*
@@ -14,5 +15,8 @@ public interface PostLikeJpaRepository extends JpaRepository<PostLikeJpaEntity, 
 
     // 좋아요 여부 확인
     Optional<PostLikeJpaEntity> findByPostIdAndUserId(Long postId, Long userId);
+
+    // 좋아요 누른 사용자 목록 조회
+    List<PostLikeJpaEntity> findAllByPostId(Long postId);
 
 }

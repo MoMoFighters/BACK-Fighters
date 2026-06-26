@@ -10,8 +10,12 @@ import com.wanted.momocity.calendar.presentation.api.response.MemoResponse;
 import com.wanted.momocity.calendar.presentation.api.response.TodoResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
 
 /*
  * comment.
@@ -24,15 +28,16 @@ import org.springframework.transaction.annotation.Transactional;
  */
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 @Transactional
+@RequiredArgsConstructor
 public class CalendarCommandService implements CalendarCommandUseCase {
 
     private final CalendarRepository calendarRepository;
 
     // Todo
     @Override
+    @CacheEvict(value = "calendar", key = "#command.userId() + ':' + #command.start().year + ':' + #command.start().monthValue", cacheManager = "redisCacheManager")
     public TodoResponse handle(CreateTodoCommand command) {
 
         // 도메인 메서드로 Todo 생성
@@ -55,6 +60,7 @@ public class CalendarCommandService implements CalendarCommandUseCase {
     }
 
     @Override
+    @CacheEvict(value = "calendar", key = "#command.userId() + ':' + #command.start().year + ':' + #command.start().monthValue", cacheManager = "redisCacheManager")
     public TodoResponse handle(UpdateTodoCommand command) {
 
         // 조회
@@ -82,6 +88,7 @@ public class CalendarCommandService implements CalendarCommandUseCase {
     }
 
     @Override
+    @CacheEvict(value = "calendar", key = "#command.userId() + ':' + #command.start().year + ':' + #command.start().monthValue", cacheManager = "redisCacheManager")
     public void handle(DeleteTodoCommand command) {
 
         // 조회
@@ -101,6 +108,7 @@ public class CalendarCommandService implements CalendarCommandUseCase {
     }
 
     @Override
+    @CacheEvict(value = "calendar", key = "#command.userId() + ':' + #command.start().year + ':' + #command.start().monthValue", cacheManager = "redisCacheManager")
     public TodoResponse handle(CheckTodoCommand command) {
 
         // 조회
@@ -129,6 +137,7 @@ public class CalendarCommandService implements CalendarCommandUseCase {
 
     // Memo
     @Override
+    @CacheEvict(value = "calendar", key = "#command.userId() + ':' + #command.start().year + ':' + #command.start().monthValue", cacheManager = "redisCacheManager")
     public MemoResponse handle(CreateMemoCommand command) {
 
         // 도메인 메서드로 Memo 생성
@@ -153,6 +162,7 @@ public class CalendarCommandService implements CalendarCommandUseCase {
     }
 
     @Override
+    @CacheEvict(value = "calendar", key = "#command.userId() + ':' + #command.start().year + ':' + #command.start().monthValue", cacheManager = "redisCacheManager")
     public MemoResponse handle(UpdateMemoCommand command) {
 
         // 조회
@@ -180,6 +190,7 @@ public class CalendarCommandService implements CalendarCommandUseCase {
     }
 
     @Override
+    @CacheEvict(value = "calendar", key = "#command.userId() + ':' + #command.start().year + ':' + #command.start().monthValue", cacheManager = "redisCacheManager")
     public void handle(DeleteMemoCommand command) {
 
         // 조회

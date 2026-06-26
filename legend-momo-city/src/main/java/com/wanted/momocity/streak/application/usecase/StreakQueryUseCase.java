@@ -12,4 +12,6 @@ import java.time.LocalDate;
 
 public interface StreakQueryUseCase {
     StreakMonthlyResponse getMonthlyStreak(Long userId, LocalDate startDate, LocalDate endDate);
+
+    StreakMonthlyResponse getFriendMonthlyStreak(Long targetUserId, LocalDate startDate, LocalDate endDate);
 }

@@ -1,16 +1,20 @@
 package com.wanted.momocity.community.infrastructure.adapter;
 
+import com.wanted.momocity.community.application.result.PostWithContents;
 import com.wanted.momocity.community.domain.model.Post;
 import com.wanted.momocity.community.domain.repository.PostRepository;
+import com.wanted.momocity.community.infrastructure.persistence.PostContentJpaEntity;
 import com.wanted.momocity.community.infrastructure.persistence.PostJpaEntity;
 import com.wanted.momocity.community.infrastructure.persistence.PostJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 /*
@@ -49,4 +53,53 @@ public class PostRepositoryAdapter implements PostRepository {
     public int hardDeleteByDeletedAtBefore(LocalDateTime threshold) {
         return postJpaRepository.hardDeleteByDeletedAtBefore(threshold);
     }
+
+    /*
+    * comment.
+    *  게시글 단건 조회 + contents fetch join
+    *  -
+    *  단건 조회 시 contents 항상 필요
+    *  -> LAZY 로딩 시 N+1 발생 가능 -> fetch join 으로 한 번에 조회
+    *  -
+    *  PostJpaEntity -> Post 도메인 변환 -> PostContentJpaEntity
+    *  -> PostContent 도메인 변환 -> PostWithContents 로 묶어서 반환
+    * */
+
+    @Override
+    public Optional<PostWithContents> findByIdWithContents(Long postId) {
+        return postJpaRepository.findByIdWithContents(postId)
+                .map(entity -> new PostWithContents(
+                        entity.toDomain(),
+                        entity.getContents().stream()
+                                .map(PostContentJpaEntity::toDomain)
+                                .toList()
+                ));
+    }
+
+    // 유저별 게시글 커서 기반 조회
+    @Override
+    public List<Post> findByUserIdWithCursor(Long userId, Long cursor, int size) {
+        return postJpaRepository.findByUserIdWithCursor(
+                        userId, cursor, PageRequest.of(0, size)
+                )
+                .stream()
+                .map(PostJpaEntity::toDomain)
+                .toList();
+    }
+
+    @Override
+    public int countByUserId(Long userId) {
+        return postJpaRepository.countByUserId(userId);
+    }
+
+    @Override
+    public int sumViewCountByUserId(Long userId) {
+        return postJpaRepository.sumViewCountByUserId(userId);
+    }
+
+    @Override
+    public int sumLikeCountByUserId(Long userId) {
+        return postJpaRepository.sumLikeCountByUserId(userId);
+    }
+
 }

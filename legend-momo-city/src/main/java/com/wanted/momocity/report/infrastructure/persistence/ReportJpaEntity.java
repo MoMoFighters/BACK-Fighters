@@ -10,22 +10,7 @@ import jakarta.persistence.Table;
 
 import java.time.LocalDateTime;
 
-/* comment.
-    ReportJpaEntity 정리
-    1. 역할 : report 테이블과 1:1 매핑되는 JPA 저장 모델
-    2. 신고 영역 단독 소유 : 다른 BC 는 이 클래스에 직접 매핑 금지
-    3. Report 도메인 모델과의 관계
-       - 같은 신고를 표현하지만 완전히 별개 클래스
-       - 변환 책임은 ReportRepositoryAdapter 가 가짐
-    4. WHY BaseTimeEntity 상속
-       → created_at / updated_at 자동 채움 (@CreatedDate / @LastModifiedDate)
-       → reportedAt 과는 의미 분리 (도메인 의도 vs DB row 메타)
-    5. WHY enum → String 매핑
-       → targetType / reason 은 도메인에서 enum, 여기선 String
-       → Adapter 가 enum.name() ↔ Enum.valueOf() 변환
-       → member / lecture 와 동일 정책 (일관성)
-       → isRead 는 도메인과 동일하게 boolean 그대로 저장 (변환 불필요)
- */
+// report 테이블과 1:1 매핑되는 JPA 저장 모델
 @Entity
 @Table(name = "report")
 public class ReportJpaEntity extends BaseTimeEntity {
@@ -41,8 +26,18 @@ public class ReportJpaEntity extends BaseTimeEntity {
     @Column(name = "target_type", nullable = false, length = 20)
     private String targetType;
 
-    @Column(name = "target_id", nullable = false)
+    // nullable 속성없음
+    // 이유는 PAGE 타입일 경우 null 허용이기 때문에 의도적으로 제거
+    @Column(name = "target_id")
     private Long targetId;
+
+    // targetId와 동일하게 nullable이다.
+    @Column(name = "reported_user_id")
+    private Long reportedUserId;
+
+    // targetId 와 동일하게 nullable이다.
+    @Column(name = "target_path", length = 500)
+    private String targetPath;
 
     @Column(name = "reason", nullable = false, length = 30)
     private String reason;
@@ -50,57 +45,54 @@ public class ReportJpaEntity extends BaseTimeEntity {
     @Column(name = "detail", length = 1000)
     private String detail;
 
-    @Column(name = "is_read", nullable = false)
-    private boolean isRead;
+    @Column(name = "is_resolved", nullable = false)
+    private boolean isResolved;
 
-    @Column(name = "reported_at", nullable = false)
-    private LocalDateTime reportedAt;
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
 
-    @Column(name = "handled_at")
-    private LocalDateTime handledAt;
+    @Column(name = "resolved_at")
+    private LocalDateTime resolvedAt;
 
-    @Column(name = "handler_admin_id")
-    private Long handlerAdminId;
-
-    // JPA 기본 생성자 (protected) : 외부 직접 인스턴스화 차단, JPA 가 리플렉션으로 사용
+    // JPA 가 리플렉션으로 객체를 만들 때 필요한 기본 생성자
     protected ReportJpaEntity() {
     }
 
-    // Adapter 의 toEntity() 가 호출하는 전체 필드 생성자
+    // Report 객체를 이걸로 변환할 때 호출한다.
     public ReportJpaEntity(Long id, Long reporterUserId, String targetType, Long targetId,
-                           String reason, String detail, boolean isRead,
-                           LocalDateTime reportedAt, LocalDateTime handledAt, Long handlerAdminId) {
+                           Long reportedUserId, String targetPath,
+                           String reason, String detail, boolean isResolved,
+                           LocalDateTime createdAt, LocalDateTime resolvedAt) {
         this.id = id;
         this.reporterUserId = reporterUserId;
         this.targetType = targetType;
         this.targetId = targetId;
+        this.reportedUserId = reportedUserId;
+        this.targetPath = targetPath;
         this.reason = reason;
         this.detail = detail;
-        this.isRead = isRead;
-        this.reportedAt = reportedAt;
-        this.handledAt = handledAt;
-        this.handlerAdminId = handlerAdminId;
+        this.isResolved = isResolved;
+        this.createdAt = createdAt;
+        this.resolvedAt = resolvedAt;
     }
 
-    // 영속화 모델 메서드 (도메인 행위 아님)
-    // 도메인 검증/규칙은 Report.markAsRead 가 담당, 여기는 단순 필드 변경만
-    public void markAsRead() {
-        this.isRead = true;
+    // JPA 변경 감지용 메서드이다.
+    // 여기서는 DB 행 상태만 바꾼다.
+    public void resolve() {
+        this.isResolved = true;
+        this.resolvedAt = LocalDateTime.now();
     }
 
-    public void markHandled(LocalDateTime handledAt, Long handlerAdminId) {
-        this.handledAt = handledAt;
-        this.handlerAdminId = handlerAdminId;
-    }
-
+    // Adapter 의 toDomain() 은 아래의 값을 호출해서 엔티티 값을 도메인 객체로 변환한다.
     public Long getId() { return id; }
     public Long getReporterUserId() { return reporterUserId; }
     public String getTargetType() { return targetType; }
     public Long getTargetId() { return targetId; }
+    public Long getReportedUserId() { return reportedUserId; }
+    public String getTargetPath() { return targetPath; }
     public String getReason() { return reason; }
     public String getDetail() { return detail; }
-    public boolean isRead() { return isRead; }
-    public LocalDateTime getReportedAt() { return reportedAt; }
-    public LocalDateTime getHandledAt() { return handledAt; }
-    public Long getHandlerAdminId() { return handlerAdminId; }
+    public boolean isResolved() { return isResolved; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public LocalDateTime getResolvedAt() { return resolvedAt; }
 }
