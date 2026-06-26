@@ -161,6 +161,6 @@ public class UserCommandService implements UserCommandUsecase {
     // 회원탈퇴 (소프트 딜리트)
     @Override
     public void softDeleteUser(Long userId) {
-        userRepository.changeStatusAndNickname(userId, Status.DELETED, "알 수 없음");
+        userRepository.changeStatusAndNickname(userId, Status.DELETED, null);
     }
 }
