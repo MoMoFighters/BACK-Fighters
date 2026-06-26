@@ -55,4 +55,12 @@ public class StoreJpaEntity {
     public Type getType() {
         return type;
     }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public String getName() {
+        return name;
+    }
 }
