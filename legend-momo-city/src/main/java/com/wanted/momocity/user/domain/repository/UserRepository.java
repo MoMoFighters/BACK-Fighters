@@ -4,6 +4,7 @@ import com.wanted.momocity.global.domain.model.Category;
 import com.wanted.momocity.user.application.command.UpdateUserInfoCommand;
 import com.wanted.momocity.user.domain.model.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -67,4 +68,10 @@ public interface UserRepository {
 
     // 회원탈퇴 (소프트 딜리트)
     void changeStatusAndNickname(Long userId, Status status, String nickname);
+
+    // 하드딜리트 할 사용자 찾기
+    List<Long> findDeletedUserIdsBefore(LocalDateTime threshold);
+
+    // 사용자 하드 딜리트
+    void deleteById(Long aLong);
 }

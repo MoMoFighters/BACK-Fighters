@@ -150,4 +150,9 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
             @Param("nickname") String nickname,
             @Param("deletedAt") LocalDateTime deletedAt
     );
+
+    // 사용자 하드 딜리트
+    @Query("SELECT u.id FROM UserUser u WHERE u.status = 'DELETED' AND u.deletedAt < :threshold")
+    List<Long> findDeletedUserIdsBefore(@Param("threshold") LocalDateTime threshold);
+
 }

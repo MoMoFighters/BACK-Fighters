@@ -152,6 +152,18 @@ public class UserRepositoryAdapter implements UserRepository {
         springDataUserRepository.changeStatusAndNickname(userId,status,nickname,LocalDateTime.now());
     }
 
+    // 하드딜리트 할 사용자 찾기
+    @Override
+    public List<Long> findDeletedUserIdsBefore(LocalDateTime threshold) {
+        return springDataUserRepository.findDeletedUserIdsBefore(threshold);
+    }
+
+    // 사용자 하드 딜리트
+    @Override
+    public void deleteById(Long userId) {
+        springDataUserRepository.deleteById(userId);
+    }
+
 
     // 마이페이지 내 정보 조회용
     private User toDomain(UserJpaEntity entity) {
