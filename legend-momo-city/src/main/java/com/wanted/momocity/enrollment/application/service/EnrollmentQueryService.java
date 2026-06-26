@@ -109,7 +109,7 @@ public class EnrollmentQueryService implements EnrollmentQueryUsecase {
         // ENUM 문자열을 소문자로 지정
         String lowerCategory = category.toLowerCase();
         // 최종 건물 이미지 URL 반환
-        return baseUrl + "/building" + lowerCategory + "/level-" + level + ".png";
+        return baseUrl + "/building/" + lowerCategory + "/level-" + level + ".png";
     }
 
     // 사용자 건물 중 category에 해당하는 건물을 찾습니다.
