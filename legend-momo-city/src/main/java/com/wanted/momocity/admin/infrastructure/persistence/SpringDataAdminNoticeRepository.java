@@ -1,4 +1,23 @@
 package com.wanted.momocity.admin.infrastructure.persistence;
 
-public class SpringDataAdminNoticeRepository {
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+
+/* comment.
+    JpaRepository 를 상속받아 기본 CRUD 를 자동으로 제공받고, 메서드 이름 규칙만 선언하면
+    Spring Data 가 SQL 를 자동으로 생성해주는 DB 인터페이스
+ */
+
+// JpaRepository 를 상속받아 기본 CRDU
+public interface SpringDataAdminNoticeRepository extends JpaRepository<AdminNoticeJpaEntity, Long> {
+
+    // isPinned 값으로 필터링된 목록을 페어링 : Spring Data 가 메서드 이름을 보고 SQL 자동 생성
+    Page<AdminNoticeJpaEntity> findByIsPinned(boolean isPinned, Pageable pageable);
+
+    // id 목록에 해당하는 공지를 한 번에 삭제 : MS-19 선택 삭제용
+    void deleteAllByIdIn(List<Long> ids);
+
 }

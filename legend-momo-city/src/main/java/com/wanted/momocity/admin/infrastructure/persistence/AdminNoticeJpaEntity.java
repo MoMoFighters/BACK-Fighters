@@ -12,6 +12,12 @@ import java.time.LocalDateTime;
 @NoArgsConstructor (access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
+
+/* comment.
+    admin_notice DB 테이블 컬럼을 자바 필드로 표현한 클래스다.
+    도메인 객체는 DB 를 모르기 때문에, 이 클래스가 toDomain() / fromDomain() 으로 도메인 <-> DB 번역 역할
+ */
+
 public class AdminNoticeJpaEntity {
 
     // 기본키, DB에서 자동 증가
