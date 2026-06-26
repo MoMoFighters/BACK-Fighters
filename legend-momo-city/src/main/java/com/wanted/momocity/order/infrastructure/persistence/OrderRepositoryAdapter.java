@@ -1,15 +1,19 @@
 package com.wanted.momocity.order.infrastructure.persistence;
 
 import com.wanted.momocity.order.domain.exception.AlreadyOwnedException;
+import com.wanted.momocity.order.domain.model.ListResult;
 import com.wanted.momocity.order.domain.model.Reason;
 import com.wanted.momocity.order.domain.model.Type;
 import com.wanted.momocity.order.domain.repositroy.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Repository
 @Transactional
@@ -35,5 +39,20 @@ public class OrderRepositoryAdapter implements OrderRepository {
     @Override
     public boolean existsByUserIdAndItemId(Long userId, Long itemId) {
         return springDataOrderRepository.existsByUserIdAndItemId(userId, itemId);
+    }
+
+    // 포인트 내역 조회
+    @Override
+    public List<ListResult> getOrderHistory(Long userId, int page, int size) {
+        return springDataOrderRepository.findByUserIdOrderByCreatedAtDesc(userId, PageRequest.of(page - 1, size))
+                .stream()
+                .map(OrderJpaEntity::toDomain)
+                .toList();
+    }
+
+    // 페이지네이션
+    @Override
+    public long countByUserId(Long userId) {
+        return springDataOrderRepository.countByUserId(userId);
     }
 }
