@@ -100,7 +100,7 @@ public class OrderController {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(
                         OrderResponseCode.LIST_FETCHED,
-                        OrderResponseMessage.AVAILABLE_LIST_FETCHED,
+                        OrderResponseMessage.AVAILABLE_PROFILE_LIST_FETCHED,
                         response
                 ));
     }
