@@ -337,16 +337,24 @@ public class PostQueryService implements PostQueryUseCase {
                 : commentRepository.countByPostIds(postIds);
 
         List<UserPostListResponse.UserPostItem> items = posts.stream()
-                .map(post -> new UserPostListResponse.UserPostItem(
-                        post.getId(),
-                        post.getTitle(),
-                        post.getCategory(),
-                        post.getViewCount(),
-                        post.getLikeCount(),
-                        commentCountMap.getOrDefault(post.getId(), 0L).intValue(),
-                        post.getThumbnailUrl(),
-                        post.getCreatedAt()
-                ))
+                .map(post -> {
+                    User user = userInfoPort.findById(post.getUserId())
+                            .orElseThrow(() -> new CommunityNotFoundException("사용자를 찾을 수 없습니다."));
+                    return new UserPostListResponse.UserPostItem(
+                            post.getId(),
+                            post.getTitle(),
+                            post.getCategory(),
+                            post.getViewCount(),
+                            post.getLikeCount(),
+                            commentCountMap.getOrDefault(post.getId(), 0L).intValue(),
+                            post.getThumbnailUrl(),
+                            post.getUserId(),
+                            user.getName(),
+                            user.getProfileImageUrl(),
+                            user.getRole().name(),
+                            post.getCreatedAt()
+                    );
+                })
                 .toList();
 
         // 조회된 게시글 수 == size ->️ 다음 페이지 존재
@@ -393,6 +401,117 @@ public class PostQueryService implements PostQueryUseCase {
                 totalLikeCount,
                 totalCommentCount
         );
+
+    }
+
+    // 커뮤니티 게시글 검색
+    @Override
+    public UserPostListResponse searchPosts(String keyword, Long cursor, int size) {
+        int totalCount = postRepository.countByKeyword(keyword);
+
+        List<Post> posts = postRepository.searchByKeyword(keyword, cursor, size);
+
+        List<Long> postIds = posts.stream().map(Post::getId).toList();
+
+        Map<Long, Long> commentCountMap = postIds.isEmpty()
+                ? Map.of()
+                : commentRepository.countByPostIds(postIds);
+
+        List<UserPostListResponse.UserPostItem> items = posts.stream()
+                .map(post -> {
+                    User user = userInfoPort.findById(post.getUserId())
+                            .orElseThrow(() -> new CommunityNotFoundException("사용자를 찾을 수 없습니다."));
+                    return new UserPostListResponse.UserPostItem(
+                            post.getId(),
+                            post.getTitle(),
+                            post.getCategory(),
+                            post.getViewCount(),
+                            post.getLikeCount(),
+                            commentCountMap.getOrDefault(post.getId(), 0L).intValue(),
+                            post.getThumbnailUrl(),
+                            post.getUserId(),
+                            user.getName(),
+                            user.getProfileImageUrl(),
+                            user.getRole().name(),
+                            post.getCreatedAt()
+                    );
+                })
+                .toList();
+
+        Long nextCursor = posts.size() == size
+                ? posts.get(posts.size() - 1).getId()
+                : null;
+
+        log.info("[Community] 게시글 검색 완료 | keyword={}, totalCount={}", keyword, totalCount);
+
+        return new UserPostListResponse(totalCount, items, nextCursor);
+    }
+
+    // 연관 게시글 추천
+    @Override
+    public PostRecommendationResponse getRecommendations(Long postId) {
+
+        // 현재 게시글 조회
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new CommunityNotFoundException("게시글을 찾을 수 없습니다."));
+
+        // 같은 카테고리 인기 게시글 3개 조회
+        List<Post> topPosts = postRepository.findTopPostsByCategory(
+                post.getCategory(), postId, 3
+        );
+
+        // topPosts postId 목록 (authorPosts 중복 제외용)
+        List<Long> topPostIds = topPosts.stream()
+                .map(Post::getId)
+                .toList();
+
+        // 같은 작성자 최신 게시글 2개 조회 (topPosts 중복 제외)
+        List<Post> authorPosts = postRepository.findLatestPostsByAuthor(
+                post.getUserId(), postId, topPostIds, 2
+        );
+
+        // topPosts -> RecommendItem 변환
+        List<PostRecommendationResponse.RecommendItem> topItems = topPosts.stream()
+                .map(p -> {
+                    User author = userInfoPort.findById(p.getUserId())
+                            .orElseThrow(() -> new CommunityNotFoundException("사용자를 찾을 수 없습니다."));
+                    return new PostRecommendationResponse.RecommendItem(
+                            p.getId(),
+                            p.getTitle(),
+                            p.getCategory(),
+                            p.getViewCount(),
+                            p.getLikeCount(),
+                            p.getThumbnailUrl(),
+                            p.getUserId(),
+                            author.getName(),
+                            p.getCreatedAt()
+                    );
+                })
+                .toList();
+
+        // authorPosts -> RecommendItem 변환
+        List<PostRecommendationResponse.RecommendItem> authorItems = authorPosts.stream()
+                .map(p -> {
+                    User author = userInfoPort.findById(p.getUserId())
+                            .orElseThrow(() -> new CommunityNotFoundException("사용자를 찾을 수 없습니다."));
+                    return new PostRecommendationResponse.RecommendItem(
+                            p.getId(),
+                            p.getTitle(),
+                            p.getCategory(),
+                            p.getViewCount(),
+                            p.getLikeCount(),
+                            p.getThumbnailUrl(),
+                            p.getUserId(),
+                            author.getName(),
+                            p.getCreatedAt()
+                    );
+                })
+                .toList();
+
+        log.info("[Community] 연관 게시글 추천 완료 | postId={}, topCount={}, authorCount={}",
+                postId, topItems.size(), authorItems.size());
+
+        return new PostRecommendationResponse(topItems, authorItems);
 
     }
 }

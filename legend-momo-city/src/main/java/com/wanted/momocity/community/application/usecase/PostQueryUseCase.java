@@ -35,4 +35,10 @@ public interface PostQueryUseCase {
     // 대시보드 - 내 게시글 통계
     DashboardResponse getDashboard(Long userId);
 
+    // 게시글 키워드 검색 (커서 기반 페이지네이션)
+    UserPostListResponse searchPosts(String keyword, Long cursor, int size);
+
+    // 연관 게시글 추천 (같은 카테고리 인기글 + 같은 작성자 최신글)
+    PostRecommendationResponse getRecommendations(Long postId);
+
 }

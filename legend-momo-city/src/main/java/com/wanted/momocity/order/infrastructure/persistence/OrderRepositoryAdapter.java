@@ -13,7 +13,9 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Repository
 @Transactional
@@ -55,4 +57,14 @@ public class OrderRepositoryAdapter implements OrderRepository {
     public long countByUserId(Long userId) {
         return springDataOrderRepository.countByUserId(userId);
     }
+
+    // 소유한 프사 목록 조회
+    @Override
+    public List<Long> findOwnedItemIdsByUserIdAndReason(Long userId, Reason reason) {
+        return springDataOrderRepository.findOwnedItemIdsByUserIdAndReason(userId, reason);
+    }
+//    @Override
+//    public Set<Long> findOwnedItemIdsByUserIdAndReason(Long userId, Reason reason) {
+//        return new HashSet<>(springDataOrderRepository.findOwnedItemIdsByUserIdAndReason(userId, reason));
+//    }
 }

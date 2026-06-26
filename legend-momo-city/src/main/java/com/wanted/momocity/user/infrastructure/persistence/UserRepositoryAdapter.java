@@ -1,7 +1,6 @@
 package com.wanted.momocity.user.infrastructure.persistence;
 
 import com.wanted.momocity.global.domain.model.Category;
-import com.wanted.momocity.user.application.command.UpdateUserInfoCommand;
 import com.wanted.momocity.user.domain.exception.UserNotFoundException;
 import com.wanted.momocity.user.domain.model.*;
 import com.wanted.momocity.user.domain.repository.UserRepository;
@@ -39,12 +38,12 @@ public class UserRepositoryAdapter implements UserRepository {
     }
 
     @Override
-    public void updateUserInfo(UpdateUserInfoCommand command) {
+    public void updateUserInfo(UpdateUserInfoData data) {
         springDataUserRepository.updateUserInfo(
-                command.userId(),
-                command.nickname(),
-                command.profileImageUrl(),
-                command.password()
+                data.userId(),
+                data.nickname(),
+                data.profileImageUrl(),
+                data.password()
         );
     }
 
@@ -144,6 +143,24 @@ public class UserRepositoryAdapter implements UserRepository {
     @Override
     public Category findCategoryById(Long userId) {
         return springDataUserRepository.findCategoryById(userId);
+    }
+
+    // 회원탈퇴 (소프트 딜리트)
+    @Override
+    public void changeStatusAndNickname(Long userId, Status status, String nickname) {
+        springDataUserRepository.changeStatusAndNickname(userId,status,nickname,LocalDateTime.now());
+    }
+
+    // 하드딜리트 할 사용자 찾기
+    @Override
+    public List<Long> findDeletedUserIdsBefore(LocalDateTime threshold) {
+        return springDataUserRepository.findDeletedUserIdsBefore(threshold);
+    }
+
+    // 사용자 하드 딜리트
+    @Override
+    public void deleteById(Long userId) {
+        springDataUserRepository.deleteById(userId);
     }
 
 

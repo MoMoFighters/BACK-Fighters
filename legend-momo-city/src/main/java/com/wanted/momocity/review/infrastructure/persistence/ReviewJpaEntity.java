@@ -5,9 +5,15 @@ import com.wanted.momocity.review.domain.model.Review;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.time.LocalDateTime;
 
 @Getter
 @Entity
+// JPA가 엔티티 저장할 때 시간 값을 자동으로 넣어주게 하는 설정
+@EntityListeners(AuditingEntityListener.class)
 // review 테이블에 “한 유저가 같은 강의에 리뷰를 한 번만 쓸 수 있다”는 DB 규칙을 거는 설정
 @Table(
         name = "review",
@@ -19,7 +25,7 @@ import lombok.NoArgsConstructor;
         }
 )
 @NoArgsConstructor
-public class ReviewJpaEntity extends BaseTimeEntity {
+public class ReviewJpaEntity{
 
 
     @Id
@@ -37,6 +43,10 @@ public class ReviewJpaEntity extends BaseTimeEntity {
 
     @Column(name = "content", nullable = false, columnDefinition = "TEXT")
     private String content;
+
+    @CreatedDate // 엔티티 생성 시 createdAt 자동입력
+    @Column(name = "created_at", nullable = false, updatable = false) // create 컬럼만 매핑
+    private LocalDateTime createdAt;
 
     // 도메인 review를 jpa entity로 변환
     public static ReviewJpaEntity from(Review review) {
@@ -58,7 +68,7 @@ public class ReviewJpaEntity extends BaseTimeEntity {
                 lectureId,
                 rating,
                 content,
-                getCreatedAt()
+                createdAt
         );
     }
 }

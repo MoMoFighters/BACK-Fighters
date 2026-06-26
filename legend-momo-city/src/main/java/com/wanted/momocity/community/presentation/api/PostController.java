@@ -6,17 +6,21 @@ import com.wanted.momocity.community.application.result.LikeResult;
 import com.wanted.momocity.community.application.result.PostCreateResult;
 import com.wanted.momocity.community.application.usecase.PostCommandUseCase;
 import com.wanted.momocity.community.application.usecase.PostQueryUseCase;
+import com.wanted.momocity.community.domain.exception.CommunityAccessDeniedException;
 import com.wanted.momocity.community.presentation.api.common.CommunityResponseCode;
 import com.wanted.momocity.community.presentation.api.request.*;
 import com.wanted.momocity.community.presentation.api.response.*;
+import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -381,8 +385,8 @@ public class PostController {
     public ResponseEntity<ApiResponse<PostReplyResponse>> getReplies(
             @PathVariable Long postId,
             @PathVariable Long commentId,
-            @RequestParam(required = false) Long cursor,
-            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(required = false)  Long cursor,
+            @RequestParam(defaultValue = "5")  int size,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         Long userId = userDetails.getUserId();
@@ -417,10 +421,17 @@ public class PostController {
     @GetMapping("/users/{targetUserId}")
     public ResponseEntity<ApiResponse<UserPostListResponse>> getUserPosts(
             @PathVariable Long targetUserId,
-            @RequestParam(required = false) Long cursor,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false)  Long cursor,
+            @RequestParam(defaultValue = "10")  int size,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
+        Long userId = userDetails.getUserId();
+
+        // 본인 페이지 접근 방지
+        if (targetUserId.equals(userId)) {
+            throw new CommunityAccessDeniedException("본인 페이지는 마이페이지에서 확인해주세요.");
+        }
+
         return ResponseEntity.ok(ApiResponse.success(
                 CommunityResponseCode.POST_LIST_FOUND,
                 "게시글 목록 조회에 성공했습니다.",
@@ -452,10 +463,55 @@ public class PostController {
             @PathVariable Long targetUserId,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
+
+        Long userId = userDetails.getUserId();
+
+        // 본인 페이지 접근 방지
+        if (targetUserId.equals(userId)) {
+            throw new CommunityAccessDeniedException("본인 페이지는 마이페이지에서 확인해주세요.");
+        }
+
         return ResponseEntity.ok(ApiResponse.success(
                 CommunityResponseCode.POST_LIST_FOUND,
                 "대시보드 조회에 성공했습니다.",
                 postQueryUseCase.getDashboard(targetUserId)
         ));
     }
+
+    // 게시글 키워드 검색
+    // GET /api/v2/posts/search?keyword={keyword}&cursor={lastPostId}&size=10
+    @Operation(summary = "게시글 검색", description = "키워드로 게시글을 검색합니다.")
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<UserPostListResponse>> searchPosts(
+            @RequestParam String keyword,
+            @RequestParam(required = false) Long cursor,
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        if (keyword == null || keyword.isBlank()) {
+            throw new DomainRuleViolationException("검색 키워드를 입력해주세요.");
+        }
+
+        return ResponseEntity.ok(ApiResponse.success(
+                CommunityResponseCode.POST_SEARCH_FOUND,
+                "게시글 검색에 성공했습니다.",
+                postQueryUseCase.searchPosts(keyword, cursor, size)
+        ));
+    }
+
+    // 연관 게시글 추천
+    // GET /api/v2/posts/{postId}/recommendations
+    @Operation(summary = "연관 게시글 추천", description = "같은 카테고리 인기글 + 작성자의 다른 글을 추천합니다.")
+    @GetMapping("/{postId}/recommendations")
+    public ResponseEntity<ApiResponse<PostRecommendationResponse>> getRecommendations(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(
+                CommunityResponseCode.POST_RECOMMENDATIONS_FOUND,
+                "연관 게시글 조회에 성공했습니다.",
+                postQueryUseCase.getRecommendations(postId)
+        ));
+    }
+
 }
