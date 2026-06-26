@@ -151,4 +151,11 @@ public class UserCommandService implements UserCommandUsecase {
     public void teacherGiveup(Long userId) {
         userRepository.changeStatus(userId,Status.ACTIVE);
     }
+
+
+    // 회원탈퇴 (소프트 딜리트)
+    @Override
+    public void softDeleteUser(Long userId) {
+        userRepository.changeStatusAndNickname(userId, Status.DELETED, "알 수 없음");
+    }
 }

@@ -146,6 +146,12 @@ public class UserRepositoryAdapter implements UserRepository {
         return springDataUserRepository.findCategoryById(userId);
     }
 
+    // 회원탈퇴 (소프트 딜리트)
+    @Override
+    public void changeStatusAndNickname(Long userId, Status status, String nickname) {
+        springDataUserRepository.changeStatusAndNickname(userId,status,nickname,LocalDateTime.now());
+    }
+
 
     // 마이페이지 내 정보 조회용
     private User toDomain(UserJpaEntity entity) {

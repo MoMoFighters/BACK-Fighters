@@ -139,4 +139,15 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
     // 승인할 강사의 카테고리 가져오기
     @Query("SELECT u.category FROM UserUser u WHERE u.id = :userId")
     Category findCategoryById(@Param("userId") Long userId);
+
+    // 회원탈퇴 (소프트 딜리트)
+    @Modifying
+    @Transactional
+    @Query("UPDATE UserUser u SET u.status = :status, u.nickname = :nickname, u.deletedAt = :deletedAt WHERE u.id = :userId")
+    void changeStatusAndNickname(
+            @Param("userId") Long userId,
+            @Param("status") Status status,
+            @Param("nickname") String nickname,
+            @Param("deletedAt") LocalDateTime deletedAt
+    );
 }

@@ -64,4 +64,7 @@ public interface UserRepository {
 
     // 승인할 강사의 프사 가져오기
     Category findCategoryById(Long userId);
+
+    // 회원탈퇴 (소프트 딜리트)
+    void changeStatusAndNickname(Long userId, Status status, String nickname);
 }

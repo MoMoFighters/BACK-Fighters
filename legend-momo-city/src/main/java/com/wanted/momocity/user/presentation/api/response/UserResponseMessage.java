@@ -5,6 +5,7 @@ public final class UserResponseMessage {
     private UserResponseMessage(){}
 
     public static final String VIEW_SUCCESS = "회원정보가 조회되었습니다.";
+    public static final String USER_SOFT_DELETED = "회원탈퇴 되었습니다.";
 
     public static final String NICKNAME_REGISTERED = "님 모모시티에 오신 걸 환영합니다. ";
     public static final String USER_INFO_UPDATE_SUCCESS = "정보가 수정되었습니다. ";

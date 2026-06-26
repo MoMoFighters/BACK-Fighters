@@ -22,4 +22,8 @@ public interface UserCommandUsecase {
 
     // 강사 포기
     void teacherGiveup(Long userId);
+
+    // 회원탈퇴 (소프트 딜리트)
+    void softDeleteUser(Long userId);
+
 }
