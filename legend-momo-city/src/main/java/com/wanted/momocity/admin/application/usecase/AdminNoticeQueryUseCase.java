@@ -12,7 +12,8 @@ import org.springframework.data.domain.Pageable;
 public interface AdminNoticeQueryUseCase {
 
     //MS-12 공지 목록 조회
-    Page<AdminNotice> getNoticeList(boolean isPinned, Pageable pageable);
+    // Boolean 타입으로 보내게 되면 null 값 처리가 가능
+    Page<AdminNotice> getNoticeList(Boolean isPinned, Pageable pageable);
 
     // MS-16 공지 상세 조회
     AdminNotice getNoticeDetail(Long id);

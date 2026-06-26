@@ -31,7 +31,13 @@ public class AdminNoticeQueryService implements AdminNoticeQueryUseCase {
     // 결과로 Page<AdminNotice> 를 반환하는데,
     // Page 는 공지 목록 + 전체 개수 + 현재페이지 번호 등 페이지 메타 정보를 담은 묶음
     @Override
-    public Page<AdminNotice> getNoticeList(boolean isPinned, Pageable pageable) {
+    public Page<AdminNotice> getNoticeList(Boolean isPinned, Pageable pageable) {
+        // null 이라면 전체 조회, 값이 있다면 isPinned 필터 조회
+        if (isPinned = null) {
+            // 값이 없는 경우
+            return adminNoticeRepository.findAll(pageable);
+        }
+        // 값이 있는 경우
         return adminNoticeRepository.findByIsPinned(isPinned, pageable);
     }
 
