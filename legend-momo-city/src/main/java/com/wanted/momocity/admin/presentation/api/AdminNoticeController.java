@@ -39,7 +39,7 @@ public class AdminNoticeController {
     // MS-12 공지 목록 조회 — isPinned 필터 + 페이징
     @GetMapping
     public ResponseEntity<ApiResponse<Page<AdminNoticeListResponse>>> getNoticeList(
-            @RequestParam(defaultValue = "false") boolean isPinned,
+            @RequestParam(required = false) Boolean isPinned,
             Pageable pageable) {
         Page<AdminNoticeListResponse> result = queryUseCase.getNoticeList(isPinned, pageable)
                 .map(AdminNoticeListResponse::from);

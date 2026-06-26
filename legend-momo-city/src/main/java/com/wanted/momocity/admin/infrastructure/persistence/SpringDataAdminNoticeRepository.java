@@ -1,8 +1,11 @@
 package com.wanted.momocity.admin.infrastructure.persistence;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.repository.query.Param;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 
@@ -18,6 +21,8 @@ public interface SpringDataAdminNoticeRepository extends JpaRepository<AdminNoti
     Page<AdminNoticeJpaEntity> findByIsPinned(boolean isPinned, Pageable pageable);
 
     // id 목록에 해당하는 공지를 한 번에 삭제 : MS-19 선택 삭제용
-    void deleteAllByIdIn(List<Long> ids);
+    @Modifying
+    @Query("DELETE FROM AdminNoticeJpaEntity a WHERE a.id IN :ids")
+    void deleteAllByIdIn(@Param("ids") List<Long> ids);
 
 }

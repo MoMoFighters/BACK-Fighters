@@ -33,7 +33,7 @@ public class AdminNoticeQueryService implements AdminNoticeQueryUseCase {
     @Override
     public Page<AdminNotice> getNoticeList(Boolean isPinned, Pageable pageable) {
         // null 이라면 전체 조회, 값이 있다면 isPinned 필터 조회
-        if (isPinned = null) {
+        if (isPinned == null) {
             // 값이 없는 경우
             return adminNoticeRepository.findAll(pageable);
         }
