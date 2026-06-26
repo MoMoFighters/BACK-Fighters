@@ -11,8 +11,8 @@ import java.time.LocalDateTime;
 public class AdminNotice {
 
     private final Long id;
-    private final String title;
-    private final String content;
+    private String title;
+    private String content;
     private boolean isPinned;
     private final LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -39,6 +39,13 @@ public class AdminNotice {
     public static AdminNotice restore(Long id, String title, String content, boolean isPinned
                                       , LocalDateTime createdAt, LocalDateTime updatedAt) {
         return new AdminNotice(id, title, content, isPinned, createdAt, updatedAt);
+    }
+
+    // MS-17 공지 수정 : title, content 만 변경 가능하다. isPinned 불가능
+    public void update(String title, String content) {
+        this.title = title;
+        this.content = content;
+        this.updatedAt = LocalDateTime.now();
     }
 
     // GETTER
