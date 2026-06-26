@@ -20,6 +20,7 @@ import com.wanted.momocity.community.domain.repository.PostContentRepository;
 import com.wanted.momocity.community.domain.repository.PostLikeRepository;
 import com.wanted.momocity.community.domain.repository.PostRepository;
 import com.wanted.momocity.global.application.s3.S3UploadPort;
+import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.global.infrastructure.cloudfront.CloudFrontUrlConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -80,6 +81,7 @@ public class PostCommandService implements PostCommandUseCase {
 
         validateAuthor(post.getUserId(), userId);
         validateImageCount(contents);
+        validateContents(contents);
 
         post.updateThumbnail(thumbnailUrl);
         postRepository.save(post);
@@ -354,7 +356,7 @@ public class PostCommandService implements PostCommandUseCase {
                 .filter(cmd -> "IMAGE".equals(cmd.type()))
                 .count();
         if (imageCount > 5) {
-            throw new IllegalArgumentException("이미지는 최대 5장까지 업로드 가능합니다.");
+            throw new DomainRuleViolationException("이미지는 최대 5장까지 업로드 가능합니다.");
         }
     }
 
@@ -362,10 +364,10 @@ public class PostCommandService implements PostCommandUseCase {
     private void validateContents(List<PostContentCommand> contents) {
         for (PostContentCommand cmd : contents) {
             if ("TEXT".equals(cmd.type()) && (cmd.content() == null || cmd.content().isBlank())) {
-                throw new IllegalArgumentException("TEXT 타입은 content 가 필수입니다.");
+                throw new DomainRuleViolationException("TEXT 타입은 content 가 필수입니다.");
             }
             if ("IMAGE".equals(cmd.type()) && (cmd.imageUrl() == null || cmd.imageUrl().isBlank())) {
-                throw new IllegalArgumentException("IMAGE 타입은 imageUrl 이 필수입니다.");
+                throw new DomainRuleViolationException("IMAGE 타입은 imageUrl 이 필수입니다.");
             }
         }
     }

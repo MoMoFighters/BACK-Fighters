@@ -10,6 +10,7 @@ import com.wanted.momocity.community.domain.exception.CommunityAccessDeniedExcep
 import com.wanted.momocity.community.presentation.api.common.CommunityResponseCode;
 import com.wanted.momocity.community.presentation.api.request.*;
 import com.wanted.momocity.community.presentation.api.response.*;
+import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -19,6 +20,7 @@ import jakarta.validation.constraints.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -117,8 +119,8 @@ public class PostController {
     @GetMapping
     public ResponseEntity<ApiResponse<PostListResponse>> getPosts(
             @RequestParam(required = false) String category,
-            @RequestParam(defaultValue = "0") @Min(value = 0, message = "페이지는 0 이상이어야 합니다.") int page,
-            @RequestParam(defaultValue = "10") @Min(value = 1, message = "size 는 1 이상이어야 합니다.") @Max(value = 100, message = "size 는 100 이하이어야 합니다.") int size,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         Long userId = userDetails.getUserId();
@@ -363,8 +365,8 @@ public class PostController {
     @GetMapping("/{postId}/comments")
     public ResponseEntity<ApiResponse<PostCommentResponse>> getComments(
             @PathVariable Long postId,
-            @RequestParam(required = false) @Positive(message = "cursor 는 양수여야 합니다.") Long cursor,
-            @RequestParam(defaultValue = "10") @Min(value = 1, message = "size 는 1 이상이어야 합니다.") @Max(value = 100, message = "size 는 100 이하이어야 합니다.") int size,
+            @RequestParam(required = false) Long cursor,
+            @RequestParam(defaultValue = "10") int size,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         Long userId = userDetails.getUserId();
@@ -383,8 +385,8 @@ public class PostController {
     public ResponseEntity<ApiResponse<PostReplyResponse>> getReplies(
             @PathVariable Long postId,
             @PathVariable Long commentId,
-            @RequestParam(required = false) @Positive(message = "cursor 는 양수여야 합니다.") Long cursor,
-            @RequestParam(defaultValue = "5") @Min(value = 1, message = "size 는 1 이상이어야 합니다.") @Max(value = 50, message = "size 는 50 이하이어야 합니다.") int size,
+            @RequestParam(required = false)  Long cursor,
+            @RequestParam(defaultValue = "5")  int size,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         Long userId = userDetails.getUserId();
@@ -401,8 +403,8 @@ public class PostController {
     @Operation(summary = "마이페이지 게시글 목록", description = "내 게시글 목록을 조회합니다.")
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<UserPostListResponse>> getMyPosts(
-            @RequestParam(required = false) @Positive(message = "cursor 는 양수여야 합니다.") Long cursor,
-            @RequestParam(defaultValue = "10") @Min(value = 1, message = "size 는 1 이상이어야 합니다.") @Max(value = 100, message = "size 는 100 이하이어야 합니다.") int size,
+            @RequestParam(required = false) Long cursor,
+            @RequestParam(defaultValue = "10") int size,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         Long userId = userDetails.getUserId();
@@ -419,8 +421,8 @@ public class PostController {
     @GetMapping("/users/{targetUserId}")
     public ResponseEntity<ApiResponse<UserPostListResponse>> getUserPosts(
             @PathVariable Long targetUserId,
-            @RequestParam(required = false) @Positive(message = "cursor 는 양수여야 합니다.") Long cursor,
-            @RequestParam(defaultValue = "10") @Min(value = 1, message = "size 는 1 이상이어야 합니다.") @Max(value = 100, message = "size 는 100 이하이어야 합니다.") int size,
+            @RequestParam(required = false)  Long cursor,
+            @RequestParam(defaultValue = "10")  int size,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         Long userId = userDetails.getUserId();
@@ -481,13 +483,13 @@ public class PostController {
     @Operation(summary = "게시글 검색", description = "키워드로 게시글을 검색합니다.")
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<UserPostListResponse>> searchPosts(
-            @RequestParam @NotBlank(message = "검색 키워드를 입력해주세요.") @Size(min = 1, max = 50, message = "검색 키워드는 1자 이상 50자 이하로 입력해주세요.") String keyword,
-            @RequestParam(required = false) @Positive(message = "cursor 는 양수여야 합니다.") Long cursor,
-            @RequestParam(defaultValue = "10") @Min(value = 1, message = "size 는 1 이상이어야 합니다.") @Max(value = 100, message = "size 는 100 이하이어야 합니다.") int size,
+            @RequestParam String keyword,
+            @RequestParam(required = false) Long cursor,
+            @RequestParam(defaultValue = "10") int size,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         if (keyword == null || keyword.isBlank()) {
-            throw new IllegalArgumentException("검색 키워드를 입력해주세요.");
+            throw new DomainRuleViolationException("검색 키워드를 입력해주세요.");
         }
 
         return ResponseEntity.ok(ApiResponse.success(

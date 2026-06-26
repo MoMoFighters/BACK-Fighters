@@ -98,6 +98,11 @@ public interface PostJpaRepository extends JpaRepository<PostJpaEntity, Long> {
     *  게시글 키워드 검색
     *  검색 대상 : title, content, authorName
     *  커서기반 : cursor = null -> 첫 페이지, cursor != null -> 해당 postId 보다 작은 데이터 조회
+    *  -
+    *  와일드카드 이스케이프
+    *  -> 사용자 입력 키워드의 %, _ 를 이스케이프 처리
+    *  -> PostRepositoryAdapter 에서 전처리 후 전달
+    *  -> ESCAPE '\' 로 안전한 검색 보장
     * */
 
     @Query("""
@@ -105,8 +110,8 @@ public interface PostJpaRepository extends JpaRepository<PostJpaEntity, Long> {
     LEFT JOIN PostContentJpaEntity c ON c.postId = p.id
     WHERE p.deletedAt IS NULL
     AND (
-        p.title LIKE %:keyword%
-        OR c.content LIKE %:keyword%
+        p.title LIKE %:keyword% ESCAPE '\\'
+        OR c.content LIKE %:keyword% ESCAPE '\\'
     )
     AND (:cursor IS NULL OR p.id < :cursor)
     ORDER BY p.id DESC
@@ -125,8 +130,8 @@ public interface PostJpaRepository extends JpaRepository<PostJpaEntity, Long> {
     LEFT JOIN PostContentJpaEntity c ON c.postId = p.id
     WHERE p.deletedAt IS NULL
     AND (
-        p.title LIKE %:keyword%
-        OR c.content LIKE %:keyword%
+       p.title LIKE %:keyword% ESCAPE '\\\\'
+       OR c.content LIKE %:keyword% ESCAPE '\\\\'
     )
 """)
     int countByKeyword(@Param("keyword") String keyword);
@@ -154,7 +159,7 @@ public interface PostJpaRepository extends JpaRepository<PostJpaEntity, Long> {
     /*
     * comment.
     *  같은 작성자의 최신 게시글 조회
-    *  현재 게시글 제외, 추천 게시글 제외, 최신순
+    *  현재 게시글 제외, 추천 게시글 제외, 최신
     * */
 
     @Query("""

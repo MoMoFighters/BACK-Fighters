@@ -109,6 +109,22 @@ public class PostRepositoryAdapter implements PostRepository {
         return postJpaRepository.sumLikeCountByUserId(userId);
     }
 
+    /*
+     * comment.
+     *  키워드 이스케이프 처리
+     *  -
+     *  사용자 입력 키워드에 %, _ 포함 시 와일드카드로 해석되는 문제 방지
+     *  -> \ 먼저 이스케이프 (순서 중요)
+     *  -> % -> \%
+     *  -> _ -> \_
+     */
+    private String escapeKeyword(String keyword) {
+        return keyword
+                .replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_");
+    }
+
     // 키워드 검색 (커서 기반 페이징 적용)
     @Override
     public List<Post> searchByKeyword(String keyword, Long cursor, int size) {
