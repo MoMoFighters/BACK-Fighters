@@ -95,3 +95,7 @@ Authorization: Bearer {{auth_token}}
 ### v2 - 학생 외, 비활성 유저 제외 친구 목록
 GET localhost:8080/api/v2/studentfriends
 Authorization: Bearer {{auth_token}}
+
+### v2 - 방명록 목록 조회
+GET localhost:8080/api/v2/friends/guest
+Authorization: Bearer {{auth_token}}

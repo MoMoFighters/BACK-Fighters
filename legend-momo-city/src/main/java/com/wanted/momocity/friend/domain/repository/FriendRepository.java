@@ -5,6 +5,7 @@ import com.wanted.momocity.friend.application.usecase.FriendQueryUseCase.FriendV
 import com.wanted.momocity.friend.enrollment.EnrollmentWithFMJpaEntity;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 
+import com.wanted.momocity.friend.infrastructure.persistence.GuestBookJpaEntity;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -49,4 +50,7 @@ public interface FriendRepository {
 
     //친구 차단(양방향 조회)
     Optional<FriendJpaEntity> findAnyRelationBetween(Long userA, Long userB);
+
+    //방명록 목록 조회 - 모두 읽음 상태
+    List<GuestBookJpaEntity> findAllByOwnerIdWithWriter(Long userId);
 }

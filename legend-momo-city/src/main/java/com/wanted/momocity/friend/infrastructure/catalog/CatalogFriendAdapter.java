@@ -3,10 +3,7 @@ package com.wanted.momocity.friend.infrastructure.catalog;
 
 import com.wanted.momocity.friend.domain.repository.FriendRepository;
 import com.wanted.momocity.friend.enrollment.EnrollmentWithFMJpaEntity;
-import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
-import com.wanted.momocity.friend.infrastructure.persistence.FriendSideEnrollmentRepository;
-import com.wanted.momocity.friend.infrastructure.persistence.FriendSideUserRepository;
-import com.wanted.momocity.friend.infrastructure.persistence.SpringDataFriendRepository;
+import com.wanted.momocity.friend.infrastructure.persistence.*;
 
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import lombok.RequiredArgsConstructor;
@@ -28,14 +25,12 @@ import java.util.Optional;
 @Slf4j
 public class CatalogFriendAdapter implements FriendRepository {
 
-    //🚨 기능 구현을 위해 다른 테이블의 JpaEntity를 만들어 진행함에 따라 머지 후 import 필요합니다.
-
-
     private final SpringDataFriendRepository springDataFriendRepository;
     //충돌 회피로 만든 수강신청 인터페이스 저장소
     private final FriendSideEnrollmentRepository friendSideEnrollmentRepository;
     //충돌 회피로 만든 사용자 인터페이스 저장소
     private final FriendSideUserRepository friendSideUserRepository;
+    private final SpringDataGuestBookRepository springDataGuestBookRepository;
 
 
     //내 친구 목록
@@ -137,6 +132,13 @@ public class CatalogFriendAdapter implements FriendRepository {
 
         //없으면 B->A 방향 조회해서 반환
         return springDataFriendRepository.findByFromUserId_IdAndToUserId_Id(userB, userA);
+    }
+
+
+    //방명록 목록 조회
+    @Override
+    public List<GuestBookJpaEntity> findAllByOwnerIdWithWriter(Long userId) {
+        return springDataGuestBookRepository.findAllByOwnerIdWithWriter(userId);
     }
 
 }

@@ -13,6 +13,7 @@ import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase.Reque
 import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase.AcceptView;
 import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase.RejectView;
 import com.wanted.momocity.friend.application.usecase.FriendQueryUseCase.ReceivedRequestView;
+import com.wanted.momocity.friend.application.usecase.FriendQueryUseCase.GuestBooksView;
 import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase.BlockView;
 import com.wanted.momocity.friend.application.usecase.FriendQueryUseCase.BlockedView;
 import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase.UnblockView;
@@ -396,4 +397,43 @@ public class FriendController {
         List<GetStudentFriendsResponse> responseList = view.stream().map(GetStudentFriendsResponse::from).toList();
         return ResponseEntity.ok(ApiResponse.success("SUCCESS", "강사, 비활성 유저 제외 친구 목록 불러오기 성공", responseList));
     }
+
+    //방명록 목록
+    @GetMapping("/api/v2/friends/guest")
+    @Operation(summary = "방명록 목록", description = "로그인 유저의 방명록 목록을 조회하고 읽는다.")
+    public ResponseEntity<ApiResponse<List<GetGuestBooksResponse>>> getGuestBooks(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long userId = userDetails.getUserId();
+
+        GetGuestBooksQuery query = new GetGuestBooksQuery(userId);
+
+        // 1. 서비스 레이어 호출
+        List<GuestBooksView> views = friendQueryUseCase.getGuestBooksQueryHandle(query);
+
+        // 2. 방명록 내역이 비어있을 때의 특별 성공 응답 처리
+        String successMessage = "";
+        if (views.isEmpty()) {
+            successMessage = "남겨진 방명록 내역이 없어요. 친구와 교류해보세요!";
+        } else {
+            successMessage = "방명록 목록 불러오기 성공";
+        }
+
+        // 3. Response DTO로 매핑
+        List<GetGuestBooksResponse> response = views.stream()
+                .map(v -> new GetGuestBooksResponse(
+                        v.bookId(),
+                        v.writerId(),
+                        v.nickname(),
+                        v.content(),
+                        v.createdAt()
+                ))
+                .toList();
+
+        return ResponseEntity.ok(ApiResponse.success(
+                "SUCCESS",
+                successMessage,
+                response
+        ));
+    }
+
+
 }
