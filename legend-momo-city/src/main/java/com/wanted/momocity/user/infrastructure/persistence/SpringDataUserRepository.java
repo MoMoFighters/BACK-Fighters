@@ -155,4 +155,7 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
     @Query("SELECT u.id FROM UserUser u WHERE u.status = 'DELETED' AND u.deletedAt < :threshold")
     List<Long> findDeletedUserIdsBefore(@Param("threshold") LocalDateTime threshold);
 
+    // 사용자 보유 포인트 찾기
+    @Query("SELECT u.point FROM UserUser u WHERE u.id = :userId")
+    long findPointById(@Param("userId") Long userId);
 }

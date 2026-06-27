@@ -8,6 +8,7 @@ import java.util.List;
 
 public record StoreListResponse(
         List<Product> stores,
+        Long point,
         int page,
         int size,
         long totalElements,
@@ -36,6 +37,6 @@ public record StoreListResponse(
                 .stream()
                 .map(Product::toResponse)
                 .toList();
-        return new StoreListResponse(items, result.page(), result.size(), result.totalElements(), result.totalPages());
+        return new StoreListResponse(items, result.point(), result.page(), result.size(), result.totalElements(), result.totalPages());
     }
 }
