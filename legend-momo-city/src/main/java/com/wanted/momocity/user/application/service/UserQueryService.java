@@ -35,6 +35,7 @@ public class UserQueryService implements UserQueryUsecase {
                 user.getProfileImageUrl(),
                 user.getEmail(),
                 user.getName(),
+                user.getPoint(),
                 user.getNickname(),
                 user.getTempPwd(),
                 user.getCreatedAt()

@@ -164,6 +164,13 @@ public class LectureQueryService implements
         Integer lectureProgress = enrollmentProgress
                 .map(LectureEnrollmentQueryPort.EnrollmentProgress::totalProgress).orElse(null);
 
+        Boolean isCompleted = null; // 미수강이면 null로 내려가도록 기본값 설정
+
+        if (enrollmentProgress.isPresent()) { // 수강 신청 정보가 있는 경우
+            isCompleted = !chapters.isEmpty() // 챕터가 1개 이상 있는지 확인
+                    && enrollmentProgress.get().completedCount() >= chapters.size(); // 완료 챕터 수가 전체 챕터 수 이상인지 확인
+        }
+
         // 수강 중인 강의인지 확인
         Map<Long, ChapterProgressInfo> chapterProgressMap = isEnrolled
                 // 수강 중이면 챕터별 진척도 목록 조회
@@ -186,6 +193,7 @@ public class LectureQueryService implements
                 reviewStats.reviewCount(),
                 isEnrolled,
                 lectureProgress,
+                isCompleted,
                 chapterProgressMap
         );
     }

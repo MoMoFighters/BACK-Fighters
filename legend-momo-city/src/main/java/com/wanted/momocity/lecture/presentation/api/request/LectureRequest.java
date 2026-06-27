@@ -4,7 +4,6 @@ import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationExc
 import com.wanted.momocity.lecture.application.command.LectureCommand;
 import com.wanted.momocity.lecture.domain.model.LectureCategory;
 import com.wanted.momocity.lecture.domain.model.LectureStatus;
-import com.wanted.momocity.lecture.domain.model.VideoStatus;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -45,37 +44,6 @@ public final class LectureRequest {
                 return LectureStatus.valueOf(lectureStatus.toUpperCase());
             } catch (IllegalArgumentException exception) {
                 throw new DomainRuleViolationException("허용되지 않은 강의 상태입니다.");
-            }
-        }
-    }
-
-
-    // 챕터 동영상 상태 변경 요청 DTO
-    public record ChangeChapterVideoStatusRequest(
-            String videoStatus
-    ) {
-        public LectureCommand.ChangeChapterVideoStatusCommand toCommand(
-                Long teacherId,
-                Long lectureId,
-                Long chapterId
-        ) {
-            return new LectureCommand.ChangeChapterVideoStatusCommand(
-                    teacherId,
-                    lectureId,
-                    chapterId,
-                    parseVideoStatus(videoStatus)
-            );
-        }
-
-        private VideoStatus parseVideoStatus(String videoStatus) {
-            if (videoStatus == null || videoStatus.isBlank()) {
-                throw new DomainRuleViolationException("동영상 상태는 필수입니다.");
-            }
-
-            try {
-                return VideoStatus.valueOf(videoStatus.toUpperCase());
-            } catch (IllegalArgumentException exception) {
-                throw new DomainRuleViolationException("허용되지 않은 동영상 상태입니다.");
             }
         }
     }
@@ -121,8 +89,13 @@ public final class LectureRequest {
 
             // 챕터 순서는 1 이상
             @Min(value = 1, message = "챕터 순서는 1 이상이어야 합니다.")
-            int orderNo
+            int orderNo,
+
+            @NotNull(message = "챕터 썸네일 이미지는 필수입니다.")
+            MultipartFile thumbnail
     ) {
+        // 썸네일 크기 제한
+        private static final long MAX_CHAPTER_THUMBNAIL_SIZE_BYTES = 5*1024*1024;
 
         // Controller에서 받은 요청값을 application 계층의 Command로 변환
         public LectureCommand.CreateChapterCommand toCommand(Long teacherId, Long lectureId) {
@@ -130,8 +103,15 @@ public final class LectureRequest {
                     teacherId,
                     lectureId,
                     title,
-                    orderNo
+                    orderNo,
+                    thumbnail
             );
+        }
+
+        public void validateThumbnailSize() {
+            if (thumbnail != null && thumbnail.getSize() > MAX_CHAPTER_THUMBNAIL_SIZE_BYTES) { // 파일이 있고 5MB를 초과하는지 확인
+                throw new DomainRuleViolationException("챕터 썸네일 파일 크기는 5MB 이하만 가능합니다."); // 5MB 초과 시 도메인 예외 발생
+            }
         }
     }
 
@@ -218,5 +198,4 @@ public final class LectureRequest {
             );
         }
     }
-
 }

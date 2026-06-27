@@ -19,7 +19,7 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
     public Review save(Review review) {
         ReviewJpaEntity entity = ReviewJpaEntity.from(review);
 
-        ReviewJpaEntity savedEntity = reviewJpaRepository.save(entity);
+        ReviewJpaEntity savedEntity = reviewJpaRepository.saveAndFlush(entity);
 
         return savedEntity.toDomain();
     }

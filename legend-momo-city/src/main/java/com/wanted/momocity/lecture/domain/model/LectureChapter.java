@@ -16,8 +16,8 @@ public class LectureChapter {
     private final String videoUrl;
     private final Long videoSizeBytes;
     private final Integer durationSec;
-    private final VideoStatus videoStatus;
     private final String originalFilename;
+    private final String chapterThumbnailUrl;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
 
@@ -29,15 +29,14 @@ public class LectureChapter {
             String videoUrl,
             Long videoSizeBytes,
             Integer durationSec,
-            VideoStatus videoStatus,
             String originalFilename,
+            String chapterThumbnailUrl,
             LocalDateTime createdAt,
             LocalDateTime updatedAt
     ) {
         validateLectureId(lectureId);
         validateTitle(title);
         validateOrderNo(orderNo);
-        validateVideoStatus(videoStatus);
 
         this.id = id;
         this.lectureId = lectureId;
@@ -46,10 +45,17 @@ public class LectureChapter {
         this.videoUrl = videoUrl;
         this.videoSizeBytes = videoSizeBytes;
         this.durationSec = durationSec;
-        this.videoStatus = videoStatus;
         this.originalFilename = originalFilename;
+        this.chapterThumbnailUrl = chapterThumbnailUrl;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+    }
+
+    // 챕터 썸네일 URL 검증
+    private void validateChapterThumbnailUrl(String chapterThumbnailUrl) {
+        if (chapterThumbnailUrl == null || chapterThumbnailUrl.isBlank()) {
+            throw new DomainRuleViolationException("챕터 썸네일 URL은 필수입니다.");
+        }
     }
 
     // 새 챕터를 등록할 때 사용
@@ -57,7 +63,8 @@ public class LectureChapter {
     public static LectureChapter create(
             Long lectureId,
             String title,
-            int orderNo
+            int orderNo,
+            String chapterThumbnailUrl
     ) {
         return new LectureChapter(
                 null,
@@ -67,10 +74,30 @@ public class LectureChapter {
                 null,
                 null,
                 null,
-                VideoStatus.UPLOADING,
                 null,
+                chapterThumbnailUrl,
                 null,
                 null
+        );
+    }
+
+    public static LectureChapter createWithoutThumbnail( // 썸네일 URL 없이 챕터 기본 정보만 생성하는 메서드
+                                                         Long lectureId, // 강의 ID
+                                                         String title, // 챕터 제목
+                                                         int orderNo // 챕터 순서
+    ) {
+        return new LectureChapter( // LectureChapter 객체 생성
+                null, // 새 챕터라 ID는 아직 없음
+                lectureId, // 강의 ID 전달
+                title, // 챕터 제목 전달
+                orderNo, // 챕터 순서 전달
+                null, // 동영상 URL은 아직 없음
+                null, // 동영상 파일 크기는 아직 없음
+                null, // 동영상 재생 시간은 아직 없음
+                null, // 원본 파일명은 아직 없음
+                null, // 썸네일 URL은 chapterId 생성 후 S3 업로드로 채움
+                null, // 생성 시간은 JPA Auditing이 채움
+                null // 수정 시간은 JPA Auditing이 채움
         );
     }
 
@@ -83,8 +110,8 @@ public class LectureChapter {
             String videoUrl,
             Long videoSizeBytes,
             Integer durationSec,
-            VideoStatus videoStatus,
             String originalFilename,
+            String chapterThumbnailUrl,
             LocalDateTime createdAt,
             LocalDateTime updatedAt
     ) {
@@ -96,8 +123,8 @@ public class LectureChapter {
                 videoUrl,
                 videoSizeBytes,
                 durationSec,
-                videoStatus,
                 originalFilename,
+                chapterThumbnailUrl,
                 createdAt,
                 updatedAt
         );
@@ -126,28 +153,8 @@ public class LectureChapter {
                 videoUrl,
                 videoSizeBytes,
                 durationSec,
-                VideoStatus.READY,
                 originalFilename,
-                createdAt,
-                updatedAt
-        );
-    }
-
-    // 챕터 동영상 처리 상태를 변경
-    // 예: UPLOADING -> ENCODING -> READY -> FAILED
-    public LectureChapter changeVideoStatus(VideoStatus videoStatus) {
-        validateVideoStatus(videoStatus);
-
-        return new LectureChapter(
-                id,
-                lectureId,
-                title,
-                orderNo,
-                videoUrl,
-                videoSizeBytes,
-                durationSec,
-                videoStatus,
-                originalFilename,
+                chapterThumbnailUrl,
                 createdAt,
                 updatedAt
         );
@@ -187,13 +194,6 @@ public class LectureChapter {
     private static void validateOrderNo(int orderNo) {
         if (orderNo < 1) {
             throw new DomainRuleViolationException("챕터 순서는 1 이상이어야 합니다.");
-        }
-    }
-
-    // 동영상 상태는 기본값을 포함해 항상 존재
-    private static void validateVideoStatus(VideoStatus videoStatus) {
-        if (videoStatus == null) {
-            throw new DomainRuleViolationException("동영상 상태는 필수입니다.");
         }
     }
 
@@ -256,9 +256,7 @@ public class LectureChapter {
         return durationSec;
     }
 
-    public VideoStatus getVideoStatus() {
-        return videoStatus;
-    }
+    public String getChapterThumbnailUrl() {return  chapterThumbnailUrl;}
 
     public String getOriginalFilename() {
         return originalFilename;
@@ -270,5 +268,23 @@ public class LectureChapter {
 
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    public LectureChapter changedChapterThumbnailUrl(String chapterThumbnailUrl) {
+        validateChapterThumbnailUrl(chapterThumbnailUrl);
+
+        return new LectureChapter(
+                id, // 기존 챕터 ID 유지
+                lectureId, // 기존 강의 ID 유지
+                title, // 기존 챕터 제목 유지
+                orderNo, // 기존 챕터 순서 유지
+                videoUrl, // 기존 동영상 URL 유지
+                videoSizeBytes, // 기존 동영상 파일 크기 유지
+                durationSec, // 기존 동영상 재생 시간 유지
+                originalFilename, // 기존 원본 파일명 유지
+                chapterThumbnailUrl, // 새 챕터 썸네일 URL 반영
+                createdAt, // 기존 생성 시간 유지
+                updatedAt // 기존 수정 시간 유지
+        );
     }
 }
