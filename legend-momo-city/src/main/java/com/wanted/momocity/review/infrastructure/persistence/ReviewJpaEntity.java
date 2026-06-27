@@ -2,6 +2,7 @@ package com.wanted.momocity.review.infrastructure.persistence;
 
 import com.wanted.momocity.global.infrastructure.persistence.BaseTimeEntity;
 import com.wanted.momocity.review.domain.model.Review;
+import com.wanted.momocity.review.domain.model.ReviewStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -48,6 +49,10 @@ public class ReviewJpaEntity{
     @Column(name = "created_at", nullable = false, updatable = false) // create 컬럼만 매핑
     private LocalDateTime createdAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private ReviewStatus status = ReviewStatus.ACTIVE;
+
     // 도메인 review를 jpa entity로 변환
     public static ReviewJpaEntity from(Review review) {
         // 저장할 JPA Entity 객체 생성
@@ -58,6 +63,7 @@ public class ReviewJpaEntity{
         entity.lectureId = review.getLectureId();
         entity.rating = review.getRating();
         entity.content = review.getContent();
+        entity.status = ReviewStatus.ACTIVE;
         return entity;
     }
 
@@ -70,5 +76,9 @@ public class ReviewJpaEntity{
                 content,
                 createdAt
         );
+    }
+
+    public void softDelete() {
+        this.status = ReviewStatus.DELETED;
     }
 }
