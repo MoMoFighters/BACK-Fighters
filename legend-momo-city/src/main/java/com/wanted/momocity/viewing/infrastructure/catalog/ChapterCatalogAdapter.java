@@ -8,7 +8,6 @@ import com.wanted.momocity.lecture.infrastructure.persistence.SpringDataChapterR
 import com.wanted.momocity.viewing.application.port.ChapterPort;
 import com.wanted.momocity.viewing.domain.model.Chapter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 

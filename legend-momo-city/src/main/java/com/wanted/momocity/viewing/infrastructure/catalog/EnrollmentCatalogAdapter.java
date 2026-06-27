@@ -2,7 +2,6 @@ package com.wanted.momocity.viewing.infrastructure.catalog;
 
 import com.wanted.momocity.enrollment.infrastructure.persistence.EnrollmentJpaRepository;
 import com.wanted.momocity.viewing.application.port.EnrollmentPort;
-import com.wanted.momocity.viewing.application.port.EnrollmentPort.EnrollmentInfo;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

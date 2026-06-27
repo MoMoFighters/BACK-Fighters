@@ -1,6 +1,8 @@
 package com.wanted.momocity.viewing.infrastructure.event;
 
+import com.wanted.momocity.global.application.point.PointChange;
 import com.wanted.momocity.viewing.domain.event.ChapterCompletedEvent;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -12,8 +14,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
  *
  * [역할]
  * ChapterCompletedEvent 후속 처리 담당
- * → 비즈니스 로직 없는 부가 작업 처리
- *
+ * -> 포인트 지급
  * [@Async 이유]
  * -> 이벤트 처리를 별도 스레드에서 실행
  * -> saveProgress() 응답 속도에 영향 없음
@@ -26,7 +27,10 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class ViewingEventHandler {
+
+    private final PointChange pointChange;
 
     @Async("domainEventExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -34,9 +38,13 @@ public class ViewingEventHandler {
         log.info("[Viewing] ChapterCompletedEvent 처리 | userId={}, lectureId={}, chapterId={}, occurredAt={}",
                 event.userId(), event.lectureId(), event.chapterId(), event.occurredAt());
 
-        // TODO 모듈 04: 잔디(스트릭) 갱신
-        // TODO 모듈 04: 수강 완료 처리 (totalProgress = 100 시)
-        // TODO 알림 발송
+        // 챕터 완료 시 포인트 지급
+        // -> ChapterCompletedEvent 는 wasCompleted=false -> isCompleted=true 일 때만 발행
+        // -> 중복 지급 방지 보장
+        pointChange.gainPoint(event.userId(), 10L);
+
+        log.info("[Viewing] 포인트 지급 완료 | userId={}, amount=10", event.userId());
+
     }
 
 }
