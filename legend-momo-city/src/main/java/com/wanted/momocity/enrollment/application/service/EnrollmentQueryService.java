@@ -1,13 +1,17 @@
 package com.wanted.momocity.enrollment.application.service;
 
+import com.wanted.momocity.auth.domain.exception.UserNotFoundException;
 import com.wanted.momocity.enrollment.application.query.EnrollmentQuery;
 import com.wanted.momocity.enrollment.application.usecase.EnrollmentQueryUsecase;
+import com.wanted.momocity.enrollment.domain.exception.BuildingSelfAccessException;
 import com.wanted.momocity.enrollment.domain.model.Building;
 import com.wanted.momocity.enrollment.domain.repository.BuildingRepository;
 import com.wanted.momocity.enrollment.domain.repository.EnrollmentRepository;
 import com.wanted.momocity.enrollment.presentation.api.response.EnrollmentProgressResponse;
+import com.wanted.momocity.friend.domain.repository.FriendRepository;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.global.domain.model.Category;
+import com.wanted.momocity.user.domain.repository.UserRepository;
 import com.wanted.momocity.viewing.application.port.CategoryProgressInfo;
 import com.wanted.momocity.viewing.application.port.CategoryProgressPort;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +35,10 @@ public class EnrollmentQueryService implements EnrollmentQueryUsecase {
 
     // 수강신청 정보를 조회하는 도메인 Repository입니다.
     private final EnrollmentRepository enrollmentRepository;
+
+    private final UserRepository userRepository;
+
+    private final FriendRepository friendRepository;
 
     // S3 빌딩 건물 기본 경로를 상수로 둔다
     private static final String BUILDING_IMAGE_BASE_URL = "https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/building";
@@ -171,5 +179,23 @@ public class EnrollmentQueryService implements EnrollmentQueryUsecase {
     // 건물 전체 필요 경험치
     private Integer calculateTotalExp() {
         return  1000;
+    }
+
+    @Override
+    public List<RenderingBuildingsView> friendBuildingInfo(Long loginUserId, Long targetUserId) {
+        if (loginUserId.equals(targetUserId)) {
+            throw new BuildingSelfAccessException("사용자 본인이기 때문에 메인페이지로 이동합니다.");
+        }
+
+        userRepository.findById(targetUserId)
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
+
+        // 두 사용자 사이의 친구 관계 조회
+        boolean isFriend = friendRepository.findAnyRelationBetween(loginUserId, targetUserId)
+                // 상태가 친구만 허용
+                .filter(friend -> "FRIEND".equals(friend.getStatus()))
+                .isPresent();
+
+        return userBuildingInfo(targetUserId);
     }
 }
