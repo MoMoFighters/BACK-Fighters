@@ -3,6 +3,7 @@ package com.wanted.momocity.user.application.service;
 import com.wanted.momocity.auth.application.port.PasswordEncodePort;
 import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.user.application.port.GetItemUrlPort;
+import com.wanted.momocity.user.application.port.GoogleDriveUploadPort;
 import com.wanted.momocity.user.domain.event.TeacherApplicationEvent;
 import com.wanted.momocity.user.domain.exception.UserNotFoundException;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
@@ -35,6 +36,7 @@ public class UserCommandService implements UserCommandUsecase {
     private final S3UploadPort s3UploadPort;
     private final ApplicationEventPublisher eventPublisher;
     private final GetItemUrlPort getItemUrlPort;
+    private final GoogleDriveUploadPort googleDriveUploadPort;
 
 
     @Override
@@ -77,8 +79,9 @@ public class UserCommandService implements UserCommandUsecase {
     @Override
     public void teacherApply(TeacherApplyCommand command) {
 
-        userRepository.findById(command.userId())
-                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
+        String name = userRepository.findById(command.userId())
+                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."))
+                .getName();
 
         if (userRepository.checkTeacherAvailable(command.userId(), Role.TEACHER, List.of(Status.PENDING, Status.ACTIVE))) {
             throw new DomainRuleViolationException("강사 신청 중이거나 이미 강사입니다.");
@@ -92,6 +95,11 @@ public class UserCommandService implements UserCommandUsecase {
         String proofKey = s3UploadPort.upload(command.proof(), "teacher_proof");
 
         userRepository.teacherApply(command.userId(),command.nickname(),command.category(),proofKey);
+
+        // 드라이브에 업로드
+        String originalFileName = command.proof().getOriginalFilename();
+        String driveFileName = name + " - " + command.category().name() + " - " + originalFileName;
+        googleDriveUploadPort.uploadGoogleDrive(command.proof(), driveFileName);
 
         log.info("[teacherApply] 강사 신청 완료 | userId={} | role=TEACHER", command.userId());
 
