@@ -85,6 +85,21 @@ public interface CommentJpaRepository extends JpaRepository<CommentJpaEntity, Lo
 
     /*
      * comment.
+     *  특정 댓글의 대댓글 수 조회
+     *  -> getReplies() 의 totalCount 용
+     *  -> Integer.MAX_VALUE 로 전체 조회 후 size() 로 카운트하는 방식 개선
+     *  -> COUNT 쿼리로 DB 레벨에서 집계
+     */
+    @Query("""
+    SELECT COUNT(c)
+    FROM CommentJpaEntity c
+    WHERE c.parentId = :commentId
+    AND c.deletedAt IS NULL
+""")
+    int countRepliesByCommentId(@Param("commentId") Long commentId);
+
+    /*
+     * comment.
      *  커서 기반 대댓글 조회
      *  parentId = commentId -> 대댓글만 조회 (parentId != NULL)
      *  cursor = null -> 첫페이지, cursor != null -> 해당 id 보다 큰 데이터 조회

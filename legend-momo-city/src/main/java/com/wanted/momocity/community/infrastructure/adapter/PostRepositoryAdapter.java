@@ -54,7 +54,8 @@ public class PostRepositoryAdapter implements PostRepository {
     @Override
     public List<Post> findAllWithCursor(PostCategory category, Long cursor, int size) {
         return postJpaRepository.findAllByCategoryWithCursor(
-                        category, cursor, PageRequest.of(0, size)
+                // size + 1 개 조회 -> 다음 페이지 존재 여부 확인용
+                        category, cursor, PageRequest.of(0, size + 1)
                 )
                 .stream()
                 .map(PostJpaEntity::toDomain)
@@ -100,7 +101,8 @@ public class PostRepositoryAdapter implements PostRepository {
     @Override
     public List<Post> findByUserIdWithCursor(Long userId, Long cursor, int size) {
         return postJpaRepository.findByUserIdWithCursor(
-                        userId, cursor, PageRequest.of(0, size)
+                        // size + 1 개 조회 -> 다음 페이지 존재 여부 확인용
+                        userId, cursor, PageRequest.of(0, size + 1)
                 )
                 .stream()
                 .map(PostJpaEntity::toDomain)
@@ -148,7 +150,8 @@ public class PostRepositoryAdapter implements PostRepository {
     @Override
     public List<Post> searchByKeyword(String keyword, PostCategory category, Long cursor, int size) {
         return postJpaRepository.searchByKeyword(
-                escapeKeyword(keyword), category, cursor, PageRequest.of(0, size))
+                        // size + 1 개 조회 -> 다음 페이지 존재 여부 확인용
+                escapeKeyword(keyword), category, cursor, PageRequest.of(0, size + 1))
                 .stream()
                 .map(PostJpaEntity::toDomain)
                 .toList();
@@ -164,7 +167,8 @@ public class PostRepositoryAdapter implements PostRepository {
     // PageRequest.of(0, size) 로 상위 N개만 조회
     @Override
     public List<Post> findTopPostsByCategory(PostCategory category, Long postId, int size) {
-        return postJpaRepository.findTopPostsByCategory(category, postId, PageRequest.of(0, size))
+        // size + 1 개 조회 -> 다음 페이지 존재 여부 확인용
+        return postJpaRepository.findTopPostsByCategory(category, postId, PageRequest.of(0, size + 1))
                 .stream()
                 .map(PostJpaEntity::toDomain)
                 .toList();
@@ -175,7 +179,8 @@ public class PostRepositoryAdapter implements PostRepository {
     @Override
     public List<Post> findLatestPostsByAuthor(Long userId, Long postId, List<Long> excludeIds, int size) {
         List<Long> safeExcludeIds = excludeIds.isEmpty() ? List.of(-1L) : excludeIds;
-        return postJpaRepository.findLatestPostsByAuthor(userId, postId, safeExcludeIds, PageRequest.of(0, size))
+        // size + 1 개 조회 -> 다음 페이지 존재 여부 확인용
+        return postJpaRepository.findLatestPostsByAuthor(userId, postId, safeExcludeIds, PageRequest.of(0, size + 1))
                 .stream()
                 .map(PostJpaEntity::toDomain)
                 .toList();

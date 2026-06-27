@@ -50,6 +50,9 @@ public interface CommentRepository {
     // 게시글 최상위 댓글 수 조회 (대댓글 제외) -> PostCommentResponse 의 totalCount 에 사용
     int countByPostId(Long postId);
 
+    // 특정 댓글의 댓글 수 조회 (getReplies totalCount 용)
+    int countRepliesByCommentId(Long commentId);
+
     // 댓글 소프트딜리트
     void delete(Comment comment);
 
