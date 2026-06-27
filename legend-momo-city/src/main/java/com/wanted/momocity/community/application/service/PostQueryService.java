@@ -52,21 +52,32 @@ public class PostQueryService implements PostQueryUseCase {
      *  -> category null 이면 전체 조회
      */
     @Override
-    @Cacheable(value = "posts", key = "#category + ':' + #page + ':' + #size", cacheManager = "redisCacheManager")
-    public PostListResponse getPosts(Long userId, String category, int page, int size) {
+    @Cacheable(
+            value = "posts",
+            key = "#category + ':' + #cursor + ':' + #size",
+            cacheManager = "redisCacheManager"
+    )
+    public PostListResponse getPosts(Long userId, String category, Long cursor, int size) {
 
-        PageRequest pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<Post> postPage = postRepository.findAll(category, pageable);
+        // 전체 게시글 수 조회 (카테고리 필터 적용)
+        int totalCount = postRepository.countByCategory(category);
 
-        List<Long> postIds = postPage.getContent().stream()
+        // 커서 기반 게시글 목록 조회
+        List<Post> posts = postRepository.findAllWithCursor(category, cursor, size);
+
+        // postId 목록 추출 → 댓글 수 일괄 조회용
+        List<Long> postIds = posts.stream()
                 .map(Post::getId)
                 .toList();
 
+        // N+1 개선 : 댓글 수 한 번에 조회
+        // postId 목록으로 GROUP BY 쿼리 -> Map(postId, count)
         Map<Long, Long> commentCountMap = postIds.isEmpty()
                 ? Map.of()
                 : commentRepository.countByPostIds(postIds);
 
-        List<PostListResponse.PostItem> items = postPage.getContent().stream()
+        // 게시글 목록 → PostItem 변환
+        List<PostListResponse.PostItem> items = posts.stream()
                 .map(post -> {
                     User user = userInfoPort.findById(post.getUserId())
                             .orElseThrow(() -> new CommunityNotFoundException("사용자를 찾을 수 없습니다."));
@@ -91,15 +102,17 @@ public class PostQueryService implements PostQueryUseCase {
                 })
                 .toList();
 
-        log.info("[Community] 게시글 목록 조회 완료 | category={}, page={}, size={}",
-                category, page, size);
+        // nextCursor 계산
+        // 조회된 게시글 수 == size → 다음 페이지 존재 → 마지막 postId 반환
+        // 조회된 게시글 수 < size → 마지막 페이지 → null 반환
+        Long nextCursor = posts.size() == size
+                ? posts.get(posts.size() - 1).getId()
+                : null;
 
-        return new PostListResponse(
-                items,
-                postPage.getTotalElements(),
-                postPage.getTotalPages(),
-                page
-        );
+        log.info("[Community] 게시글 목록 조회 완료 | category={}, cursor={}, size={}",
+                category, cursor, size);
+
+        return new PostListResponse(totalCount, items, nextCursor);
     }
 
     // 게시글 단건 조회

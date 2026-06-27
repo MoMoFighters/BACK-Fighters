@@ -119,7 +119,7 @@ public class PostController {
     @GetMapping
     public ResponseEntity<ApiResponse<PostListResponse>> getPosts(
             @RequestParam(required = false) String category,
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(required = false) Long cursor,
             @RequestParam(defaultValue = "10") int size,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
@@ -128,7 +128,7 @@ public class PostController {
         return ResponseEntity.ok(ApiResponse.success(
                 CommunityResponseCode.POST_LIST_FOUND,
                 "게시글 목록 조회에 성공했습니다.",
-                postQueryUseCase.getPosts(userId, category, page, size)
+                postQueryUseCase.getPosts(userId, category, cursor, size)
         ));
     }
 

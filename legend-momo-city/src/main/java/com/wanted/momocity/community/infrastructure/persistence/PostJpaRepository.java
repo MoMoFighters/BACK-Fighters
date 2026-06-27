@@ -39,17 +39,40 @@ public interface PostJpaRepository extends JpaRepository<PostJpaEntity, Long> {
     """)
     Optional<PostJpaEntity> findByIdWithContents(@Param("postId") Long postId);
 
-    // 목록 조회 (소프트딜리트 제외, 카테고리 필터링)
+    /*
+    * comment.
+    *  게시글 목록 커서 기반 조회
+    *  커서기반 : cursor = null -> 첫 페이지, cursor != null -> 해당 postId 보다 작은 데이터 조회 (내림차순)
+    *  카테고리 필터링 : category = null -> 전체 조회, category != null -> 해당 카테고리만 조회
+    * */
+
     @Query("""
-        SELECT p FROM PostJpaEntity p
-        WHERE p.deletedAt IS NULL
-        AND (:category IS NULL OR p.category = :category)
-        ORDER BY p.createdAt DESC
-    """)
-    Page<PostJpaEntity> findAllByCategory(
+    SELECT p FROM PostJpaEntity p
+    WHERE p.deletedAt IS NULL
+    AND (:category IS NULL OR p.category = :category)
+    AND (:cursor IS NULL OR p.id < :cursor)
+    ORDER BY p.id DESC
+""")
+    List<PostJpaEntity> findAllByCategoryWithCursor(
             @Param("category") String category,
+            @Param("cursor") Long cursor,
             Pageable pageable
     );
+
+    /*
+    * comment.
+    *  카테고리별 전체 게시글 수 조회
+    *  cursor 기반 페이지네이션 totalCount 반환용
+    *  -> category = null -> 전체 게시글 수
+    * */
+
+    @Query("""
+    SELECT COUNT(p)
+    FROM PostJpaEntity p
+    WHERE p.deletedAt IS NULL
+    AND (:category IS NULL OR p.category = :category)
+""")
+    int countByCategory(@Param("category") String category);
 
     // 유저별 게시글 커서 기반 조회
     // cursor = null -> 첫 페이지, cursor != null -> 해당 postId 보다 작은 데이터 조회
@@ -130,8 +153,8 @@ public interface PostJpaRepository extends JpaRepository<PostJpaEntity, Long> {
     LEFT JOIN PostContentJpaEntity c ON c.postId = p.id
     WHERE p.deletedAt IS NULL
     AND (
-       p.title LIKE %:keyword% ESCAPE '\\\\'
-       OR c.content LIKE %:keyword% ESCAPE '\\\\'
+       p.title LIKE %:keyword% ESCAPE '\\'
+       OR c.content LIKE %:keyword% ESCAPE '\\'
     )
 """)
     int countByKeyword(@Param("keyword") String keyword);

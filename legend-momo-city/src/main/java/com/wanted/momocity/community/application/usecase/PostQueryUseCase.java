@@ -11,8 +11,8 @@ import com.wanted.momocity.community.presentation.api.response.*;
 
 public interface PostQueryUseCase {
 
-    // 게시글 목록 조회 (카테고리 필터링, offset 페이지네이션)
-    PostListResponse getPosts(Long userId, String category, int page, int size);
+    // 게시글 목록 조회 (카테고리 필터링, 커서 기반 페이지네이션)
+    PostListResponse getPosts(Long userId, String category, Long cursor, int size);
 
     // 게시글 단건 조회 (contents 포함, comments 미포함)
     PostDetailResponse getPost(Long userId, Long PostId);

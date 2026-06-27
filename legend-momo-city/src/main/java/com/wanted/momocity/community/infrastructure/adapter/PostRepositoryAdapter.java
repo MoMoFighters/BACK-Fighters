@@ -44,11 +44,26 @@ public class PostRepositoryAdapter implements PostRepository {
                 .map(PostJpaEntity::toDomain);
     }
 
-    // 카테고리별 게시글 페이징 조회
+    /*
+    * comment.
+    *  게시글 목록 커서 기반 조회 구현
+    *  [PageRequest.of(0, size)] : 커서 기반에서는 항상 첫페이지(0) -> size 개만 조회
+    * */
+
     @Override
-    public Page<Post> findAll(String category, Pageable pageable) {
-        return postJpaRepository.findAllByCategory(category, pageable)
-                .map(PostJpaEntity:: toDomain);
+    public List<Post> findAllWithCursor(String category, Long cursor, int size) {
+        return postJpaRepository.findAllByCategoryWithCursor(
+                        category, cursor, PageRequest.of(0, size)
+                )
+                .stream()
+                .map(PostJpaEntity::toDomain)
+                .toList();
+    }
+
+    // 카테고리별 전체 게시글 수 조회
+    @Override
+    public int countByCategory(String category) {
+        return postJpaRepository.countByCategory(category);
     }
 
     // 게시글 하드딜리트
