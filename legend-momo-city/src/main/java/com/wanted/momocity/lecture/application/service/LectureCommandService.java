@@ -48,7 +48,7 @@ public class LectureCommandService implements
         AdminLectureCommandUseCase {
 
     // 강의당 등록 가능한 최대 챕터 수
-    private static final int MAX_CHAPTER_COUNT = 5;
+    private static final int MAX_CHAPTER_COUNT = 10;
 
     // 챕터 동영상 최대 업로드 크기: 500MB
     private static final long MAX_VIDEO_SIZE_BYTES = 500 * 1024 * 1024;
@@ -133,7 +133,7 @@ public class LectureCommandService implements
         int chapterCount = chapterRepository.countByLectureId(command.lectureId());
 
         if (chapterCount >= MAX_CHAPTER_COUNT) {
-            throw new ChapterLimitExceededException("챕터는 최대 5개까지만 등록할 수 있습니다.");
+            throw new ChapterLimitExceededException("챕터는 최대 10개까지만 등록할 수 있습니다.");
         }
 
         boolean duplicatedOrderNo = chapterRepository.existsByLectureIdAndOrderNo(
