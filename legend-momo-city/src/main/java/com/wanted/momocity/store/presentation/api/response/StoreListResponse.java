@@ -31,6 +31,11 @@ public record StoreListResponse(
                     store.getUrl(),
                     store.getType(),
                     ownedItemId.contains(store.getId())
+                    /*comment
+                    *  이게 상품 갯수만큼 반복 호출됨
+                    *  List면 contains()를 호출할 때마다 리스트 맨 앞부터 하나씩 비교해야하지만
+                    *  HashSet이면 바로 찾아감 
+                    *  */
             );
         }
     }
