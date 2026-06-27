@@ -99,6 +99,23 @@ public interface CommentJpaRepository extends JpaRepository<CommentJpaEntity, Lo
     int countRepliesByCommentId(@Param("commentId") Long commentId);
 
     /*
+    * comment.
+    *  댓글 목록의 대댓글 일괄 조회 (N + 1 개선)
+    *  commentId 목록으로 IN 쿼리 -> 1번 쿼리로 전체 대댓글 조회
+    *  - 대댓글은 ASC 로 표시
+    * */
+
+    @Query("""
+    SELECT c FROM CommentJpaEntity c
+    WHERE c.parentId IN :commentIds
+    AND c.deletedAt IS NULL
+    ORDER BY c.id ASC
+""")
+    List<CommentJpaEntity> findRepliesByCommentIds(
+            @Param("commentIds") List<Long> commentIds
+    );
+
+    /*
      * comment.
      *  커서 기반 대댓글 조회
      *  parentId = commentId -> 대댓글만 조회 (parentId != NULL)

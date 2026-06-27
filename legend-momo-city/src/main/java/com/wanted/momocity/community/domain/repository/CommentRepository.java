@@ -39,6 +39,12 @@ public interface CommentRepository {
     * */
     List<Comment> findByPostIdWithCursor(Long postId, Long cursor, int size);
 
+    // 댓글 목록의 대댓글 일괄 조회 (N+1 개선)
+    List<Comment> findRepliesByCommentIds(List<Long> commentIds);
+
+    // 특정 댓글의 댓글 수 조회 (getReplies totalCount 용)
+    int countRepliesByCommentId(Long commentId);
+
     /*
      * comment,
      *  커서 기반 대댓글 조회
@@ -46,12 +52,8 @@ public interface CommentRepository {
      * */
     List<Comment> findRepliesByCommentIdWithCursor(Long commentId, Long cursor, int size);
 
-
     // 게시글 최상위 댓글 수 조회 (대댓글 제외) -> PostCommentResponse 의 totalCount 에 사용
     int countByPostId(Long postId);
-
-    // 특정 댓글의 댓글 수 조회 (getReplies totalCount 용)
-    int countRepliesByCommentId(Long commentId);
 
     // 댓글 소프트딜리트
     void delete(Comment comment);

@@ -78,6 +78,15 @@ public class CommentRepositoryAdapter implements CommentRepository {
         return commentJpaRepository.countRepliesByCommentId(commentId);
     }
 
+    // 댓글 목록의 대댓글 일괄 조회
+    @Override
+    public List<Comment> findRepliesByCommentIds(List<Long> commentIds) {
+        return commentJpaRepository.findRepliesByCommentIds(commentIds)
+                .stream()
+                .map(CommentJpaEntity::toDomain)
+                .toList();
+    }
+
     @Override
     public int countByPostId(Long postId) {
         return commentJpaRepository.countByPostId(postId);

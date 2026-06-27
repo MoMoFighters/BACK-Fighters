@@ -4,6 +4,7 @@ import com.wanted.momocity.auth.domain.model.User;
 import com.wanted.momocity.community.application.port.UserInfoPort;
 import com.wanted.momocity.community.application.result.PostWithContents;
 import com.wanted.momocity.community.application.usecase.PostQueryUseCase;
+import com.wanted.momocity.community.domain.exception.CommunityAccessDeniedException;
 import com.wanted.momocity.community.domain.exception.CommunityNotFoundException;
 import com.wanted.momocity.community.domain.model.Comment;
 import com.wanted.momocity.community.domain.model.Post;
@@ -22,8 +23,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -192,23 +195,36 @@ public class PostQueryService implements PostQueryUseCase {
         List<Comment> pagedComments = hasNext ? comments.subList(0, size) : comments;
         Long nextCursor = hasNext ? pagedComments.get(pagedComments.size() - 1).getId() : null;
 
+        // 댓글 Id 목록 추출 -> 대댓글 일괄 조회용
+        List<Long> commentIds = pagedComments.stream()
+                .map(Comment::getId)
+                .toList();
+
+        // N+1 개선 : 대댓글 한 번에 일괄 조회
+        // commentId 목록으로 IN 쿼리 -> 1번 쿼리
+        // -> commentId 기준 Map<commentId, List<Comment>> 로 변환
+        Map<Long, List<Comment>> repliesMap = commentRepository
+                .findRepliesByCommentIds(commentIds)
+                .stream()
+                .collect(Collectors.groupingBy(Comment::getParentId));
+
         // items 변환 -> pagedComments 사용
+        // 댓글 목록 -> CommentResponse 변환
         List<CommentResponse> commentResponses = pagedComments.stream()
                 .map(c -> {
                     // 댓글 작성자 정보 조회
                     User commentAuthor = userInfoPort.findById(c.getUserId())
                             .orElseThrow(() -> new CommunityNotFoundException("사용자를 찾을 수 없습니다."));
 
-                    // 대댓글 첫 size + 1 방식으로 조회 -> 다음 대댓글 존재 확인용
-                    List<Comment> replies = commentRepository
-                            .findRepliesByCommentIdWithCursor(c.getId(), null, 6);
+                    // 대댓글 목록 조회 (repliesMap 에서 가져옴 -> DB 추가 조회 없음)
+                    List<Comment> allReplies = repliesMap.getOrDefault(c.getId(), List.of());
 
                     // 대댓글 5개 초과 여부 확인
                     // size + 1 개 조회 후 5개 초과 시 hasMoreReplies = true, 반환값은 5
-                    boolean hasMoreReplies = replies.size() > 5;
+                    boolean hasMoreReplies = allReplies.size() > 5;
                     List<Comment> pagedReplies = hasMoreReplies
-                            ? replies.subList(0, 5)
-                            : replies;
+                            ? new ArrayList<>(allReplies.subList(0, 5))
+                            : allReplies;
 
                     // nextCursor 계산
                     // hasMoreReplies = true -> 다음 페이지 존재, false -> null
@@ -245,7 +261,9 @@ public class PostQueryService implements PostQueryUseCase {
                             commentAuthor.getName(),
                             commentAuthor.getProfileImageUrl(),
                             commentAuthor.getRole().name(),
+                            // 댓글 작성자가 본인인지 확인
                             c.getUserId().equals(userId),
+                            // 댓글 작성자가 게시글 작성자인지 확인
                             c.getUserId().equals(post.getUserId()),
                             c.getCreatedAt(),
                             replyResponses,
@@ -276,6 +294,20 @@ public class PostQueryService implements PostQueryUseCase {
         // 게시글 작성자 확인용
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CommunityNotFoundException("게시글을 찾을 수 없습니다."));
+
+        // 댓글 조회 (해당 게시글의 댓글인지 검증)
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new CommunityNotFoundException("댓글을 찾을 수 없습니다."));
+
+        // 해당 게시글의 댓글인지 검증
+        if (!comment.getPostId().equals(postId)) {
+            throw new CommunityAccessDeniedException("해당 게시글의 댓글이 아닙니다.");
+        }
+
+        // 최상위 댓글인지 검증 (대댓글에 대댓글 방지)
+        if (comment.getParentId() != null) {
+            throw new CommunityAccessDeniedException("대댓글에는 대댓글을 작성할 수 없습니다.");
+        }
 
         // 전체 대댓글 수
         int totalCount = commentRepository.countRepliesByCommentId(commentId);
@@ -423,7 +455,7 @@ public class PostQueryService implements PostQueryUseCase {
         // 유저별 총 좋아요 수 합산
         int totalLikeCount = postRepository.sumLikeCountByUserId(userId);
 
-        // postIds 만 조회 (Post 전체 로드 없이 Id 만 조회 -> 성능 개선)
+        // postIds 만 조회
         List<Long> postIds = postRepository.findPostIdsByUserId(userId);
 
         // 총 댓글 수 (대댓글 제외)
