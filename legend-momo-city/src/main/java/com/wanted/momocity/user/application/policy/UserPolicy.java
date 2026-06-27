@@ -70,4 +70,12 @@ public class UserPolicy {
         // 사용자가 이미 정지 상태이면 true
         // 사용자가 정지 가능한 상태이면 false
     }
+
+    public boolean isActive(Long userId){
+        Status status = userRepository.findStatusById(userId);
+        return status == Status.ACTIVE;
+        // 사용자가 Active이면 true
+    }
+
+
 }

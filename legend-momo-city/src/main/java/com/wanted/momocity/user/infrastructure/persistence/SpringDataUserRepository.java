@@ -182,6 +182,12 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
     void banOver(@Param("now") LocalDateTime now);
 
     // 사용자 신고 횟수 -
-    void minusReportCount(Long userId);
+    // status -> active
+    // suspensionCount -1
+    // suspendedUntil -> null
+    @Modifying
+    @Transactional
+    @Query("UPDATE UserUser u SET u.suspensionCount = u.suspensionCount - 1, u.status = 'ACTIVE', u.suspendedUntil = null WHERE u.id = :userId")
+    void minusReportCount(@Param("userId") Long userId);
 
 }

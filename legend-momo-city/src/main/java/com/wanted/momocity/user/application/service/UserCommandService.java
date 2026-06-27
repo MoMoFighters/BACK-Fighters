@@ -3,6 +3,7 @@ package com.wanted.momocity.user.application.service;
 import com.wanted.momocity.auth.application.port.PasswordEncodePort;
 import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.user.application.port.GetItemUrlPort;
+import com.wanted.momocity.user.application.port.ReportRedisPort;
 import com.wanted.momocity.user.domain.event.TeacherApplicationEvent;
 import com.wanted.momocity.user.domain.exception.AlreadySuspendedException;
 import com.wanted.momocity.user.domain.exception.UserNotFoundException;
@@ -38,6 +39,7 @@ public class UserCommandService implements UserCommandUsecase {
     private final S3UploadPort s3UploadPort;
     private final ApplicationEventPublisher eventPublisher;
     private final GetItemUrlPort getItemUrlPort;
+    private final ReportRedisPort reportRedisPort;
 
 
     @Override
@@ -182,6 +184,9 @@ public class UserCommandService implements UserCommandUsecase {
         CheckStatusResult result = reportApply(count);
         userRepository.reportApply(userId, result.status(), result.suspendedUntil());
 
+        // 신고 처리 시각 Redis에 저장
+        reportRedisPort.saveReportTime(userId);
+
         log.info("[user] 신고 처리 | userId={} | count={} | status={} | suspendedUntil={}",
                 userId, count, result.status(), result.suspendedUntil());
 
@@ -200,6 +205,17 @@ public class UserCommandService implements UserCommandUsecase {
     // 사용자 신고 횟수 -
     @Override
     public void minusReportCount(Long userId) {
+        // Active인 사람은 - 못 시킴
+        if (userPolicy.isActive(userId)) {
+            throw new AlreadySuspendedException("활성 사용자의 정지 횟수는 줄일 수 없습니다.");
+        }
+
+        if (!reportRedisPort.existsReportTime(userId)) {
+            throw new DomainRuleViolationException("신고 후 24시간이 경과하여 복구할 수 없습니다.");
+        }
+
         userRepository.minusReportCount(userId);
+        reportRedisPort.deleteReportTime(userId);
+        log.info("[user] 사용자 제재 복구 완료 | userId={}", userId);
     }
 }
