@@ -98,6 +98,8 @@ public class StudentLectureResponse {
             // 수강 중인 학생의 강의 전체 진척도, 미수강이면 null
             Integer lectureProgress,
 
+            Boolean isCompleted,
+
             // 강의에 포함된 챕터 목록
             List<StudentLectureChapterResponse> chapters,
 
@@ -117,6 +119,7 @@ public class StudentLectureResponse {
                 int reviewCount,
                 boolean isEnrolled,
                 Integer lectureProgress,
+                Boolean isCompleted,
                 Map<Long, ChapterProgressInfo> chapterProgressMap
         ) {
             return new StudentLectureDetailResponse(
@@ -130,6 +133,7 @@ public class StudentLectureResponse {
                     reviewCount,
                     isEnrolled,
                     lectureProgress,
+                    isCompleted,
                     chapters.stream()
                             .map(chapter -> StudentLectureChapterResponse.from(
                                     chapter,
