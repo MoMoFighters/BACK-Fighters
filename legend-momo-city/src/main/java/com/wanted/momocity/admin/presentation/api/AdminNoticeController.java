@@ -15,6 +15,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -35,7 +36,9 @@ public class AdminNoticeController {
     @Operation(summary = "공지 작성", description = "관리자가 공지를 작성한다.")
     public ResponseEntity<ApiResponse<Void>> createNotice(@RequestBody @Valid CreateNoticeRequest request) {
         commandUseCase.createNotice(request.toCommand());
-        return ResponseEntity.ok(ApiResponse.success(ApiResponseCode.SUCCESS, "공지가 등록되었습니다.", null));
+        // POST 방식에서 리소스가 만들어지면 200 상태 코드보다는 생성 201 상태 코드가 맞다고 판단
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.created((ApiResponseCode.CREATED) , "공지가 등록되었습니다!", null));
     }
 
     // MS-12 공지 목록 조회 — isPinned 필터 + 페이징
