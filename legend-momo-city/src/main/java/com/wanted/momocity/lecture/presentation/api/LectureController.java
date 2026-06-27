@@ -4,7 +4,6 @@ import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
-import com.wanted.momocity.lecture.application.command.LectureCommand.ChangeChapterVideoStatusCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.ChangeLectureStatusCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.RegisterChapterVideoCommand;
 import com.wanted.momocity.lecture.application.query.LectureQuery.GetAdminLectureDetailQuery;
@@ -22,13 +21,11 @@ import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.model.LectureCategory;
 import com.wanted.momocity.lecture.domain.model.LectureChapter;
 import com.wanted.momocity.lecture.domain.model.LectureStatus;
-import com.wanted.momocity.lecture.presentation.api.request.LectureRequest;
 import com.wanted.momocity.lecture.presentation.api.request.LectureRequest.AdminChangeLectureStatusRequest;
-import com.wanted.momocity.lecture.presentation.api.request.LectureRequest.ChangeChapterVideoStatusRequest;
 import com.wanted.momocity.lecture.presentation.api.request.LectureRequest.ChangeLectureStatusRequest;
-import com.wanted.momocity.lecture.presentation.api.request.LectureRequest.CreateChapterRequest;
 import com.wanted.momocity.lecture.presentation.api.request.LectureRequest.CreateLectureRequest;
 import com.wanted.momocity.lecture.presentation.api.request.LectureRequest.RegisterChapterVideoRequest;
+import com.wanted.momocity.lecture.presentation.api.request.LectureRequest.CreateChapterRequest;
 import com.wanted.momocity.lecture.presentation.api.response.AdminLectureResponse.AdminChangeLectureStatusResponse;
 import com.wanted.momocity.lecture.presentation.api.response.AdminLectureResponse.AdminLectureDetailResponse;
 import com.wanted.momocity.lecture.presentation.api.response.AdminLectureResponse.AdminLecturePageResponse;
@@ -154,15 +151,20 @@ public class LectureController {
     ) {
         Long teacherId = Long.parseLong(authentication.getName());
 
+        request.validateThumbnailSize();
+
         LectureChapter chapter = chapterCommandUseCase.createChapter(
-                request.toCommand(teacherId, lectureId)
+                request.toCommand(
+                        teacherId,
+                        lectureId
+                )
         );
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created(
                         ApiResponseCode.CREATED,
                         "챕터가 등록되었습니다.",
-                        CreateChapterResponse.from(chapter)
+                            CreateChapterResponse.from(chapter)
                 ));
     }
 
@@ -433,49 +435,6 @@ public class LectureController {
                 ApiResponseCode.SUCCESS,
                 "강의 상태가 변경되었습니다.",
                 ChangeLectureStatusResponse.from(lecture)
-        ));
-    }
-
-    /*
-     * 챕터 동영상 상태 변경 API
-     *
-     * 업로드된 동영상의 처리 상태를 변경한다.
-     * 실제 파일 업로드가 아니라 상태값만 변경하므로 JSON으로 받는다.
-     *
-     * 예:
-     * - UPLOADING
-     * - ENCODING
-     * - READY
-     * - FAILED
-     *
-     * READY 상태가 되면 학생 화면에서 재생 가능한 영상으로 판단할 수 있다.
-     */
-    @Operation(
-            summary = "챕터 동영상 상태 변경",
-            description = "강사가 본인 강의의 챕터 동영상 상태를 변경합니다."
-    )
-    @PatchMapping("/{lectureId}/chapters/{chapterId}/video/status")
-    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
-    public ResponseEntity<ApiResponse<RegisterChapterVideoResponse>> changeChapterVideoStatus(
-            Authentication authentication,
-            @PathVariable Long lectureId,
-            @PathVariable Long chapterId,
-            @Valid @RequestBody ChangeChapterVideoStatusRequest request
-    ) {
-        Long teacherId = Long.parseLong(authentication.getName());
-
-        ChangeChapterVideoStatusCommand command = request.toCommand(
-                teacherId,
-                lectureId,
-                chapterId
-        );
-
-        LectureChapter chapter = chapterCommandUseCase.changeChapterVideoStatus(command);
-
-        return ResponseEntity.ok(ApiResponse.success(
-                ApiResponseCode.SUCCESS,
-                "챕터 동영상 상태가 변경되었습니다.",
-                RegisterChapterVideoResponse.from(chapter)
         ));
     }
 

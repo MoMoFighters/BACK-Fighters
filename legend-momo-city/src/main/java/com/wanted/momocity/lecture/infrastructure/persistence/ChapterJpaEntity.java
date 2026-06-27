@@ -38,14 +38,13 @@ public class ChapterJpaEntity extends BaseTimeEntity {
     @Column(name = "duration_sec")
     private Integer durationSec;
 
-    // 동영상 처리 상태
-    @Enumerated(EnumType.STRING)
-    @Column(name = "video_status", nullable = false, length = 30)
-    private VideoStatus videoStatus;
-
     // 원본 동영상 파일명
     @Column(name = "original_filename", length = 255)
     private String originalFilename;
+
+    // 챕터 썸네일 컬럼과 매필
+    @Column(name = "thumbnail_url", length = 500)
+    private String chapterThumbnailUrl;
 
     protected ChapterJpaEntity() {
     }
@@ -58,8 +57,8 @@ public class ChapterJpaEntity extends BaseTimeEntity {
             String videoUrl,
             Long videoSizeBytes,
             Integer durationSec,
-            VideoStatus videoStatus,
-            String originalFilename
+            String originalFilename,
+            String chapterThumbnailUrl
     ) {
         this.id = id;
         this.lectureId = lectureId;
@@ -68,8 +67,8 @@ public class ChapterJpaEntity extends BaseTimeEntity {
         this.videoUrl = videoUrl;
         this.videoSizeBytes = videoSizeBytes;
         this.durationSec = durationSec;
-        this.videoStatus = videoStatus;
         this.originalFilename = originalFilename;
+        this.chapterThumbnailUrl = chapterThumbnailUrl;
     }
 
     // 도메인 모델을 JPA Entity로 변환
@@ -82,8 +81,8 @@ public class ChapterJpaEntity extends BaseTimeEntity {
                 chapter.getVideoUrl(),
                 chapter.getVideoSizeBytes(),
                 chapter.getDurationSec(),
-                chapter.getVideoStatus(),
-                chapter.getOriginalFilename()
+                chapter.getOriginalFilename(),
+                chapter.getChapterThumbnailUrl()
         );
     }
 
@@ -97,8 +96,8 @@ public class ChapterJpaEntity extends BaseTimeEntity {
                 videoUrl,
                 videoSizeBytes,
                 durationSec,
-                videoStatus,
                 originalFilename,
+                chapterThumbnailUrl,
                 getCreatedAt(),
                 getUpdatedAt()
         );
@@ -132,11 +131,9 @@ public class ChapterJpaEntity extends BaseTimeEntity {
         return durationSec;
     }
 
-    public VideoStatus getVideoStatus() {
-        return videoStatus;
-    }
-
     public String getOriginalFilename() {
         return originalFilename;
     }
+
+    public String getChapterThumbnailUrl() {return chapterThumbnailUrl;}
 }

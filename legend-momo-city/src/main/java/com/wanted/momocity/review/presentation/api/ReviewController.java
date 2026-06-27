@@ -70,7 +70,7 @@ public class ReviewController {
     @GetMapping("/{lectureId}/reviews")
     public ResponseEntity<ApiResponse<ReviewListResponse>> getReviews(
             @PathVariable Long lectureId,
-            @RequestParam(defaultValue = "0") @Min(0) int page, // 요청한 페이지 번호, 기본값 = 0
+            @RequestParam(defaultValue = "1") @Min(1) int page, // 요청한 페이지 번호, 기본값 = 0
             @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size // 한 페이지 요청 수강평 개수, 기본값 = 10
 
     ) {
