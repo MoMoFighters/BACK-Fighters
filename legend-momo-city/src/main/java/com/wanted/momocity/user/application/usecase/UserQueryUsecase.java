@@ -19,6 +19,7 @@ public interface UserQueryUsecase {
             String profileImageUrl,
             String email,
             String name,
+            Long point,
             String nickname,
             Boolean isTempPwd,
             LocalDateTime createdAt
