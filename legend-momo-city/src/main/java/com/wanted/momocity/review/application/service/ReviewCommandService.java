@@ -33,6 +33,8 @@ public class ReviewCommandService implements ReviewCommandUseCase {
     public void createReview(
             ReviewCommand.CreateReviewCommand command
     ) {
+        // 수강평 등록 처리 시간 기록
+        long startTime = System.currentTimeMillis();
         // 수강평 등록 시작 로그
         log.info("수강평 등록 시작 - userId={}, lectureId{}",
                 command.userId(),
@@ -84,22 +86,33 @@ public class ReviewCommandService implements ReviewCommandUseCase {
             throw new DuplicateReviewException("이미 수강평을 작성한 강의입니다.");
         }
 
+        // 수강평 등록 처리 걸린 시간
+        long elapsedTime = System.currentTimeMillis() - startTime;
+
         // 수강평 완료 로그
-        log.info("수강평 등록 완료 : reviewId={}, userId={}, lectureID={}",
+        log.info("수강평 등록 완료 : reviewId={}, userId={}, lectureID={}, elapsedTime={}",
                 savedReview.getId(),
                 savedReview.getUserId(),
-                savedReview.getLectureId()
+                savedReview.getLectureId(),
+                elapsedTime
         );
     }
 
     // ReviewCommandUseCase 인터페이스의 메서드를 구현한다는 표시
     @Override
     public void deleteReview(Long reviewId) {
+
+        long startTime = System.currentTimeMillis();
+        log.info("수강평 삭제 시작 - reviewId={}", reviewId);
+
         // 삭제할 리뷰가 DB에 존재하지 않는지 확인
         if (!reviewRepository.existsById(reviewId)) {
+            log.warn("수강평 삭제 실패 - 수강평 없음, reviewId={}", reviewId);
             throw new ReviewNotFoundException("수강평을 찾을 수 없습니다.");
         }
 
+        long elapsedTime = System.currentTimeMillis() - startTime;
+        log.info("수강평 삭제 완료 - reviewId={}, elapsedTime={}ms", reviewId, elapsedTime);
         // 리뷰 ID 기준으로 수강평 삭제 실행
         reviewRepository.softDeleteById(reviewId);
     }

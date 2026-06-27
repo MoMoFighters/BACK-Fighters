@@ -11,6 +11,7 @@ import com.wanted.momocity.review.infrastructure.persistence.ReviewJpaEntity;
 import com.wanted.momocity.review.infrastructure.persistence.ReviewJpaRepository;
 import com.wanted.momocity.review.presentation.api.response.ReviewListResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@Slf4j
 public class ReviewQueryService implements ReviewQueryUseCase {
 
     // 수강평 DB 조회 담당
@@ -31,6 +33,10 @@ public class ReviewQueryService implements ReviewQueryUseCase {
 
     @Override
     public ReviewListResponse getReviews(ReviewQuery.GetReviewListQuery query) {
+
+        long startTime = System.currentTimeMillis();
+        log.info("수강평 목록 조회 시작 - lectureId={}, page={}, size={}", query.lectureId(), query.page(), query.size());
+
         // 요청한 lectureId에 해당하는 강의가 있는지 확인
         lectureRepository.findById(query.lectureId())
                 .orElseThrow(() -> new LectureNotFoundException("강의를 찾을 수 없습니다."));
@@ -46,7 +52,7 @@ public class ReviewQueryService implements ReviewQueryUseCase {
         );
 
         // 수강평 목록 조회 응답
-        return new ReviewListResponse(reviewPage.getContent().stream() // 현재 페이지의 수강평 목록을 스트림으로 변환
+        ReviewListResponse response =  new ReviewListResponse(reviewPage.getContent().stream() // 현재 페이지의 수강평 목록을 스트림으로 변환
                 .map(this::toReviewItemResponse) // ReviewJpaEntity를 ReviewItemResponse로 변환
                 .toList(), // 변환된 수강평 응답 목록을 List로 수집
                 query.page(), // 현재 페이지 번호
@@ -54,6 +60,16 @@ public class ReviewQueryService implements ReviewQueryUseCase {
                 reviewPage.getTotalElements(), // 전체 수강평 개수
                 reviewPage.getTotalPages() // 전체 페이지 수
         );
+
+        long elapsedTime =System.currentTimeMillis() - startTime;
+        log.info("수강평 목록 조회 완료 - lectureId={}, totalElement={}, totalPages={}, elapsedTime={}ms",
+                query.lectureId(),
+                reviewPage.getTotalElements(),
+                reviewPage.getTotalPages(),
+                elapsedTime
+                );
+
+        return response;
     }
 
     // 수강 Entity
