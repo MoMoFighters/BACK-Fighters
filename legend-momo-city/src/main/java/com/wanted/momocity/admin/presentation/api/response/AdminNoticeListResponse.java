@@ -13,7 +13,8 @@ public record AdminNoticeListResponse(
         Long noticeId,
         String title,
         boolean isPinned,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
 ) {
 
     // 도메인 객체 -> 응답 DTO 반환
@@ -22,7 +23,8 @@ public record AdminNoticeListResponse(
                 notice.getId(),
                 notice.getTitle(),
                 notice.isPinned(),
-                notice.getCreatedAt()
+                notice.getCreatedAt(),
+                notice.getUpdatedAt()
         );
     }
 
