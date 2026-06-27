@@ -115,6 +115,12 @@ public class PostRepositoryAdapter implements PostRepository {
         return postJpaRepository.countByUserId(userId);
     }
 
+    // 유저별 게시글 Ids 목록만 조회 (Post 전체 로드 없이 Id 만 조회)
+    @Override
+    public List<Long> findPostIdsByUserId(Long userId) {
+        return postJpaRepository.findPostIdsByUserId(userId);
+    }
+
     // 총 게시글 조회수 합산
     @Override
     public int sumViewCountByUserId(Long userId) {

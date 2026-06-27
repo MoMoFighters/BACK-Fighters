@@ -45,6 +45,9 @@ public interface PostRepository {
     // 유저별 게시글 수 조회
     int countByUserId(Long userId);
 
+    // 유저별 게시글 Id 목록만 조회 (getDashboard 댓글 수 집계용)
+    List<Long> findPostIdsByUserId(Long userId);
+
     // 대시보드용 통계 조회 (총 조회수, 총 좋아요수)
     int sumViewCountByUserId(Long userId);
     int sumLikeCountByUserId(Long userId);

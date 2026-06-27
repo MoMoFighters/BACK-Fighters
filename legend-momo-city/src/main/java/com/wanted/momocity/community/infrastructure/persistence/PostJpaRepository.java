@@ -167,6 +167,20 @@ public interface PostJpaRepository extends JpaRepository<PostJpaEntity, Long> {
 
     /*
     * comment.
+    *  유저별 게시글 Id 목록만 조회
+    *  getDashboard() 에서 댓글 수 집계용으로 postIds 만 필요
+    *  -> Id 만 조회하여 붎필요한 데이터 로드 방지
+    * */
+
+    @Query("""
+    SELECT p.id FROM PostJpaEntity p
+    WHERE p.userId = :userId
+    AND p.deletedAt IS NULL
+""")
+    List<Long> findPostIdsByUserId(@Param("userId") Long userId);
+
+    /*
+    * comment.
     *  같은 카테고리 인기 게시글 조회
     *  viewCount * 0.6 + likeCount * 0.4
     *  현재 게시글 제외

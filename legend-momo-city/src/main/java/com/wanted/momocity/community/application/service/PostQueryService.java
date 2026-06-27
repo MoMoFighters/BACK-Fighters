@@ -416,13 +416,15 @@ public class PostQueryService implements PostQueryUseCase {
     @Override
     public DashboardResponse getDashboard(Long userId) {
 
+        // 유저별 전체 게시글 수 조회
         int totalPostCount = postRepository.countByUserId(userId);
+        // 유저별 총 조회수 합산
         int totalViewCount = postRepository.sumViewCountByUserId(userId);
+        // 유저별 총 좋아요 수 합산
         int totalLikeCount = postRepository.sumLikeCountByUserId(userId);
 
-        // 내 게시글 postId 목록
-        List<Post> myPosts = postRepository.findByUserIdWithCursor(userId, null, Integer.MAX_VALUE);
-        List<Long> postIds = myPosts.stream().map(Post::getId).toList();
+        // postIds 만 조회 (Post 전체 로드 없이 Id 만 조회 -> 성능 개선)
+        List<Long> postIds = postRepository.findPostIdsByUserId(userId);
 
         // 총 댓글 수 (대댓글 제외)
         int totalCommentCount = postIds.isEmpty()
