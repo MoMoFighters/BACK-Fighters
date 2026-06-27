@@ -1,5 +1,6 @@
 package com.wanted.momocity.community.application.usecase;
 
+import com.wanted.momocity.community.domain.model.PostCategory;
 import com.wanted.momocity.community.presentation.api.response.*;
 
 /*
@@ -11,8 +12,8 @@ import com.wanted.momocity.community.presentation.api.response.*;
 
 public interface PostQueryUseCase {
 
-    // 게시글 목록 조회 (카테고리 필터링, offset 페이지네이션)
-    PostListResponse getPosts(Long userId, String category, int page, int size);
+    // 게시글 목록 조회 (카테고리 필터링, 커서 기반 페이지네이션)
+    PostListResponse getPosts(Long userId, PostCategory category, Long cursor, int size);
 
     // 게시글 단건 조회 (contents 포함, comments 미포함)
     PostDetailResponse getPost(Long userId, Long PostId);
@@ -36,7 +37,7 @@ public interface PostQueryUseCase {
     DashboardResponse getDashboard(Long userId);
 
     // 게시글 키워드 검색 (커서 기반 페이지네이션)
-    UserPostListResponse searchPosts(String keyword, Long cursor, int size);
+    UserPostListResponse searchPosts(String keyword, PostCategory category, Long cursor, int size);
 
     // 연관 게시글 추천 (같은 카테고리 인기글 + 같은 작성자 최신글)
     PostRecommendationResponse getRecommendations(Long postId);

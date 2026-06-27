@@ -7,6 +7,7 @@ import com.wanted.momocity.notification.domain.model.Notification;
 import com.wanted.momocity.notification.infrastructure.persistence.*;
 import com.wanted.momocity.notification.domain.repository.NotificationRepository;
 import com.wanted.momocity.user.infrastructure.persistence.SpringDataUserRepository;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
@@ -26,6 +27,7 @@ public class CatalogNotificationRepositoryAdapter implements NotificationReposit
     private final NotificationSideUserRepository notificationSideUserRepository;
     private final NotificationSideChatRoomRepository notificationSideChatRoomRepository;
     private final NotificationSideMessageReadRepository notificationSideMessageReadRepository;
+    private final EntityManager em;
 
     @Override
     @Transactional
@@ -111,8 +113,8 @@ public class CatalogNotificationRepositoryAdapter implements NotificationReposit
 
     //알림 읽기 - 메시지 알림의 refId(roomId)에 로그인 유저가 속하는지 검증
     @Override
-    public List<MessageReadJpaEntity> findMessageReadsByRoomIds(List<Long> messageRoomIds) {
-        return notificationSideMessageReadRepository.findByRoomId_IdIn(messageRoomIds);
+    public List<MessageReadJpaEntity> findMessageReadsByRoomIdsAndUserId(List<Long> messageRoomIds, Long userId) {
+        return notificationSideMessageReadRepository.findByRoomId_IdIn(messageRoomIds, userId);
     }
 
     //알림 읽기 - 일반 알림 읽음 상태 저장
@@ -135,7 +137,9 @@ public class CatalogNotificationRepositoryAdapter implements NotificationReposit
     //알림 읽음 상태 빠른 저장(읽음 개수 웹소켓)
     @Override
     public void fastSaveChanges() {
-
+        log.info("[CatalogNotificationRepositoryAdapter] 벌크 연산 완료 후 영속성 컨텍스트 Flush 및 Clear 진행");
+        em.flush(); // 쓰기 지연 저장소에 남아있을 수 있는 데이터 잔여물 방출
+        em.clear(); // 🎯 핵심: 1차 캐시를 완전히 비워 웹소켓용 재조회 쿼리가 무조건 DB 최신 값을 읽도록 강제!
     }
 
     //알림 삭제 - 일반 알림

@@ -1,6 +1,7 @@
 package com.wanted.momocity.community.infrastructure.persistence;
 
 import com.wanted.momocity.community.domain.model.Post;
+import com.wanted.momocity.community.domain.model.PostCategory;
 import com.wanted.momocity.global.infrastructure.persistence.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -46,8 +47,9 @@ public class PostJpaEntity extends BaseTimeEntity {
     @Column(name = "post_like", nullable = false)
     private int likeCount;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "category", nullable = false)
-    private String category;
+    private PostCategory category;
 
     @Column(name = "thumbnail_url")
     private String thumbnailUrl;

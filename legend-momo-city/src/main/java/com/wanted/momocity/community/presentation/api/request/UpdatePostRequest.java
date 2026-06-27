@@ -1,5 +1,6 @@
 package com.wanted.momocity.community.presentation.api.request;
 
+import com.wanted.momocity.community.domain.model.PostCategory;
 import jakarta.validation.constraints.NotBlank;
 
 /*
@@ -12,6 +13,6 @@ public record UpdatePostRequest(
         String title,
 
         @NotBlank(message = "카테고리를 입력해주세요.")
-        String category
+        PostCategory category
 ) {
 }

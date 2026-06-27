@@ -55,6 +55,11 @@ public class NotificationHandlerService {
 
         //"FRIEND_REQUEST" 타입이면서 refId가 일치하면 삭제
         notificationRepository.deleteByRefIdAndUserId_IdAndType(fromUserId, toUserId, "FRIEND_REQUEST");
+
+        // 현재 화면에 붙어있는 유저라면 즉시 가공해서 푸시!
+        notificationQueryUseCase.getMainTotalCountsQueryHandle(new GetMainTotalCountsQuery(toUserId));
+        notificationQueryUseCase.getNotificationQueryHandle(new GetNotificationQuery(toUserId));
+        log.info("[알림 핸들러 -> 쿼리 연동] 온라인 유저 {}번에게 실시간 알림 웹소켓 전송 완료", toUserId);
     }
 
     //친구 요청 수락(상태 변경 SENT -> FRIEND)
@@ -70,6 +75,11 @@ public class NotificationHandlerService {
         //레포지토리를 통해 알림 저장
         Notification saved = notificationRepository.save(newNotification);
         log.info("[NotificationHandlerService] 수락 알림 생성 완료 - 생성된 알림ID: {}", saved.getId());
+
+        // 현재 화면에 붙어있는 유저라면 즉시 가공해서 푸시!
+        notificationQueryUseCase.getMainTotalCountsQueryHandle(new GetMainTotalCountsQuery(fromUserId));
+        notificationQueryUseCase.getNotificationQueryHandle(new GetNotificationQuery(fromUserId));
+        log.info("[알림 핸들러 -> 쿼리 연동] 온라인 유저 {}번에게 실시간 알림 웹소켓 전송 완료", fromUserId);
     }
 
     //메시지 전송
@@ -123,6 +133,7 @@ public class NotificationHandlerService {
         );
 
         notificationRepository.save(newNotification);
+
     }
 
     //강사-학생 자동 친구 행 추가 시 학생 쪽 알림
@@ -144,6 +155,39 @@ public class NotificationHandlerService {
         //레포지토리를 통해 알림 저장
         Notification saved = notificationRepository.save(newNotification);
         log.info("[NotificationHandlerService] 자동 친구 알림 생성 완료 - 생성된 알림ID: {}", saved.getId());
+
+        // ⭕ 누락된 실시간 푸시 추가 (학생 쪽 아이디인 fromUserId에게 푸시)
+        notificationQueryUseCase.getMainTotalCountsQueryHandle(new GetMainTotalCountsQuery(fromUserId));
+        notificationQueryUseCase.getNotificationQueryHandle(new GetNotificationQuery(fromUserId));
+        log.info("[알림 핸들러 -> 쿼리 연동] 온라인 유저 {}번(학생)에게 실시간 자동 친구 알림 웹소켓 전송 완료", fromUserId);
     }
 
+    //방명록 작성
+    public void guestBookNotification(Long bookId, Long writerId, Long ownerId, String writerNickname, LocalDateTime now) {
+        log.info("[NotificationHandlerService] 방명록 작성 알림 처리 시작 - 방명록ID(refId): {}, 작성자: {}, 도시주인: {}", bookId, writerId, ownerId);
+
+        // 1. 자기 자신의 도시에 방명록을 남긴 경우 알림 생성을 건너뜁니다.
+        if (writerId.equals(ownerId)) {
+            log.info("[NotificationHandlerService] 본인 도시에 작성한 방명록이므로 알림 생성을 건너뜀");
+            return;
+        }
+
+        // 2. 명세서 스펙에 맞춘 알림 텍스트 조립 ("{nickname}님이 회원님의 도시에 방명록을 남겼습니다.")
+        String message = String.format("%s님이 회원님의 도시에 방명록을 남겼습니다.", writerNickname);
+
+        // 3. 순수한 도메인 모델(Aggregate) 생성
+        // (Notification 도메인 내부에 관련 팩토리 메서드가 정의되어 있다고 가정하거나 일반 create 사용)
+        // 알림을 받는 주인은 ownerId이고, 링크(참조)되는 ID는 생성된 방명록 PK(bookId)입니다.
+        Notification newNotification = Notification.createGuestBook(ownerId, message, bookId, now);
+
+        // 4. 레포지토리를 통해 알림 테이블에 적재
+        Notification saved = notificationRepository.save(newNotification);
+        log.info("[NotificationHandlerService] 방명록 알림 생성 완료 - 생성된 알림ID: {}", saved.getId());
+
+        // 5. 현재 화면을 보고 있을 도시 주인을 위해 즉시 실시간 웹소켓 푸시 연동!
+        // ⭕ 일관성을 맞추기 위해 불필요한 try-catch 제거하고 다이렉트 트리거 실행
+        notificationQueryUseCase.getMainTotalCountsQueryHandle(new GetMainTotalCountsQuery(ownerId));
+        notificationQueryUseCase.getNotificationQueryHandle(new GetNotificationQuery(ownerId));
+        log.info("[알림 핸들러 -> 쿼리 연동] 온라인 유저 {}번(도시주인)에게 실시간 방명록 알림 웹소켓 전송 성공", ownerId);
+    }
 }
