@@ -111,9 +111,11 @@ public class ReviewCommandService implements ReviewCommandUseCase {
             throw new ReviewNotFoundException("수강평을 찾을 수 없습니다.");
         }
 
+        reviewRepository.softDeleteById(reviewId);
+
         long elapsedTime = System.currentTimeMillis() - startTime;
         log.info("수강평 삭제 완료 - reviewId={}, elapsedTime={}ms", reviewId, elapsedTime);
         // 리뷰 ID 기준으로 수강평 삭제 실행
-        reviewRepository.softDeleteById(reviewId);
+
     }
 }
