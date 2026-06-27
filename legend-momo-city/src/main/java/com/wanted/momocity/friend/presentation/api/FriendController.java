@@ -13,10 +13,12 @@ import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase.Reque
 import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase.AcceptView;
 import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase.RejectView;
 import com.wanted.momocity.friend.application.usecase.FriendQueryUseCase.ReceivedRequestView;
+import com.wanted.momocity.friend.application.usecase.FriendQueryUseCase.GuestBooksView;
 import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase.BlockView;
 import com.wanted.momocity.friend.application.usecase.FriendQueryUseCase.BlockedView;
 import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase.UnblockView;
 import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase.DeleteView;
+import com.wanted.momocity.friend.presentation.api.request.RegisterGuestBookRequest;
 import com.wanted.momocity.friend.presentation.api.response.*;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -396,4 +398,79 @@ public class FriendController {
         List<GetStudentFriendsResponse> responseList = view.stream().map(GetStudentFriendsResponse::from).toList();
         return ResponseEntity.ok(ApiResponse.success("SUCCESS", "강사, 비활성 유저 제외 친구 목록 불러오기 성공", responseList));
     }
+
+    //방명록 목록
+    @GetMapping("/api/v2/friends/guest")
+    @Operation(summary = "방명록 목록", description = "로그인 유저의 방명록 목록을 조회하고 읽는다.")
+    public ResponseEntity<ApiResponse<List<GetGuestBooksResponse>>> getGuestBooks(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long userId = userDetails.getUserId();
+
+        GetGuestBooksQuery query = new GetGuestBooksQuery(userId);
+
+        // 1. 서비스 레이어 호출
+        List<GuestBooksView> views = friendQueryUseCase.getGuestBooksQueryHandle(query);
+
+        // 2. 방명록 내역이 비어있을 때의 특별 성공 응답 처리
+        String successMessage = "";
+        if (views.isEmpty()) {
+            successMessage = "남겨진 방명록 내역이 없어요. 친구와 교류해보세요!";
+        } else {
+            successMessage = "방명록 목록 불러오기 성공";
+        }
+
+        // 3. Response DTO로 매핑
+        List<GetGuestBooksResponse> response = views.stream()
+                .map(v -> new GetGuestBooksResponse(
+                        v.bookId(),
+                        v.writerId(),
+                        v.nickname(),
+                        v.content(),
+                        v.createdAt()
+                ))
+                .toList();
+
+        return ResponseEntity.ok(ApiResponse.success(
+                "SUCCESS",
+                successMessage,
+                response
+        ));
+    }
+
+    //방명록 작성
+    @PostMapping("/api/v2/friends/guests/register/{ownerId}")
+    @Operation(summary = "방명록 작성", description = "userId는 도시 주인 아이디이며 친구 상태에서만 작성 가능하고 1일 1회 제한된다.")
+    public ResponseEntity<ApiResponse<RegisterGuestBookResponse>> registerGuestBook(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                           @PathVariable Long ownerId,
+                                                           @RequestBody RegisterGuestBookRequest request) {
+
+        Long userId = userDetails.getUserId();
+
+        // 1. 커맨드 객체 조립
+        RegisterGuestBookCommand command = new RegisterGuestBookCommand(
+                ownerId,
+                userId,
+                request.content()
+        );
+
+        // 2. 서비스 레이어 핸들러 호출
+        FriendCommandUseCase.RegisterGuestBookView view = friendCommandUseCase.registerGuestBookCommandHandle(command);
+
+        // 3. 공통 응답 규격인 ApiResponse 포맷에 맞추어 반환
+        RegisterGuestBookResponse response = new RegisterGuestBookResponse(
+                view.bookId(),
+                view.ownerId(),
+                view.nickname(),
+                request.content(),
+                view.createdAt()
+        );
+
+        String successMessage = String.format("%s님의 도시에 방명록을 남겼습니다.", view.nickname());
+
+        return ResponseEntity.ok(ApiResponse.success(
+                "SUCCESS",
+                successMessage,
+                response
+        ));
+    }
+
 }

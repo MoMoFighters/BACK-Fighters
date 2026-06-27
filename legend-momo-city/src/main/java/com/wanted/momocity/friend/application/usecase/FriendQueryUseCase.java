@@ -2,6 +2,7 @@ package com.wanted.momocity.friend.application.usecase;
 
 import com.wanted.momocity.friend.application.query.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 //포트가 만들어준 문
@@ -83,5 +84,16 @@ public interface FriendQueryUseCase {
             String role,
             String status,
             String profileImageUrl
+    ) {}
+
+    //방명록 조회
+    List<GuestBooksView> getGuestBooksQueryHandle(GetGuestBooksQuery query);
+
+    record GuestBooksView(
+            Long bookId,
+            Long writerId,
+            String nickname,
+            String content,
+            LocalDateTime createdAt
     ) {}
 }
