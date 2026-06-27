@@ -1,6 +1,7 @@
 package com.wanted.momocity.review.infrastructure.adapter;
 
 import com.wanted.momocity.lecture.application.port.LectureReviewQueryPort;
+import com.wanted.momocity.review.domain.model.ReviewStatus;
 import com.wanted.momocity.review.infrastructure.persistence.ReviewJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -21,7 +22,7 @@ public class LectureReviewQueryAdapter implements LectureReviewQueryPort {
         double averageRating = reviewJpaRepository.findAverageRatingByLectureId(lectureId);
 
         // 해당 강의의 수강평 개수 조회
-        int reviewCount = (int) reviewJpaRepository.countByLectureId(lectureId);
+        int reviewCount = (int) reviewJpaRepository.countByLectureIdAndStatus(lectureId, ReviewStatus.ACTIVE);
 
         // 수강평 통계 DTO
         return new ReviewStats(
