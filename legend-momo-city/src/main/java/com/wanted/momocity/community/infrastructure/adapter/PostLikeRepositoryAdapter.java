@@ -41,6 +41,12 @@ public class PostLikeRepositoryAdapter implements PostLikeRepository {
                 .toList();
     }
 
+    // 좋아요 존재 여부 확인 (boolean 만 반환)
+    @Override
+    public boolean existsByPostIdAndUserId(Long postId, Long userId) {
+        return postLikeJpaRepository.existsByPostIdAndUserId(postId, userId);
+    }
+
     @Override
     public void delete(PostLike postLike) {
         postLikeJpaRepository.delete(PostLikeJpaEntity.from(postLike));
