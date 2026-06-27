@@ -130,8 +130,8 @@ public interface PostJpaRepository extends JpaRepository<PostJpaEntity, Long> {
     LEFT JOIN PostContentJpaEntity c ON c.postId = p.id
     WHERE p.deletedAt IS NULL
     AND (
-       p.title LIKE %:keyword% ESCAPE '\\\\'
-       OR c.content LIKE %:keyword% ESCAPE '\\\\'
+       p.title LIKE %:keyword% ESCAPE '\\'
+       OR c.content LIKE %:keyword% ESCAPE '\\'
     )
 """)
     int countByKeyword(@Param("keyword") String keyword);
