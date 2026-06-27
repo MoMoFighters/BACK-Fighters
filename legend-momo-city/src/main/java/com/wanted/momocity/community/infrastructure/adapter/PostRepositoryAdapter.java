@@ -31,23 +31,27 @@ public class PostRepositoryAdapter implements PostRepository {
 
     private final PostJpaRepository postJpaRepository;
 
+    // 게시글 저장 (생성, 수정)
     @Override
     public Post save(Post post) {
         return postJpaRepository.save(PostJpaEntity.from(post)).toDomain();
     }
 
+    // 게시글 단건 조회
     @Override
     public Optional<Post> findById(Long postId) {
         return postJpaRepository.findByIdAndDeletedAtIsNull(postId)
                 .map(PostJpaEntity::toDomain);
     }
 
+    // 카테고리별 게시글 페이징 조회
     @Override
     public Page<Post> findAll(String category, Pageable pageable) {
         return postJpaRepository.findAllByCategory(category, pageable)
                 .map(PostJpaEntity:: toDomain);
     }
 
+    // 게시글 하드딜리트
     @Override
     @Transactional
     public int hardDeleteByDeletedAtBefore(LocalDateTime threshold) {
@@ -87,19 +91,73 @@ public class PostRepositoryAdapter implements PostRepository {
                 .toList();
     }
 
+    // 작성한 총 게시글 수 조회
     @Override
     public int countByUserId(Long userId) {
         return postJpaRepository.countByUserId(userId);
     }
 
+    // 총 게시글 조회수 합산
     @Override
     public int sumViewCountByUserId(Long userId) {
         return postJpaRepository.sumViewCountByUserId(userId);
     }
 
+    // 총 게시글 좋아요 수 합산
     @Override
     public int sumLikeCountByUserId(Long userId) {
         return postJpaRepository.sumLikeCountByUserId(userId);
     }
 
+    /*
+     * comment.
+     *  키워드 이스케이프 처리
+     *  -
+     *  사용자 입력 키워드에 %, _ 포함 시 와일드카드로 해석되는 문제 방지
+     *  -> \ 먼저 이스케이프 (순서 중요)
+     *  -> % -> \%
+     *  -> _ -> \_
+     */
+    private String escapeKeyword(String keyword) {
+        return keyword
+                .replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_");
+    }
+
+    // 키워드 검색 (커서 기반 페이징 적용)
+    @Override
+    public List<Post> searchByKeyword(String keyword, Long cursor, int size) {
+        return postJpaRepository.searchByKeyword(keyword, cursor, PageRequest.of(0, size))
+                .stream()
+                .map(PostJpaEntity::toDomain)
+                .toList();
+    }
+
+    // 검색 결과 총 개수 조회 (페이징 카운트)
+    @Override
+    public int countByKeyword(String keyword) {
+        return postJpaRepository.countByKeyword(keyword);
+    }
+
+    // 같은 카테고리 인기 게시글 조회
+    // PageRequest.of(0, size) 로 상위 N개만 조회
+    @Override
+    public List<Post> findTopPostsByCategory(String category, Long postId, int size) {
+        return postJpaRepository.findTopPostsByCategory(category, postId, PageRequest.of(0, size))
+                .stream()
+                .map(PostJpaEntity::toDomain)
+                .toList();
+    }
+
+    // 같은 작성자의 최신 게시글 조회
+    // excludeIds 비어있으면 빈 리스트 처리
+    @Override
+    public List<Post> findLatestPostsByAuthor(Long userId, Long postId, List<Long> excludeIds, int size) {
+        List<Long> safeExcludeIds = excludeIds.isEmpty() ? List.of(-1L) : excludeIds;
+        return postJpaRepository.findLatestPostsByAuthor(userId, postId, safeExcludeIds, PageRequest.of(0, size))
+                .stream()
+                .map(PostJpaEntity::toDomain)
+                .toList();
+    }
 }

@@ -43,6 +43,18 @@ public interface PostRepository {
     int sumViewCountByUserId(Long userId);
     int sumLikeCountByUserId(Long userId);
 
+    // 키워드 검색 (커서 기반)
+    List<Post> searchByKeyword(String keyword, Long cursor, int size);
+
+    // 키워드 검색 결과 총 개수
+    int countByKeyword(String keyword);
+
+    // 같은 카테고리 인기 게시글 조회
+    List<Post> findTopPostsByCategory(String category, Long postId, int size);
+
+    // 같은 작성자 최신 게시글 조회
+    List<Post> findLatestPostsByAuthor(Long userId, Long postId, List<Long> excludeIds, int size);
+
     // 게시글 하드딜리트
     int hardDeleteByDeletedAtBefore(LocalDateTime threshold);
 

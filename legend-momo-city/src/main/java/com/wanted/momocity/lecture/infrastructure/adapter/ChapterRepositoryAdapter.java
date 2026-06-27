@@ -60,18 +60,5 @@ public class ChapterRepositoryAdapter implements ChapterRepository {
                 .map(ChapterJpaEntity::toDomain)
                 .toList();
     }
-
-    // 특정 강의의 챕터 중 지정한 영상 상태가 아닌 챕터가 있는지 확인
-    @Override
-    @Transactional(readOnly = true)
-    public boolean existsByLectureIdAndVideoStatusNot(
-            Long lectureId,
-            VideoStatus videoStatus
-    ) {
-        return repository.existsByLectureIdAndVideoStatusNot(
-                lectureId,
-                videoStatus
-        );
-    }
     
 }

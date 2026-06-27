@@ -41,7 +41,8 @@ public class RedisConfig {
     @Bean (name = "redisCacheManager")
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory,
                                           @Qualifier("postsCacheConfiguration") RedisCacheConfiguration postsCacheConfiguration,
-                                          @Qualifier("calendarCacheConfiguration") RedisCacheConfiguration calendarCacheConfiguration
+                                          @Qualifier("calendarCacheConfiguration") RedisCacheConfiguration calendarCacheConfiguration,
+                                          @Qualifier("streakCacheConfiguration") RedisCacheConfiguration streakCacheConfiguration
     ) {
 
         /*
@@ -91,7 +92,7 @@ public class RedisConfig {
         cacheConfigs.put("calendar", calendarCacheConfiguration);
 
         // Streak 오늘 레벨 캐시
-        cacheConfigs.put("streak", defaultConfig.entryTtl(Duration.ofHours(1)));
+        cacheConfigs.put("streak", streakCacheConfiguration);
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)

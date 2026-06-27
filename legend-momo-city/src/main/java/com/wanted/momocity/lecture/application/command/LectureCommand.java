@@ -3,7 +3,6 @@ package com.wanted.momocity.lecture.application.command;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.lecture.domain.model.LectureCategory;
 import com.wanted.momocity.lecture.domain.model.LectureStatus;
-import com.wanted.momocity.lecture.domain.model.VideoStatus;
 import org.springframework.web.multipart.MultipartFile;
 
 // Lecture 도메인에서 사용하는 Command record 모음집
@@ -55,15 +54,6 @@ public final class LectureCommand {
         }
     }
 
-    // 강사가 챕터 동영상 처리 상태를 변경할 때 사용하는 Command.
-    public record ChangeChapterVideoStatusCommand(
-            Long teacherId,
-            Long lectureId,
-            Long chapterId,
-            VideoStatus videoStatus
-    ) {
-    }
-
     /* comment
      * 강사가 본인 강의 상태를 변경할 때 사용하는 Command.
      * 보통 강의 등록 후 WAITING 상태로 변경할 때 사용된다.
@@ -80,8 +70,30 @@ public final class LectureCommand {
             Long teacherId,
             Long lectureId,
             String title,
-            int orderNo
+            int orderNo,
+            MultipartFile thumbnail
     ) {
+        public CreateChapterCommand { // Compact Constructor로 Command 값 검증
+            if (teacherId == null) { // 강사 ID가 없는지 확인
+                throw new DomainRuleViolationException("강사 ID는 필수입니다."); // 없으면 예외 발생
+            }
+
+            if (lectureId == null) { // 강의 ID가 없는지 확인
+                throw new DomainRuleViolationException("강의 ID는 필수입니다."); // 없으면 예외 발생
+            }
+
+            if (title == null || title.isBlank()) { // 챕터 제목이 없는지 확인
+                throw new DomainRuleViolationException("챕터명은 필수입니다."); // 없으면 예외 발생
+            }
+
+            if (orderNo < 1) { // 챕터 순서가 1보다 작은지 확인
+                throw new DomainRuleViolationException("챕터 순서는 1 이상이어야 합니다."); // 1 미만이면 예외 발생
+            }
+
+            if (thumbnail == null || thumbnail.isEmpty()) { // 챕터 썸네일 URL이 없는지 확인
+                throw new DomainRuleViolationException("챕터 썸네일 URL은 필수입니다."); // 없으면 예외 발생
+            }
+        }
     }
 
     /* comment

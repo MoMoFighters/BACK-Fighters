@@ -19,7 +19,4 @@ public interface SpringDataChapterRepository extends JpaRepository<ChapterJpaEnt
 
     // 특정 강의에 속한 챕터 목록을 orderNo 오름차순으로 조회
     List<ChapterJpaEntity> findAllByLectureIdOrderByOrderNoAsc(Long lectureId);
-
-    // 특정 강의의 챕터 중 지정한 영상 상태가 아닌 챕터가 있는지 확인
-    boolean existsByLectureIdAndVideoStatusNot(Long lectureId, VideoStatus videoStatus);
 }

@@ -3,6 +3,8 @@ package com.wanted.momocity.community.presentation.api.request;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
 import java.util.List;
 
@@ -35,8 +37,13 @@ public record UploadContentsRequest(
 
     public record ContentItem(
             @NotBlank(message = "타입을 입력해주세요.")
+            @Pattern(
+                    regexp = "^(TEXT|IMAGE)$",
+                    message = "타입은 TEXT 또는 IMAGE 만 가능합니다."
+            )
             String type,
 
+            @Size(max = 2000, message = "내용은 2000자 이하로 입력해주세요.")
             String content,
             String imageUrl
     ) {}

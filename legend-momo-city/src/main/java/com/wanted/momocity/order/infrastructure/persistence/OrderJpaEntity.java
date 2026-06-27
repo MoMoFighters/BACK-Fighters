@@ -31,7 +31,7 @@ public class OrderJpaEntity {
     @Column(nullable = false)
     private Long amount;
 
-    @Column(nullable = false)
+    @Column(nullable = true) // 포인트 + 이면 itemId가 없음
     private Long itemId; // store테이블에 있는 상품의 pk
 
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -63,6 +63,10 @@ public class OrderJpaEntity {
 
     public Type getType() {
         return type;
+    }
+
+    public Long getAmount() {
+        return amount;
     }
 
     public Long getItemId() {

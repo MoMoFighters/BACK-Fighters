@@ -35,7 +35,7 @@ public class ReviewQueryService implements ReviewQueryUseCase {
                 .orElseThrow(() -> new LectureNotFoundException("강의를 찾을 수 없습니다."));
 
 
-        Pageable pageable = PageRequest.of(query.page(), query.size());
+        Pageable pageable = PageRequest.of(query.page() -1, query.size());
 
         // 최신순으로 강의평 조회
         Page<ReviewJpaEntity> reviewPage = reviewJpaRepository.findAllByLectureIdOrderByCreatedAtDesc(

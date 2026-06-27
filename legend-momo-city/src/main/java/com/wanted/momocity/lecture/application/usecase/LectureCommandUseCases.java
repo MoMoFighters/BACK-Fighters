@@ -4,7 +4,6 @@ import com.wanted.momocity.lecture.application.command.LectureCommand.ChangeLect
 import com.wanted.momocity.lecture.application.command.LectureCommand.CreateLectureCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.CreateChapterCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.RegisterChapterVideoCommand;
-import com.wanted.momocity.lecture.application.command.LectureCommand.ChangeChapterVideoStatusCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.AdminChangeLectureStatusCommand;
 import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.model.LectureChapter;
@@ -31,9 +30,6 @@ public final class LectureCommandUseCases {
 
         // 동영상 등록
         LectureChapter registerChapterVideo(RegisterChapterVideoCommand command);
-
-        // 챕터 동영상 처리 상태를 변경
-        LectureChapter changeChapterVideoStatus(ChangeChapterVideoStatusCommand command);
     }
 
     // 관리자 강의 명령 기능을 정의하는 UseCase

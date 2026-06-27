@@ -93,6 +93,90 @@ public interface PostJpaRepository extends JpaRepository<PostJpaEntity, Long> {
 """)
     int sumLikeCountByUserId(@Param("userId") Long userId);
 
+    /*
+    * comment.
+    *  게시글 키워드 검색
+    *  검색 대상 : title, content, authorName
+    *  커서기반 : cursor = null -> 첫 페이지, cursor != null -> 해당 postId 보다 작은 데이터 조회
+    *  -
+    *  와일드카드 이스케이프
+    *  -> 사용자 입력 키워드의 %, _ 를 이스케이프 처리
+    *  -> PostRepositoryAdapter 에서 전처리 후 전달
+    *  -> ESCAPE '\' 로 안전한 검색 보장
+    * */
+
+    @Query("""
+    SELECT DISTINCT p FROM PostJpaEntity p
+    LEFT JOIN PostContentJpaEntity c ON c.postId = p.id
+    WHERE p.deletedAt IS NULL
+    AND (
+        p.title LIKE %:keyword% ESCAPE '\\'
+        OR c.content LIKE %:keyword% ESCAPE '\\'
+    )
+    AND (:cursor IS NULL OR p.id < :cursor)
+    ORDER BY p.id DESC
+""")
+    List<PostJpaEntity> searchByKeyword(
+            @Param("keyword") String keyword,
+            @Param("cursor") Long cursor,
+            Pageable pageable
+    );
+
+    // 키워드 검색 결과 총 개수
+    // DISTINCT 로 중복 제거
+    @Query("""
+    SELECT COUNT(DISTINCT p.id)
+    FROM PostJpaEntity p
+    LEFT JOIN PostContentJpaEntity c ON c.postId = p.id
+    WHERE p.deletedAt IS NULL
+    AND (
+       p.title LIKE %:keyword% ESCAPE '\\\\'
+       OR c.content LIKE %:keyword% ESCAPE '\\\\'
+    )
+""")
+    int countByKeyword(@Param("keyword") String keyword);
+
+    /*
+    * comment.
+    *  같은 카테고리 인기 게시글 조회
+    *  viewCount * 0.6 + likeCount * 0.4
+    *  현재 게시글 제외
+    * */
+
+    @Query("""
+    SELECT p FROM PostJpaEntity p
+    WHERE p.deletedAt IS NULL
+    AND p.category = :category
+    AND p.id != :postId
+    ORDER BY (p.viewCount * 0.6 + p.likeCount * 0.4) DESC
+""")
+    List<PostJpaEntity> findTopPostsByCategory(
+            @Param("category") String category,
+            @Param("postId") Long postId,
+            Pageable pageable
+    );
+
+    /*
+    * comment.
+    *  같은 작성자의 최신 게시글 조회
+    *  현재 게시글 제외, 추천 게시글 제외, 최신
+    * */
+
+    @Query("""
+    SELECT p FROM PostJpaEntity p
+    WHERE p.deletedAt IS NULL
+    AND p.userId = :userId
+    AND p.id != :postId
+    AND p.id NOT IN :excludeIds
+    ORDER BY p.createdAt DESC
+""")
+    List<PostJpaEntity> findLatestPostsByAuthor(
+            @Param("userId") Long userId,
+            @Param("postId") Long postId,
+            @Param("excludeIds") List<Long> excludeIds,
+            Pageable pageable
+    );
+
     // 하드딜리트 (스케줄러용)
     // deletedAt IS NOT NULL : 소프트딜리트된 게시글만 대상
     // deletedAt < threshold : 기준일(6개월) 이전 데이터만 삭제

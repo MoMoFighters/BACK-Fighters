@@ -26,11 +26,10 @@ public class StudentLectureResponse {
             // 강의 안에서 챕터가 보여질 순서
             int orderNo,
 
+            String chapterThumbnailUrl,
+
             // 동영상 재생 시간입니다. 단위는 초
             Integer durationSec,
-
-            // 동영상 처리 상태. 예: UPLOADING, ENCODING, READY, FAILED
-            String videoStatus,
 
             // 챕터별 진척도
             Integer chapterProgress,
@@ -52,8 +51,8 @@ public class StudentLectureResponse {
                     chapter.getId(),
                     chapter.getTitle(),
                     chapter.getOrderNo(),
+                    chapter.getChapterThumbnailUrl(),
                     chapter.getDurationSec(),
-                    chapter.getVideoStatus().name(),
                     // 챕터 진척도
                     // null ? null : -> progressInfo가 없으면 null, 있으면 안에 있느 값을 꺼내라
                     progressInfo == null ? null : progressInfo.ProgressRate(),
@@ -99,6 +98,8 @@ public class StudentLectureResponse {
             // 수강 중인 학생의 강의 전체 진척도, 미수강이면 null
             Integer lectureProgress,
 
+            Boolean isCompleted,
+
             // 강의에 포함된 챕터 목록
             List<StudentLectureChapterResponse> chapters,
 
@@ -118,6 +119,7 @@ public class StudentLectureResponse {
                 int reviewCount,
                 boolean isEnrolled,
                 Integer lectureProgress,
+                Boolean isCompleted,
                 Map<Long, ChapterProgressInfo> chapterProgressMap
         ) {
             return new StudentLectureDetailResponse(
@@ -131,8 +133,8 @@ public class StudentLectureResponse {
                     reviewCount,
                     isEnrolled,
                     lectureProgress,
+                    isCompleted,
                     chapters.stream()
-                            .filter(chapter -> chapter.getVideoStatus() == VideoStatus.READY)
                             .map(chapter -> StudentLectureChapterResponse.from(
                                     chapter,
                                     chapterProgressMap.get(chapter.getId())

@@ -3,7 +3,6 @@ package com.wanted.momocity.lecture.application.service;
 import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.lecture.application.command.LectureCommand.AdminChangeLectureStatusCommand;
-import com.wanted.momocity.lecture.application.command.LectureCommand.ChangeChapterVideoStatusCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.ChangeLectureStatusCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.CreateChapterCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.CreateLectureCommand;
@@ -21,7 +20,6 @@ import com.wanted.momocity.lecture.domain.exception.LectureNotFoundException;
 import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.model.LectureChapter;
 import com.wanted.momocity.lecture.domain.model.LectureStatus;
-import com.wanted.momocity.lecture.domain.model.VideoStatus;
 import com.wanted.momocity.lecture.domain.repository.ChapterRepository;
 import com.wanted.momocity.lecture.domain.repository.LectureRepository;
 import com.wanted.momocity.lecture.presentation.api.response.AdminLectureResponse.AdminChangeLectureStatusResponse;
@@ -50,7 +48,7 @@ public class LectureCommandService implements
         AdminLectureCommandUseCase {
 
     // 강의당 등록 가능한 최대 챕터 수
-    private static final int MAX_CHAPTER_COUNT = 5;
+    private static final int MAX_CHAPTER_COUNT = 10;
 
     // 챕터 동영상 최대 업로드 크기: 500MB
     private static final long MAX_VIDEO_SIZE_BYTES = 500 * 1024 * 1024;
@@ -135,7 +133,7 @@ public class LectureCommandService implements
         int chapterCount = chapterRepository.countByLectureId(command.lectureId());
 
         if (chapterCount >= MAX_CHAPTER_COUNT) {
-            throw new ChapterLimitExceededException("챕터는 최대 5개까지만 등록할 수 있습니다.");
+            throw new ChapterLimitExceededException("챕터는 최대 10개까지만 등록할 수 있습니다.");
         }
 
         boolean duplicatedOrderNo = chapterRepository.existsByLectureIdAndOrderNo(
@@ -147,7 +145,7 @@ public class LectureCommandService implements
             throw new DuplicateChapterOrderException("동일 강의 안에 이미 사용 중인 챕터 순서입니다.");
         }
 
-        LectureChapter chapter = LectureChapter.create(
+        LectureChapter chapter = LectureChapter.createWithoutThumbnail(
                 command.lectureId(),
                 command.title(),
                 command.orderNo()
@@ -155,12 +153,23 @@ public class LectureCommandService implements
 
         LectureChapter savedChapter = chapterRepository.save(chapter);
 
+        String chapterThumbnailUrl = s3UploadPort.upload(
+                command.thumbnail(),
+                "lecture/" + command.lectureId() + "/chapter/" + savedChapter.getId()
+        );
+
+        LectureChapter chapterWithThumbnail = savedChapter.changedChapterThumbnailUrl(
+                chapterThumbnailUrl
+        );
+
+        LectureChapter resultChapter = chapterRepository.save(chapterWithThumbnail);
+
         log.info("챕터 등록 완료 - chapterId={}, lectureId={}, orderNo={}",
                 savedChapter.getId(),
                 savedChapter.getLectureId(),
                 savedChapter.getOrderNo());
 
-        return savedChapter;
+        return resultChapter;
     }
 
     /**
@@ -211,48 +220,10 @@ public class LectureCommandService implements
 
         LectureChapter savedChapter = chapterRepository.save(updatedChapter);
 
-        log.info("챕터 동영상 등록 완료 - chapterId={}, lectureId={}, videoStatus={}, videoSizeBytes={}",
+        log.info("챕터 동영상 등록 완료 - chapterId={}, lectureId={}, videoSizeBytes={}",
                 savedChapter.getId(),
                 savedChapter.getLectureId(),
-                savedChapter.getVideoStatus(),
                 savedChapter.getVideoSizeBytes());
-
-        return savedChapter;
-    }
-
-    /**
-     * 챕터 동영상 처리 상태 변경.
-     */
-    @Override
-    public LectureChapter changeChapterVideoStatus(ChangeChapterVideoStatusCommand command) {
-        Long teacherId = teacherAccountPort.getTeacherId(command.teacherId());
-
-        LectureAggregate lecture = lectureRepository.findById(command.lectureId())
-                .orElseThrow(() -> new LectureNotFoundException("강의를 찾을 수 없습니다."));
-
-        if (!lecture.isOwnedBy(teacherId)) {
-            throw new AccessDeniedException("본인이 등록한 강의의 챕터만 동영상 상태를 변경할 수 있습니다.");
-        }
-
-        LectureChapter chapter = chapterRepository.findById(command.chapterId())
-                .orElseThrow(() -> new ChapterNotFoundException("챕터를 찾을 수 없습니다."));
-
-        if (!chapter.belongsTo(command.lectureId())) {
-            throw new ChapterNotFoundException("유효하지 않은 챕터 식별자입니다.");
-        }
-
-        if (!chapter.hasVideo()) {
-            throw new DomainRuleViolationException("동영상이 등록된 챕터만 상태를 변경할 수 있습니다.");
-        }
-
-        LectureChapter changedChapter = chapter.changeVideoStatus(command.videoStatus());
-
-        LectureChapter savedChapter = chapterRepository.save(changedChapter);
-
-        log.info("챕터 동영상 상태 변경 완료 - chapterId={}, lectureId={}, videoStatus={}",
-                savedChapter.getId(),
-                savedChapter.getLectureId(),
-                savedChapter.getVideoStatus());
 
         return savedChapter;
     }
@@ -311,10 +282,6 @@ public class LectureCommandService implements
 
         if (chapterRepository.existsByLectureIdAndVideoUrlIsNull(lectureId)) {
             throw new DomainRuleViolationException("강의를 승인하려면 모든 챕터에 동영상이 등록되어야 합니다.");
-        }
-
-        if (chapterRepository.existsByLectureIdAndVideoStatusNot(lectureId, VideoStatus.READY)) {
-            throw new DomainRuleViolationException("강의를 승인하려면 모든 동영상이 READY 상태여야 합니다.");
         }
     }
 }
