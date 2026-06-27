@@ -25,6 +25,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -252,6 +253,27 @@ public class UserController {
                 UserResponseMessage.USER_SOFT_DELETED,
                 null
         ));
+    }
+
+
+    @PatchMapping("/plus/report-count/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "관리저의 신고 처리",
+                description = "신고 누적 횟수에 따라 status, suspensionCount, suspendedUntil 변경")
+    public ResponseEntity<ApiResponse<Void>> plusReportCount(
+            @PathVariable Long userId){
+        LocalDateTime suspendedUntil = userCommandUsecase.plusReportCount(userId);
+
+        String suspendedMsg = suspendedUntil != null
+                ? " (정지 기간 : ~ " + suspendedUntil.toLocalDate() + ")"
+                : " (영구 정지)";
+
+        return ResponseEntity.ok(ApiResponse.success(
+                UserResponseCode.USER_REPORT_PLUS,
+                UserResponseMessage.USER_REPORT_PLUS + suspendedMsg,
+                null
+        ));
+
     }
 
 

@@ -74,4 +74,14 @@ public interface UserRepository {
 
     // 사용자 하드 딜리트
     void deleteById(Long aLong);
+
+    // 사용자 신고 횟수 +
+    Long plusReportCount(Long userId);
+
+    // 신고 횟수에 따른 처리
+    void reportApply(Long userId, Status status, LocalDateTime localDateTime);
+
+    // 사용자 신고 횟수 -
+    void minusReportCount(Long userId);
+
 }

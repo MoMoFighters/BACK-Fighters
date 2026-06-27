@@ -4,12 +4,14 @@ import com.wanted.momocity.auth.application.port.PasswordEncodePort;
 import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.user.application.port.GetItemUrlPort;
 import com.wanted.momocity.user.domain.event.TeacherApplicationEvent;
+import com.wanted.momocity.user.domain.exception.AlreadySuspendedException;
 import com.wanted.momocity.user.domain.exception.UserNotFoundException;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.user.application.command.*;
 import com.wanted.momocity.user.application.policy.UserPolicy;
 import com.wanted.momocity.user.application.usecase.UserCommandUsecase;
 import com.wanted.momocity.user.domain.exception.InvalidReasonException;
+import com.wanted.momocity.user.domain.model.CheckStatusResult;
 import com.wanted.momocity.user.domain.model.Role;
 import com.wanted.momocity.user.domain.model.Status;
 import com.wanted.momocity.user.domain.model.UpdateUserInfoData;
@@ -20,6 +22,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 
@@ -162,5 +165,41 @@ public class UserCommandService implements UserCommandUsecase {
     @Override
     public void softDeleteUser(Long userId) {
         userRepository.changeStatusAndNickname(userId, Status.DELETED, null);
+    }
+
+    // 사용자 신고 횟수 +
+    @Override
+    public LocalDateTime plusReportCount(Long userId) {
+
+        // 이미 정지 상태이면 더 신고 + 못 시킴
+        if (userPolicy.isSuspended(userId)) {
+            throw new AlreadySuspendedException("이미 정지된 사용자입니다.");
+        }
+
+        // 일단 신고 횟수 +1 하고 그건 리턴 받고
+        Long count = userRepository.plusReportCount(userId);
+        // 리턴 받은 그 신고 카운트를 기반으로 사용자 상태 변경
+        CheckStatusResult result = reportApply(count);
+        userRepository.reportApply(userId, result.status(), result.suspendedUntil());
+
+        log.info("[user] 신고 처리 | userId={} | count={} | status={} | suspendedUntil={}",
+                userId, count, result.status(), result.suspendedUntil());
+
+        return result.suspendedUntil();
+    }
+
+    private CheckStatusResult reportApply(Long count) {
+        LocalDateTime now = LocalDateTime.now();
+        return switch (count.intValue()) {
+            case 1 -> new CheckStatusResult(Status.BANNED, now.plusWeeks(1));
+            case 2 -> new CheckStatusResult(Status.BANNED, now.plusMonths(1));
+            default -> new CheckStatusResult(Status.BLACK, null);
+        };
+    }
+
+    // 사용자 신고 횟수 -
+    @Override
+    public void minusReportCount(Long userId) {
+        userRepository.minusReportCount(userId);
     }
 }
