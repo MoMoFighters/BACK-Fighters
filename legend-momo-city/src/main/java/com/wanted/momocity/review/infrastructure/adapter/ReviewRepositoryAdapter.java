@@ -51,7 +51,7 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
     @Override
     public void softDeleteById(Long reviewId) {
 
-        ReviewJpaEntity review = reviewJpaRepository.findById(reviewId)
+        ReviewJpaEntity review = reviewJpaRepository.findByIdAndStatus(reviewId, ReviewStatus.ACTIVE)
                 .orElseThrow(() -> new ReviewNotFoundException("수강평을 찾을 수 없습니다."));
 
         review.softDelete();

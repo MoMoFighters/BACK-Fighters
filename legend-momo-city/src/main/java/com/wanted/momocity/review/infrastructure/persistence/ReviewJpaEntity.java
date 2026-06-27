@@ -17,13 +17,13 @@ import java.time.LocalDateTime;
 @EntityListeners(AuditingEntityListener.class)
 // review 테이블에 “한 유저가 같은 강의에 리뷰를 한 번만 쓸 수 있다”는 DB 규칙을 거는 설정
 @Table(
-        name = "review",
-        uniqueConstraints = { // unique 제약조건을 추가
-                @UniqueConstraint( // 실제 unique 제약조건 하나를 정의
-                        name = "uk_review_user_lecture", // DB에 만들어질 unique 제약조건 이름
-                        columnNames = {"user_id", "lecture_id"}
-                )
-        }
+        name = "review"
+//        uniqueConstraints = { // unique 제약조건을 추가
+//                @UniqueConstraint( // 실제 unique 제약조건 하나를 정의
+//                        name = "uk_review_user_lecture", // DB에 만들어질 unique 제약조건 이름
+//                        columnNames = {"user_id", "lecture_id"}
+//                )
+//        }
 )
 @NoArgsConstructor
 public class ReviewJpaEntity{

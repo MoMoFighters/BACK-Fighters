@@ -8,12 +8,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ReviewJpaRepository extends JpaRepository<ReviewJpaEntity, Long> {
 
     boolean existsByUserIdAndLectureIdAndStatus(Long userId, Long lectureId, ReviewStatus status);
 
-
+    Optional<ReviewJpaEntity> findByIdAndStatus(Long id, ReviewStatus status);
+    
     // 강의 별 리뷰 통계 조회 결과 받기
     interface ReviewStatsProjection {
         Long getLectureId();
