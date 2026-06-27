@@ -2,6 +2,7 @@ package com.wanted.momocity.community.presentation.api.request;
 
 import com.wanted.momocity.community.domain.model.PostCategory;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 /*
@@ -16,7 +17,7 @@ public record CreatePostRequest(
         @Size(max = 100, message = "제목은 100자 이하로 입력해주세요.")
         String title,
 
-        @NotBlank(message = "카테고리를 입력해주세요.")
+        @NotNull(message = "카테고리를 입력해주세요.")
         PostCategory category,
 
         String thumbnailUrl
