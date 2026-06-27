@@ -8,6 +8,7 @@ import com.wanted.momocity.enrollment.domain.model.Building;
 import com.wanted.momocity.enrollment.domain.repository.BuildingRepository;
 import com.wanted.momocity.enrollment.domain.repository.EnrollmentRepository;
 import com.wanted.momocity.enrollment.presentation.api.response.EnrollmentProgressResponse;
+import com.wanted.momocity.friend.domain.repository.FriendRepository;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.global.domain.model.Category;
 import com.wanted.momocity.user.domain.repository.UserRepository;
@@ -36,6 +37,8 @@ public class EnrollmentQueryService implements EnrollmentQueryUsecase {
     private final EnrollmentRepository enrollmentRepository;
 
     private final UserRepository userRepository;
+
+    private final FriendRepository friendRepository;
 
     // S3 빌딩 건물 기본 경로를 상수로 둔다
     private static final String BUILDING_IMAGE_BASE_URL = "https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/building";
@@ -186,6 +189,12 @@ public class EnrollmentQueryService implements EnrollmentQueryUsecase {
 
         userRepository.findById(targetUserId)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
+
+        // 두 사용자 사이의 친구 관계 조회
+        boolean isFriend = friendRepository.findAnyRelationBetween(loginUserId, targetUserId)
+                // 상태가 친구만 허용
+                .filter(friend -> "FRIEND".equals(friend.getStatus()))
+                .isPresent();
 
         return userBuildingInfo(targetUserId);
     }
