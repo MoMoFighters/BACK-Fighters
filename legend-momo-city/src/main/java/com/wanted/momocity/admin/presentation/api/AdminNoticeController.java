@@ -7,6 +7,7 @@ import com.wanted.momocity.admin.presentation.api.request.DeleteNoticesRequest;
 import com.wanted.momocity.admin.presentation.api.request.UpdateNoticeRequest;
 import com.wanted.momocity.admin.presentation.api.response.AdminNoticeDetailResponse;
 import com.wanted.momocity.admin.presentation.api.response.AdminNoticeListResponse;
+import com.wanted.momocity.admin.presentation.api.response.AdminNoticePageResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,7 +15,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -35,18 +38,24 @@ public class AdminNoticeController {
     @Operation(summary = "공지 작성", description = "관리자가 공지를 작성한다.")
     public ResponseEntity<ApiResponse<Void>> createNotice(@RequestBody @Valid CreateNoticeRequest request) {
         commandUseCase.createNotice(request.toCommand());
-        return ResponseEntity.ok(ApiResponse.success(ApiResponseCode.SUCCESS, "공지가 등록되었습니다.", null));
+        // POST 방식에서 리소스가 만들어지면 200 상태 코드보다는 생성 201 상태 코드가 맞다고 판단
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.created((ApiResponseCode.CREATED) , "공지가 등록되었습니다!", null));
     }
 
     // MS-12 공지 목록 조회 — isPinned 필터 + 페이징
+    // FE 컨벤션(1-based page)에 맞춰 page-1 변환 후 처리하고, 응답은 items 래퍼로 감싸 FE 스펙과 일치시킴
     @GetMapping
     @Operation(summary = "공지 목록 조회", description = "isPinned 파라미터가 없으면 전체 조회, 있으면 필터 조회한다.")
-    public ResponseEntity<ApiResponse<Page<AdminNoticeListResponse>>> getNoticeList(
+    public ResponseEntity<ApiResponse<AdminNoticePageResponse>> getNoticeList(
             @RequestParam(required = false) Boolean isPinned,
-            Pageable pageable) {
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        // FE는 page=1을 첫 페이지로 인식 → 내부 0-based 로 변환
+        PageRequest pageable = PageRequest.of(page - 1, size);
         Page<AdminNoticeListResponse> result = queryUseCase.getNoticeList(isPinned, pageable)
                 .map(AdminNoticeListResponse::from);
-        return ResponseEntity.ok(ApiResponse.success(ApiResponseCode.SUCCESS, "공지 목록 조회 성공", result));
+        return ResponseEntity.ok(ApiResponse.success(ApiResponseCode.SUCCESS, "공지 목록 조회 성공", AdminNoticePageResponse.from(result)));
     }
 
     // MS-16 공지 상세 조회
