@@ -3,6 +3,7 @@ package com.wanted.momocity.community.application.usecase;
 import com.wanted.momocity.community.application.command.PostContentCommand;
 import com.wanted.momocity.community.application.result.LikeResult;
 import com.wanted.momocity.community.application.result.PostCreateResult;
+import com.wanted.momocity.community.domain.model.PostCategory;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -17,7 +18,7 @@ import java.util.List;
 public interface PostCommandUseCase {
 
     // 게시글 생성
-    PostCreateResult createPost(Long userId, String title, String category);
+    PostCreateResult createPost(Long userId, String title, PostCategory category, String thumbNailUrl);
 
     // 게시글 이미지 업로드 (POST)
     String uploadImage(MultipartFile image);
@@ -26,7 +27,7 @@ public interface PostCommandUseCase {
     void uploadContents(Long userId, Long postId, String thumbnailUrl, List<PostContentCommand> contents);
 
     // 게시글 제목/카테고리 수정
-    void updatePost(Long userId, Long postId, String title, String category);
+    void updatePost(Long userId, Long postId, String title, PostCategory category);
 
     // 게시글 콘텐츠 수정 (PUT)
     void updateContents(Long userId, Long postId, String thumbnailUrl, List<PostContentCommand> contents);

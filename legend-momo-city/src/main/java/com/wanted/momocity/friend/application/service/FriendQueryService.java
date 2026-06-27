@@ -6,6 +6,7 @@ import com.wanted.momocity.friend.application.usecase.FriendQueryUseCase;
 import com.wanted.momocity.friend.domain.repository.FriendRepository;
 import com.wanted.momocity.friend.enrollment.EnrollmentWithFMJpaEntity;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
+import com.wanted.momocity.friend.infrastructure.persistence.GuestBookJpaEntity;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import com.wanted.momocity.friend.lecture.LectureWithFMJpaEntity;
 import lombok.RequiredArgsConstructor;
@@ -297,12 +298,17 @@ public class FriendQueryService implements FriendQueryUseCase {
         List<StudentFriendsView> result = new ArrayList<>();
 
         for (FriendJpaEntity friend : friends) {
+            // FRIEND 상태는 쿼리 단계에서 보장되나 명시적 안전장치 유지 가능
+            if (!"FRIEND".equals(friend.getStatus())) {
+                continue;
+            }
+
             UserWithFMJpaEntity friendUser = friend.getFromUserId().getId().equals(query.userId())
                     ? friend.getToUserId()
                     : friend.getFromUserId();
 
             //강사 제외하기
-            if ("TEACHER".equals(friendUser.getRole())) {
+            if (!"STUDENT".equals(friendUser.getRole())) {
                 continue;
             }
             //비활성 유저 제외(다대다에서 비활성 유저 개설/초대 불가, 친구 도시 놀러가기)
@@ -322,5 +328,26 @@ public class FriendQueryService implements FriendQueryUseCase {
 
         log.info("[GetStudentFriendsQueryService] 학생 친구 목록 가공 완료 - 최종 반환 개수:{}개", result.size());
         return result;
+    }
+
+    //방명록 목록 조회
+    @Override
+    @Transactional //읽음 처리가 필요함.
+    public List<GuestBooksView> getGuestBooksQueryHandle(GetGuestBooksQuery query) {
+        log.info("[GuestBookQueryService] 방명록 목록 조회 및 읽음 처리 시작 - 주인ID: {}", query.userId());
+
+        // 2. 일괄 처리 후 최신 데이터 전체 조회 (Fetch Join)
+        List<GuestBookJpaEntity> guestBooks = friendRepository.findAllByOwnerIdWithWriter(query.userId());
+
+        // 3. 뷰 모델(record)로 매핑하여 반환
+        return guestBooks.stream()
+                .map(gb -> new GuestBooksView(
+                        gb.getId(),
+                        gb.getWriterId().getId(),
+                        gb.getWriterId().getNickname(), // 페치 조인했으므로 N+1 문제 없음!
+                        gb.getContent(),
+                        gb.getCreatedAt()
+                ))
+                .toList();
     }
 }

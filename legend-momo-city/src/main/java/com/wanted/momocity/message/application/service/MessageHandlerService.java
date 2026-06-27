@@ -10,12 +10,9 @@ import com.wanted.momocity.message.infrastructure.persistence.*;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -72,6 +69,11 @@ public class MessageHandlerService {
 
             ChatRoomJpaEntity room = messageRepository.findChatRoomById(roomId)
                     .orElse(null);
+
+            if (room == null) {
+                log.warn("[MessageHandlerService] 조회된 방(ID:{})이 DB에 존재하지 않아 건너뜁니다.", roomId);
+                continue;
+            }
 
             //상대방이 먼저 나간 경우 메시지로 확인(+안내 문구도 같이 확인)
             boolean hasHistory = messageRepository.existsMessageByRoomIdAndSenderId(roomId, targetUserId)

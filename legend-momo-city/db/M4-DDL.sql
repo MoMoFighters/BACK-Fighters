@@ -419,7 +419,6 @@ CREATE TABLE `guestbook` (
                              `writer_id`  BIGINT        NOT NULL,
                              `owner_id`   BIGINT        NOT NULL,
                              `content`    VARCHAR(1000) NOT NULL,
-                             `is_read`    BOOLEAN       NOT NULL DEFAULT FALSE,
                              `created_at` DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
                              PRIMARY KEY (`id`),
                              KEY `idx_guestbook_owner`  (`owner_id`),
@@ -435,7 +434,7 @@ CREATE TABLE `notification` (
                                 `type`       ENUM('APPROVAL','FRIEND_REQUEST','MESSAGE','GUESTBOOK','POST','CALENDAR') NOT NULL,
                                 `ref_id`     BIGINT       NULL,
                                 `message`    VARCHAR(500) NOT NULL,
-                                `is_read`    BOOLEAN      NOT NULL DEFAULT FALSE,
+                                `is_read`    BOOLEAN      NULL DEFAULT FALSE,
                                 `created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                 PRIMARY KEY (`id`),
                                 KEY `idx_notification_user` (`user_id`),
@@ -489,7 +488,7 @@ CREATE TABLE `report` (
                           PRIMARY KEY (`id`),
                           KEY `idx_report_reporter`        (`reporter_user_id`),
                           KEY `idx_report_target_created`  (`target_type`, `target_id`, `created_at` DESC),
-                          KEY `idx_report_is_read_created` (`is_resolved`, `created_at` DESC)
+                          KEY `idx_report_is_resolved_created` (`is_resolved`, `created_at` DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================================
