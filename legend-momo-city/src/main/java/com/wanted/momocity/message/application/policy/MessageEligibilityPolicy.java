@@ -12,6 +12,7 @@ import com.wanted.momocity.message.infrastructure.persistence.ChatRoomJpaEntity;
 import com.wanted.momocity.message.infrastructure.persistence.ChatRoomMemberJpaEntity;
 import com.wanted.momocity.message.infrastructure.persistence.SpringDataChatRoomMemberRepository;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
@@ -22,15 +23,11 @@ import java.util.Optional;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class MessageEligibilityPolicy {
 
     private final MessageRepository messageRepository;
-//    private final SpringDataChatRoomMemberRepository springDataChatRoomMemberRepository;
 
-    public MessageEligibilityPolicy(MessageRepository messageRepository) {
-        this.messageRepository = messageRepository;
-//        this.springDataChatRoomMemberRepository = springDataChatRoomMemberRepository;
-    }
 
     //유저 상태, 친구 상태, 역할을 종합하여 (알 수 없음) 가공 여부를 판별하는 규칙
     public boolean determineNotActive(UserWithFMJpaEntity targetUser, String friendStatus, Long loginUserId) {
@@ -263,6 +260,12 @@ public class MessageEligibilityPolicy {
     //다대다 채팅방 멤버 초대하기
     //멤버 초대 기본 검증 - for문에서 중복 검증하는 거 따로 빼기.
     public void validateBeforeLoop(ChatRoomJpaEntity chatRoom, Long userId, List<Long> chatMember) {
+        //빈 값 입력 시 예외
+        if (chatMember == null || chatMember.isEmpty()) {
+            log.warn("[MessageEligibilityPolicy] 채팅방 멤버 초대 실패 - 초대 멤버를 선택하지 않음");
+            throw new FMBusinessRuleViolationException("초대할 대상을 선택해주세요.");
+        }
+
         //로그인 유저가 방 멤버인지 확인
         if (!messageRepository.existsMemberByRoomIdAndUserId(chatRoom.getId(), userId)) {
             log.warn("[MessageEligibilityPolicy] 채팅방 멤버 초대 실패 - 로그인 유저가 참여 중인 방이 아님. 방ID:{}, 유저ID:{}", chatRoom.getId(), userId);
@@ -278,11 +281,6 @@ public class MessageEligibilityPolicy {
     }
     public void inviteRoomMember(ChatRoomJpaEntity chatRoom, Long userId, List<Long> chatMember, boolean hasMe, String friendStatus, boolean isExistMember, boolean isNotStudentOrActive) {
         // 로그인 유저(초대 주체)와 초대 대상자들이 친구인지 검증, 일대일인지 확인, 중복 멤버 확인
-        //빈 값 입력 시 예외
-        if (chatMember == null || chatMember.isEmpty()) {
-            log.warn("[MessageEligibilityPolicy] 채팅방 멤버 초대 실패 - 초대 멤버를 선택하지 않음");
-            throw new FMBusinessRuleViolationException("초대할 대상을 선택해주세요.");
-        }
 
         //일대일 방인지 확인
         if (chatRoom.getRoomTitle() == null || chatRoom.getRoomTitle().trim().isEmpty()) {

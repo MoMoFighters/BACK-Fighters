@@ -1,9 +1,6 @@
 package com.wanted.momocity.notification.infrastructure.event;
 
-import com.wanted.momocity.friend.domain.event.AcceptRequestFriendPublishedEvent;
-import com.wanted.momocity.friend.domain.event.CancelRequestFriendPublishedEvent;
-import com.wanted.momocity.friend.domain.event.RequestFriendPublishedEvent;
-import com.wanted.momocity.friend.domain.event.TeacherStudentAutoFriendPublishedEvent;
+import com.wanted.momocity.friend.domain.event.*;
 import com.wanted.momocity.message.domain.event.SendMessagePublishedEvent;
 import com.wanted.momocity.notification.application.service.NotificationHandlerService;
 import lombok.RequiredArgsConstructor;
@@ -92,6 +89,21 @@ public class NotificationLifecycleEventHandler {
                 event.toUserId(), //강사 아이디(refId)
                 event.teacherName(), //강사 이름
                 event.teacherNickname() //강사 닉네임
+        );
+    }
+
+    //방명록 작성 알림
+    @Async("domainEventExecutor")
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleGuestBook(RegisterGuestBookPublishedEvent event) {
+        log.info("[NotificationLifecycleEventHandler] 방명록 작성 알림 행 추가 이벤트 수신 -> 알림 서비스로 이동");
+
+        notificationHandlerService.guestBookNotification(
+                event.bookId(),
+                event.writerId(),
+                event.ownerId(),
+                event.writerNickname(),
+                event.now()
         );
     }
 }

@@ -3,9 +3,9 @@ POST localhost:8080/api/v1/auth/signup/student
 Content-Type: application/json
 
 {
-  "email": "seolim8203@naver.com",
-  "password": "password123!",
-  "name": "테스트학생"
+  "email": "",
+  "password": "",
+  "name": ""
 }
 
 ### 이메일 인증코드 발송
@@ -13,7 +13,7 @@ POST localhost:8080/api/v1/auth/email/send
 Content-Type: application/json
 
 {
-  "email": "seolim8203@naver.com"
+  "email": ""
 }
 
 ### 이메일 인증코드 값 인증
@@ -21,9 +21,10 @@ POST localhost:8080/api/v1/auth/email/verify
 Content-Type: application/json
 
 {
-  "email": "seolim8203@naver.com",
+  "email": "",
   "code": ""
 }
+
 
 ### 로그인
 POST localhost:8080/api/v1/auth/login
@@ -95,3 +96,16 @@ Authorization: Bearer {{auth_token}}
 ### v2 - 학생 외, 비활성 유저 제외 친구 목록
 GET localhost:8080/api/v2/studentfriends
 Authorization: Bearer {{auth_token}}
+
+### v2 - 방명록 목록 조회
+GET localhost:8080/api/v2/friends/guest
+Authorization: Bearer {{auth_token}}
+
+### v2 - 방명록 작성
+POST localhost: 8080/api/v2/friends/guests/register/13
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "content": "방명록 미친구"
+}

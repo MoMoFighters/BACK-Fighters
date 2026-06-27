@@ -2,6 +2,8 @@ package com.wanted.momocity.friend.application.usecase;
 
 import com.wanted.momocity.friend.application.command.*;
 
+import java.time.LocalDateTime;
+
 public interface FriendCommandUseCase {
 
     //친구 요청
@@ -78,5 +80,15 @@ public interface FriendCommandUseCase {
             String nickname,
             String role,
             String status
+    ) {}
+
+    //방명록 작성
+    RegisterGuestBookView registerGuestBookCommandHandle(RegisterGuestBookCommand command);
+
+    record RegisterGuestBookView(
+            Long bookId,
+            Long ownerId,
+            String nickname,
+            LocalDateTime createdAt
     ) {}
 }

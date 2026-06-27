@@ -6,6 +6,7 @@ import com.wanted.momocity.lecture.domain.exception.LectureNotFoundException;
 import com.wanted.momocity.lecture.domain.repository.LectureRepository;
 import com.wanted.momocity.review.application.query.ReviewQuery;
 import com.wanted.momocity.review.application.usecase.ReviewQueryUseCase;
+import com.wanted.momocity.review.domain.model.ReviewStatus;
 import com.wanted.momocity.review.infrastructure.persistence.ReviewJpaEntity;
 import com.wanted.momocity.review.infrastructure.persistence.ReviewJpaRepository;
 import com.wanted.momocity.review.presentation.api.response.ReviewListResponse;
@@ -38,8 +39,9 @@ public class ReviewQueryService implements ReviewQueryUseCase {
         Pageable pageable = PageRequest.of(query.page() -1, query.size());
 
         // 최신순으로 강의평 조회
-        Page<ReviewJpaEntity> reviewPage = reviewJpaRepository.findAllByLectureIdOrderByCreatedAtDesc(
+        Page<ReviewJpaEntity> reviewPage = reviewJpaRepository.findAllByLectureIdAndStatusOrderByCreatedAtDesc(
                 query.lectureId(),
+                ReviewStatus.ACTIVE,
                 pageable
         );
 

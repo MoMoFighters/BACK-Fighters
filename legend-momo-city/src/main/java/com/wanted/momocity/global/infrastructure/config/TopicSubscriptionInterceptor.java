@@ -48,13 +48,13 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
                 //세션 매니저에 "이 유저 들어왔다"고 기록
                 sessionManager.enterRoom(userId, roomId);
                 log.info("[웹소켓 인터셉터] 유저 {}번이 {}번 채팅방에 입장했습니다.", userId, roomId);
+            }
 
-                // 알림 개수 채널 구독 처리
-                // 프론트가 /user/sub/notice/total-counts로 구독 시, 내장 브러커 통과 경로 매칭
-                if (destination.contains("/sub/notice/total-counts")) {
-                    notificationSessionManager.enterNotificationChannel(userId);
-                    log.info("[웹소켓 인터셉터] 유저 {}번이 실시간 알림 개수 채널을 구독했습니다.", userId);
-                }
+            // 알림 개수 채널 구독 처리
+            // 프론트가 /user/sub/notice/total-counts로 구독 시, 내장 브러커 통과 경로 매칭
+            if (destination != null && destination.contains("/sub/notice/total-counts")) {
+                notificationSessionManager.enterNotificationChannel(userId, accessor.getSessionId());
+                log.info("[웹소켓 인터셉터] 유저 {}번이 실시간 알림 개수 채널을 구독했습니다.", userId);
             }
         }
 
@@ -79,7 +79,7 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
                     log.info("[웹소켓 인터셉터] 유저 {}번이 채팅방({}) 구독을 취소하여 세션에서 제거되었습니다.", userId, destination);
                 } // 2) 알림 채널 구독 해제
                 else if (destination.contains("/sub/notice/total-counts")) {
-                    notificationSessionManager.leaveNotificationChannel(userId);
+                    notificationSessionManager.leaveNotificationChannel(userId, accessor.getSessionId());
                     log.info("[웹소켓 인터셉터] 유저 {}번이 실시간 알림 개수 채널 구독을 취소했습니다.", userId);
                 }
                 else {
@@ -95,7 +95,7 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
                 // 연결이 완전히 끊기는 것은 방을 나가는 것이 맞으므로 무조건 제거
                 sessionManager.leaveRoom(userId);
 
-                notificationSessionManager.leaveNotificationChannel(userId);
+                notificationSessionManager.leaveNotificationChannel(userId, accessor.getSessionId());
                 log.info("[웹소켓 인터셉터] 유저 {}번의 웹소켓 연결이 종료되어 세션에서 완전히 제거되었습니다.", userId);
             }
         }
