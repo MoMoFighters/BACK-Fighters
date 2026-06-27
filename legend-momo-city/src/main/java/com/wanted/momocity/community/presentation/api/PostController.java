@@ -7,6 +7,7 @@ import com.wanted.momocity.community.application.result.PostCreateResult;
 import com.wanted.momocity.community.application.usecase.PostCommandUseCase;
 import com.wanted.momocity.community.application.usecase.PostQueryUseCase;
 import com.wanted.momocity.community.domain.exception.CommunityAccessDeniedException;
+import com.wanted.momocity.community.domain.model.PostCategory;
 import com.wanted.momocity.community.presentation.api.common.CommunityResponseCode;
 import com.wanted.momocity.community.presentation.api.request.*;
 import com.wanted.momocity.community.presentation.api.response.*;
@@ -54,7 +55,7 @@ public class PostController {
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         Long userId = userDetails.getUserId();
-        PostCreateResult result = postCommandUseCase.createPost(userId, request.title(), request.category());
+        PostCreateResult result = postCommandUseCase.createPost(userId, request.title(), request.category(),request.thumbnailUrl());
 
         return ResponseEntity.status(201).body(ApiResponse.created(
                 CommunityResponseCode.POST_CREATED,
@@ -118,8 +119,8 @@ public class PostController {
     })
     @GetMapping
     public ResponseEntity<ApiResponse<PostListResponse>> getPosts(
-            @RequestParam(required = false) String category,
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(required = false) PostCategory category,
+            @RequestParam(required = false) Long cursor,
             @RequestParam(defaultValue = "10") int size,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
@@ -128,7 +129,7 @@ public class PostController {
         return ResponseEntity.ok(ApiResponse.success(
                 CommunityResponseCode.POST_LIST_FOUND,
                 "게시글 목록 조회에 성공했습니다.",
-                postQueryUseCase.getPosts(userId, category, page, size)
+                postQueryUseCase.getPosts(userId, category, cursor, size)
         ));
     }
 
@@ -143,6 +144,7 @@ public class PostController {
     @GetMapping("/{postId}")
     public ResponseEntity<ApiResponse<PostDetailResponse>> getPost(
             @PathVariable Long postId,
+            @RequestParam(required = false) PostCategory category,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         Long userId = userDetails.getUserId();
@@ -484,18 +486,25 @@ public class PostController {
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<UserPostListResponse>> searchPosts(
             @RequestParam String keyword,
+            @RequestParam(required = false) PostCategory category,
             @RequestParam(required = false) Long cursor,
             @RequestParam(defaultValue = "10") int size,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
+        // 공백 검증
         if (keyword == null || keyword.isBlank()) {
             throw new DomainRuleViolationException("검색 키워드를 입력해주세요.");
+        }
+
+        // 최소 길이 검증
+        if (keyword.trim().length() < 2) {
+            throw new DomainRuleViolationException("검색 키워드는 2자 이상 입력해주세요.");
         }
 
         return ResponseEntity.ok(ApiResponse.success(
                 CommunityResponseCode.POST_SEARCH_FOUND,
                 "게시글 검색에 성공했습니다.",
-                postQueryUseCase.searchPosts(keyword, cursor, size)
+                postQueryUseCase.searchPosts(keyword, category, cursor, size)
         ));
     }
 
