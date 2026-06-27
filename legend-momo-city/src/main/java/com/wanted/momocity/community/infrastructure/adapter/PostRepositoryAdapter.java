@@ -2,6 +2,7 @@ package com.wanted.momocity.community.infrastructure.adapter;
 
 import com.wanted.momocity.community.application.result.PostWithContents;
 import com.wanted.momocity.community.domain.model.Post;
+import com.wanted.momocity.community.domain.model.PostCategory;
 import com.wanted.momocity.community.domain.repository.PostRepository;
 import com.wanted.momocity.community.infrastructure.persistence.PostContentJpaEntity;
 import com.wanted.momocity.community.infrastructure.persistence.PostJpaEntity;
@@ -51,7 +52,7 @@ public class PostRepositoryAdapter implements PostRepository {
     * */
 
     @Override
-    public List<Post> findAllWithCursor(String category, Long cursor, int size) {
+    public List<Post> findAllWithCursor(PostCategory category, Long cursor, int size) {
         return postJpaRepository.findAllByCategoryWithCursor(
                         category, cursor, PageRequest.of(0, size)
                 )
@@ -62,7 +63,7 @@ public class PostRepositoryAdapter implements PostRepository {
 
     // 카테고리별 전체 게시글 수 조회
     @Override
-    public int countByCategory(String category) {
+    public int countByCategory(PostCategory category) {
         return postJpaRepository.countByCategory(category);
     }
 
@@ -135,15 +136,19 @@ public class PostRepositoryAdapter implements PostRepository {
      */
     private String escapeKeyword(String keyword) {
         return keyword
+                // 1. 백슬래시 먼저 이스케이프
                 .replace("\\", "\\\\")
+                // 2. 퍼센트 이스케이프
                 .replace("%", "\\%")
+                // 3. 언더스코어 이스케이프
                 .replace("_", "\\_");
     }
 
     // 키워드 검색 (커서 기반 페이징 적용)
     @Override
-    public List<Post> searchByKeyword(String keyword, Long cursor, int size) {
-        return postJpaRepository.searchByKeyword(keyword, cursor, PageRequest.of(0, size))
+    public List<Post> searchByKeyword(String keyword, PostCategory category, Long cursor, int size) {
+        return postJpaRepository.searchByKeyword(
+                escapeKeyword(keyword), category, cursor, PageRequest.of(0, size))
                 .stream()
                 .map(PostJpaEntity::toDomain)
                 .toList();
@@ -151,14 +156,14 @@ public class PostRepositoryAdapter implements PostRepository {
 
     // 검색 결과 총 개수 조회 (페이징 카운트)
     @Override
-    public int countByKeyword(String keyword) {
-        return postJpaRepository.countByKeyword(keyword);
+    public int countByKeyword(String keyword, PostCategory category) {
+        return postJpaRepository.countByKeyword(escapeKeyword(keyword), category);
     }
 
     // 같은 카테고리 인기 게시글 조회
     // PageRequest.of(0, size) 로 상위 N개만 조회
     @Override
-    public List<Post> findTopPostsByCategory(String category, Long postId, int size) {
+    public List<Post> findTopPostsByCategory(PostCategory category, Long postId, int size) {
         return postJpaRepository.findTopPostsByCategory(category, postId, PageRequest.of(0, size))
                 .stream()
                 .map(PostJpaEntity::toDomain)

@@ -1,7 +1,7 @@
 package com.wanted.momocity.community.presentation.api.request;
 
+import com.wanted.momocity.community.domain.model.PostCategory;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 /*
@@ -17,11 +17,7 @@ public record CreatePostRequest(
         String title,
 
         @NotBlank(message = "카테고리를 입력해주세요.")
-        @Pattern(
-                regexp = "^(STUDY|COOK|EXERCISE|HOBBY|FITNESS|ETC)$",
-                message = "유효하지 않은 카테고리입니다."
-        )
-        String category,
+        PostCategory category,
 
         String thumbnailUrl
 ) {

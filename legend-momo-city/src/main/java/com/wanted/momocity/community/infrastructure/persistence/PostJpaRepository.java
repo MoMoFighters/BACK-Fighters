@@ -1,11 +1,13 @@
 package com.wanted.momocity.community.infrastructure.persistence;
 
+import com.wanted.momocity.community.domain.model.PostCategory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.security.core.parameters.P;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -54,7 +56,7 @@ public interface PostJpaRepository extends JpaRepository<PostJpaEntity, Long> {
     ORDER BY p.id DESC
 """)
     List<PostJpaEntity> findAllByCategoryWithCursor(
-            @Param("category") String category,
+            @Param("category") PostCategory category,
             @Param("cursor") Long cursor,
             Pageable pageable
     );
@@ -72,7 +74,7 @@ public interface PostJpaRepository extends JpaRepository<PostJpaEntity, Long> {
     WHERE p.deletedAt IS NULL
     AND (:category IS NULL OR p.category = :category)
 """)
-    int countByCategory(@Param("category") String category);
+    int countByCategory(@Param("category") PostCategory category);
 
     // 유저별 게시글 커서 기반 조회
     // cursor = null -> 첫 페이지, cursor != null -> 해당 postId 보다 작은 데이터 조회
@@ -123,9 +125,9 @@ public interface PostJpaRepository extends JpaRepository<PostJpaEntity, Long> {
     *  커서기반 : cursor = null -> 첫 페이지, cursor != null -> 해당 postId 보다 작은 데이터 조회
     *  -
     *  와일드카드 이스케이프
-    *  -> 사용자 입력 키워드의 %, _ 를 이스케이프 처리
-    *  -> PostRepositoryAdapter 에서 전처리 후 전달
-    *  -> ESCAPE '\' 로 안전한 검색 보장
+    *  사용자 입력 키워드의 %, _ 를 PostRepositoryAdapter.escapeKeyword() 에서 전처리
+    *  -> % -> \%, _ -> \_ 로 변환 후 전달
+    *  -> JPQL ESCAPE 절 미사용 (Hibernate 6 호환성 문제로 제거)
     * */
 
     @Query("""
@@ -133,14 +135,16 @@ public interface PostJpaRepository extends JpaRepository<PostJpaEntity, Long> {
     LEFT JOIN PostContentJpaEntity c ON c.postId = p.id
     WHERE p.deletedAt IS NULL
     AND (
-        p.title LIKE %:keyword% ESCAPE '\\'
-        OR c.content LIKE %:keyword% ESCAPE '\\'
+        p.title LIKE %:keyword%
+        OR c.content LIKE %:keyword%
     )
+    AND (:category IS NULL OR p.category = :category)
     AND (:cursor IS NULL OR p.id < :cursor)
     ORDER BY p.id DESC
 """)
     List<PostJpaEntity> searchByKeyword(
             @Param("keyword") String keyword,
+            @Param("category") PostCategory category,
             @Param("cursor") Long cursor,
             Pageable pageable
     );
@@ -153,11 +157,13 @@ public interface PostJpaRepository extends JpaRepository<PostJpaEntity, Long> {
     LEFT JOIN PostContentJpaEntity c ON c.postId = p.id
     WHERE p.deletedAt IS NULL
     AND (
-       p.title LIKE %:keyword% ESCAPE '\\'
-       OR c.content LIKE %:keyword% ESCAPE '\\'
+        p.title LIKE %:keyword%
+        OR c.content LIKE %:keyword%
     )
+    AND (:category IS NULL OR p.category = :category)
 """)
-    int countByKeyword(@Param("keyword") String keyword);
+    int countByKeyword(@Param("keyword") String keyword,
+                       @Param("category") PostCategory category);
 
     /*
     * comment.
@@ -174,7 +180,7 @@ public interface PostJpaRepository extends JpaRepository<PostJpaEntity, Long> {
     ORDER BY (p.viewCount * 0.6 + p.likeCount * 0.4) DESC
 """)
     List<PostJpaEntity> findTopPostsByCategory(
-            @Param("category") String category,
+            @Param("category") PostCategory category,
             @Param("postId") Long postId,
             Pageable pageable
     );

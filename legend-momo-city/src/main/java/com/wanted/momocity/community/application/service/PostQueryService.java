@@ -7,6 +7,7 @@ import com.wanted.momocity.community.application.usecase.PostQueryUseCase;
 import com.wanted.momocity.community.domain.exception.CommunityNotFoundException;
 import com.wanted.momocity.community.domain.model.Comment;
 import com.wanted.momocity.community.domain.model.Post;
+import com.wanted.momocity.community.domain.model.PostCategory;
 import com.wanted.momocity.community.domain.model.PostLike;
 import com.wanted.momocity.community.domain.repository.CommentRepository;
 import com.wanted.momocity.community.domain.repository.PostLikeRepository;
@@ -57,7 +58,7 @@ public class PostQueryService implements PostQueryUseCase {
             key = "#category + ':' + #cursor + ':' + #size",
             cacheManager = "redisCacheManager"
     )
-    public PostListResponse getPosts(Long userId, String category, Long cursor, int size) {
+    public PostListResponse getPosts(Long userId, PostCategory category, Long cursor, int size) {
 
         // 전체 게시글 수 조회 (카테고리 필터 적용)
         int totalCount = postRepository.countByCategory(category);
@@ -88,7 +89,7 @@ public class PostQueryService implements PostQueryUseCase {
                     return new PostListResponse.PostItem(
                             post.getId(),
                             post.getTitle(),
-                            post.getCategory(),
+                            post.getCategory().name(),
                             post.getViewCount(),
                             post.getLikeCount(),
                             commentCount,
@@ -152,7 +153,7 @@ public class PostQueryService implements PostQueryUseCase {
         return new PostDetailResponse(
                 post.getId(),
                 post.getTitle(),
-                post.getCategory(),
+                post.getCategory().name(),
                 post.getViewCount(),
                 post.getLikeCount(),
                 isLiked,
@@ -356,7 +357,7 @@ public class PostQueryService implements PostQueryUseCase {
                     return new UserPostListResponse.UserPostItem(
                             post.getId(),
                             post.getTitle(),
-                            post.getCategory(),
+                            post.getCategory().name(),
                             post.getViewCount(),
                             post.getLikeCount(),
                             commentCountMap.getOrDefault(post.getId(), 0L).intValue(),
@@ -419,10 +420,10 @@ public class PostQueryService implements PostQueryUseCase {
 
     // 커뮤니티 게시글 검색
     @Override
-    public UserPostListResponse searchPosts(String keyword, Long cursor, int size) {
-        int totalCount = postRepository.countByKeyword(keyword);
+    public UserPostListResponse searchPosts(String keyword, PostCategory category, Long cursor, int size) {
+        int totalCount = postRepository.countByKeyword(keyword, category);
 
-        List<Post> posts = postRepository.searchByKeyword(keyword, cursor, size);
+        List<Post> posts = postRepository.searchByKeyword(keyword, category, cursor, size);
 
         List<Long> postIds = posts.stream().map(Post::getId).toList();
 
@@ -437,7 +438,7 @@ public class PostQueryService implements PostQueryUseCase {
                     return new UserPostListResponse.UserPostItem(
                             post.getId(),
                             post.getTitle(),
-                            post.getCategory(),
+                            post.getCategory().name(),
                             post.getViewCount(),
                             post.getLikeCount(),
                             commentCountMap.getOrDefault(post.getId(), 0L).intValue(),
@@ -491,7 +492,7 @@ public class PostQueryService implements PostQueryUseCase {
                     return new PostRecommendationResponse.RecommendItem(
                             p.getId(),
                             p.getTitle(),
-                            p.getCategory(),
+                            p.getCategory().name(),
                             p.getViewCount(),
                             p.getLikeCount(),
                             p.getThumbnailUrl(),
@@ -510,7 +511,7 @@ public class PostQueryService implements PostQueryUseCase {
                     return new PostRecommendationResponse.RecommendItem(
                             p.getId(),
                             p.getTitle(),
-                            p.getCategory(),
+                            p.getCategory().name(),
                             p.getViewCount(),
                             p.getLikeCount(),
                             p.getThumbnailUrl(),

@@ -2,6 +2,7 @@ package com.wanted.momocity.community.domain.repository;
 
 import com.wanted.momocity.community.application.result.PostWithContents;
 import com.wanted.momocity.community.domain.model.Post;
+import com.wanted.momocity.community.domain.model.PostCategory;
 import com.wanted.momocity.community.infrastructure.persistence.PostJpaEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -31,11 +32,11 @@ public interface PostRepository {
 
     // 게시글 목록 커서 기반 조회
     // category = null -> 전체 조회
-    List<Post> findAllWithCursor(String category, Long cursor, int size);
+    List<Post> findAllWithCursor(PostCategory category, Long cursor, int size);
 
     // 카테고리별 전체 게시글 수 조회
     // totalCount 반환용
-    int countByCategory(String category);
+    int countByCategory(PostCategory category);
 
     // 유저별 게시글 목록 커서 기반 조회
     // cursor = null -> 첫 페이지, cursor != null -> 해당 postId 보다 작은 데이터 조회
@@ -49,13 +50,13 @@ public interface PostRepository {
     int sumLikeCountByUserId(Long userId);
 
     // 키워드 검색 (커서 기반)
-    List<Post> searchByKeyword(String keyword, Long cursor, int size);
+    List<Post> searchByKeyword(String keyword, PostCategory category, Long cursor, int size);
 
     // 키워드 검색 결과 총 개수
-    int countByKeyword(String keyword);
+    int countByKeyword(String keyword, PostCategory category);
 
     // 같은 카테고리 인기 게시글 조회
-    List<Post> findTopPostsByCategory(String category, Long postId, int size);
+    List<Post> findTopPostsByCategory(PostCategory category, Long postId, int size);
 
     // 같은 작성자 최신 게시글 조회
     List<Post> findLatestPostsByAuthor(Long userId, Long postId, List<Long> excludeIds, int size);

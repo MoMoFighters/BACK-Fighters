@@ -11,10 +11,7 @@ import com.wanted.momocity.community.domain.event.PostLikedEvent;
 import com.wanted.momocity.community.domain.event.ReplyCreatedEvent;
 import com.wanted.momocity.community.domain.exception.CommunityAccessDeniedException;
 import com.wanted.momocity.community.domain.exception.CommunityNotFoundException;
-import com.wanted.momocity.community.domain.model.Comment;
-import com.wanted.momocity.community.domain.model.Post;
-import com.wanted.momocity.community.domain.model.PostContent;
-import com.wanted.momocity.community.domain.model.PostLike;
+import com.wanted.momocity.community.domain.model.*;
 import com.wanted.momocity.community.domain.repository.CommentRepository;
 import com.wanted.momocity.community.domain.repository.PostContentRepository;
 import com.wanted.momocity.community.domain.repository.PostLikeRepository;
@@ -62,8 +59,8 @@ public class PostCommandService implements PostCommandUseCase {
     // 게시글 추가 시 목록 캐시 전체 무효화
     @Override
     @CacheEvict(value = "posts", allEntries = true, cacheManager = "redisCacheManager")
-    public PostCreateResult createPost(Long userId, String title, String category) {
-        Post post = Post.create(userId, title, category);
+    public PostCreateResult createPost(Long userId, String title, PostCategory category, String thumbnailUrl) {
+        Post post = Post.create(userId, title, category, thumbnailUrl);
         Post saved = postRepository.save(post);
 
         log.info("[Community] 게시글 생성 완료 | userId={}, postId={}", userId, saved.getId());
@@ -105,7 +102,7 @@ public class PostCommandService implements PostCommandUseCase {
     // 제목 / 카테고리 수정 시 목록 캐시 전체 무효화
     @Override
     @CacheEvict(value = "posts", allEntries = true, cacheManager = "redisCacheManager")
-    public void updatePost(Long userId, Long postId, String title, String category) {
+    public void updatePost(Long userId, Long postId, String title, PostCategory category) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CommunityNotFoundException("게시글을 찾을 수 없습니다."));
 
