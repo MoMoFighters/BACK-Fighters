@@ -40,6 +40,7 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
     @Query("SELECT u FROM UserUser u WHERE u.role = :role AND u.status = :status ORDER BY u.updatedAt DESC")
     List<UserJpaEntity> findByRoleAndStatus(@Param("role") Role role, @Param("status") Status status, Pageable pageable);
 
+    // 승인 대기 중인 강사 카운트
     long countByRoleAndStatus(Role role, Status status);
 
 
