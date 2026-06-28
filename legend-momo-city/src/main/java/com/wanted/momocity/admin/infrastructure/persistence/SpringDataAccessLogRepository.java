@@ -10,9 +10,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
  */
 public interface SpringDataAccessLogRepository extends JpaRepository<AccessLogJpaEntity, Long> {
 
-    // WHERE user_id IS NOT NULL
-    Page<AccessLogJpaEntity> findAllByUserIdIsNotNull(Pageable pageable);
-
-    // WHERE action = ? AND user_id IS NOT NULL
-    Page<AccessLogJpaEntity> findByActionAndUserIdIsNotNull(String action, Pageable pageable);
+    // WHERE action = ? (비로그인 포함)
+    Page<AccessLogJpaEntity> findByAction(String action, Pageable pageable);
 }

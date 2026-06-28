@@ -13,8 +13,10 @@ import java.time.LocalDateTime;
 public record ReportDetailResponse(
         Long reportId,
         Long reporterUserId,
+        Long reportedUserId,
         String targetType,
         Long targetId,
+        String targetPath,
         String reason,
         String detail,
         boolean isResolved,
@@ -26,9 +28,11 @@ public record ReportDetailResponse(
         return new ReportDetailResponse(
                 report.getId(),
                 report.getReporterUserId(),
+                report.getReportedUserId(),
                 report.getTargetType().name(),
                 report.getTargetId(),
-                report.getReason().name(),
+                report.getTargetPath(),
+                report.getReason().toKorean(),
                 report.getDetail(),
                 report.isResolved(),
                 report.getCreatedAt(),

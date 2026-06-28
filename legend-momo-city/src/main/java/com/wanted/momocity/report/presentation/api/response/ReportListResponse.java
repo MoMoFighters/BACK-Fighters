@@ -40,7 +40,8 @@ public record ReportListResponse(
                     report.getReporterUserId(),
                     report.getTargetType().name(),
                     report.getTargetId(),
-                    report.getReason().name(),
+                    // 한국어 상태값을 위한 리팩
+                    report.getReason().toKorean(),
                     report.getDetail(),
                     report.isResolved(),
                     report.getCreatedAt()
