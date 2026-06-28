@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.Optional;
 
 /* comment.
     JpaRepository 를 상속받아 기본 CRUD 를 자동으로 제공받고, 메서드 이름 규칙만 선언하면
@@ -24,5 +25,8 @@ public interface SpringDataAdminNoticeRepository extends JpaRepository<AdminNoti
     @Modifying
     @Query("DELETE FROM AdminNoticeJpaEntity a WHERE a.id IN :ids")
     void deleteAllByIdIn(@Param("ids") List<Long> ids);
+
+    // isPinned = true 인 공지 단건 조회 : Spring Data 가 메서드 이름 보고 SQL 자동 생성
+    Optional<AdminNoticeJpaEntity> findByIsPinnedTrue();
 
 }

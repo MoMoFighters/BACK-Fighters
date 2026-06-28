@@ -91,4 +91,19 @@ public class AdminNoticeController {
         return ResponseEntity.ok(ApiResponse.success(ApiResponseCode.SUCCESS, "공지가 삭제되었습니다.", null));
     }
 
+    // MS-21 공지 고정
+    @PatchMapping("/{id}/pin")
+    @Operation(summary = "공지 고정", description = "공지를 상단에 고정한다. 기존 고정 공지는 자동 해제된다.")
+    public ResponseEntity<ApiResponse<Void>> pinNotice(@PathVariable Long id) {
+        commandUseCase.pinNotice(id);
+        return ResponseEntity.ok(ApiResponse.success(ApiResponseCode.SUCCESS, "공지가 상단에 고정되었습니다.", null));
+    }
+
+    // MS-22 공지 고정 해제
+    @PatchMapping("/{id}/unpin")
+    @Operation(summary = "공지 고정 해제", description = "고정된 공지의 고정을 해제한다.")
+    public ResponseEntity<ApiResponse<Void>> unpinNotice(@PathVariable Long id) {
+        commandUseCase.unpinNotice(id);
+        return ResponseEntity.ok(ApiResponse.success(ApiResponseCode.SUCCESS, "공지 고정이 해제되었습니다.", null));
+    }
 }

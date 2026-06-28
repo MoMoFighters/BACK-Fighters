@@ -1,6 +1,7 @@
 package com.wanted.momocity.global.presentation.api.common;
 
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
+import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -126,6 +127,17 @@ public class ApiExceptionHandler {
                         HttpStatus.NOT_FOUND.value(),
                         ApiResponseCode.NOT_FOUND,
                         message
+                ));
+    }
+
+    // DB에서 id로 조회했으나 존재하지 않을 때 500 대신 404 로 내려준다.
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleEntityNotFound(EntityNotFoundException exception) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiErrorResponse.of(
+                        HttpStatus.NOT_FOUND.value(),
+                        ApiResponseCode.NOT_FOUND,
+                        exception.getMessage()
                 ));
     }
 
