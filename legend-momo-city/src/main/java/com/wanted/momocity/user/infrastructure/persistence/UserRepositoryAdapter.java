@@ -194,7 +194,8 @@ public class UserRepositoryAdapter implements UserRepository {
                 entity.getPoint(),
                 entity.getNickname(),
                 entity.isTempPwd(),
-                entity.getCreatedAt()
+                entity.getCreatedAt(),
+                entity.getSuspensionCount()
         );
     }
 
@@ -226,6 +227,8 @@ public class UserRepositoryAdapter implements UserRepository {
                 entity.getCreatedAt(),
                 entity.getDeletedAt(),
                 entity.getStatus(),
+                entity.getSuspensionCount(),
+                entity.getSuspendedUntil(),
                 entity.getRole() == Role.TEACHER ? entity.getProof() : null
         );
     }
