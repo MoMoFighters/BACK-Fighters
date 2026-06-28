@@ -51,6 +51,19 @@ public class AdminNotice {
         this.updatedAt = LocalDateTime.now();
     }
 
+    // isPinned
+    // MS-21 공지 고정
+    public void pin() {
+        this.isPinned = true;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // MS-22 공지 고정 해제
+    public void unpin() {
+        this.isPinned = false;
+        this.updatedAt = LocalDateTime.now();
+    }
+
     // GETTER
     public Long getId() {
         return id;

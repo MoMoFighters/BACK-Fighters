@@ -32,4 +32,8 @@ public interface AdminNoticeRepository {
     // MS-19 : 공지 선택 삭제
     void deleteAllByIds(List<Long> ids);
 
+    // 공지가 0 개 일수도 있기 때문에 null 체크 없이 .ifPresent( ) 로 안전하게 처리할 수 있다.
+    // MS-21, 22 : 현재 고정된 공지 단건 조회 (없으면 Optional.empty())
+    Optional<AdminNotice> findPinned();
+
 }
