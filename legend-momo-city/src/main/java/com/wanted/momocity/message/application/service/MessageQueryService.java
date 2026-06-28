@@ -190,9 +190,23 @@ public class MessageQueryService implements MessageQueryUseCase {
                 ));
             }
 
+            // 💡 1. 로그인 유저의 해당 방 참여 정보(특히 joinedAt) 가져오기
+            ChatRoomMemberJpaEntity loginUserMember = allMembers.stream()
+                    .filter(m -> m.getUserId().getId().equals(query.userId()))
+                    .findFirst()
+                    .orElse(null);
+
+            LocalDateTime myJoinedAt = (loginUserMember != null) ? loginUserMember.getJoinedAt() : pro.roomCreatedAt();
+
                 //마지막 채팅 내역, 마지막 채팅 시간
                 String lastContent = (pro.lastMessage() != null) ? pro.lastMessage().getContent() : "";
                 LocalDateTime lastChattedAt = (pro.lastMessage() != null) ? pro.lastMessage().getCreatedAt() : null;
+
+            // 💡 2. [핵심] 어댑터가 가져온 메시지 시간이 내 입장 시각(joinedAt)보다 과거라면 덮어쓰기!
+            if (pro.lastMessage() != null && pro.lastMessage().getCreatedAt().isBefore(myJoinedAt)) {
+                lastContent = "채팅방에 입장했습니다. 대화를 시작해 보세요!";
+                lastChattedAt = myJoinedAt; // 과거 톡 시간은 노출 및 정렬에서 제외하기 위해 null 처리
+            }
 
                 //안내 문구 시간 정렬 기준 추가
                 LocalDateTime lastAnnounceAt = messageRepository.findLatestAnnounceTime(roomId).orElse(null);
@@ -212,6 +226,13 @@ public class MessageQueryService implements MessageQueryUseCase {
                     //둘다 없으면 채팅방 개설 시간
                     lastestOrderTime = pro.roomCreatedAt();
                 }
+
+            // 💡 4. [중요] 재입장 유저 대상 날짜 동기화 보정
+            // 과거 메시지가 잘려 나갔고, 마지막 안내 멘트 시간마저 내 입장 시점(myJoinedAt) 이전의 과거 데이터라면
+            // 정렬 및 목록 노출 시간은 '재입장 시각'으로 완전히 덮어써 주어야 어색하지 않습니다.
+            if (lastestOrderTime.isBefore(myJoinedAt)) {
+                lastestOrderTime = myJoinedAt;
+            }
 
                 //채팅방별 안읽은 메시지
                 Long unreadCount = 0L;
