@@ -58,6 +58,12 @@ public class AdminNoticeRepositoryAdapter implements AdminNoticeRepository {
     @Override
     public void delete(Long id) {
         springDataRepo.deleteById(id);
-
     }
+
+    // 현재 고정된 공지를 SpringData 에서 조회 후 도메인으로 변환, 없으면 Optional.empty() 반환
+    @Override
+    public Optional<AdminNotice> findPinned() {
+        return springDataRepo.findByIsPinnedTrue().map(AdminNoticeJpaEntity::toDomain);
+    }
+
 }

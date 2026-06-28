@@ -25,4 +25,10 @@ public interface AdminNoticeCommandUseCase {
     // MS-19 공지 선택 삭제
     void deleteNotices(List<Long> ids);
 
+    // MS-21 공지 고정
+    void pinNotice(Long id);
+
+    // MS-22 공지 고정 해제
+    void unpinNotice(Long id);
+
 }
