@@ -147,10 +147,8 @@ public class PostQueryService implements PostQueryUseCase {
                 ))
                 .toList();
 
-        // 현재 로그인 유저가 해당 게시글에 좋아요 눌렀는지 확인
-        boolean isLiked = postLikeRepository
-                .findByPostIdAndUserId(postId, userId)
-                .isPresent();
+        // 수정: EXISTS 쿼리로 boolean 만 반환 -> 불필요한 데이터 로드 방지
+        boolean isLiked = postLikeRepository.existsByPostIdAndUserId(postId, userId);
 
         // 현재 로그인 유저가 게시글 작성자인지 확인
         boolean isMine = post.getUserId().equals(userId);
