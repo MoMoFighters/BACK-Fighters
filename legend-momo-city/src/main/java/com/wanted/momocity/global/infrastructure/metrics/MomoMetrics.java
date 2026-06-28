@@ -19,9 +19,19 @@ public class MomoMetrics {
     private final Timer chatRoomListTimer;
     private final Timer lectureUploadTimer;
     private final Timer lectureListTimer;
+    private final Timer reviewCreateTimer;
+    private final Timer reviewDeleteTimer;
+    private final Timer reviewListTimer;
+    private final Timer enrollmentProgressTimer;
+    private final Timer chapterCreateTimer;
+    private final Timer chapterVideoRegisterTimer;
+
 
     // ===== Counter =====
     private final Counter s3UploadFailCounter;
+    private final Counter reviewCreatedCounter;
+    private final Counter reviewDeletedCounter;
+    private final Counter duplicateReviewFailedCounter;
 
 
     public MomoMetrics(MeterRegistry meterRegistry) {
@@ -78,6 +88,42 @@ public class MomoMetrics {
                 .description("S3 파일 업로드 실패 횟수")
                 .register(meterRegistry);
 
+
+        this.reviewCreateTimer = Timer.builder("momocity.review.create.duration")
+                .description("수강평 등록 소요 시간")
+                .register(meterRegistry);
+
+        this.reviewDeleteTimer = Timer.builder("momocity.review.delete.duration")
+                .description("수강평 삭제 소요 시간")
+                .register(meterRegistry);
+
+        this.reviewListTimer = Timer.builder("momocity.review.list.duration")
+                .description("수강평 목록 조회 소요 시간")
+                .register(meterRegistry);
+
+        this.reviewCreatedCounter = Counter.builder("momocity.review.created")
+                .description("수강평 등록 성공 횟수")
+                .register(meterRegistry);
+
+        this.reviewDeletedCounter = Counter.builder("momocity.review.deleted")
+                .description("수강평 삭제 성공 횟수")
+                .register(meterRegistry);
+
+        this.duplicateReviewFailedCounter = Counter.builder("momocity.review.duplicate.failed")
+                .description("중복 수강평 등록 실패 횟수")
+                .register(meterRegistry);
+
+        this.enrollmentProgressTimer = Timer.builder("momocity.enrollment.progress.duration")
+                .description("학습 진척도 조회 소요 시간")
+                .register(meterRegistry);
+
+        this.chapterCreateTimer = Timer.builder("momocity.chapter.create.duration")
+                .description("챕터 등록 소요 시간")
+                .register(meterRegistry);
+
+        this.chapterVideoRegisterTimer = Timer.builder("momocity.chapter.video.register.duration")
+                .description("챕터 동영상 등록 소요 시간")
+                .register(meterRegistry);
     }
 
     // 작업 시작 시점의 시간을 기억
@@ -133,5 +179,41 @@ public class MomoMetrics {
         sample.stop(lectureListTimer);
     }
 
+    // 수강평 등록 소요 시간 기록
+    public void stopReviewCreateTimer(Timer.Sample sample) {
+        sample.stop(reviewCreateTimer);
+    }
 
+    // 수강평 삭제 소요 시간 기록
+    public void stopReviewDeleteTimer(Timer.Sample sample) {
+        sample.stop(reviewDeleteTimer);
+    }
+
+    public void stopReviewListTimer(Timer.Sample sample) {
+        sample.stop(reviewListTimer);
+    }
+
+    public void recordReviewCreated() {
+        reviewCreatedCounter.increment();
+    }
+
+    public void recordReviewDeleted() {
+        reviewDeletedCounter.increment();
+    }
+
+    public void recordDuplicateReviewFailed() {
+        duplicateReviewFailedCounter.increment();
+    }
+
+    public void stopEnrollmentProgressTimer(Timer.Sample sample) {
+        sample.stop(enrollmentProgressTimer);
+    }
+
+    public void stopChapterCreateTimer(Timer.Sample sample) {
+        sample.stop(chapterCreateTimer);
+    }
+
+    public void stopChapterVideoRegisterTimer(Timer.Sample sample) {
+        sample.stop(chapterVideoRegisterTimer);
+    }
 }
