@@ -97,7 +97,7 @@ public class UserCommandService implements UserCommandUsecase {
         userPolicy.teacherProofPolicy(command.proof());
         String proofKey = s3UploadPort.upload(command.proof(), "teacher_proof");
 
-        userRepository.teacherApply(command.userId(),command.nickname(),command.category(),proofKey);
+        userRepository.teacherApply(command.userId(),command.nickname(),command.category(),proofKey,LocalDateTime.now());
 
         log.info("[teacherApply] 강사 신청 완료 | userId={} | role=TEACHER", command.userId());
 

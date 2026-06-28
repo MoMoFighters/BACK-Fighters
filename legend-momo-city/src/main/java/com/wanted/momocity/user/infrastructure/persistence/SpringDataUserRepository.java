@@ -52,12 +52,13 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
     // proof : null -> S3 url
     @Modifying
     @Transactional
-    @Query("UPDATE UserUser u SET u.role = 'TEACHER', u.status = 'PENDING', u.category = :category, u.proof = :proof, u.nickname = :nickname " +
+    @Query("UPDATE UserUser u SET u.role = 'TEACHER', u.status = 'PENDING', u.category = :category, u.proof = :proof, u.nickname = :nickname, u.updatedAt = :updatedAt " +
             "WHERE u.id = :userId")
     void teacherApply(@Param("userId") Long userId,
                       @Param("nickname") String nickname,
                       @Param("category") Category category,
-                      @Param("proof") String proof);
+                      @Param("proof") String proof,
+                      @Param("updatedAt") LocalDateTime updatedAt);
 
     // 강사 중복 신청 방지용
     @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM UserUser u WHERE u.id = :userId AND u.role = :role AND u.status IN :status")

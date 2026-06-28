@@ -52,7 +52,7 @@ public interface UserRepository {
     boolean setAlarm(Long userId);
 
     // 강사 신청
-    void teacherApply(Long userId, String nickname, Category category, String proof);
+    void teacherApply(Long userId, String nickname, Category category, String proof, LocalDateTime updatedAt);
 
     // 강사 중복 신청 확인/ 강사 role 확인 용
     boolean checkTeacherAvailable(Long userId, Role role, List<Status> status);
