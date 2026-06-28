@@ -16,11 +16,11 @@ public record DashboardSummaryResponse(
         List<RecentNotice> recentNotices,
         List<RecentAccessLog> recentAccessLogs
 ) {
-    record Cards(long totalUsers, long unresolvedReports, long pendingTeachers, long activeLectures) {}
-    record SystemHealth(String webService, String database, String fileStorage, String mailService) {}
-    record PendingTask(String type, String title, String requester, LocalDateTime requestedAt) {}
-    record RecentReport(Long reportId, String reporterName, String reason, boolean isResolved, LocalDateTime createdAt) {}
-    record RecentNotice(Long noticeId, String title, LocalDateTime createdAt) {}
+    public record Cards(long totalUsers, long unresolvedReports, long pendingTeachers, long activeLectures) {}
+    public record SystemHealth(String webService, String database, String fileStorage, String mailService) {}
+    public record PendingTask(String type, String title, String requester, LocalDateTime requestedAt) {}
+    public record RecentReport(Long reportId, String reporterName, String reason, boolean isResolved, LocalDateTime createdAt) {}
+    public record RecentNotice(Long noticeId, String title, LocalDateTime createdAt) {}
     // role 추가 — FE MS-4 연동 요청
-    record RecentAccessLog(Long logId, String ip, String userName, String role, boolean isSuccess, LocalDateTime accessedAt) {}
+    public record RecentAccessLog(Long logId, String ip, String userName, String role, boolean isSuccess, LocalDateTime accessedAt) {}
 }
