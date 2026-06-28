@@ -12,7 +12,9 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, Long> {
 
@@ -194,4 +196,11 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
     // 사용자 보유 포인트 찾기
     @Query("SELECT u.point FROM UserUser u WHERE u.id = :userId")
     long findPointById(@Param("userId") Long userId);
+
+    // userid로 사용자 찾기
+    // AS id → getId()
+    // AS name → getName()
+    // AS role → getRole()
+    @Query("SELECT u.id AS id, u.name AS name, u.role AS role FROM UserUser u WHERE u.id IN :userIds")
+    List<UserNameProjection> findNameAndRoleByIdIn(@Param("userIds") Set<Long> userIds);
 }
