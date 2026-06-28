@@ -57,16 +57,16 @@ public class AdminNoticeCommandService implements AdminNoticeCommandUseCase {
         adminNoticeRepository.deleteAllByIds(ids);
     }
 
-    // MS-21 공지 고정 : 기존 고정 공지 해제 후 대상 공지 고정
+    // MS-21 공지 고정 : target 존재 확인 먼저 → 없는 id 요청 시 기존 고정 공지가 의도치 않게 해제되는 버그 방지
     @Override
     public void pinNotice(Long id) {
+        AdminNotice target = adminNoticeRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 공지입니다."));
         adminNoticeRepository.findPinned()
                 .ifPresent(prev -> {
                     prev.unpin();
                     adminNoticeRepository.save(prev);
                 });
-        AdminNotice target = adminNoticeRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 공지입니다."));
         target.pin();
         adminNoticeRepository.save(target);
     }
