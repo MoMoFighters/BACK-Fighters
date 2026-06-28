@@ -4,6 +4,7 @@ import com.wanted.momocity.auth.application.port.PasswordEncodePort;
 import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.user.application.port.GetItemUrlPort;
 import com.wanted.momocity.user.application.port.ReportRedisPort;
+import com.wanted.momocity.user.domain.event.ReportRedisEvent;
 import com.wanted.momocity.user.domain.event.TeacherApplicationEvent;
 import com.wanted.momocity.user.domain.exception.AlreadySuspendedException;
 import com.wanted.momocity.user.domain.exception.UserNotFoundException;
@@ -185,7 +186,7 @@ public class UserCommandService implements UserCommandUsecase {
         userRepository.reportApply(userId, result.status(), result.suspendedUntil());
 
         // 신고 처리 시각 Redis에 저장
-        reportRedisPort.saveReportTime(userId);
+        eventPublisher.publishEvent(new ReportRedisEvent(userId, true));
 
         log.info("[user] 신고 처리 | userId={} | count={} | status={} | suspendedUntil={}",
                 userId, count, result.status(), result.suspendedUntil());
@@ -194,10 +195,15 @@ public class UserCommandService implements UserCommandUsecase {
     }
 
     private CheckStatusResult reportApply(Long count) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime midnight = LocalDateTime.now()
+                .plusDays(1)
+                .toLocalDate()
+                .atStartOfDay(); // 정지 기간을 정지 마지막날 자정으로 설정
+                                    // 그렇게 해야 매일 자정마다 도는 스케줄러에 맞춰 정지를 풀어줄 수 있음
+
         return switch (count.intValue()) {
-            case 1 -> new CheckStatusResult(Status.BANNED, now.plusWeeks(1));
-            case 2 -> new CheckStatusResult(Status.BANNED, now.plusMonths(1));
+            case 1 -> new CheckStatusResult(Status.BANNED, midnight.plusWeeks(1));
+            case 2 -> new CheckStatusResult(Status.BANNED, midnight.plusMonths(1));
             default -> new CheckStatusResult(Status.BLACK, null);
         };
     }
@@ -215,7 +221,7 @@ public class UserCommandService implements UserCommandUsecase {
         }
 
         userRepository.minusReportCount(userId);
-        reportRedisPort.deleteReportTime(userId);
+        eventPublisher.publishEvent(new ReportRedisEvent(userId, false));
         log.info("[user] 사용자 제재 복구 완료 | userId={}", userId);
     }
 }
