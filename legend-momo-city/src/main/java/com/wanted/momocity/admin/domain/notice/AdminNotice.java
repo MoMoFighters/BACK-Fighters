@@ -32,7 +32,7 @@ public class AdminNotice {
 
     // MS - 11 공지 생성 시 호출
     public static AdminNotice create(String title, String content, boolean isPinned) {
-        return new AdminNotice(null, title, content, isPinned, LocalDateTime.now(), null);
+        return new AdminNotice(null, title, content, isPinned, LocalDateTime.now(), LocalDateTime.now());
     }
 
     // DB 에서 꺼낸 데이터를 도메인 객체로 복원
