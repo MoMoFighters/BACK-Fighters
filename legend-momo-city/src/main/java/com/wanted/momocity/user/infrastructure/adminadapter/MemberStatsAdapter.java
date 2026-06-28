@@ -20,7 +20,7 @@ public class MemberStatsAdapter implements MemberStatsPort {
     // 전체 회원 수 (탈퇴 제외)
     @Override
     public long countAll() {
-        return springDataUserRepository.countByStatus(Status.ACTIVE);
+        return springDataUserRepository.countByStatusNot(Status.DELETED);
     }
 
     @Override

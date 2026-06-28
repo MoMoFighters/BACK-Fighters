@@ -203,4 +203,7 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
     // AS role → getRole()
     @Query("SELECT u.id AS id, u.name AS name, u.role AS role FROM UserUser u WHERE u.id IN :userIds")
     List<UserNameProjection> findNameAndRoleById(@Param("userIds") Set<Long> userIds);
+
+    // 탈퇴회원 제외 전체 조회
+    long countByStatusNot(Status status);
 }
