@@ -25,6 +25,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -254,6 +255,56 @@ public class UserController {
         ));
     }
 
+
+    @PatchMapping("/plus/report-count/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "관리저의 신고 처리",
+                description = "신고 누적 횟수에 따라 status, suspensionCount, suspendedUntil 변경")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "신고 처리 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "이미 정지된 사용자")
+    })
+    public ResponseEntity<ApiResponse<Void>> plusReportCount(
+            @PathVariable Long userId){
+        LocalDateTime suspendedUntil = userCommandUsecase.plusReportCount(userId);
+
+        String suspendedDate = suspendedUntil != null
+                ? " (정지 기간 : ~ " + suspendedUntil.toLocalDate() + ")"
+                : " (영구 정지)";
+
+        return ResponseEntity.ok(ApiResponse.success(
+                UserResponseCode.USER_REPORT_PLUS,
+                UserResponseMessage.USER_REPORT_PLUS + suspendedDate,
+                null
+        ));
+
+    }
+
+    @PatchMapping("/minus/report-count/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "관리저가 실수로 +누른 경우에 사용자 복구 ")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "신고 복구 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "24시간 경과"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "ACTIVE 사용자"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
+    })
+    public ResponseEntity<ApiResponse<Void>> minusReportCount(
+            @PathVariable Long userId){
+
+        userCommandUsecase.minusReportCount(userId);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                UserResponseCode.USER_REPORT_MINUS,
+                UserResponseMessage.USER_REPORT_MINUS,
+                null
+        ));
+    }
 
 
 }
