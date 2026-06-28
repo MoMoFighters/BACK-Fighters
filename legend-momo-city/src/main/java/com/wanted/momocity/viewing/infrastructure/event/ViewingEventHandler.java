@@ -1,6 +1,6 @@
 package com.wanted.momocity.viewing.infrastructure.event;
 
-import com.wanted.momocity.global.application.point.PointChange;
+import com.wanted.momocity.viewing.application.service.PointGrantService;
 import com.wanted.momocity.viewing.domain.event.ChapterCompletedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +30,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @RequiredArgsConstructor
 public class ViewingEventHandler {
 
-    private final PointChange pointChange;
+    private final PointGrantService pointGrantService;
 
     @Async("domainEventExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -38,12 +38,8 @@ public class ViewingEventHandler {
         log.info("[Viewing] ChapterCompletedEvent 처리 | userId={}, lectureId={}, chapterId={}, occurredAt={}",
                 event.userId(), event.lectureId(), event.chapterId(), event.occurredAt());
 
-        // 챕터 완료 시 포인트 지급
-        // -> ChapterCompletedEvent 는 wasCompleted=false -> isCompleted=true 일 때만 발행
-        // -> 중복 지급 방지 보장
-        pointChange.gainPoint(event.userId(), 10L);
-
-        log.info("[Viewing] 포인트 지급 완료 | userId={}, amount=10", event.userId());
+        // 챕터 완료 시 포인트 지급 (@Transactional 보장된 서비스에서 처리)
+        pointGrantService.grantChapterCompletionPoint(event.userId());
 
     }
 
