@@ -21,6 +21,9 @@ public interface PostLikeRepository {
 
     List<PostLike> findAllByPostId(Long postId);
 
+    // 좋아요 존재 여부 확인 (EXISTS 쿼리 -> 불필요한 데이터 로드 방지)
+    boolean existsByPostIdAndUserId(Long postId, Long userId);
+
     // 좋아요 삭제
     void delete(PostLike postLike);
 

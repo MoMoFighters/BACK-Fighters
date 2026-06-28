@@ -249,7 +249,7 @@ public class ViewingQueryService implements ViewingQueryUseCase {
                     return new ChapterProgressResponse.ChapterProgressItem(
                             chapter.getId(), chapter.getTitle(), chapter.getOrderNo(),
                             Math.min(history.getWatchedSeconds(), chapter.getDurationSec()), chapter.getDurationSec(),
-//                             chapterProgress,
+                            // chapterProgress,
                             history.getProgressRate(), history.isCompleted(),
                             isAccessible
                     );
