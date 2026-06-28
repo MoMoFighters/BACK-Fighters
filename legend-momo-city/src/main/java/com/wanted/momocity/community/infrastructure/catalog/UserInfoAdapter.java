@@ -2,7 +2,7 @@ package com.wanted.momocity.community.infrastructure.catalog;
 
 import com.wanted.momocity.auth.application.port.LoadUserPort;
 import com.wanted.momocity.auth.domain.model.User;
-import com.wanted.momocity.community.application.port.UserInfoPort;
+import com.wanted.momocity.community.application.post.port.UserInfoPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

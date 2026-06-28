@@ -1,15 +1,12 @@
-package com.wanted.momocity.community.application.service;
+package com.wanted.momocity.community.application.post.service;
 
 import com.wanted.momocity.auth.domain.model.User;
-import com.wanted.momocity.community.application.port.UserInfoPort;
-import com.wanted.momocity.community.application.result.PostWithContents;
-import com.wanted.momocity.community.application.usecase.PostQueryUseCase;
-import com.wanted.momocity.community.domain.exception.CommunityAccessDeniedException;
+import com.wanted.momocity.community.application.post.port.UserInfoPort;
+import com.wanted.momocity.community.application.post.result.PostWithContents;
+import com.wanted.momocity.community.application.post.usecase.PostQueryUseCase;
 import com.wanted.momocity.community.domain.exception.CommunityNotFoundException;
-import com.wanted.momocity.community.domain.model.Comment;
 import com.wanted.momocity.community.domain.model.Post;
 import com.wanted.momocity.community.domain.model.PostCategory;
-import com.wanted.momocity.community.domain.model.PostLike;
 import com.wanted.momocity.community.domain.repository.CommentRepository;
 import com.wanted.momocity.community.domain.repository.PostLikeRepository;
 import com.wanted.momocity.community.domain.repository.PostRepository;
@@ -17,16 +14,11 @@ import com.wanted.momocity.community.presentation.api.response.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -121,24 +113,23 @@ public class PostQueryService implements PostQueryUseCase {
     }
 
     // 게시글 단건 조회
-    // contents, comments, isMine, isLiked 포함
-    // 조회수 증가는 CommandService 에서 처리
     @Override
     public PostDetailResponse getPost(Long userId, Long postId) {
 
         // 조회수 비동기 증가 -> 응답 반환과 무관하게 별도 스레드에서 처리
         postCommandService.increaseViewCount(postId);
 
+        // 게시글 + 콘텐츠 fetch join 조회
         PostWithContents postWithContents = postRepository.findByIdWithContents(postId)
                 .orElseThrow(() -> new CommunityNotFoundException("게시글을 찾을 수 없습니다."));
 
         Post post = postWithContents.post();
 
+        // 게시글 작성자 정보 조회
         User author = userInfoPort.findById(post.getUserId())
                 .orElseThrow(() -> new CommunityNotFoundException("사용자를 찾을 수 없습니다."));
 
-        // 콘텐츠 목록 조회
-        // orderNo 기준 정렬
+        // 콘텐츠 목록 조회 (orderNo 기준 정렬)
         List<PostContentResponse> contents = postWithContents.contents().stream()
                 .map(c -> new PostContentResponse(
                         c.getType().name(),
@@ -147,7 +138,7 @@ public class PostQueryService implements PostQueryUseCase {
                 ))
                 .toList();
 
-        // 수정: EXISTS 쿼리로 boolean 만 반환 -> 불필요한 데이터 로드 방지
+        // EXISTS 쿼리로 boolean 만 반환 -> 불필요한 데이터 로드 방지
         boolean isLiked = postLikeRepository.existsByPostIdAndUserId(postId, userId);
 
         // 현재 로그인 유저가 게시글 작성자인지 확인
@@ -171,208 +162,6 @@ public class PostQueryService implements PostQueryUseCase {
                 post.getCreatedAt()
         );
 
-    }
-
-    @Override
-    public PostCommentResponse getComments(Long userId, Long postId, Long cursor, int size) {
-
-        // 게시글 조회 (작성자 userId 확인용)
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new CommunityNotFoundException("게시글을 찾을 수 없습니다."));
-
-        // 전체 댓글 수 조회 (대댓글 제외)
-        int totalCount = commentRepository.countByPostId(postId);
-
-        // 커서 기반 댓글 목록 조회
-        List<Comment> comments = commentRepository.findByPostIdWithCursor(postId, cursor, size);
-
-        // nextCursor 계산
-        // size + 1 개 조회 후 실제 반환 = size 개 -> size + 1 번째 데이터 존재 = 다음 페이지 존재, 없으면 null 반환
-        // size 개 조회 시 마지막 페이지일 시 nextCursor 반환 -> 빈페이지 요청 발생
-        boolean hasNext = comments.size() > size;
-        List<Comment> pagedComments = hasNext ? comments.subList(0, size) : comments;
-        Long nextCursor = hasNext ? pagedComments.get(pagedComments.size() - 1).getId() : null;
-
-        // 댓글 Id 목록 추출 -> 대댓글 일괄 조회용
-        List<Long> commentIds = pagedComments.stream()
-                .map(Comment::getId)
-                .toList();
-
-        // N+1 개선 : 대댓글 한 번에 일괄 조회
-        // commentId 목록으로 IN 쿼리 -> 1번 쿼리
-        // -> commentId 기준 Map<commentId, List<Comment>> 로 변환
-        Map<Long, List<Comment>> repliesMap = commentRepository
-                .findRepliesByCommentIds(commentIds)
-                .stream()
-                .collect(Collectors.groupingBy(Comment::getParentId));
-
-        // items 변환 -> pagedComments 사용
-        // 댓글 목록 -> CommentResponse 변환
-        List<CommentResponse> commentResponses = pagedComments.stream()
-                .map(c -> {
-                    // 댓글 작성자 정보 조회
-                    User commentAuthor = userInfoPort.findById(c.getUserId())
-                            .orElseThrow(() -> new CommunityNotFoundException("사용자를 찾을 수 없습니다."));
-
-                    // 대댓글 목록 조회 (repliesMap 에서 가져옴 -> DB 추가 조회 없음)
-                    List<Comment> allReplies = repliesMap.getOrDefault(c.getId(), List.of());
-
-                    // 대댓글 5개 초과 여부 확인
-                    // size + 1 개 조회 후 5개 초과 시 hasMoreReplies = true, 반환값은 5
-                    boolean hasMoreReplies = allReplies.size() > 5;
-                    List<Comment> pagedReplies = hasMoreReplies
-                            ? new ArrayList<>(allReplies.subList(0, 5))
-                            : allReplies;
-
-                    // nextCursor 계산
-                    // hasMoreReplies = true -> 다음 페이지 존재, false -> null
-                    Long nextReplyCursor = hasMoreReplies
-                            ? pagedReplies.get(pagedReplies.size() - 1).getId()
-                            : null;
-
-                    // replyResponse 변환 -> getReplies 사용
-                    List<ReplyResponse> replyResponses = pagedReplies.stream()
-                            .map(r -> {
-                                // 대댓글 작성자 정보 조회
-                                User replyAuthor = userInfoPort.findById(r.getUserId())
-                                        .orElseThrow(() -> new CommunityNotFoundException("사용자를 찾을 수 없습니다."));
-                                return new ReplyResponse(
-                                        r.getId(),
-                                        r.getUserId(),
-                                        r.getContent(),
-                                        replyAuthor.getName(),
-                                        replyAuthor.getProfileImageUrl(),
-                                        replyAuthor.getRole().name(),
-                                        // 대댓글 작성자가 본인인지 확인
-                                        r.getUserId().equals(userId),
-                                        // 대댓글 작성자가 게시글 작성자인지 확인
-                                        r.getUserId().equals(post.getUserId()),
-                                        r.getCreatedAt()
-                                );
-                            })
-                            .toList();
-
-                    return new CommentResponse(
-                            c.getId(),
-                            c. getUserId(),
-                            c.getContent(),
-                            commentAuthor.getName(),
-                            commentAuthor.getProfileImageUrl(),
-                            commentAuthor.getRole().name(),
-                            // 댓글 작성자가 본인인지 확인
-                            c.getUserId().equals(userId),
-                            // 댓글 작성자가 게시글 작성자인지 확인
-                            c.getUserId().equals(post.getUserId()),
-                            c.getCreatedAt(),
-                            replyResponses,
-                            hasMoreReplies,
-                            nextReplyCursor
-                    );
-                })
-                .toList();
-
-        log.info("[Community] 게시글 댓글 조회 완료 | postId={}, totalCount={}", postId, totalCount);
-
-        return new PostCommentResponse(totalCount, commentResponses, nextCursor);
-
-    }
-
-    /*
-     * comment.
-     *  대댓글 목록 조회
-     *  isPostWriter 계산 위해 post 조회 필요
-     *  - nextCursor
-     *  조회된 대댓글 수 == size -> 다음 페이지 존재
-     *  조회된 대댓글 수 < size -> 마지막 페이지 -> NULL
-     * */
-
-    @Override
-    public PostReplyResponse getReplies(Long userId, Long postId, Long commentId, Long cursor, int size) {
-
-        // 게시글 작성자 확인용
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new CommunityNotFoundException("게시글을 찾을 수 없습니다."));
-
-        // 댓글 조회 (해당 게시글의 댓글인지 검증)
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new CommunityNotFoundException("댓글을 찾을 수 없습니다."));
-
-        // 해당 게시글의 댓글인지 검증
-        if (!comment.getPostId().equals(postId)) {
-            throw new CommunityAccessDeniedException("해당 게시글의 댓글이 아닙니다.");
-        }
-
-        // 최상위 댓글인지 검증 (대댓글에 대댓글 방지)
-        if (comment.getParentId() != null) {
-            throw new CommunityAccessDeniedException("대댓글에는 대댓글을 작성할 수 없습니다.");
-        }
-
-        // 전체 대댓글 수
-        int totalCount = commentRepository.countRepliesByCommentId(commentId);
-
-        // 커서 기반 대댓글 조회
-        List<Comment> replies = commentRepository
-                .findRepliesByCommentIdWithCursor(commentId, cursor, size);
-
-        // nextCursor 계산
-        // size + 1 개 조회 후 실제 반환 = size 개 -> size + 1 번째 데이터 존재 = 다음 페이지 존재, 없으면 null 반환
-        // size 개 조회 시 마지막 페이지일 시 nextCursor 반환 -> 빈페이지 요청 발생
-        boolean hasNext = replies.size() > size;
-        List<Comment> pagedReplies = hasNext ? replies.subList(0, size) : replies;
-        Long nextCursor = hasNext ? pagedReplies.get(pagedReplies.size() - 1).getId() : null;
-
-        // items 변환 -> pagedReplies 사용
-        List<ReplyResponse> replyResponses = pagedReplies.stream()
-                .map(r -> {
-                    // 대댓글 작성자 정보 조회
-                    User replyAuthor = userInfoPort.findById(r.getUserId())
-                            .orElseThrow(() -> new CommunityNotFoundException("사용자를 찾을 수 없습니다."));
-                    return new ReplyResponse(
-                            r.getId(),
-                            r.getUserId(),
-                            r.getContent(),
-                            replyAuthor.getName(),
-                            replyAuthor.getProfileImageUrl(),
-                            replyAuthor.getRole().name(),
-                            r.getUserId().equals(userId),
-                            r.getUserId().equals(post.getUserId()),
-                            r.getCreatedAt()
-                    );
-                })
-                .toList();
-
-        log.info("[Community] 대댓글 조회 완료 | commentId={}, totalCount={}", commentId, totalCount);
-
-        return new PostReplyResponse(totalCount, replyResponses, nextCursor);
-
-    }
-
-    // 좋아요 누른 사용자 목록 조회
-    // userId 포함 -> 클릭 시 해당 사용자 페이지로 이동
-    @Override
-    public PostLikeListResponse getLikes(Long postId) {
-
-        // 게시글 좋아요 누른 사용자 목록 전체 조회
-        List<PostLike> likes = postLikeRepository.findAllByPostId(postId);
-
-        // 좋아요 누른 사용자 정보 변환 (userId 기준 유저 정보 조회)
-        List<PostLikeListResponse.LikeUserItem> users = likes.stream()
-                .map(like -> {
-                    // 좋아요 누른 사용자 정보 조회
-                    User user = userInfoPort.findById(like.getUserId())
-                            .orElseThrow(() -> new CommunityNotFoundException("사용자를 찾을 수 없습니다."));
-                    return new PostLikeListResponse.LikeUserItem(
-                            user.getId(),
-                            user.getName(),
-                            user.getProfileImageUrl(),
-                            user.getRole().name()
-                    );
-                })
-                .toList();
-
-        log.info("[Community] 좋아요 목록 조회 완료 | postId={}, totalCount={}", postId, likes.size());
-
-        return new PostLikeListResponse(likes.size(), users);
     }
 
     // 마이페이지 - 내 게시글 목록
