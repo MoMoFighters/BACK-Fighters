@@ -19,6 +19,7 @@ public class UserNameAdapter implements UserNamePort {
     // userId로 이름, 역할 반환
     @Override
     public Map<Long, UserInfo> getUserInfoByUserIds(Set<Long> userIds) {
+        if (userIds.isEmpty()) return Map.of(); // 만약 userIds가 비어있으면 db까지 안 가고 빈 맵 반환
         return springDataUserRepository.findNameAndRoleById(userIds)
                 .stream()
                 .collect(Collectors.toMap(
