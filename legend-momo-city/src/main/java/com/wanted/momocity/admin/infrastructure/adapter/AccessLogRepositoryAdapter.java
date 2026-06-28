@@ -7,8 +7,11 @@ import com.wanted.momocity.admin.infrastructure.persistence.AccessLogJpaEntity;
 import com.wanted.momocity.admin.infrastructure.persistence.SpringDataAccessLogRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 /* comment.
     AccessLogRepository(domain) 구현체.
@@ -35,5 +38,14 @@ public class AccessLogRepositoryAdapter implements AccessLogRepository {
         return springDataAccessLogRepository
                 .findByAction(action.name(), pageable)
                 .map(AccessLogJpaEntity::toDomain);
+    }
+
+    @Override
+    public List<AccessLog> findRecent(int limit) {
+        return springDataAccessLogRepository
+                .findAllByOrderByCreatedAtDesc(PageRequest.of(0, limit))
+                .stream()
+                .map(AccessLogJpaEntity::toDomain)
+                .toList();
     }
 }
