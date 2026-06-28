@@ -1,10 +1,13 @@
 package com.wanted.momocity.review.application.service;
 
 import com.wanted.momocity.enrollment.domain.repository.EnrollmentRepository;
+import com.wanted.momocity.global.infrastructure.metrics.MomoMetrics;
 import com.wanted.momocity.lecture.domain.exception.LectureNotFoundException;
 import com.wanted.momocity.lecture.domain.repository.LectureRepository;
 import com.wanted.momocity.review.application.command.ReviewCommand;
 import com.wanted.momocity.review.application.usecase.ReviewCommandUseCase;
+import com.wanted.momocity.review.domain.event.ReviewCreatedEvent;
+import com.wanted.momocity.review.domain.event.ReviewDeletedEvent;
 import com.wanted.momocity.review.domain.exception.DuplicateReviewException;
 import com.wanted.momocity.review.domain.exception.ReviewAccessDeniedException;
 import com.wanted.momocity.review.domain.exception.ReviewNotFoundException;
@@ -13,6 +16,7 @@ import com.wanted.momocity.review.domain.model.ReviewStatus;
 import com.wanted.momocity.review.domain.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +31,8 @@ public class ReviewCommandService implements ReviewCommandUseCase {
     private final ReviewRepository reviewRepository;
     private final LectureRepository lectureRepository;
     private final EnrollmentRepository enrollmentRepository;
+    private final MomoMetrics momoMetrics;
+    private final ApplicationEventPublisher eventPublisher;
 
     // 등록 API는 응답 데이터가 필요 없으므로 반환하지 않습니다.
     @Override
@@ -64,6 +70,13 @@ public class ReviewCommandService implements ReviewCommandUseCase {
         );
         // 이미 수강평 작성했을 경우 중복 방지
         if (alreadyReviewed) {
+            momoMetrics.recordDuplicateReviewFailed();
+
+            log.warn("수강평 등록 실패 - 중복 수강평, userId={}, lectureId={}",
+                    command.userId(),
+                    command.lectureId()
+            );
+
             throw new DuplicateReviewException("이미 수강평을 작성한 강의입니다.");
         }
 
@@ -82,9 +95,16 @@ public class ReviewCommandService implements ReviewCommandUseCase {
             // DB에 수강평을 저장합니다.
             savedReview = reviewRepository.save(review);
         } catch (DataIntegrityViolationException exception) {
+            momoMetrics.recordDuplicateReviewFailed();
             // 동시에 중복 요청이 들어와 DB unique 제약조건이 발생한 경우 409 예외로 변환합니다.
             throw new DuplicateReviewException("이미 수강평을 작성한 강의입니다.");
         }
+
+        eventPublisher.publishEvent(new ReviewCreatedEvent(
+                savedReview.getId(),
+                savedReview.getUserId(),
+                savedReview.getLectureId()
+        ));
 
         // 수강평 등록 처리 걸린 시간
         long elapsedTime = System.currentTimeMillis() - startTime;
@@ -112,6 +132,8 @@ public class ReviewCommandService implements ReviewCommandUseCase {
         }
 
         reviewRepository.softDeleteById(reviewId);
+
+        eventPublisher.publishEvent(new ReviewDeletedEvent(reviewId));
 
         long elapsedTime = System.currentTimeMillis() - startTime;
         log.info("수강평 삭제 완료 - reviewId={}, elapsedTime={}ms", reviewId, elapsedTime);
