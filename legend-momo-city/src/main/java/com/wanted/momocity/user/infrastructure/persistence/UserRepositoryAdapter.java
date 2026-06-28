@@ -192,6 +192,8 @@ public class UserRepositoryAdapter implements UserRepository {
                 entity.getEmail(),
                 entity.getName(),
                 entity.getPoint(),
+                entity.getRole(),
+                entity.getCategory(),
                 entity.getNickname(),
                 entity.isTempPwd(),
                 entity.getCreatedAt(),
