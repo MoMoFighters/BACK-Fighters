@@ -16,6 +16,7 @@ import com.wanted.momocity.community.domain.repository.CommentRepository;
 import com.wanted.momocity.community.domain.repository.PostContentRepository;
 import com.wanted.momocity.community.domain.repository.PostLikeRepository;
 import com.wanted.momocity.community.domain.repository.PostRepository;
+import com.wanted.momocity.community.infrastructure.metrics.CommunityMetrics;
 import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.global.infrastructure.cloudfront.CloudFrontUrlConverter;
@@ -53,6 +54,7 @@ public class PostCommandService implements PostCommandUseCase {
     private final CloudFrontUrlConverter cloudFrontUrlConverter;
     private final S3UploadPort s3UploadPort;
     private final ApplicationEventPublisher eventPublisher;
+    private final CommunityMetrics communityMetrics;
 
     // 게시글 생성
     // title, category 만 저장 -> postId 반환 후 콘텐츠 업로드 API 호출
@@ -62,6 +64,9 @@ public class PostCommandService implements PostCommandUseCase {
     public PostCreateResult createPost(Long userId, String title, PostCategory category, String thumbnailUrl) {
         Post post = Post.create(userId, title, category, thumbnailUrl);
         Post saved = postRepository.save(post);
+
+        // 게시글 작성 횟수 카운트
+        communityMetrics.recordPostCreated();
 
         log.info("[Community] 게시글 생성 완료 | userId={}, postId={}", userId, saved.getId());
         return new PostCreateResult(saved.getId());
@@ -185,6 +190,9 @@ public class PostCommandService implements PostCommandUseCase {
         postLikeRepository.save(PostLike.create(postId, userId));
         post.increaseLikeCount();
         postRepository.save(post);
+
+        // 좋아요 횟수 카운트
+        communityMetrics.recordPostLiked();
 
         // 본인 게시글 좋아요 시 알림 제외
         if (!post.getUserId().equals(userId)) {
@@ -373,10 +381,18 @@ public class PostCommandService implements PostCommandUseCase {
     // S3 업로드 후 CloudFront URL 반환
     @Override
     public String uploadImage(MultipartFile image) {
-        String key = s3UploadPort.upload(image, "community/images");
-        String url = cloudFrontUrlConverter.convert(key);
-
-        log.info("[Community] 이미지 업로드 완료 | url={}", url);
-        return url;
-    }
+        try {
+            String key = communityMetrics.getImageUploadTimer().record(
+                    () -> s3UploadPort.upload(image, "community/images")
+            );
+            String url = cloudFrontUrlConverter.convert(key);
+            log.info("[Community] 이미지 업로드 완료 | url={}", url);
+            return url;
+        } catch (Exception e) {
+            // 업로드 실패 횟수 카운트
+            communityMetrics.recordImageUploadFailed();
+            log.error("[Community] 이미지 업로드 실패 | 예외={}", e.getMessage());
+            throw e;
+        }
+        }
 }
