@@ -1,8 +1,10 @@
-package com.wanted.momocity.admin.infrastructure.persistence;
+package com.wanted.momocity.admin.infrastructure.adapter;
 
 import com.wanted.momocity.admin.domain.access.AccessLog;
 import com.wanted.momocity.admin.domain.access.AccessLogAction;
 import com.wanted.momocity.admin.domain.access.AccessLogRepository;
+import com.wanted.momocity.admin.infrastructure.persistence.AccessLogJpaEntity;
+import com.wanted.momocity.admin.infrastructure.persistence.SpringDataAccessLogRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
