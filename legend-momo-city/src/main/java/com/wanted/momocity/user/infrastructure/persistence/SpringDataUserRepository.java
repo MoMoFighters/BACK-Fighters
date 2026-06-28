@@ -12,7 +12,9 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, Long> {
 
@@ -40,6 +42,7 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
     @Query("SELECT u FROM UserUser u WHERE u.role = :role AND u.status = :status ORDER BY u.updatedAt DESC")
     List<UserJpaEntity> findByRoleAndStatus(@Param("role") Role role, @Param("status") Status status, Pageable pageable);
 
+    // 승인 대기 중인 강사 카운트
     long countByRoleAndStatus(Role role, Status status);
 
 
@@ -49,12 +52,13 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
     // proof : null -> S3 url
     @Modifying
     @Transactional
-    @Query("UPDATE UserUser u SET u.role = 'TEACHER', u.status = 'PENDING', u.category = :category, u.proof = :proof, u.nickname = :nickname " +
+    @Query("UPDATE UserUser u SET u.role = 'TEACHER', u.status = 'PENDING', u.category = :category, u.proof = :proof, u.nickname = :nickname, u.updatedAt = :updatedAt " +
             "WHERE u.id = :userId")
     void teacherApply(@Param("userId") Long userId,
                       @Param("nickname") String nickname,
                       @Param("category") Category category,
-                      @Param("proof") String proof);
+                      @Param("proof") String proof,
+                      @Param("updatedAt") LocalDateTime updatedAt);
 
     // 강사 중복 신청 방지용
     @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM UserUser u WHERE u.id = :userId AND u.role = :role AND u.status IN :status")
@@ -193,4 +197,14 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
     // 사용자 보유 포인트 찾기
     @Query("SELECT u.point FROM UserUser u WHERE u.id = :userId")
     long findPointById(@Param("userId") Long userId);
+
+    // userid로 사용자 찾기
+    // AS id → getId()
+    // AS name → getName()
+    // AS role → getRole()
+    @Query("SELECT u.id AS id, u.name AS name, u.role AS role FROM UserUser u WHERE u.id IN :userIds")
+    List<UserNameProjection> findNameAndRoleById(@Param("userIds") Set<Long> userIds);
+
+    // 탈퇴회원 제외 전체 조회
+    long countByStatusNot(Status status);
 }

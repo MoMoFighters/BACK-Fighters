@@ -116,8 +116,8 @@ public class UserRepositoryAdapter implements UserRepository {
     }
 
     @Override
-    public void teacherApply(Long userId, String nickname , Category category, String proof) {
-        springDataUserRepository.teacherApply(userId,nickname,category,proof);
+    public void teacherApply(Long userId, String nickname , Category category, String proof, LocalDateTime updatedAt) {
+        springDataUserRepository.teacherApply(userId,nickname,category,proof, updatedAt);
     }
 
     // 강사 중복 신청 확인용
