@@ -63,11 +63,12 @@ public interface AdminDashboardQueryUseCase {
             LocalDateTime createdAt
     ) {}
 
-    // 최근 접속한 사람들 로그
+    // 최근 접속한 사람들 로그 — role 추가 (FE MS-4 연동 요청)
     record RecentAccessLog(
             Long logId,
             String ip,
             String userName,
+            String role,
             boolean isSuccess,
             LocalDateTime accessedAt
     ) {}

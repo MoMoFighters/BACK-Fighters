@@ -78,13 +78,14 @@ public class AdminDashboardQueryService implements AdminDashboardQueryUseCase {
                 // null 값 500번 막기 위해서 리팩토링
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
-        Map<Long, String> pendingNameMap = userNamePort.getNamesByUserIds(reporterIds);
+        // UserNamePort 스펙이 Map<Long,String> → Map<Long,UserInfo>(name+role)로 변경됨에 따라 타입·메서드명 교체
+        Map<Long, UserNamePort.UserInfo> pendingNameMap = userNamePort.getUserInfoByUserIds(reporterIds);
 
         List<PendingTask> pendingTasks = Stream.concat(
                         pendingReports.stream().map(r -> new PendingTask(
                                 "REPORT",
                                 r.reasonKo(),
-                                pendingNameMap.getOrDefault(r.reporterUserId(), "알 수 없음"),
+                                pendingNameMap.getOrDefault(r.reporterUserId(), new UserNamePort.UserInfo("알 수 없음", null)).name(),
                                 r.requestedAt()
                         )),
                         pendingTeachers.stream().map(t -> new PendingTask(
@@ -105,12 +106,13 @@ public class AdminDashboardQueryService implements AdminDashboardQueryUseCase {
                 // 500 번 상태 코드를 방지하기 위해 있는 코드
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
-        Map<Long, String> recentNameMap = userNamePort.getNamesByUserIds(recentReporterIds);
+        // 동일 이유 — UserInfo.name() 으로 이름 추출
+        Map<Long, UserNamePort.UserInfo> recentNameMap = userNamePort.getUserInfoByUserIds(recentReporterIds);
 
         List<RecentReport> recentReports = recentItems.stream()
                 .map(r -> new RecentReport(
                         r.reportId(),
-                        recentNameMap.getOrDefault(r.reporterUserId(), "알 수 없음"),
+                        recentNameMap.getOrDefault(r.reporterUserId(), new UserNamePort.UserInfo("알 수 없음", null)).name(),
                         r.reasonKo(),
                         r.isResolved(),
                         r.createdAt()
@@ -131,13 +133,16 @@ public class AdminDashboardQueryService implements AdminDashboardQueryUseCase {
                 .map(AccessLog::getUserId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
-        Map<Long, String> logNameMap = userNamePort.getNamesByUserIds(logUserIds);
+        // 동일 이유 — 접근 로그 사용자 이름도 UserInfo.name() 으로 추출
+        Map<Long, UserNamePort.UserInfo> logNameMap = userNamePort.getUserInfoByUserIds(logUserIds);
 
         List<RecentAccessLog> recentAccessLogs = logs.stream()
                 .map(log -> new RecentAccessLog(
                         log.getId(),
                         log.getIp(),
-                        log.getUserId() != null ? logNameMap.getOrDefault(log.getUserId(), "알 수 없음") : "비로그인",
+                        log.getUserId() != null ? logNameMap.getOrDefault(log.getUserId(), new UserNamePort.UserInfo("알 수 없음", null)).name() : "비로그인",
+                        // role — 비로그인이면 null, 이름 조회 실패 시 null
+                        log.getUserId() != null ? logNameMap.getOrDefault(log.getUserId(), new UserNamePort.UserInfo("알 수 없음", null)).role() : null,
                         log.getAction() != AccessLogAction.FORBIDDEN,
                         log.getCreatedAt()
                 ))
