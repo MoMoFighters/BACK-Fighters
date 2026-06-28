@@ -1,5 +1,6 @@
 package com.wanted.momocity.enrollment.presentation.api;
 
+import com.wanted.momocity.enrollment.domain.exception.BuildingSelfAccessException;
 import com.wanted.momocity.enrollment.domain.exception.DuplicateEnrollmentException;
 import com.wanted.momocity.enrollment.domain.exception.EnrollmentLectureNotFoundException;
 import com.wanted.momocity.enrollment.domain.exception.InvalidEnrollmentLectureStatusException;
@@ -50,6 +51,18 @@ public class EnrollmentExceptionHandler {
                 .body(ApiErrorResponse.of(
                         HttpStatus.BAD_REQUEST.value(),
                         ApiResponseCode.DOMAIN_RULE_VIOLATION,
+                        exception.getMessage()
+                ));
+    }
+
+    @ExceptionHandler(BuildingSelfAccessException.class)
+    public ResponseEntity<ApiErrorResponse> handleBuildingSelfAccess(
+            BuildingSelfAccessException exception
+    ) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiErrorResponse.of(
+                        HttpStatus.BAD_REQUEST.value(),
+                        "BUILDING_SELF_ACCESS",
                         exception.getMessage()
                 ));
     }

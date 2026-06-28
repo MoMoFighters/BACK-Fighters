@@ -59,4 +59,16 @@ public class Notification {
                 false
         );
     }
+
+    //방명록 알림 생성
+    public static Notification createGuestBook(Long ownerId, String message, Long bookId, LocalDateTime now) {
+        return new Notification(
+                null,
+                ownerId,
+                "GUESTBOOK",
+                bookId,
+                message,
+                false
+        );
+    }
 }

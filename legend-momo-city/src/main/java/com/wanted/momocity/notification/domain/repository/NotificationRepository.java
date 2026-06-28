@@ -39,7 +39,7 @@ public interface NotificationRepository {
     List<NotificationJpaEntity> findAllByIdIn(List<Long> targetId);
 
     //알림 읽기 - 메시지 알림의 refId(roomId)에 로그인 유저가 속하는지 검증
-    List<MessageReadJpaEntity> findMessageReadsByRoomIds(List<Long> messageRoomIds);
+    List<MessageReadJpaEntity> findMessageReadsByRoomIdsAndUserId(List<Long> messageRoomIds, Long userId);
 
     //알림 읽기 - 일반 알림 읽음 상태 저장
     void saveAll(List<NotificationJpaEntity> generalNotisToUpdate);

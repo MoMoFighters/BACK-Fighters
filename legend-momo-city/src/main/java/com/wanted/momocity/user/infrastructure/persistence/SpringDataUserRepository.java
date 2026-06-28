@@ -190,4 +190,7 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
     @Query("UPDATE UserUser u SET u.suspensionCount = u.suspensionCount - 1, u.status = 'ACTIVE', u.suspendedUntil = null WHERE u.id = :userId")
     void minusReportCount(@Param("userId") Long userId);
 
+    // 사용자 보유 포인트 찾기
+    @Query("SELECT u.point FROM UserUser u WHERE u.id = :userId")
+    long findPointById(@Param("userId") Long userId);
 }

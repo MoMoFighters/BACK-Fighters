@@ -15,6 +15,8 @@ import com.wanted.momocity.message.application.usecase.MessageQueryUseCase;
 import com.wanted.momocity.message.domain.event.SendMessagePublishedEvent;
 import com.wanted.momocity.message.domain.repository.MessageRepository;
 import com.wanted.momocity.message.infrastructure.persistence.*;
+import com.wanted.momocity.notification.application.query.GetPhoneAppCountsQuery;
+import com.wanted.momocity.notification.application.usecase.NotificationQueryUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -43,6 +45,9 @@ public class MessageCommandService implements MessageCommandUseCase {
 
     //웹소켓 중복 가공 회피를 위한 QueryUseCase 주입
     private final MessageQueryUseCase messageQueryUseCase;
+
+    //웹소켓 알림 관련
+    private final NotificationQueryUseCase notificationQueryUseCase;
 
     //채팅방 조회 및 개설
     @Override
@@ -126,6 +131,24 @@ public class MessageCommandService implements MessageCommandUseCase {
                             //재입장 시 message_announce 테이블에 안내 문구 추가
                             messageRepository.saveEnterAnnounce(existingRoom, loginUser, loginUser.getNickname() + "님이 입장했습니다.");
                             log.info("[CreatedChatRoomCommandService] 재입장 안내 문구 추가 완료. 방ID:{}", finalRoomId);
+
+                            List<ChatRoomMemberJpaEntity> currentMembers = messageRepository.findMembersByRoomId(finalRoomId);
+                            String destination = "/sub/chat/room/" + finalRoomId;
+
+                            for (ChatRoomMemberJpaEntity member : currentMembers) {
+                                Long memberId = member.getUserId().getId();
+
+                                // 💬 1) 나 포함 방 참여자 전원의 '채팅방 내부 메시지 내역(입장 문구 추가)' 실시간 갱신
+                                List<MessageQueryUseCase.MessageHistoryView> historyPayload =
+                                        messageQueryUseCase.getMessageHistoryQueryHandle(new GetMessageHistoryQuery(finalRoomId, memberId, null));
+                                messagingTemplate.convertAndSendToUser(memberId.toString(), destination, historyPayload);
+
+                                // 🗂️ 2) 나 포함 방 참여자 전원의 '전체 채팅방 목록(방이 다시 리스트에 등장함)' 실시간 갱신
+                                List<MessageQueryUseCase.ChatRoomView> chatRoomListPayload =
+                                        messageQueryUseCase.getChatRoomQueryHandle(new FindChatRoomQuery(memberId));
+                                messagingTemplate.convertAndSendToUser(memberId.toString(), "/sub/chat/rooms", chatRoomListPayload);
+                            }
+                            log.info("[웹소켓 실시간 발송] 과거 방 재입장으로 인해 참여 멤버 전원 화면 실시간 갱신 완료");
 
                             break;
                         }
@@ -333,6 +356,13 @@ public class MessageCommandService implements MessageCommandUseCase {
             List<MessageQueryUseCase.ChatRoomView> chatRoomListPayload =
                     messageQueryUseCase.getChatRoomQueryHandle(new FindChatRoomQuery(receiver.getId()));
             messagingTemplate.convertAndSendToUser(receiver.getId().toString(), "/sub/chat/rooms", chatRoomListPayload);
+
+            // ==========================================
+            // 🎯 [여기서 추가] 메시지를 받은 사람들의 휴대폰 앱 알림 개수도 실시간으로 올려줌!
+            // ==========================================
+            if (!receiver.getId().equals(command.senderId())) { // 내가 보낸 게 아닐 때 (진짜 수신자들만)
+                notificationQueryUseCase.getPhoneAppCountsQueryHandle(new GetPhoneAppCountsQuery(receiver.getId()));  // 🔥 휴대폰 앱 배지 개수 갱신!
+            }
         }
         log.info("[웹소켓 실시간 발송] QueryService 기존 로직 재활용");
 
@@ -419,6 +449,9 @@ public class MessageCommandService implements MessageCommandUseCase {
             messagingTemplate.convertAndSendToUser(roomUser.getId().toString(), "/sub/chat/rooms", chatRoomListPayload);
         }
         log.info("[웹소켓 실시간 발송] 방 진입/읽음에 따른 전원 대화방(숫자 차감) 및 목록 갱신 완료");
+
+        notificationQueryUseCase.getPhoneAppCountsQueryHandle(new GetPhoneAppCountsQuery(command.userId()));  // 🔥 휴대폰 앱 배지 개수 갱신!
+        log.info("[웹소켓 실시간 발송] 읽은 사람(ID: {})의 통합 알림 카운트 및 휴대폰 앱 배지 갱신 완료", command.userId());
 
         return new ReadView(
                 command.roomId(),
@@ -562,6 +595,8 @@ public class MessageCommandService implements MessageCommandUseCase {
                 announceContent,
                 chatRoom.getUpdatedAt());
 
+        messageRepository.fastSaveChanges();
+
         //웹소켓으로 현재 존재하는 방 멤버에게 메시지 내역 띄움
         // 🌟 [추가]: 변경 내역 방 전원에게 실시간 웹소켓 푸시
         String destination = "/sub/chat/room/" + chatRoom.getId();
@@ -606,6 +641,8 @@ public class MessageCommandService implements MessageCommandUseCase {
         //기본 검증(접근 권한, 중복 사용자)
         messageEligibilityPolicy.validateBeforeLoop(chatRoom, command.userId(), command.chatMember());
 
+        LocalDateTime invitedAt = LocalDateTime.now();
+
         // 초대 대상자들 존재 확인
         List<UserWithFMJpaEntity> invitees = new ArrayList<>();
         for (Long memberId : command.chatMember()) {
@@ -633,7 +670,7 @@ public class MessageCommandService implements MessageCommandUseCase {
             invitees.add(invitee);
 
             //초대한 멤버들 저장
-            messageRepository.saveInviteChatRoomMember(chatRoom, invitee, LocalDateTime.now());
+            messageRepository.saveInviteChatRoomMember(chatRoom, invitee, invitedAt);
         }
 
         //컨트롤러에 필요한 초대된 멤버들 닉네임 가공
@@ -648,7 +685,9 @@ public class MessageCommandService implements MessageCommandUseCase {
                 chatRoom,
                 loginUser,
                 inviteMessage,
-                LocalDateTime.now());
+                invitedAt);
+
+        messageRepository.fastSaveChanges();
 
         //웹소켓으로 방에 있는 멤버들에게 안내 문구 보내기
         // 🌟 [추가]: 새로 초대된 사람을 포함하여 현재 방에 속한 '최신 멤버 목록'을 가져와 전원에게 웹소켓 푸시
@@ -675,8 +714,8 @@ public class MessageCommandService implements MessageCommandUseCase {
                 chatRoom.getRoomTitle(),
                 loginUser.getId(),
                 loginUser.getNickname(),
-                loginUser.getRole(), // 예: STUDENT
-                chatRoom.getUpdatedAt(),
+                loginUser.getRole(),
+                invitedAt,
                 invitedUserNicknames
         );
     }

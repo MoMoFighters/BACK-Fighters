@@ -9,6 +9,7 @@ import com.wanted.momocity.review.domain.exception.DuplicateReviewException;
 import com.wanted.momocity.review.domain.exception.ReviewAccessDeniedException;
 import com.wanted.momocity.review.domain.exception.ReviewNotFoundException;
 import com.wanted.momocity.review.domain.model.Review;
+import com.wanted.momocity.review.domain.model.ReviewStatus;
 import com.wanted.momocity.review.domain.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -54,9 +55,10 @@ public class ReviewCommandService implements ReviewCommandUseCase {
         }
 
         // 로그인 한 사용자가 강의평을 이미 작성했는지 확인하기
-        boolean alreadyReviewed = reviewRepository.existsByUserIdAndLectureId(
+        boolean alreadyReviewed = reviewRepository.existsByUserIdAndLectureIdAndStatus(
                 command.userId(),
-                command.lectureId()
+                command.lectureId(),
+                ReviewStatus.ACTIVE
         );
         // 이미 수강평 작성했을 경우 중복 방지
         if (alreadyReviewed) {
@@ -99,6 +101,6 @@ public class ReviewCommandService implements ReviewCommandUseCase {
         }
 
         // 리뷰 ID 기준으로 수강평 삭제 실행
-        reviewRepository.deleteById(reviewId);
+        reviewRepository.softDeleteById(reviewId);
     }
 }
