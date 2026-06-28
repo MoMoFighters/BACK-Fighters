@@ -63,8 +63,25 @@ public class CommentRepositoryAdapter implements CommentRepository {
     @Override
     public List<Comment> findByPostIdWithCursor(Long postId, Long cursor, int size) {
         return commentJpaRepository.findByPostIdWithCursor(
-                postId, cursor, PageRequest.of(0, size)
+                        // size + 1 개 조회 -> 다음 페이지 존재 여부 확인용
+                postId, cursor, PageRequest.of(0, size + 1)
         )
+                .stream()
+                .map(CommentJpaEntity::toDomain)
+                .toList();
+    }
+
+    // 특정 댓글의 대댓글 수 조회
+    // COUNT 쿼리로 DB 레벨에서 집계
+    @Override
+    public int countRepliesByCommentId(Long commentId) {
+        return commentJpaRepository.countRepliesByCommentId(commentId);
+    }
+
+    // 댓글 목록의 대댓글 일괄 조회
+    @Override
+    public List<Comment> findRepliesByCommentIds(List<Long> commentIds) {
+        return commentJpaRepository.findRepliesByCommentIds(commentIds)
                 .stream()
                 .map(CommentJpaEntity::toDomain)
                 .toList();
@@ -79,7 +96,8 @@ public class CommentRepositoryAdapter implements CommentRepository {
     @Override
     public List<Comment> findRepliesByCommentIdWithCursor(Long commentId, Long cursor, int size) {
         return commentJpaRepository.findRepliesByCommentIdWithCursor(
-                        commentId, cursor, PageRequest.of(0, size)
+                        // size + 1 개 조회 -> 다음 페이지 존재 여부 확인용
+                        commentId, cursor, PageRequest.of(0, size + 1)
                 )
                 .stream()
                 .map(CommentJpaEntity::toDomain)

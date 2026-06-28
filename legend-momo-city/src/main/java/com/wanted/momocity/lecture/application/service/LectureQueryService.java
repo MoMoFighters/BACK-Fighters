@@ -1,7 +1,6 @@
 package com.wanted.momocity.lecture.application.service;
 
 import com.wanted.momocity.auth.application.port.LoadUserPort;
-import com.wanted.momocity.auth.domain.model.User;
 import com.wanted.momocity.enrollment.application.port.StudentAccountPort;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.lecture.application.port.LectureEnrollmentQueryPort;
@@ -28,6 +27,7 @@ import com.wanted.momocity.lecture.presentation.api.response.TeacherLectureRespo
 import com.wanted.momocity.viewing.application.port.ChapterProgressInfo;
 import com.wanted.momocity.viewing.application.port.LectureChapterProgressPort;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,6 +43,7 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@Slf4j
 public class LectureQueryService implements
         LectureQueryUseCase,
         AdminLectureQueryUseCase {
@@ -74,6 +75,15 @@ public class LectureQueryService implements
     // 학생/비로그인 기준 강의 목록 조회.
     @Override
     public StudentLecturePageResponse getLectures(GetLecturesQuery query) {
+        long startTime = System.currentTimeMillis(); // 학생/비회원 강의 목록 조회 시작 시간을 기록
+
+        log.info("강의 목록 조회 시작 - userId={}, category={}, keyword={}, page={}, size={}",
+                query.userId(),
+                query.category(),
+                query.keyword(),
+                query.page(),
+                query.size()
+        );
 
         /*
          * comment
@@ -128,18 +138,37 @@ public class LectureQueryService implements
                 .map(lecture -> toStudentListItemResponse(lecture, finalStudentId, reviewStatsMap)) // 리뷰 통계 Map을 함께 넘겨 응답 DTO 생성
                 .toList();
 
-        return new StudentLecturePageResponse(
-                content,
-                query.page(),
-                query.size(),
-                lecturePage.totalElements(),
-                lecturePage.totalPages()
+        // 학생/비회원 강의 목록 응답 객체 생성
+        StudentLecturePageResponse response = new StudentLecturePageResponse(
+                content, // 강의 목록 응답 데이터 설정
+                query.page(), // 현재 페이지 번호 설정
+                query.size(), // 페이지 크기 설정
+                lecturePage.totalElements(), // 전체 강의 수 설정
+                lecturePage.totalPages() // 전체 페이지 수 설정
         );
+
+        long elapsedTime = System.currentTimeMillis() - startTime;
+
+        log.info("강의 목록 조회 완료 - userId={}, contentCount={}, totalElements={}, totalPages={}, elapsedTime={}ms", // 조회 결과와 처리 시간을 기록
+                query.userId(),
+                content.size(),
+                lecturePage.totalElements(),
+                lecturePage.totalPages(),
+                elapsedTime
+        );
+
+        return response;
     }
 
     // 학생 기준 강의 상세 조회.
     @Override
     public StudentLectureDetailResponse getStudentLectureDetail(GetStudentLectureDetailQuery query) {
+        long startTime = System.currentTimeMillis();
+
+        log.info("학생 강의 상세 조회 시작 - userId={}, lectureId={}",
+                query.userId(),
+                query.lectureId()
+        );
         Long studentId = studentAccountPort.getStudentId(query.userId());
 
         LectureAggregate lecture = lectureRepository.findById(query.lectureId())
@@ -164,6 +193,13 @@ public class LectureQueryService implements
         Integer lectureProgress = enrollmentProgress
                 .map(LectureEnrollmentQueryPort.EnrollmentProgress::totalProgress).orElse(null);
 
+        Boolean isCompleted = null; // 미수강이면 null로 내려가도록 기본값 설정
+
+        if (enrollmentProgress.isPresent()) { // 수강 신청 정보가 있는 경우
+            isCompleted = !chapters.isEmpty() // 챕터가 1개 이상 있는지 확인
+                    && enrollmentProgress.get().completedCount() >= chapters.size(); // 완료 챕터 수가 전체 챕터 수 이상인지 확인
+        }
+
         // 수강 중인 강의인지 확인
         Map<Long, ChapterProgressInfo> chapterProgressMap = isEnrolled
                 // 수강 중이면 챕터별 진척도 목록 조회
@@ -179,20 +215,43 @@ public class LectureQueryService implements
 
         LectureReviewQueryPort.ReviewStats reviewStats = lectureReviewQueryPort.getReviewStats(lecture.getId());
 
-        return StudentLectureDetailResponse.from(
+        StudentLectureDetailResponse response = StudentLectureDetailResponse.from(
                 lecture,
                 chapters,
                 reviewStats.averageRating(),
                 reviewStats.reviewCount(),
                 isEnrolled,
                 lectureProgress,
+                isCompleted,
                 chapterProgressMap
         );
+
+        long elapsedTime = System.currentTimeMillis() - startTime;
+
+        log.info("학생 강의 상세 조회 완료 - studentId={}, lectureId={}, isEnrolled={}, chapterCount={}, lectureProgress={}, elapsedTime={}ms",
+                studentId,
+                lecture.getId(),
+                isEnrolled,
+                chapters.size(),
+                lectureProgress,
+                elapsedTime
+        );
+
+        return response;
     }
 
     // 강사 기준 본인 강의 목록 조회.
     @Override
     public TeacherLecturePageResponse getTeacherLectures(GetTeacherLecturesQuery query) {
+        long startTime = System.currentTimeMillis();
+
+        log.info("강사 강의 목록 조회 시작 - requestTeacherId={}, category={}, keyword={}, page={}, size={}",
+                query.teacherId(),
+                query.category(),
+                query.keyword(),
+                query.page(),
+                query.size()
+        );
 
         Long teacherId = teacherAccountPort.getTeacherId(query.teacherId());
 
@@ -228,18 +287,38 @@ public class LectureQueryService implements
                 }).toList();
 
 
-        return new TeacherLecturePageResponse(
+        TeacherLecturePageResponse response = new TeacherLecturePageResponse(
                 content,
                 query.page(),
                 query.size(),
                 lecturePage.totalElements(),
                 lecturePage.totalPages()
         );
+
+        long elapsedTime = System.currentTimeMillis() - startTime;
+
+        log.info("강사 강의 목록 조회 완료 - teacherId={}, contentCount={}, totalElements={}, totalPages={}, elapsedTime={}ms",
+                teacherId,
+                content.size(),
+                lecturePage.totalElements(),
+                lecturePage.totalPages(),
+                elapsedTime
+        );
+
+        return response;
     }
 
     // 강사 기준 본인 강의 상세 조회.
     @Override
     public TeacherLectureDetailResponse getTeacherLectureDetail(GetTeacherLectureDetailQuery query) {
+
+        long startTime = System.currentTimeMillis();
+
+        log.info("선생 강의 상세 조회 시작 - teacherId={}, lectureId={}",
+                query.teacherId(),
+                query.lectureId()
+        );
+
         Long teacherId = teacherAccountPort.getTeacherId(query.teacherId());
 
         LectureAggregate lecture = lectureRepository.findById(query.lectureId())
@@ -253,6 +332,15 @@ public class LectureQueryService implements
                 chapterRepository.findAllByLectureIdOrderByOrderNoAsc(query.lectureId());
 
         LectureReviewQueryPort.ReviewStats reviewStats = lectureReviewQueryPort.getReviewStats(lecture.getId());
+
+        long elapsedTime = System.currentTimeMillis() - startTime;
+
+        log.info("선생 강의 상세 조회 완료 - teacherId={}, lectureId={}, chapterCount={}, elapsedTime={}ms",
+                teacherId,
+                lecture.getId(),
+                chapters.size(),
+                elapsedTime
+        );
 
         return TeacherLectureDetailResponse.from(
                 lecture,
@@ -268,6 +356,15 @@ public class LectureQueryService implements
      */
     @Override
     public AdminLecturePageResponse getAdminLectures(GetAdminLecturesQuery query) {
+        long startTime = System.currentTimeMillis();
+
+        log.info("관리자 강의 목록 조회 시작 - status={}, category={}, keyword={}, page={}, size={}",
+                query.status(),
+                query.category(),
+                query.keyword(),
+                query.page(),
+                query.size()
+        );
         List<LectureStatus> statuses = resolveAdminLectureStatuses(query.status());
 
         var lecturePage = lectureRepository.findAdminLectures(
@@ -299,18 +396,35 @@ public class LectureQueryService implements
                 })
                 .toList();
 
-        return new AdminLecturePageResponse(
+        AdminLecturePageResponse response = new AdminLecturePageResponse(
                 content,
                 query.page(),
                 query.size(),
                 lecturePage.totalElements(),
                 lecturePage.totalPages()
         );
+
+        long elapsedTime = System.currentTimeMillis() - startTime;
+
+        log.info("관리자 강의 목록 조회 완료 - statuses={}, contentCount={}, totalElements={}, totalPages={}, elapsedTime={}ms",
+                statuses,
+                content.size(),
+                lecturePage.totalElements(),
+                lecturePage.totalPages(),
+                elapsedTime
+        );
+
+        return response;
     }
 
     // 관리자 기준 강의 상세 조회.
     @Override
     public AdminLectureDetailResponse getAdminLectureDetail(GetAdminLectureDetailQuery query) {
+        long startTime = System.currentTimeMillis();
+
+        log.info("관리자 강의 상세 조회 시작 - lectureId={}",
+                query.lectureId()
+        );
         LectureAggregate lecture = lectureRepository.findById(query.lectureId())
                 .orElseThrow(() -> new LectureNotFoundException("강의를 찾을 수 없습니다."));
 
@@ -324,12 +438,24 @@ public class LectureQueryService implements
 
         LectureReviewQueryPort.ReviewStats reviewStats = lectureReviewQueryPort.getReviewStats(lecture.getId());
 
-        return AdminLectureDetailResponse.from(
+        AdminLectureDetailResponse response = AdminLectureDetailResponse.from(
                 lecture,
                 chapters,
                 reviewStats.averageRating(),
                 reviewStats.reviewCount()
         );
+
+        long elapsedTime = System.currentTimeMillis() - startTime;
+
+        log.info("관리자 강의 상세 조회 완료 - lectureId={}, lectureStatus={}, chapterCount={}, reviewCount={}, elapsedTime={}ms",
+                lecture.getId(),
+                lecture.getStatus(),
+                chapters.size(),
+                reviewStats.reviewCount(),
+                elapsedTime
+        );
+
+        return response;
     }
 
     // 관리자 목록 조회에서 사용할 강의 상태 목록을 결정

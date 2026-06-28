@@ -1,11 +1,13 @@
 package com.wanted.momocity.community.infrastructure.persistence;
 
+import com.wanted.momocity.community.domain.model.PostCategory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.security.core.parameters.P;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -39,17 +41,40 @@ public interface PostJpaRepository extends JpaRepository<PostJpaEntity, Long> {
     """)
     Optional<PostJpaEntity> findByIdWithContents(@Param("postId") Long postId);
 
-    // 목록 조회 (소프트딜리트 제외, 카테고리 필터링)
+    /*
+    * comment.
+    *  게시글 목록 커서 기반 조회
+    *  커서기반 : cursor = null -> 첫 페이지, cursor != null -> 해당 postId 보다 작은 데이터 조회 (내림차순)
+    *  카테고리 필터링 : category = null -> 전체 조회, category != null -> 해당 카테고리만 조회
+    * */
+
     @Query("""
-        SELECT p FROM PostJpaEntity p
-        WHERE p.deletedAt IS NULL
-        AND (:category IS NULL OR p.category = :category)
-        ORDER BY p.createdAt DESC
-    """)
-    Page<PostJpaEntity> findAllByCategory(
-            @Param("category") String category,
+    SELECT p FROM PostJpaEntity p
+    WHERE p.deletedAt IS NULL
+    AND (:category IS NULL OR p.category = :category)
+    AND (:cursor IS NULL OR p.id < :cursor)
+    ORDER BY p.id DESC
+""")
+    List<PostJpaEntity> findAllByCategoryWithCursor(
+            @Param("category") PostCategory category,
+            @Param("cursor") Long cursor,
             Pageable pageable
     );
+
+    /*
+    * comment.
+    *  카테고리별 전체 게시글 수 조회
+    *  cursor 기반 페이지네이션 totalCount 반환용
+    *  -> category = null -> 전체 게시글 수
+    * */
+
+    @Query("""
+    SELECT COUNT(p)
+    FROM PostJpaEntity p
+    WHERE p.deletedAt IS NULL
+    AND (:category IS NULL OR p.category = :category)
+""")
+    int countByCategory(@Param("category") PostCategory category);
 
     // 유저별 게시글 커서 기반 조회
     // cursor = null -> 첫 페이지, cursor != null -> 해당 postId 보다 작은 데이터 조회
@@ -100,9 +125,9 @@ public interface PostJpaRepository extends JpaRepository<PostJpaEntity, Long> {
     *  커서기반 : cursor = null -> 첫 페이지, cursor != null -> 해당 postId 보다 작은 데이터 조회
     *  -
     *  와일드카드 이스케이프
-    *  -> 사용자 입력 키워드의 %, _ 를 이스케이프 처리
-    *  -> PostRepositoryAdapter 에서 전처리 후 전달
-    *  -> ESCAPE '\' 로 안전한 검색 보장
+    *  사용자 입력 키워드의 %, _ 를 PostRepositoryAdapter.escapeKeyword() 에서 전처리
+    *  -> % -> \%, _ -> \_ 로 변환 후 전달
+    *  -> JPQL ESCAPE 절 미사용 (Hibernate 6 호환성 문제로 제거)
     * */
 
     @Query("""
@@ -110,14 +135,16 @@ public interface PostJpaRepository extends JpaRepository<PostJpaEntity, Long> {
     LEFT JOIN PostContentJpaEntity c ON c.postId = p.id
     WHERE p.deletedAt IS NULL
     AND (
-        p.title LIKE %:keyword% ESCAPE '\\'
-        OR c.content LIKE %:keyword% ESCAPE '\\'
+        p.title LIKE %:keyword%
+        OR c.content LIKE %:keyword%
     )
+    AND (:category IS NULL OR p.category = :category)
     AND (:cursor IS NULL OR p.id < :cursor)
     ORDER BY p.id DESC
 """)
     List<PostJpaEntity> searchByKeyword(
             @Param("keyword") String keyword,
+            @Param("category") PostCategory category,
             @Param("cursor") Long cursor,
             Pageable pageable
     );
@@ -130,11 +157,27 @@ public interface PostJpaRepository extends JpaRepository<PostJpaEntity, Long> {
     LEFT JOIN PostContentJpaEntity c ON c.postId = p.id
     WHERE p.deletedAt IS NULL
     AND (
-       p.title LIKE %:keyword% ESCAPE '\\\\'
-       OR c.content LIKE %:keyword% ESCAPE '\\\\'
+        p.title LIKE %:keyword%
+        OR c.content LIKE %:keyword%
     )
+    AND (:category IS NULL OR p.category = :category)
 """)
-    int countByKeyword(@Param("keyword") String keyword);
+    int countByKeyword(@Param("keyword") String keyword,
+                       @Param("category") PostCategory category);
+
+    /*
+    * comment.
+    *  유저별 게시글 Id 목록만 조회
+    *  getDashboard() 에서 댓글 수 집계용으로 postIds 만 필요
+    *  -> Id 만 조회하여 붎필요한 데이터 로드 방지
+    * */
+
+    @Query("""
+    SELECT p.id FROM PostJpaEntity p
+    WHERE p.userId = :userId
+    AND p.deletedAt IS NULL
+""")
+    List<Long> findPostIdsByUserId(@Param("userId") Long userId);
 
     /*
     * comment.
@@ -151,7 +194,7 @@ public interface PostJpaRepository extends JpaRepository<PostJpaEntity, Long> {
     ORDER BY (p.viewCount * 0.6 + p.likeCount * 0.4) DESC
 """)
     List<PostJpaEntity> findTopPostsByCategory(
-            @Param("category") String category,
+            @Param("category") PostCategory category,
             @Param("postId") Long postId,
             Pageable pageable
     );

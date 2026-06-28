@@ -1,7 +1,6 @@
 package com.wanted.momocity.viewing.domain.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.Getter;
 
 import java.io.Serializable;

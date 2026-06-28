@@ -13,4 +13,7 @@ public final class UserResponseMessage {
 
     public static final String VIEW_BUILDING_INFO = "사용자 빌딩 정보가 조회되었습니다.";
 
+    public static final String USER_REPORT_PLUS = "사용자 제재 완료";
+    public static final String USER_REPORT_MINUS = "사용자 제재 취소";
+
 }

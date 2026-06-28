@@ -1,4 +1,4 @@
-package com.wanted.momocity.admin.infrastructure.persistence;
+package com.wanted.momocity.admin.infrastructure.adapter;
 
 /* comment.
     도메인이 선언한 AdminNoticeRepository 게약을 실제로 구현하는 어댑터.
@@ -7,6 +7,8 @@ package com.wanted.momocity.admin.infrastructure.persistence;
 
 import com.wanted.momocity.admin.domain.notice.AdminNotice;
 import com.wanted.momocity.admin.domain.notice.AdminNoticeRepository;
+import com.wanted.momocity.admin.infrastructure.persistence.AdminNoticeJpaEntity;
+import com.wanted.momocity.admin.infrastructure.persistence.SpringDataAdminNoticeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

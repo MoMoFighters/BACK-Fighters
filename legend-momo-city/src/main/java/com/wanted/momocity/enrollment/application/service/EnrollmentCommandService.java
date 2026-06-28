@@ -47,7 +47,12 @@ public class EnrollmentCommandService implements EnrollmentCommandUseCase {
     @Override
     public Enrollment createEnrollment(CreateEnrollmentCommand command) {
 
-        log.info("수강신청 시작 - lectureId={}", command.lectureId());
+        long startTime = System.currentTimeMillis();
+        log.info("수강신청 시작 - studentId={}, lectureId={}, position={}",
+                command.studentId(),
+                command.lectureId(),
+                command.position()
+                );
 
             // Authorization 토큰에서 꺼낸 email로 학생 ID를 조회
             Long userId = studentAccountPort.getStudentId(command.studentId());
@@ -66,11 +71,20 @@ public class EnrollmentCommandService implements EnrollmentCommandUseCase {
 
             // 이미 수강신청한 강의라면 중복 수강신청 예외를 발생
             if (alreadyEnrolled) {
+                log.warn("수강신청 실패 - 중복 신청, userId={}, lectureId={}",
+                        userId,
+                        command.lectureId()
+                );
                 throw new DuplicateEnrollmentException("이미 수강신청한 강의입니다.");
             }
 
             // ACTIVE 상태의 강의만 수강신청할 수 있음
             if (lectureStatus != LectureStatus.ACTIVE) {
+                log.warn("수강신청 실패 - 비활성 강의, userId={}, lectureId={}, lectureStatus={}",
+                        userId,
+                        command.lectureId(),
+                        lectureStatus
+                );
                 throw new InvalidEnrollmentLectureStatusException("진행 중인 강의만 수강신청할 수 있습니다.");
             }
 
@@ -99,12 +113,15 @@ public class EnrollmentCommandService implements EnrollmentCommandUseCase {
                     savedEnrollment.getLectureId()
             ));
 
+            long elapsedTime = System.currentTimeMillis() - startTime;
             // 수강신청 완료와 이벤트 발행 여부를 추적하기 위한 로그
             // 수강신청 후 강사 자동 친구 추가 이벤트가 이어지므로 enrollmentId, userId, lectureId를 남긴다.
-            log.info("수강신청 완료 - enrollmentId={}, userId={}, lectureId={}",
+            log.info("수강신청 완료 - enrollmentId={}, userId={}, lectureId={}, elapsedTime={}ms",
                     savedEnrollment.getId(),
                     savedEnrollment.getUserId(),
-                    savedEnrollment.getLectureId());
+                    savedEnrollment.getLectureId(),
+                    elapsedTime
+            );
 
             // 저장된 수강신청 도메인 객체를 반환
             return savedEnrollment;
@@ -117,6 +134,11 @@ public class EnrollmentCommandService implements EnrollmentCommandUseCase {
             Long position
     ) {
         Category buildingCategory = Category.valueOf(lectureCategory.name());
+        log.info("수강신청 건물 확인 시작 - userId={}, category={}, poition={}",
+                userId,
+                buildingCategory,
+                position
+        );
         // 사용자가 해당 카테고리 건물을 가지고 있는지 확인
         boolean hasBuilding = buildingRepository.existsByUserIdAndCategory(
                 userId,
@@ -125,6 +147,10 @@ public class EnrollmentCommandService implements EnrollmentCommandUseCase {
 
         // 만약 건물을 이미 가지고 있으면 생성 X
         if (hasBuilding) {
+            log.info("수강신청 건물 생성 생략 - 이미 보유, userId={}, category={}",
+                    userId,
+                    buildingCategory
+            );
             return;
         }
 
@@ -141,6 +167,12 @@ public class EnrollmentCommandService implements EnrollmentCommandUseCase {
         try {
             // 신규 건물 저장 시도
             buildingRepository.save(building);
+            log.info("수강신청 건물 생성 완료 - userId={}, category={}, position={}, level={}",
+                    userId,
+                    buildingCategory,
+                    position,
+                    building.getLevel()
+            );
             // unique 제약 위반이 발생한 경우
         } catch (DataIntegrityViolationException exception) {
             // 중복 생성 상황을 로그로 남김

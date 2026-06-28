@@ -155,4 +155,42 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
     @Query("SELECT u.id FROM UserUser u WHERE u.status = 'DELETED' AND u.deletedAt < :threshold")
     List<Long> findDeletedUserIdsBefore(@Param("threshold") LocalDateTime threshold);
 
+    // 사용자 신고 횟수 +
+    @Modifying
+    @Transactional
+    @Query("UPDATE UserUser u SET u.suspensionCount = COALESCE(u.suspensionCount, 0) + 1 WHERE u.id = :userId")
+    void plusReportCount(@Param("userId") Long userId);
+
+    // 변화한 신고 카운트 조회 -> status, 정지기간 설정용
+    @Query("SELECT u.suspensionCount FROM UserUser u WHERE u.id = :userId")
+    Long findSuspensionCountById(@Param("userId") Long userId);
+
+    // 신고 횟수에 따라 정지 적용
+    @Modifying
+    @Transactional
+    @Query("UPDATE UserUser u SET u.status = :status, u.suspendedUntil = :suspendedUntil WHERE u.id = :userId")
+    void reportApply(@Param("userId") Long userId,
+                          @Param("status") Status status,
+                          @Param("suspendedUntil") LocalDateTime suspendedUntil);
+
+    // 정지 풀어주기
+    // banned -> active
+    // 정지기간 -> null
+    @Modifying
+    @Transactional
+    @Query("UPDATE UserUser u SET u.status = 'ACTIVE', u.suspendedUntil = null WHERE u.status = 'BANNED' AND u.suspendedUntil <= :now")
+    void banOver(@Param("now") LocalDateTime now);
+
+    // 사용자 신고 횟수 -
+    // status -> active
+    // suspensionCount -1
+    // suspendedUntil -> null
+    @Modifying
+    @Transactional
+    @Query("UPDATE UserUser u SET u.suspensionCount = u.suspensionCount - 1, u.status = 'ACTIVE', u.suspendedUntil = null WHERE u.id = :userId")
+    void minusReportCount(@Param("userId") Long userId);
+
+    // 사용자 보유 포인트 찾기
+    @Query("SELECT u.point FROM UserUser u WHERE u.id = :userId")
+    long findPointById(@Param("userId") Long userId);
 }

@@ -1,6 +1,8 @@
 package com.wanted.momocity.review.infrastructure.adapter;
 
+import com.wanted.momocity.review.domain.exception.ReviewNotFoundException;
 import com.wanted.momocity.review.domain.model.Review;
+import com.wanted.momocity.review.domain.model.ReviewStatus;
 import com.wanted.momocity.review.domain.repository.ReviewRepository;
 import com.wanted.momocity.review.infrastructure.persistence.ReviewJpaEntity;
 import com.wanted.momocity.review.infrastructure.persistence.ReviewJpaRepository;
@@ -19,21 +21,23 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
     public Review save(Review review) {
         ReviewJpaEntity entity = ReviewJpaEntity.from(review);
 
-        ReviewJpaEntity savedEntity = reviewJpaRepository.save(entity);
+        ReviewJpaEntity savedEntity = reviewJpaRepository.saveAndFlush(entity);
 
         return savedEntity.toDomain();
     }
 
     // 수강평 작성 확인
     @Override
-    public boolean existsByUserIdAndLectureId(
+    public boolean existsByUserIdAndLectureIdAndStatus(
             Long userId,
-            Long lectureId
+            Long lectureId,
+            ReviewStatus status
     ) {
         // 중복 수강평 여부 확인
-        return reviewJpaRepository.existsByUserIdAndLectureId(
+        return reviewJpaRepository.existsByUserIdAndLectureIdAndStatus(
                 userId,
-                lectureId
+                lectureId,
+                status
         );
     }
 
@@ -45,7 +49,11 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
 
     // 리뷰 삭제 (관리자)
     @Override
-    public void deleteById(Long reviewId) {
-        reviewJpaRepository.deleteById(reviewId);
+    public void softDeleteById(Long reviewId) {
+
+        ReviewJpaEntity review = reviewJpaRepository.findByIdAndStatus(reviewId, ReviewStatus.ACTIVE)
+                .orElseThrow(() -> new ReviewNotFoundException("수강평을 찾을 수 없습니다."));
+
+        review.softDelete();
     }
 }

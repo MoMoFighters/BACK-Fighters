@@ -2,11 +2,11 @@ package com.wanted.momocity.global.domain.model;
 
 public enum Category {
 
-    FITNESS("https://s3.ap-northeast-2.amazonaws.com/버킷명/default/teacher-fitness.png"),
-    STUDY  ("https://s3.ap-northeast-2.amazonaws.com/버킷명/default/teacher-study.png"),
-    COOK   ("https://s3.ap-northeast-2.amazonaws.com/버킷명/default/teacher-cook.png"),
-    BEAUTY ("https://s3.ap-northeast-2.amazonaws.com/버킷명/default/teacher-beauty.png"),
-    ART    ("https://s3.ap-northeast-2.amazonaws.com/버킷명/default/teacher-art.png");
+    FITNESS("https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/FITNESSProfile.png"),
+    STUDY  ("https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/STUDYProfile.png"),
+    COOK   ("https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/COOKProfile.png"),
+    BEAUTY ("https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/BEAUTYProfile.png"),
+    ART    ("https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/ARTProfile.png");
 
     private final String categoryProfileImage;
 

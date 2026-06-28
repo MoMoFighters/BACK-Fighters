@@ -1,5 +1,6 @@
 package com.wanted.momocity.store.presentation.api;
 
+import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.store.application.usecase.StoreCommandUsecase;
 import com.wanted.momocity.store.application.usecase.StoreQueryUsecase;
@@ -14,6 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -35,13 +37,14 @@ public class StoreController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)")
     })
     public ResponseEntity<ApiResponse<StoreListResponse>> getStoreProductList(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @Parameter(description = "페이지 번호 (1-base)", example = "1")
             @RequestParam(defaultValue = "1") int page,
             @Parameter(description = "페이지 크기", example = "20")
             @RequestParam(defaultValue = "5") int size
     ){
 
-        StoreListResult result = storeQueryUsecase.getProductList(page, size);
+        StoreListResult result = storeQueryUsecase.getProductList(userDetails.getUserId(),page, size);
         StoreListResponse response = StoreListResponse.from(result);
 
         return ResponseEntity.status(HttpStatus.OK)
