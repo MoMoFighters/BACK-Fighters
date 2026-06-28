@@ -7,6 +7,7 @@ import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import com.wanted.momocity.message.application.command.*;
 import com.wanted.momocity.message.application.manager.ChatRoomSessionManager;
+import com.wanted.momocity.message.application.metric.MessageMetrics;
 import com.wanted.momocity.message.application.policy.MessageEligibilityPolicy;
 import com.wanted.momocity.message.application.query.FindChatRoomQuery;
 import com.wanted.momocity.message.application.query.GetMessageHistoryQuery;
@@ -48,6 +49,9 @@ public class MessageCommandService implements MessageCommandUseCase {
 
     //웹소켓 알림 관련
     private final NotificationQueryUseCase notificationQueryUseCase;
+
+    //메트릭
+    private final MessageMetrics messageMetrics;
 
     //채팅방 조회 및 개설
     @Override
@@ -147,6 +151,8 @@ public class MessageCommandService implements MessageCommandUseCase {
                             List<ChatRoomMemberJpaEntity> currentMembers = messageRepository.findMembersByRoomId(finalRoomId);
                             String destination = "/sub/chat/room/" + finalRoomId;
 
+                            messageRepository.fastSaveChanges();
+
                             for (ChatRoomMemberJpaEntity member : currentMembers) {
                                 Long memberId = member.getUserId().getId();
 
@@ -174,7 +180,7 @@ public class MessageCommandService implements MessageCommandUseCase {
 
                             RoomInfo existingRoomInfo = new RoomInfo(
                                     finalRoomId,
-                                    command.roomTitle(),
+                                    null,
                                     2L //기존 방 복구 시 무조건 일대일이므로 2명 고정
                             );
 
@@ -236,6 +242,11 @@ public class MessageCommandService implements MessageCommandUseCase {
                 command.roomTitle(),
                 inMemberCount //로그인 유저 포함 멤버수이므로 초대된 멤버 + 1
         );
+
+        long inMemberCountMetric = targetUsers.size() + 1;
+
+        // 🎯 메트릭 심기: 새로 만들어진 방의 멤버 수 분포를 수집
+        messageMetrics.recordRoomMemberCount(inMemberCountMetric);
 
         return new CreateRoomView(
                 false,

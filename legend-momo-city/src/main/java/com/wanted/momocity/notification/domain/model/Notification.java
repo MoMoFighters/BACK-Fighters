@@ -21,7 +21,13 @@ public class Notification {
     //친구 요청
     //순수한 도메인 모델 안에서 알림 객체 생성 비즈니스를 정의
     public static Notification createFriendRequest(Long userId, String message, Long refId) {
-        return new Notification(null, userId, "FRIEND_REQUEST", refId, message, false, LocalDateTime.now());
+        return new Notification(
+                null,
+                userId,
+                "FRIEND_REQUEST",
+                refId, message,
+                false,
+                LocalDateTime.now());
     }
 
     //친구 요청 수락

@@ -220,8 +220,6 @@ public class FriendCommandService implements FriendCommandUseCase {
         String targetRole = "STUDENT";
         UserWithFMJpaEntity targetUser = null;
 
-        //FRIEND일 때만 통과
-        friendEligibilityPolicy.ensureBlockable(relationOpt,  targetRole);
 
         if (relationOpt.isPresent()) {
             //검증 통과했으므로 무조건 행 존재
@@ -230,6 +228,9 @@ public class FriendCommandService implements FriendCommandUseCase {
                     ? relation.getToUserId() : relation.getFromUserId();
             targetRole = targetUser.getRole();
         }
+
+        //FRIEND일 때만 통과
+        friendEligibilityPolicy.ensureBlockable(relationOpt,  targetRole);
 
         FriendJpaEntity relation = relationOpt.get();
         String finalStatus = "BLOCK";

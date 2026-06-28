@@ -1,6 +1,7 @@
 package com.wanted.momocity.friend.application.service;
 
 
+import com.wanted.momocity.friend.application.metric.FriendMetrics;
 import com.wanted.momocity.friend.application.query.*;
 import com.wanted.momocity.friend.application.usecase.FriendQueryUseCase;
 import com.wanted.momocity.friend.domain.repository.FriendRepository;
@@ -27,7 +28,8 @@ import java.util.stream.Collectors;
 public class FriendQueryService implements FriendQueryUseCase {
 
     private final FriendRepository friendRepository;
-    //충돌 회피로 친구 기능 관련 수강 테이블 인테페이스 저장소
+    //메트릭
+    private final FriendMetrics friendMetrics;
     //친구 목록 조회
     @Override
     public List<FriendView> getFriendQueryHandle(GetFriendQuery query) {
@@ -162,6 +164,10 @@ public class FriendQueryService implements FriendQueryUseCase {
         }
 
         log.info("[FindUserQueryService] 사용자 검색 가공 완료 - 최종 반환 결과: {}개", result.size());
+
+        // 🎯 메트릭 심기: 전체 스캔을 유발하는 키워드 검색 횟수 카운팅
+        friendMetrics.recordSearchFullScan();
+        
         return result;
     }
 

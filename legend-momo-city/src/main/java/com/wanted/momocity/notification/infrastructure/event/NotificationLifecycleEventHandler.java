@@ -120,7 +120,7 @@ public class NotificationLifecycleEventHandler {
         notificationHandlerService.createPostLikedNotification(
                 event.postOwnerId(), //게시글 주인 아이디
                 event.likedUserName(), //좋아요 누른 주체 닉네임
-                event.postOwnerId(), //게시글 아이디
+                event.postId(), //게시글 아이디
                 event.likeUserId() //좋아요 누른 주제 아이디
         );
     }

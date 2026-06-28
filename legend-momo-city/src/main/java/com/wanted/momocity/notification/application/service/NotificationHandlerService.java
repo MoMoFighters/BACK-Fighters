@@ -120,7 +120,7 @@ public class NotificationHandlerService {
                     message,
                     //추후 isRead 생기면 주석 해제
                     null, //notification 관련 알림은 message_read에서 처리하므로 null 처리
-                    existingNotification.getCreatedAt()
+                    createdAt
             );
 
             notificationRepository.save(updatedNotification);

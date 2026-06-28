@@ -143,7 +143,6 @@ public class SecurityConfig {
                         // 임시 비밀번호 발급도 인증 토큰 필요
                         .requestMatchers("/api/v1/auth/**").permitAll() // 인증 없이 허용
                         .requestMatchers("/ws-chat/**").permitAll()
-                        .requestMatchers("/ws-stomp/**").permitAll()
                         .anyRequest().authenticated()) // 나머지는 인증 필요
 //                ========================================================================
 
