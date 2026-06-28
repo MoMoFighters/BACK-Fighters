@@ -75,6 +75,8 @@ public class AdminDashboardQueryService implements AdminDashboardQueryUseCase {
 
         Set<Long> reporterIds = pendingReports.stream()
                 .map(PendingReportPort.PendingReportItem::reporterUserId)
+                // null 값 500번 막기 위해서 리팩토링
+                .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
         Map<Long, String> pendingNameMap = userNamePort.getNamesByUserIds(reporterIds);
 
@@ -100,6 +102,8 @@ public class AdminDashboardQueryService implements AdminDashboardQueryUseCase {
 
         Set<Long> recentReporterIds = recentItems.stream()
                 .map(RecentReportPort.RecentReportItem::reporterUserId)
+                // 500 번 상태 코드를 방지하기 위해 있는 코드
+                .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
         Map<Long, String> recentNameMap = userNamePort.getNamesByUserIds(recentReporterIds);
 
@@ -133,7 +137,7 @@ public class AdminDashboardQueryService implements AdminDashboardQueryUseCase {
                 .map(log -> new RecentAccessLog(
                         log.getId(),
                         log.getIp(),
-                        log.getUserId() != null ? logNameMap.get(log.getUserId()) : null,
+                        log.getUserId() != null ? logNameMap.getOrDefault(log.getUserId(), "알 수 없음") : "비로그인",
                         log.getAction() != AccessLogAction.FORBIDDEN,
                         log.getCreatedAt()
                 ))
