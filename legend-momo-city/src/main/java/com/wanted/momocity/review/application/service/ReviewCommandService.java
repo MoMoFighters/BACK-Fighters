@@ -6,6 +6,8 @@ import com.wanted.momocity.lecture.domain.exception.LectureNotFoundException;
 import com.wanted.momocity.lecture.domain.repository.LectureRepository;
 import com.wanted.momocity.review.application.command.ReviewCommand;
 import com.wanted.momocity.review.application.usecase.ReviewCommandUseCase;
+import com.wanted.momocity.review.domain.event.ReviewCreatedEvent;
+import com.wanted.momocity.review.domain.event.ReviewDeletedEvent;
 import com.wanted.momocity.review.domain.exception.DuplicateReviewException;
 import com.wanted.momocity.review.domain.exception.ReviewAccessDeniedException;
 import com.wanted.momocity.review.domain.exception.ReviewNotFoundException;
@@ -14,6 +16,7 @@ import com.wanted.momocity.review.domain.model.ReviewStatus;
 import com.wanted.momocity.review.domain.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +32,7 @@ public class ReviewCommandService implements ReviewCommandUseCase {
     private final LectureRepository lectureRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final MomoMetrics momoMetrics;
+    private final ApplicationEventPublisher eventPublisher;
 
     // 등록 API는 응답 데이터가 필요 없으므로 반환하지 않습니다.
     @Override
@@ -96,7 +100,11 @@ public class ReviewCommandService implements ReviewCommandUseCase {
             throw new DuplicateReviewException("이미 수강평을 작성한 강의입니다.");
         }
 
-        momoMetrics.recordReviewCreated();
+        eventPublisher.publishEvent(new ReviewCreatedEvent(
+                savedReview.getId(),
+                savedReview.getUserId(),
+                savedReview.getLectureId()
+        ));
 
         // 수강평 등록 처리 걸린 시간
         long elapsedTime = System.currentTimeMillis() - startTime;
@@ -125,7 +133,7 @@ public class ReviewCommandService implements ReviewCommandUseCase {
 
         reviewRepository.softDeleteById(reviewId);
 
-        momoMetrics.recordReviewDeleted();
+        eventPublisher.publishEvent(new ReviewDeletedEvent(reviewId));
 
         long elapsedTime = System.currentTimeMillis() - startTime;
         log.info("수강평 삭제 완료 - reviewId={}, elapsedTime={}ms", reviewId, elapsedTime);
