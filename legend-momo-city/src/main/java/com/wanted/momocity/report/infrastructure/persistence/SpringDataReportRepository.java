@@ -19,4 +19,8 @@ public interface SpringDataReportRepository extends JpaRepository<ReportJpaEntit
 
     // reportedUserId 는 컬럼 기준으로 해당 유저가 신고 당한 내역을 전부 조회
     List<ReportJpaEntity> findAllByReportedUserId(Long reportedUserId);
+
+    // 미처리 신고 수 (is_resolved = false) — ReportStatsAdapter 가 countUnresolved() 구현에 사용
+    long countByIsResolved(boolean isResolved);
+    
 }
