@@ -1,6 +1,6 @@
-package com.wanted.momocity.user.infrastructure.adminadapter;
+package com.wanted.momocity.user.infrastructure.reportadapter;
 
-import com.wanted.momocity.admin.application.port.UserNamePort;
+import com.wanted.momocity.report.application.port.ReportUserNamePort;
 import com.wanted.momocity.user.infrastructure.persistence.SpringDataUserRepository;
 import com.wanted.momocity.user.infrastructure.persistence.UserNameProjection;
 import lombok.RequiredArgsConstructor;
@@ -12,18 +12,18 @@ import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
-public class UserNameAdapter implements UserNamePort {
+public class ReportUserNameAdapter implements ReportUserNamePort {
 
     private final SpringDataUserRepository springDataUserRepository;
 
-    // userId로 이름, 역할 반환
+    // 신고자/피신고자 이름 조회
     @Override
-    public Map<Long, UserInfo> getUserInfoByUserIds(Set<Long> userIds) {
+    public Map<Long, String> getNamesByUserIds(Set<Long> userIds) {
         return springDataUserRepository.findNameAndRoleById(userIds)
                 .stream()
                 .collect(Collectors.toMap(
                         UserNameProjection::getId,
-                        p -> new UserInfo(p.getName(), p.getRole().name())
+                        UserNameProjection::getName
                 ));
     }
 }
