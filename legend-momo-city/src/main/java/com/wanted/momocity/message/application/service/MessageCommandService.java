@@ -89,8 +89,20 @@ public class MessageCommandService implements MessageCommandUseCase {
             //어댑터 포트를 통해 두 유저가 있는 기존 채팅방이 존재하는지 검증
             Optional<Long> existingRoomIdOpt = messageRepository.findExistingRoom(command.userId(), targetUserId);
             if (existingRoomIdOpt.isPresent()) {
-                log.info("[CreateChatRoomCommandService] 1차 멤버 검증 성공 - 양방향 활성화된 채팅방 발견. 기존 방ID: {}", existingRoomIdOpt.get());
                 finalRoomId = existingRoomIdOpt.get();
+                log.info("[CreateChatRoomCommandService] 1차 멤버 검증 성공 - 양방향 활성화된 채팅방 발견. 기존 방ID: {}", existingRoomIdOpt.get());
+
+                List<MemberInfo> existingMembers = new ArrayList<>();
+                existingMembers.add(new MemberInfo(
+                        singleTargetUser.getId(),
+                        "TEACHER".equals(singleTargetUser.getRole()) ? singleTargetUser.getName() : null,
+                        singleTargetUser.getNickname(),
+                        singleTargetUser.getRole(),
+                        friendStatuses.get(0)
+                ));
+
+                RoomInfo existingRoomInfo = new RoomInfo(finalRoomId, null, 2L); // 일대일이므로 방제목은 확실하게 null 보장
+                return new CreateRoomView(true, existingRoomInfo, existingMembers);
             } else {
                 //2차 검증: 로그인한 사용자가 나갔을 때 혼자 남은 방 중 과거 대화 역추적
                 log.info("[CreateChatRoomCommandService] 1차 검증 실패(나간 유저 존재) -> 2차 메시지 교차 검증 역추적 시작...");
@@ -150,34 +162,30 @@ public class MessageCommandService implements MessageCommandUseCase {
                             }
                             log.info("[웹소켓 실시간 발송] 과거 방 재입장으로 인해 참여 멤버 전원 화면 실시간 갱신 완료");
 
-                            break;
+
+                            List<MemberInfo> existingMembers = new ArrayList<>();
+                            existingMembers.add(new MemberInfo(
+                                    singleTargetUser.getId(),
+                                    "TEACHER".equals(singleTargetUser.getRole()) ? singleTargetUser.getName() : null,
+                                    singleTargetUser.getNickname(),
+                                    singleTargetUser.getRole(),
+                                    friendStatuses.get(0)
+                            ));
+
+                            RoomInfo existingRoomInfo = new RoomInfo(
+                                    finalRoomId,
+                                    command.roomTitle(),
+                                    2L //기존 방 복구 시 무조건 일대일이므로 2명 고정
+                            );
+
+                            return new CreateRoomView(
+                                    true,
+                                    existingRoomInfo,
+                                    existingMembers
+                            );
                         }
                     }
                 }
-            }
-
-            //기존 방 찾았다면 리턴
-            if (finalRoomId != null) {
-                List<MemberInfo> existingMembers = new ArrayList<>();
-                existingMembers.add(new MemberInfo(
-                        singleTargetUser.getId(),
-                        "TEACHER".equals(singleTargetUser.getRole()) ? singleTargetUser.getName() : null,
-                        singleTargetUser.getNickname(),
-                        singleTargetUser.getRole(),
-                        friendStatuses.get(0)
-                ));
-
-                RoomInfo existingRoomInfo = new RoomInfo(
-                        finalRoomId,
-                        command.roomTitle(),
-                        2L //기존 방 복구 시 무조건 일대일이므로 2명 고정
-                );
-
-                return new CreateRoomView(
-                        true,
-                        existingRoomInfo,
-                        existingMembers
-                );
             }
         }
 

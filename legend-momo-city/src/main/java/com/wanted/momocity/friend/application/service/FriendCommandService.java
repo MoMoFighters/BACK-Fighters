@@ -372,7 +372,7 @@ public class FriendCommandService implements FriendCommandUseCase {
                 savedBook.getId(),
                 ownerUser.getId(),
                 ownerUser.getNickname(),
-                LocalDateTime.now()
+                savedBook.getCreatedAt()
         );
     }
 }
