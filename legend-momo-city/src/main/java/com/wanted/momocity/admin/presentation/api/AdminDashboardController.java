@@ -78,7 +78,7 @@ public class AdminDashboardController {
                         // recentAccessLogs : 최근 접근 로그 목록 변환
                         summary.recentAccessLogs().stream()
                                 .map(l -> new DashboardSummaryResponse.RecentAccessLog(
-                                        l.logId(), l.ip(), l.userName(), l.isSuccess(), l.accessedAt()))
+                                        l.logId(), l.ip(), l.userName(), l.role(), l.isSuccess(), l.accessedAt()))
                                 .toList()
                 );
 

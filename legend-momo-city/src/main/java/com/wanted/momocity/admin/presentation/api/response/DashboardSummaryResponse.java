@@ -21,5 +21,6 @@ public record DashboardSummaryResponse(
     record PendingTask(String type, String title, String requester, LocalDateTime requestedAt) {}
     record RecentReport(Long reportId, String reporterName, String reason, boolean isResolved, LocalDateTime createdAt) {}
     record RecentNotice(Long noticeId, String title, LocalDateTime createdAt) {}
-    record RecentAccessLog(Long logId, String ip, String userName, boolean isSuccess, LocalDateTime accessedAt) {}
+    // role 추가 — FE MS-4 연동 요청
+    record RecentAccessLog(Long logId, String ip, String userName, String role, boolean isSuccess, LocalDateTime accessedAt) {}
 }
