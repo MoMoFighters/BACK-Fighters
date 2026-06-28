@@ -2,7 +2,9 @@ package com.wanted.momocity.streak.application.service;
 
 import com.wanted.momocity.streak.application.usecase.StreakCommandUseCase;
 import com.wanted.momocity.streak.domain.model.Streak;
+import com.wanted.momocity.streak.domain.model.StreakLevel;
 import com.wanted.momocity.streak.domain.repository.StreakRepository;
+import com.wanted.momocity.streak.infrastructure.metrics.StreakMetrics;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -28,6 +30,7 @@ import java.time.LocalDate;
 public class StreakCommandService implements StreakCommandUseCase {
 
     private final StreakRepository streakRepository;
+    private final StreakMetrics streakMetrics;
 
     /*
     * comment.
@@ -50,8 +53,26 @@ public class StreakCommandService implements StreakCommandUseCase {
                 .findByUserIdAndStreakDate(userId, date)
                 .orElse(Streak.create(userId, date, 0));
 
+        // 신규 생성 여부 판단
+        boolean isNew = streak == null;
+
+        if (isNew) {
+            streak = Streak.create(userId, date, 0);
+            // 신규 생성 횟수 카운트
+            streakMetrics.recordStreakCreated();
+        }
+
+        // 누적 전 레벨 저장
+        StreakLevel beforeLevel = streak.getLevel();
+
         // daily_watched_seconds 누적 + level 재계산
         streak.accumulate(watchedSeconds);
+
+        // 레벨업 여부 판단
+        if (streak.getLevel().ordinal() > beforeLevel.ordinal()) {
+            // 레벨업 횟수 카운트
+            streakMetrics.recordStreakLevelUp();
+        }
 
         streakRepository.save(streak);
 
