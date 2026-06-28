@@ -20,20 +20,20 @@ public class AccessLogRepositoryAdapter implements AccessLogRepository {
 
     private final SpringDataAccessLogRepository springDataAccessLogRepository;
 
-    // action 필터 없이 user_id IS NOT NULL 조건만 걸어서 전체 조회.
+    // action 필터 없이 user_id 전체 조회.
     @Override
-    public Page<AccessLog> findAllByUserIdIsNotNull(Pageable pageable) {
+    public Page<AccessLog> findAll(Pageable pageable) {
         return springDataAccessLogRepository
-                .findAllByUserIdIsNotNull(pageable)
+                .findAll(pageable)
                 .map(AccessLogJpaEntity::toDomain);
     }
 
     // 위의 Override 와 동일하다. 다만, action 조건이 추가된다.
     // action.name() 으로 enum -> String 변환해서 JPA 에 넘긴다.
     @Override
-    public Page<AccessLog> findByActionAndUserIdIsNotNull(AccessLogAction action, Pageable pageable) {
+    public Page<AccessLog> findByAction(AccessLogAction action, Pageable pageable) {
         return springDataAccessLogRepository
-                .findByActionAndUserIdIsNotNull(action.name(), pageable)
+                .findByAction(action.name(), pageable)
                 .map(AccessLogJpaEntity::toDomain);
     }
 }

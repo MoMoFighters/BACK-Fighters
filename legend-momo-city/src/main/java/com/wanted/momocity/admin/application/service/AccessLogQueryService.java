@@ -24,18 +24,18 @@ public class AccessLogQueryService implements AccessLogQueryUseCase {
 
     private final AccessLogRepository accessLogRepository;
 
-    // 비로그인 제외 + 전체 접근 로그를 최신순으로 페이지 조회
+    // 비로그인 포함 + 전체 접근 로그를 최신순으로 페이지 조회
     @Override
     public Page<AccessLog> getAll(int page, int limit) {
         PageRequest pageable = PageRequest.of(page - 1, limit, Sort.by("createdAt").descending());
-        return accessLogRepository.findAllByUserIdIsNotNull(pageable);
+        return accessLogRepository.findAll(pageable);
     }
 
-    // 비로그인 제외 + action 으로 필터링해서 최신순으로 페이지 조회
+    // 비로그인 포함 + action 으로 필터링해서 최신순으로 페이지 조회
     @Override
     public Page<AccessLog> getByAction(AccessLogAction action, int page, int limit) {
         PageRequest pageable = PageRequest.of(page - 1, limit, Sort.by("createdAt").descending());
-        return accessLogRepository.findByActionAndUserIdIsNotNull(action, pageable);
+        return accessLogRepository.findByAction(action, pageable);
     }
 
 }
