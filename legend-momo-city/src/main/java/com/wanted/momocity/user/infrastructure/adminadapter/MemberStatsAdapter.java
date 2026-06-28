@@ -1,4 +1,4 @@
-package com.wanted.momocity.user.infrastructure.count;
+package com.wanted.momocity.user.infrastructure.adminadapter;
 
 import com.wanted.momocity.admin.application.port.MemberStatsPort;
 import com.wanted.momocity.user.domain.model.Status;
