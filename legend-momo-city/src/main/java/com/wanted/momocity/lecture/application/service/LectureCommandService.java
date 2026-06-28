@@ -64,6 +64,12 @@ public class LectureCommandService implements
      */
     @Override
     public LectureAggregate createLecture(CreateLectureCommand command) {
+        long startTime = System.currentTimeMillis();
+        log.info("강의 등록 시작 - teacherId={}, category={}, title={}",
+                command.teacherId(),
+                command.category(),
+                command.title()
+                );
         Long teacherId = teacherAccountPort.getTeacherId(command.teacherId());
 
         LectureAggregate lecture = LectureAggregate.create(
@@ -83,26 +89,37 @@ public class LectureCommandService implements
                 Instant.now()
         ));
 
-        log.info("강의 등록 완료 - lectureId={}, teacherId={}, status={}",
+        long elapsedTime = System.currentTimeMillis()-startTime;
+        log.info("강의 등록 완료 - lectureId={}, teacherId={}, status={}, elapsedTime={}ms",
                 savedLecture.getId(),
                 savedLecture.getTeacherId(),
-                savedLecture.getStatus());
+                savedLecture.getStatus(),
+                elapsedTime
+        );
 
         return savedLecture;
     }
 
     /**
-     * 강사가 본인 강의를 심사 대기 상태로 변경.
+     * 강사가 강의 신청 시 강의 상태 변경 Waiting
      */
     @Override
     public LectureAggregate changeLectureStatus(ChangeLectureStatusCommand command) {
+
+        long startTime = System.currentTimeMillis();
+        log.info("강의 상태 변경 시작 - teacherId={}, lectureId={}, status={}",
+                command.teacherId(),
+                command.lectureId(),
+                command.lectureStatus()
+                );
+
         Long teacherId = teacherAccountPort.getTeacherId(command.teacherId());
 
         LectureAggregate lecture = lectureRepository.findById(command.lectureId())
                 .orElseThrow(() -> new LectureNotFoundException("강의를 찾을 수 없습니다."));
 
         if (!lecture.isOwnedBy(teacherId)) {
-            throw new AccessDeniedException("본인이 등록한 강의만 상태를 변경할 수 있습니다.");
+            throw new AccessDeniedException("본인이 등록한 강의만 상태를 확인 할 수 있습니다.");
         }
 
         if (command.lectureStatus() != LectureStatus.WAITING) {
@@ -113,7 +130,17 @@ public class LectureCommandService implements
 
         LectureAggregate changedLecture = lecture.changeStatus(command.lectureStatus());
 
-        return lectureRepository.save(changedLecture);
+        LectureAggregate savedLecture = lectureRepository.save(changedLecture); // 변경된 강의 상태 저장
+
+        long elapsedTime = System.currentTimeMillis() - startTime;
+
+        log.info("강사 강의 상태 변경 완료 - teacherId={}, lectureId={}, lectureStatus={}, elapsedTime={}ms",
+                teacherId,
+                savedLecture.getId(),
+                savedLecture.getStatus(),
+                elapsedTime
+        );
+        return savedLecture;
     }
 
     /**
@@ -121,6 +148,14 @@ public class LectureCommandService implements
      */
     @Override
     public LectureChapter createChapter(CreateChapterCommand command) {
+
+        long startTime = System.currentTimeMillis();
+        log.info("챕터 등록 시작 - teacherId={}, lectureId={}, orderNo={}, title={}",
+                command.teacherId(),
+                command.lectureId(),
+                command.orderNo(),
+                command.title()
+        );
         Long teacherId = teacherAccountPort.getTeacherId(command.teacherId());
 
         LectureAggregate lecture = lectureRepository.findById(command.lectureId())
@@ -164,10 +199,13 @@ public class LectureCommandService implements
 
         LectureChapter resultChapter = chapterRepository.save(chapterWithThumbnail);
 
-        log.info("챕터 등록 완료 - chapterId={}, lectureId={}, orderNo={}",
+        long elapsedTime = System.currentTimeMillis()-startTime;
+        log.info("챕터 등록 완료 - chapterId={}, lectureId={}, orderNo={}, elapsedTime={}ms",
                 savedChapter.getId(),
                 savedChapter.getLectureId(),
-                savedChapter.getOrderNo());
+                savedChapter.getOrderNo(),
+                elapsedTime
+        );
 
         return resultChapter;
     }
@@ -177,6 +215,14 @@ public class LectureCommandService implements
      */
     @Override
     public LectureChapter registerChapterVideo(RegisterChapterVideoCommand command) {
+        long startTime = System.currentTimeMillis();
+
+        log.info("챕터 동영상 등록 시작 - teacherId={}, lectureId={}, chapterId={}, durationSec={}",
+                command.teacherId(),
+                command.lectureId(),
+                command.chapterId(),
+                command.durationSec()
+        );
         Long teacherId = teacherAccountPort.getTeacherId(command.teacherId());
 
         LectureAggregate lecture = lectureRepository.findById(command.lectureId())
@@ -220,10 +266,15 @@ public class LectureCommandService implements
 
         LectureChapter savedChapter = chapterRepository.save(updatedChapter);
 
-        log.info("챕터 동영상 등록 완료 - chapterId={}, lectureId={}, videoSizeBytes={}",
+        long elapsedTime = System.currentTimeMillis() - startTime;
+
+        log.info("챕터 동영상 등록 완료 - chapterId={}, lectureId={}, videoSizeBytes={}, durationSec={}, elapsedTime={}ms",
                 savedChapter.getId(),
                 savedChapter.getLectureId(),
-                savedChapter.getVideoSizeBytes());
+                savedChapter.getVideoSizeBytes(),
+                savedChapter.getDurationSec(),
+                elapsedTime
+        );
 
         return savedChapter;
     }
@@ -233,6 +284,13 @@ public class LectureCommandService implements
      */
     @Override
     public AdminChangeLectureStatusResponse changeLectureStatus(AdminChangeLectureStatusCommand command) {
+        long startTime = System.currentTimeMillis();
+
+        log.info("관리자 강의 상태 변경 시작 - adminId={}, lectureId={}, targetStatus={}",
+                command.adminId(),
+                command.lectureId(),
+                command.lectureStatus()
+        );
         LectureAggregate lecture = lectureRepository.findById(command.lectureId())
                 .orElseThrow(() -> new LectureNotFoundException("강의를 찾을 수 없습니다."));
 
@@ -244,10 +302,15 @@ public class LectureCommandService implements
 
         LectureAggregate savedLecture = lectureRepository.save(changedLecture);
 
-        log.info("관리자 강의 상태 변경 완료 - adminId={}, lectureId={}, lectureStatus={}",
+        long elapsedTime = System.currentTimeMillis() - startTime;
+
+        log.info("관리자 강의 상태 변경 완료 - adminId={}, lectureId={}, beforeStatus={}, afterStatus={}, elapsedTime={}ms",
                 command.adminId(),
                 savedLecture.getId(),
-                savedLecture.getStatus());
+                lecture.getStatus(),
+                savedLecture.getStatus(),
+                elapsedTime
+        );
 
         return AdminChangeLectureStatusResponse.from(savedLecture);
     }

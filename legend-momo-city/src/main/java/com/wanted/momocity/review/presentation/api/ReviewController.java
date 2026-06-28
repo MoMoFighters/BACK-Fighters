@@ -11,6 +11,9 @@ import com.wanted.momocity.review.presentation.api.request.CreateReviewRequest;
 import com.wanted.momocity.review.presentation.api.response.CreateReviewResponse;
 import com.wanted.momocity.review.presentation.api.response.CreateReviewSuccessResponse;
 import com.wanted.momocity.review.presentation.api.response.ReviewListResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -25,11 +28,24 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/lectures")
+@Tag(name = "Review", description = "수강평 등록, 삭제, 목록 조회 API")
 public class ReviewController {
 
     private final ReviewCommandUseCase reviewCommandUseCase;
     private final ReviewQueryUseCase reviewQueryUseCase;
 
+    @Operation(
+            summary = "수강평 등록",
+            description = "로그인한 학생이 수강 중인 강의에 수강평을 등록합니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "수강평 등록 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "입력값 검증 실패"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "수강평 등록 권한 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "강의 또는 사용자 정보를 찾을 수 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "이미 ACTIVE 상태의 수강평을 작성한 강의")
+    })
     @PostMapping("/{lectureId}/reviews")
     public ResponseEntity<CreateReviewSuccessResponse> createReview(
             // 로그인한 사용자 정보를 가져오기
@@ -57,6 +73,16 @@ public class ReviewController {
     }
 
     // 강의 삭제
+    @Operation(
+            summary = "수강평 삭제",
+            description = "관리자가 수강평을 삭제합니다. 실제 row를 삭제하지 않고 DELETED 상태로 변경합니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "수강평 삭제 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "삭제 가능한 ACTIVE 수강평을 찾을 수 없음")
+    })
     @DeleteMapping("/reviews/{reviewId}")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')") // 관리자만 삭제 가능
     public ResponseEntity<?> deleteReview(@PathVariable Long reviewId // URL에서 reviewId 추출
@@ -67,6 +93,15 @@ public class ReviewController {
     }
 
     // 강의 수강평 목록 조회
+    @Operation(
+            summary = "수강평 목록 조회",
+            description = "특정 강의의 ACTIVE 상태 수강평 목록을 최신순으로 페이지 조회합니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "수강평 목록 조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 페이지 또는 조회 조건"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "강의를 찾을 수 없음")
+    })
     @GetMapping("/{lectureId}/reviews")
     public ResponseEntity<ApiResponse<ReviewListResponse>> getReviews(
             @PathVariable Long lectureId,
