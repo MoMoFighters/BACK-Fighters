@@ -168,7 +168,8 @@ public class AuthCommandService implements AuthCommandUsecase {
                 : tokenProviderPort.getAccessTokenValidityMilliseconds() / 1000;
 
         log.info("[login] 로그인 성공 | userId={} | isTempPwd={}", user.getId(), user.getIsTempPwd());
-        return new LoginResponse(accessToken, refreshToken, user.getStatus(), accessTokenExpiry);
+        return new LoginResponse(accessToken, refreshToken, user.getStatus(), user.getRole(),
+                                user.getIsTempPwd(),user.getNickname(),accessTokenExpiry);
     }
 
     // 로그아웃
@@ -220,8 +221,9 @@ public class AuthCommandService implements AuthCommandUsecase {
 
 
         // 응답
-        return new LoginResponse(accessToken, refreshToken, user.getStatus(),
-                tokenProviderPort.getAccessTokenValidityMilliseconds());
+        return new LoginResponse(accessToken, refreshToken, user.getStatus(),user.getRole(),
+                user.getIsTempPwd(),user.getNickname(),
+                tokenProviderPort.getAccessTokenValidityMilliseconds()/1000);
     }
 
     // 새로운 유저 db에 등록
