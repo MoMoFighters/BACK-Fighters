@@ -206,7 +206,7 @@ public class AuthCommandService implements AuthCommandUsecase {
         // 인증 성공하면 JWT 토큰 발급
         String accessToken = tokenProviderPort.createAccessToken(
                 String.valueOf(user.getId()),
-                user.getRole().name(),
+                "ROLE_" + user.getRole().name(),
                 user.getCategory()
         );
         String refreshToken = tokenProviderPort.createRefreshToken(
