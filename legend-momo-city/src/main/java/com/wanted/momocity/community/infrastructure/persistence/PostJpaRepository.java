@@ -220,6 +220,23 @@ public interface PostJpaRepository extends JpaRepository<PostJpaEntity, Long> {
             Pageable pageable
     );
 
+    /*
+     * comment.
+     *  해당 연도의 월별 게시글 수 조회
+     *  소프트딜리트 제외
+     *  1월~12월 데이터 없는 달은 결과에 미포함 -> PostStatsAdapter 에서 0으로 채움
+     * */
+
+    @Query("""
+    SELECT FUNCTION('MONTH', p.createdAt) AS month, COUNT(p) AS count
+    FROM PostJpaEntity p
+    WHERE p.deletedAt IS NULL
+    AND FUNCTION('YEAR', p.createdAt) = :year
+    GROUP BY FUNCTION('MONTH', p.createdAt)
+    ORDER BY FUNCTION('MONTH', p.createdAt) ASC
+""")
+    List<Object[]> countPostByMonth(@Param("year") int year);
+
     // 하드딜리트 (스케줄러용)
     // deletedAt IS NOT NULL : 소프트딜리트된 게시글만 대상
     // deletedAt < threshold : 기준일(6개월) 이전 데이터만 삭제
