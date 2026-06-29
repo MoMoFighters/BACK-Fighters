@@ -145,6 +145,7 @@ public class ViewingCommandService implements ViewingCommandUseCase {
          *  -> 5~10초마다 그 구간만큼 누적
          *  -> 재시청도 학습으로 인정
          */
+        
         boolean hasMeaningfulProgress = command.playbackSeconds() > prevWatchedSeconds
                 && command.playbackSeconds() - prevWatchedSeconds <= 10;
 
