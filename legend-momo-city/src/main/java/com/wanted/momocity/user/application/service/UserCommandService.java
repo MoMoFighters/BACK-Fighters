@@ -5,17 +5,13 @@ import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.user.application.port.GetItemUrlPort;
 import com.wanted.momocity.user.application.port.GoogleDriveUploadPort;
 import com.wanted.momocity.user.domain.event.DriveUploadEvent;
-import com.wanted.momocity.user.application.port.ReportRedisPort;
-import com.wanted.momocity.user.domain.event.ReportRedisEvent;
 import com.wanted.momocity.user.domain.event.TeacherApplicationEvent;
-import com.wanted.momocity.user.domain.exception.AlreadySuspendedException;
 import com.wanted.momocity.user.domain.exception.UserNotFoundException;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.user.application.command.*;
 import com.wanted.momocity.user.application.policy.UserPolicy;
 import com.wanted.momocity.user.application.usecase.UserCommandUsecase;
 import com.wanted.momocity.user.domain.exception.InvalidReasonException;
-import com.wanted.momocity.user.domain.model.CheckStatusResult;
 import com.wanted.momocity.user.domain.model.Role;
 import com.wanted.momocity.user.domain.model.Status;
 import com.wanted.momocity.user.domain.model.UpdateUserInfoData;
@@ -27,7 +23,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.List;
 
 
@@ -43,7 +38,6 @@ public class UserCommandService implements UserCommandUsecase {
     private final S3UploadPort s3UploadPort;
     private final ApplicationEventPublisher eventPublisher;
     private final GetItemUrlPort getItemUrlPort;
-    private final ReportRedisPort reportRedisPort;
 
 
     @Override
@@ -101,19 +95,17 @@ public class UserCommandService implements UserCommandUsecase {
         userPolicy.teacherProofPolicy(command.proof());
         String proofKey = s3UploadPort.upload(command.proof(), "teacher_proof");
 
-        userRepository.teacherApply(command.userId(),command.nickname(),command.category(),proofKey,LocalDateTime.now());
+        userRepository.teacherApply(command.userId(),command.nickname(),command.category(),proofKey);
 
         // 드라이브에 업로드
-        try {
-            byte[] fileBytes = command.proof().getBytes();
-            String contentType = command.proof().getContentType();
-            String originalFileName = command.proof().getOriginalFilename();
-            String driveFileName = name + " - " + command.category().name() + " - " + originalFileName;
-            eventPublisher.publishEvent(new DriveUploadEvent(fileBytes, contentType, driveFileName,proofKey, command.userId()));
-        } catch (IOException e) {
-            log.error("[teacherApply] 파일 읽기 실패 | userId={}", command.userId());
-        }
+        String originalFileName = command.proof().getOriginalFilename();
+        String driveFileName = name + " - " + command.category().name() + " - " + originalFileName;
+        eventPublisher.publishEvent(new DriveUploadEvent(driveFileName, proofKey, command.userId()));
 
+        /*comment
+        *  MultipartFile은 HTTP 요청이 살아있는 동안만 접근 가능한데
+        *  비동기는 요청이 끝난 후 별도 스레드에서 실행되니까 그때는 이미 파일 데이터가 사라진 상태
+        *  그래서 S3에는 이미 파일이 올라가 있으니까 proofKey로 S3에서 파일을 가져와 그거로 비동기 스레드에서 드라이브에 원본파일ㅇ을 업로드*/
         log.info("[teacherApply] 강사 신청 완료 | userId={} | role=TEACHER", command.userId());
 
     }
@@ -183,60 +175,5 @@ public class UserCommandService implements UserCommandUsecase {
     @Override
     public void softDeleteUser(Long userId) {
         userRepository.changeStatusAndNickname(userId, Status.DELETED, null);
-    }
-
-    // 사용자 신고 횟수 +
-    @Override
-    public LocalDateTime plusReportCount(Long userId) {
-
-        // 이미 정지 상태이면 더 신고 + 못 시킴
-        if (userPolicy.isSuspended(userId)) {
-            throw new AlreadySuspendedException("이미 정지된 사용자입니다.");
-        }
-
-        // 일단 신고 횟수 +1 하고 그건 리턴 받고
-        Long count = userRepository.plusReportCount(userId);
-        // 리턴 받은 그 신고 카운트를 기반으로 사용자 상태 변경
-        CheckStatusResult result = reportApply(count);
-        userRepository.reportApply(userId, result.status(), result.suspendedUntil());
-
-        // 신고 처리 시각 Redis에 저장
-        eventPublisher.publishEvent(new ReportRedisEvent(userId, true));
-
-        log.info("[user] 신고 처리 | userId={} | count={} | status={} | suspendedUntil={}",
-                userId, count, result.status(), result.suspendedUntil());
-
-        return result.suspendedUntil();
-    }
-
-    private CheckStatusResult reportApply(Long count) {
-        LocalDateTime midnight = LocalDateTime.now()
-                .plusDays(1)
-                .toLocalDate()
-                .atStartOfDay(); // 정지 기간을 정지 마지막날 자정으로 설정
-                                    // 그렇게 해야 매일 자정마다 도는 스케줄러에 맞춰 정지를 풀어줄 수 있음
-
-        return switch (count.intValue()) {
-            case 1 -> new CheckStatusResult(Status.BANNED, midnight.plusWeeks(1));
-            case 2 -> new CheckStatusResult(Status.BANNED, midnight.plusMonths(1));
-            default -> new CheckStatusResult(Status.BLACK, null);
-        };
-    }
-
-    // 사용자 신고 횟수 -
-    @Override
-    public void minusReportCount(Long userId) {
-        // Active인 사람은 - 못 시킴
-        if (userPolicy.isActive(userId)) {
-            throw new AlreadySuspendedException("활성 사용자의 정지 횟수는 줄일 수 없습니다.");
-        }
-
-        if (!reportRedisPort.existsReportTime(userId)) {
-            throw new DomainRuleViolationException("신고 후 24시간이 경과하여 복구할 수 없습니다.");
-        }
-
-        userRepository.minusReportCount(userId);
-        eventPublisher.publishEvent(new ReportRedisEvent(userId, false));
-        log.info("[user] 사용자 제재 복구 완료 | userId={}", userId);
     }
 }
