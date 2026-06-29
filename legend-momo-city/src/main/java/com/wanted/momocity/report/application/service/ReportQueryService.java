@@ -1,5 +1,6 @@
 package com.wanted.momocity.report.application.service;
 
+import com.wanted.momocity.report.application.port.ChapterParentPort;
 import com.wanted.momocity.report.application.port.CommentContentPort;
 import com.wanted.momocity.report.application.port.ReportUserNamePort;
 import com.wanted.momocity.report.application.port.ReviewContentPort;
@@ -30,6 +31,7 @@ public class ReportQueryService implements ReportQueryUseCase {
     private final ReportUserNamePort reportUserNamePort;
     private final ReviewContentPort reviewContentPort;
     private final CommentContentPort commentContentPort;
+    private final ChapterParentPort chapterParentPort;
 
 
     @Override
@@ -90,9 +92,9 @@ public class ReportQueryService implements ReportQueryUseCase {
             default -> null;
         };
 
-        // 3. CHAPTER 타입일 때만 lectureId 조회 — 성진님 ChapterParentAdapter 완료 후 포트 주입 예정
+        // 3. CHAPTER 타입일 때만 lectureId 조회, 나머지는 null
         Long parentId = switch (report.getTargetType()) {
-            case CHAPTER -> null; // TODO: chapterParentPort.getLectureIdByChapterId(report.getTargetId())
+            case CHAPTER -> chapterParentPort.getLectureIdByChapterId(report.getTargetId());
             default -> null;
         };
 
