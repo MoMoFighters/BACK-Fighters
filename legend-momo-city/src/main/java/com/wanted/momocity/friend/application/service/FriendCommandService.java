@@ -327,18 +327,22 @@ public class FriendCommandService implements FriendCommandUseCase {
     public RegisterGuestBookView registerGuestBookCommandHandle(RegisterGuestBookCommand command) {
         log.info("[RegisterGuestBookCommandService] 방명록 작성 비즈니스 루틴 시작 - 작성자: {}, 도시주인: {}", command.userId(), command.ownerId());
 
-        // 🎯 1. 시작 한 줄: 이번 요청의 성공 여부를 추적할 플래그 선언
-        boolean isSuccess = false;
-
         LocalDateTime now =  LocalDateTime.now();
         //도시 주인 존재 확인
         // 1. 대상 도시 주인 유저 존재 여부 검증 (404 대응)
         UserWithFMJpaEntity ownerUser = friendRepository.findUserById(command.ownerId())
-                .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 사용자의 도시에 방명록을 작성할 수 없습니다."));
+                .orElseThrow(() -> {
+                    friendMetrics.recordGuestbookResult(false); // 🎯 정림님 의도대로 실패 시 메트릭 기록
+                    return new FMResourceNotFoundException("존재하지 않는 사용자의 도시에 방명록을 작성할 수 없습니다.");
+                });
+
 
         // 2. 로그인 유저(방문자) 정보 조회
         UserWithFMJpaEntity loginUser = friendRepository.findUserById(command.userId())
-                .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> {
+                    friendMetrics.recordGuestbookResult(false); // 🎯 정림님 의도대로 실패 시 메트릭 기록
+                    return new FMResourceNotFoundException("존재하지 않는 사용자입니다.");
+                });
 
         // 3. 두 사람 사이의 친구 관계 데이터 추출
         Optional<FriendJpaEntity> relationOpt = friendRepository.findAnyRelationBetween(command.userId(), command.ownerId());
@@ -372,9 +376,6 @@ public class FriendCommandService implements FriendCommandUseCase {
                 now
         ));
         log.info("[RegisterGuestBookCommandService] 방명록 알림 유도 이벤트 발행 성공 - 수신 타겟 유저ID: {}", ownerUser.getId());
-
-        // 🎯 2. 끝 한 줄: 무사히 통과했으므로 성공 플래그 전달하며 메트릭 판단 위임
-        friendMetrics.recordGuestbookResult(isSuccess = true);
 
         // 8. 유스케이스 명세서에 약속된 출력 주머니(View Record) 반환
         // 응답 스펙의 데이터 매핑 흐름에 따라 도시 주인의 닉네임을 담아 전달합니다.

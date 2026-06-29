@@ -32,7 +32,6 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
     private final ChatRoomSessionManager sessionManager;
     //알림 관련 - 메인 페이지 종 모양에 띄워질 총 알림 개수
     private final NotificationSessionManager notificationSessionManager;
-    private final LoadUserPort loadUserPort;
     private final JwtTokenProvider jwtTokenProvider;
 
     @Override
