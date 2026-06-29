@@ -1,5 +1,6 @@
 package com.wanted.momocity.auth.application.port;
 
+import com.wanted.momocity.auth.domain.model.Category;
 import org.springframework.security.core.Authentication;
 
 public interface TokenProviderPort {
@@ -19,7 +20,7 @@ public interface TokenProviderPort {
     String createTempAccessToken(Authentication authentication);
 
     // 소셜 로그인 용 -> 이메일이랑 role만 가지고 access 토큰 발급하기
-    String createAccessToken(String userId, String role);
+    String createAccessToken(String userId, String role, Category category);
 
     // 액세스 토큰 블랙리스트 처리용 액세스 토큰 로그아웃 후 잔여시간 계산
     long getRemainingMillis(String accessToken);
