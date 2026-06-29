@@ -12,6 +12,7 @@ import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCases.Ad
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCases.ChapterCommandUseCase;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCases.LectureCommandUseCase;
 import com.wanted.momocity.lecture.domain.event.LectureCreatedEvent;
+import com.wanted.momocity.lecture.domain.event.LectureStatusChangedEvent;
 import com.wanted.momocity.lecture.domain.exception.ChapterLimitExceededException;
 import com.wanted.momocity.lecture.domain.exception.ChapterNotFoundException;
 import com.wanted.momocity.lecture.domain.exception.ChapterVideoAlreadyExistsException;
@@ -326,6 +327,16 @@ public class LectureCommandService implements
         LectureAggregate changedLecture = lecture.changeStatus(command.lectureStatus());
 
         LectureAggregate savedLecture = lectureRepository.save(changedLecture);
+
+        // 강의 승인/거절 상태 변경 이벤트 발행
+        eventPublisher.publishEvent(new LectureStatusChangedEvent(
+                savedLecture.getId(),
+                savedLecture.getTeacherId(),
+                command.adminId(),
+                savedLecture.getTitle(),
+                savedLecture.getStatus(),
+                Instant.now()
+        ));
 
         long elapsedTime = System.currentTimeMillis() - startTime;
 
