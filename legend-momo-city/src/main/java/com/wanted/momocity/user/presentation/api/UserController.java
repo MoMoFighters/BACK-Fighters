@@ -4,7 +4,6 @@ import com.wanted.momocity.auth.application.port.BlacklistPort;
 import com.wanted.momocity.auth.application.port.RedisRefreshTokenPort;
 import com.wanted.momocity.auth.application.port.TokenProviderPort;
 import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
-import com.wanted.momocity.enrollment.application.usecase.EnrollmentQueryUsecase;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.user.application.command.NicknameRegisterCommand;
 import com.wanted.momocity.user.application.command.UpdateUserInfoCommand;
@@ -36,7 +35,6 @@ public class UserController {
 
     private final UserCommandUsecase userCommandUsecase;
     private final UserQueryUsecase userQueryUsecase;
-    private final EnrollmentQueryUsecase enrollmentQueryUsecase;
 
     private final BlacklistPort blacklistPort;
     private final TokenProviderPort tokenProviderPort;
@@ -56,14 +54,12 @@ public class UserController {
     public ResponseEntity<ApiResponse<UserInfoDetailResponse>> getUserDetail(
             @AuthenticationPrincipal CustomUserDetails userDetails){
 
-        Long userId = userDetails.getUserId();
-        UserQueryUsecase.UserDetailView userDetail = userQueryUsecase.userDetail(userId);
-        List<EnrollmentQueryUsecase.RenderingBuildingsView>  userBuildingInfo = enrollmentQueryUsecase.userBuildingInfo(userId);
+        UserQueryUsecase.UserDetailResult result = userQueryUsecase.userDetail(userDetails.getUserId());
 
         return ResponseEntity.ok(ApiResponse.success(
                 UserResponseCode.SUCCESS,
                 UserResponseMessage.VIEW_SUCCESS,
-                new UserInfoDetailResponse(userDetail, userBuildingInfo)
+                new UserInfoDetailResponse(result.userDetail(), result.buildings())
         ));
     }
 
