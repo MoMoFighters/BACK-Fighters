@@ -2,7 +2,9 @@ package com.wanted.momocity.admin.presentation.api;
 
 import com.wanted.momocity.admin.application.usecase.AdminDashboardQueryUseCase;
 import com.wanted.momocity.admin.application.usecase.AdminDashboardQueryUseCase.DashboardSummary;
+import com.wanted.momocity.admin.application.usecase.MonthlyStatsQueryUseCase;
 import com.wanted.momocity.admin.presentation.api.response.DashboardSummaryResponse;
+import com.wanted.momocity.admin.presentation.api.response.MonthlyStatsResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,7 +14,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.time.LocalDate;
 
 /* comment.
     AdminDashboardController 정리
@@ -27,6 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminDashboardController {
 
     private final AdminDashboardQueryUseCase dashboardQueryUseCase;
+    private final MonthlyStatsQueryUseCase monthlyStatsQueryUseCase;
 
 
     @GetMapping("/dashboard/summary")
@@ -72,7 +78,7 @@ public class AdminDashboardController {
                         // recentNotices : 최근 공지 목록 변환
                         summary.recentNotices().stream()
                                 .map(n -> new DashboardSummaryResponse.RecentNotice(
-                                        n.noticeId(), n.title(), n.createdAt()))
+                                        n.noticeId(), n.title(), n.createdAt(), n.isPinned()))
                                 .toList(),
 
                         // recentAccessLogs : 최근 접근 로그 목록 변환
@@ -89,6 +95,23 @@ public class AdminDashboardController {
                         "대시보드 요약 통계 조회 성공",
                         response
                 )
+        );
+    }
+
+    @GetMapping("/dashboard/monthly-stats")
+    @Operation(
+            summary = "대시보드 월별 운영 추이",
+            description = "연도별 월별 회원수/강의수/게시글수를 반환한다. year 미입력 시 현재 연도 기준."
+    )
+    public ResponseEntity<ApiResponse<MonthlyStatsResponse>> getMonthlyStats(
+            @RequestParam(required = false) Integer year
+    ) {
+        int targetYear = (year != null) ? year : LocalDate.now().getYear();
+        MonthlyStatsResponse response = MonthlyStatsResponse.from(
+                monthlyStatsQueryUseCase.getMonthlyStats(targetYear)
+        );
+        return ResponseEntity.ok(
+                ApiResponse.success(ApiResponseCode.SUCCESS, "월별 운영 추이 조회 성공", response)
         );
     }
 }

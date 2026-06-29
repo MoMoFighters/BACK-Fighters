@@ -1,7 +1,6 @@
 package com.wanted.momocity.admin.presentation.api;
 
 import com.wanted.momocity.admin.application.usecase.AccessLogQueryUseCase;
-import com.wanted.momocity.admin.domain.access.AccessLog;
 import com.wanted.momocity.admin.domain.access.AccessLogAction;
 import com.wanted.momocity.admin.presentation.api.response.AccessLogResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
@@ -9,7 +8,6 @@ import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -41,12 +39,12 @@ public class AccessLogController {
             @RequestParam(required = false) AccessLogAction action
     ) {
         // action 유무에 따라 UseCase 메서드 분기
-        Page<AccessLog> result = (action == null)
+        AccessLogQueryUseCase.AccessLogResult result = (action == null)
                 ? accessLogQueryUseCase.getAll(page, limit)
                 : accessLogQueryUseCase.getByAction(action, page, limit);
 
-        // Page<AccessLog> → 응답 DTO 변환
-        AccessLogResponse response = AccessLogResponse.from(result);
+        // Page<AccessLog> + userInfoMap → 응답 DTO 변환
+        AccessLogResponse response = AccessLogResponse.from(result.page(), result.userInfoMap());
 
         // 문제 없다면 200을 띄우며 성공했다고 알리기
         return ResponseEntity.ok(
