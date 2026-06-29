@@ -46,14 +46,15 @@ public class ReportQueryService implements ReportQueryUseCase {
         Map<Long, String> userNames = reportUserNamePort.getNamesByUserIds(userIds);
 
         // 3. targetType 기준으로 내용 조회
-        Map<Long, String> targetContents = new HashMap<>();
+        // REVIEW·COMMENT 가 동일한 targetId 를 가질 수 있어 복합 키(타입_id)로 충돌 방지
+        Map<String, String> targetContents = new HashMap<>();
         for (Report r : reports) {
             String content = switch (r.getTargetType()) {
                 case REVIEW -> reviewContentPort.getContentById(r.getTargetId());
                 case COMMENT -> commentContentPort.getContentById(r.getTargetId());
                 default -> null;
             };
-            targetContents.put(r.getTargetId(), content);
+            targetContents.put(r.getTargetType().name() + "_" + r.getTargetId(), content);
         }
 
         return new ReportList(reports, userNames, targetContents);
@@ -73,14 +74,15 @@ public class ReportQueryService implements ReportQueryUseCase {
         Map<Long, String> userNames = reportUserNamePort.getNamesByUserIds(userIds);
 
         // 3. targetType 기준으로 내용 조회
-        Map<Long, String> targetContents = new HashMap<>();
+        // REVIEW·COMMENT 가 동일한 targetId 를 가질 수 있어 복합 키(타입_id)로 충돌 방지
+        Map<String, String> targetContents = new HashMap<>();
         for (Report r : reports) {
             String content = switch (r.getTargetType()) {
                 case REVIEW -> reviewContentPort.getContentById(r.getTargetId());
                 case COMMENT -> commentContentPort.getContentById(r.getTargetId());
                 default -> null;
             };
-            targetContents.put(r.getTargetId(), content);
+            targetContents.put(r.getTargetType().name() + "_" + r.getTargetId(), content);
         }
 
         return new ReportList(reports, userNames, targetContents);

@@ -39,15 +39,15 @@ public record ReportListResponse(
     ) {
 
         // Report 도메인 + 이름·내용 Map 을 받아 Item 으로 변환
-        public static Item from(Report report, Map<Long, String> userNames, Map<Long, String> targetContents) {
+        // targetContents 키가 String 복합 키(타입_id)로 바뀌어 파라미터 타입 일치
+        public static Item from(Report report, Map<Long, String> userNames, Map<String, String> targetContents) {
             return new Item(
                     report.getId(),
                     report.getReporterUserId(),
                     userNames.getOrDefault(report.getReporterUserId(), "알 수 없음"),
                     report.getTargetType().name(),
                     report.getTargetId(),
-                    targetContents.getOrDefault(report.getTargetId(), null),
-                    // 한국어 상태값을 위한 리팩
+                    targetContents.getOrDefault(report.getTargetType().name() + "_" + report.getTargetId(), null),
                     report.getReason().toKorean(),
                     report.getDetail(),
                     report.isResolved(),

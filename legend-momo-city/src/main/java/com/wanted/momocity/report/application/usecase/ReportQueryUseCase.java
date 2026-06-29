@@ -22,7 +22,7 @@ public interface ReportQueryUseCase {
     record ReportList(
             List<Report> reports,
             Map<Long, String> userNames,      // userId → 이름
-            Map<Long, String> targetContents  // targetId → 내용
+            Map<String, String> targetContents  // "REVIEW_5", "COMMENT_3" 형태
     ) {}
 
     // 해당 UseCase 가 어떤 것을 반환하는지 확인가능하기 때문에 여기에 둔다.
