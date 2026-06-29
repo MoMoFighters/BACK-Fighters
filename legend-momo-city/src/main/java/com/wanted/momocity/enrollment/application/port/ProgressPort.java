@@ -5,4 +5,9 @@ public interface ProgressPort {
 
     // 특정 사용자가 특정 강의를 얼마나 시청했는지 전체 진척도를 조회
     int getTotalProgress(Long userId, Long lectureId);
+
+    record ProgressInfo(
+            int totalProgress,
+            int completedCount
+    ) {}
 }
