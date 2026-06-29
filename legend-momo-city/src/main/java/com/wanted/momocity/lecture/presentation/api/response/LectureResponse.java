@@ -59,6 +59,22 @@ public class LectureResponse {
                     chapter.getUpdatedAt()
             );
         }
+
+        public static Object from(LectureChapter chapter, LectureS3UrlResolver lectureS3UrlResolver) {
+            return new CreateChapterResponse(
+                    chapter.getId(),
+                    chapter.getLectureId(),
+                    chapter.getTitle(),
+                    chapter.getOrderNo(),
+                    chapter.getVideoUrl(), // 동영상은 public URL로 변환하지 않음
+                    chapter.getVideoSizeBytes(),
+                    lectureS3UrlResolver.toUrl(chapter.getChapterThumbnailUrl()), // 챕터 썸네일만 전체 S3 URL로 변환
+                    chapter.getDurationSec(),
+                    chapter.getOriginalFilename(),
+                    chapter.getCreatedAt(),
+                    chapter.getUpdatedAt()
+            );
+        }
     }
 
     // CreateLectureResponse는 강의 등록 성공 시 프론트에 내려주는 응답 DTO
@@ -167,9 +183,9 @@ public class LectureResponse {
                     chapter.getLectureId(),
                     chapter.getTitle(),
                     chapter.getOrderNo(),
-                    lectureS3UrlResolver.toUrl(chapter.getVideoUrl()),
-                    chapter.getVideoSizeBytes(),
                     chapter.getVideoUrl(),
+                    chapter.getVideoSizeBytes(),
+                    lectureS3UrlResolver.toUrl(chapter.getChapterThumbnailUrl()),
                     chapter.getDurationSec(),
                     chapter.getOriginalFilename(),
                     chapter.getUpdatedAt()

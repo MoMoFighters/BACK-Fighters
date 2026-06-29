@@ -192,7 +192,7 @@ public class LectureController {
                 .body(ApiResponse.created(
                         ApiResponseCode.CREATED,
                         "챕터가 등록되었습니다.",
-                            CreateChapterResponse.from(chapter)
+                            CreateChapterResponse.from(chapter, lectureS3UrlResolver)
                 ));
     }
 
