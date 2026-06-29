@@ -25,7 +25,8 @@ public class CustomUserDetailsService implements UserDetailsService {
         return new CustomUserDetails(
                 user.getId(),
                 user.getPassword(),
-                List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
+                List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())),
+                user.getCategory()
         );
     }
 }
