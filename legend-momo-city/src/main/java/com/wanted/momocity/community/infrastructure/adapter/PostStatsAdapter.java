@@ -9,22 +9,17 @@ import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-/*
- * comment.
- *  월별 게시글 통계 어댑터
- *  -> 대시보드 월별 운영 추이 그래프용
- * */
-
+// 대시보드 월별 운영 추이 — 게시글 수 집계 어댑터
 @Component
 @RequiredArgsConstructor
 public class PostStatsAdapter implements PostStatsPort {
 
     private final PostJpaRepository postJpaRepository;
 
-    // 해당 연도 월별 게시글 수 반환 (1월~12월)
-    // 데이터 없는 달은 0으로 채움
+    // 해당 연도 월별 게시글 수 반환 (1월~12월), 데이터 없는 달은 0으로 채움
     @Override
     public List<MonthlyCount> countPostByMonth(int year) {
         List<Object[]> rows = postJpaRepository.countPostByMonth(year);
@@ -40,6 +35,6 @@ public class PostStatsAdapter implements PostStatsPort {
 
         return IntStream.rangeClosed(1, 12)
                 .mapToObj(m -> new MonthlyCount(m, monthMap.get(m)))
-                .toList();
+                .collect(Collectors.toList());
     }
 }
