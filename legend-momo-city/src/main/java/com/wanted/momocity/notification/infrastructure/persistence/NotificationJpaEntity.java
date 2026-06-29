@@ -49,9 +49,7 @@ public class NotificationJpaEntity {
         entity.type = domain.getType(); // 타입 고정
         entity.refId = domain.getRefId();
         entity.message = domain.getMessage();
-        //추후 주석 해제
-        entity.isRead = domain.getIsRead();
-        entity.createdAt = LocalDateTime.now();
+        entity.createdAt = domain.getCreatedAt();
 
         if ("MESSAGE".equals(domain.getType())) {
             entity.isRead = null;
@@ -76,7 +74,8 @@ public class NotificationJpaEntity {
                 this.type,
                 this.refId,
                 this.message,
-                this.isRead
+                this.isRead,
+                this.createdAt
         );
     }
 

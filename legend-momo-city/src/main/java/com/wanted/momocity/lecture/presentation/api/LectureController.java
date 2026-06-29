@@ -12,6 +12,7 @@ import com.wanted.momocity.lecture.application.query.LectureQuery.GetLecturesQue
 import com.wanted.momocity.lecture.application.query.LectureQuery.GetStudentLectureDetailQuery;
 import com.wanted.momocity.lecture.application.query.LectureQuery.GetTeacherLectureDetailQuery;
 import com.wanted.momocity.lecture.application.query.LectureQuery.GetTeacherLecturesQuery;
+import com.wanted.momocity.lecture.application.service.LectureS3UrlResolver;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCases.AdminLectureCommandUseCase;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCases.ChapterCommandUseCase;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCases.LectureCommandUseCase;
@@ -80,8 +81,7 @@ public class LectureController {
     // 관리자 강의 상태 변경 UseCase
     private final AdminLectureCommandUseCase adminLectureCommandUseCase;
 
-
-
+    private final LectureS3UrlResolver lectureS3UrlResolver;
 
     /* comment
      * 강의 등록 API
@@ -137,7 +137,7 @@ public class LectureController {
                 .body(ApiResponse.created(
                         ApiResponseCode.CREATED,
                         "강의가 등록되었습니다.",
-                        CreateLectureResponse.from(lecture)
+                        CreateLectureResponse.from(lecture, lectureS3UrlResolver)
                 ));
     }
 
@@ -192,7 +192,7 @@ public class LectureController {
                 .body(ApiResponse.created(
                         ApiResponseCode.CREATED,
                         "챕터가 등록되었습니다.",
-                            CreateChapterResponse.from(chapter)
+                            CreateChapterResponse.from(chapter, lectureS3UrlResolver)
                 ));
     }
 
@@ -244,7 +244,7 @@ public class LectureController {
         return ResponseEntity.ok(ApiResponse.success(
                 ApiResponseCode.SUCCESS,
                 "챕터 동영상이 등록되었습니다.",
-                RegisterChapterVideoResponse.from(chapter)
+                RegisterChapterVideoResponse.from(chapter, lectureS3UrlResolver)
         ));
     }
 
