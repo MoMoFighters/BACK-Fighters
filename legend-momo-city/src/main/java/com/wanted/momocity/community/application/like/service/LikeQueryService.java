@@ -3,8 +3,10 @@ package com.wanted.momocity.community.application.like.service;
 import com.wanted.momocity.community.application.like.usecase.LikeQueryUseCase;
 import com.wanted.momocity.community.application.post.port.UserInfoPort;
 import com.wanted.momocity.community.domain.exception.CommunityNotFoundException;
+import com.wanted.momocity.community.domain.model.Post;
 import com.wanted.momocity.community.domain.model.PostLike;
 import com.wanted.momocity.community.domain.repository.PostLikeRepository;
+import com.wanted.momocity.community.domain.repository.PostRepository;
 import com.wanted.momocity.community.presentation.api.response.PostLikeListResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,11 +28,20 @@ import java.util.List;
 public class LikeQueryService implements LikeQueryUseCase {
 
     private final PostLikeRepository postLikeRepository;
+    private final PostRepository postRepository;
     private final UserInfoPort userInfoPort;
 
     // 좋아요 누른 사용자 목록 조회
     @Override
     public PostLikeListResponse getLikes(Long postId) {
+
+        // 게시글 존재 여부 확인 (없으면 404, 삭제됐으면 404)
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new CommunityNotFoundException("게시글을 찾을 수 없습니다."));
+
+        if (post.isDeleted()) {
+            throw new CommunityNotFoundException("삭제된 게시글입니다.");
+        }
 
         // 게시글 좋아요 누른 사용자 목록 전체 조회
         List<PostLike> likes = postLikeRepository.findAllByPostId(postId);

@@ -94,6 +94,11 @@ public class CommentCommandService implements CommentCommandUseCase {
         Comment parentComment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new CommunityNotFoundException("댓글을 찾을 수 없습니다."));
 
+        // 부모 댓글이 해당 게시글 소속인지 검증
+        if (!parentComment.getPostId().equals(postId)) {
+            throw new CommunityAccessDeniedException("해당 게시글의 댓글이 아닙니다.");
+        }
+
         // 대댓글에 대댓글 방지
         if (parentComment.isReply()) {
             throw new CommunityAccessDeniedException("대댓글에는 답글을 달 수 없습니다.");
@@ -104,6 +109,15 @@ public class CommentCommandService implements CommentCommandUseCase {
             throw new CommunityAccessDeniedException("삭제된 댓글에는 대댓글을 작성할 수 없습니다.");
         }
 
+        // 게시글 조회 (삭제 여부 + postOwnerId 알림용) → 저장 전에 수행
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new CommunityNotFoundException("게시글을 찾을 수 없습니다."));
+
+        // 삭제된 게시글 대댓글 방지
+        if (post.isDeleted()) {
+            throw new CommunityAccessDeniedException("삭제된 게시글에는 대댓글을 작성할 수 없습니다.");
+        }
+
         // 대댓글 생성 및 저장
         Comment reply = Comment.createReply(postId, userId, commentId, content);
         Comment saved = commentRepository.save(reply);
@@ -111,10 +125,6 @@ public class CommentCommandService implements CommentCommandUseCase {
         // 대댓글 작성자 정보 조회 (알림용)
         User user = userInfoPort.findById(userId)
                 .orElseThrow(() -> new CommunityNotFoundException("사용자를 찾을 수 없습니다."));
-
-        // 게시글 조회 (postOwnerId 알림용)
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new CommunityNotFoundException("게시글을 찾을 수 없습니다."));
 
         // 본인 게시글 또는 본인 댓글에 대댓글 시 알림 제외
         if (!userId.equals(post.getUserId()) && !userId.equals(parentComment.getUserId())) {

@@ -41,7 +41,7 @@ public class LikeController {
         Long userId = userDetails.getUserId();
         LikeResult result = likeCommandUseCase.likePost(userId, postId);
 
-        return ResponseEntity.ok(ApiResponse.success(
+        return ResponseEntity.status(201).body(ApiResponse.created(
                 CommunityResponseCode.LIKE_CREATED,
                 "좋아요를 눌렀습니다.",
                 new LikeResponse(result.postId(), result.likeCount(), result.isLiked())
