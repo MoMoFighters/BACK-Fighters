@@ -1,5 +1,6 @@
 package com.wanted.momocity.lecture.presentation.api.response;
 
+import com.wanted.momocity.lecture.application.service.LectureS3UrlResolver;
 import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.model.LectureChapter;
 
@@ -75,13 +76,13 @@ public class LectureResponse {
     ) {
 
         // 도메인 모델 Lecture를 응답 DTO로 변환
-        public static CreateLectureResponse from(LectureAggregate lecture) {
+        public static CreateLectureResponse from(LectureAggregate lecture, LectureS3UrlResolver lectureS3UrlResolver) {
             return new CreateLectureResponse(
                     lecture.getId(),
                     lecture.getTeacherId(),
                     lecture.getTitle(),
                     lecture.getDescription(),
-                    lecture.getThumbnailUrl(),
+                    lectureS3UrlResolver.toUrl(lecture.getThumbnailUrl()),
                     lecture.getCategory().name(),
                     lecture.getStatus().name(),
                     lecture.getCompletedUserCount(),
@@ -160,21 +161,19 @@ public class LectureResponse {
     ) {
 
         // LectureChapter 도메인 모델을 응답 DTO로 변환
-        public static RegisterChapterVideoResponse from(LectureChapter chapter) {
+        public static RegisterChapterVideoResponse from(LectureChapter chapter, LectureS3UrlResolver lectureS3UrlResolver) {
             return new RegisterChapterVideoResponse(
                     chapter.getId(),
                     chapter.getLectureId(),
                     chapter.getTitle(),
                     chapter.getOrderNo(),
-                    chapter.getVideoUrl(),
+                    lectureS3UrlResolver.toUrl(chapter.getVideoUrl()),
                     chapter.getVideoSizeBytes(),
-                    chapter.getChapterThumbnailUrl(),
+                    chapter.getVideoUrl(),
                     chapter.getDurationSec(),
                     chapter.getOriginalFilename(),
                     chapter.getUpdatedAt()
             );
         }
     }
-
-
 }
