@@ -1,6 +1,7 @@
 package com.wanted.momocity.user.infrastructure.adminadapter;
 
 import com.wanted.momocity.admin.application.port.MemberStatsPort;
+import com.wanted.momocity.admin.application.port.MonthlyCount;
 import com.wanted.momocity.user.domain.model.Role;
 import com.wanted.momocity.user.domain.model.Status;
 import com.wanted.momocity.user.infrastructure.persistence.SpringDataUserRepository;
@@ -9,6 +10,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 @Component
 @Transactional
@@ -34,6 +38,19 @@ public class MemberStatsAdapter implements MemberStatsPort {
                 Status.ACTIVE,
                 date.atStartOfDay()
         );
+    }
+
+    // 해당 연도의 월별 회원 수 조회
+    public List<MonthlyCount> countMemberByMonth(int year){
+        Map<Integer, Long> monthMap = new LinkedHashMap<>();
+        for (int i = 1; i <= 12; i++) monthMap.put(i, 0L);
+
+        springDataUserRepository.countByMonth(year)
+                .forEach(mc -> monthMap.put(mc.month(), mc.count()));
+
+        return monthMap.entrySet().stream()
+                .map(e -> new MonthlyCount(e.getKey(), e.getValue()))
+                .toList();
     }
 
     // 승인 대기 중인 강사 수

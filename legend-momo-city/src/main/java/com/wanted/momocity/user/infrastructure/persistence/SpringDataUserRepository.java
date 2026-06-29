@@ -1,6 +1,7 @@
 package com.wanted.momocity.user.infrastructure.persistence;
 
 
+import com.wanted.momocity.admin.application.port.MonthlyCount;
 import com.wanted.momocity.global.domain.model.Category;
 import com.wanted.momocity.user.domain.model.Role;
 import com.wanted.momocity.user.domain.model.Status;
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, Long> {
@@ -207,4 +209,12 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
 
     // 탈퇴회원 제외 전체 조회
     long countByStatusNot(Status status);
+
+    // 탈퇴한 회원을 제외한 해당 연도의 원별 사용자 수
+    @Query("SELECT new com.wanted.momocity.admin.application.port.MonthlyCount(MONTH(u.createdAt), COUNT(u)) " +
+            "FROM UserUser u " +
+            "WHERE YEAR(u.createdAt) = :year AND u.status != 'DELETED' " +
+            "GROUP BY MONTH(u.createdAt) " +
+            "ORDER BY MONTH(u.createdAt)")
+    List<MonthlyCount> countByMonth(@Param("year") int year);
 }
