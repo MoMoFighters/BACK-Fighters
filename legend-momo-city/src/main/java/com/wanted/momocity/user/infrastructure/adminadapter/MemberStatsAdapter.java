@@ -41,6 +41,7 @@ public class MemberStatsAdapter implements MemberStatsPort {
     }
 
     // 해당 연도의 월별 회원 수 조회
+    @Override
     public List<MonthlyCount> countMemberByMonth(int year){
         Map<Integer, Long> monthMap = new LinkedHashMap<>();
         for (int i = 1; i <= 12; i++) monthMap.put(i, 0L);
