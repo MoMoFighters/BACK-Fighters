@@ -123,7 +123,7 @@ public class AdminDashboardQueryService implements AdminDashboardQueryUseCase {
         List<RecentNotice> recentNotices = adminNoticeRepository
                 .findAll(PageRequest.of(0, 7, Sort.by(Sort.Direction.DESC, "createdAt")))
                 .stream()
-                .map(n -> new RecentNotice(n.getId(), n.getTitle(), n.getCreatedAt()))
+                .map(n -> new RecentNotice(n.getId(), n.getTitle(), n.getCreatedAt(), n.isPinned()))
                 .toList();
 
         // 6. recentAccessLogs — 최근 5개 (비로그인 포함)
