@@ -59,10 +59,11 @@ public class ReportRepositoryAdapter implements ReportRepository {
     }
 
     // 전체 신고 수를 반환한다. (대시보드 통계용 MS-15)
+    // 미처리 신고 수 (is_resolved = false 인 것만 카운트)
     @Override
     @Transactional(readOnly = true)
-    public long countAll() {
-        return repository.count();
+    public long countUnresolved() {
+        return repository.countByIsResolved(false);
     }
 
     // ID 로 신고 단건 조회 : 없으면 Optional null 값으로 반환

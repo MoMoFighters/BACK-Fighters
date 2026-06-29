@@ -1,8 +1,10 @@
-package com.wanted.momocity.admin.infrastructure.persistence;
+package com.wanted.momocity.admin.infrastructure.adapter;
 
 import com.wanted.momocity.admin.domain.audit.ErrorLevel;
 import com.wanted.momocity.admin.domain.audit.ErrorLog;
 import com.wanted.momocity.admin.domain.audit.ErrorLogRepository;
+import com.wanted.momocity.admin.infrastructure.persistence.ErrorLogJpaEntity;
+import com.wanted.momocity.admin.infrastructure.persistence.SpringDataErrorLogRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;

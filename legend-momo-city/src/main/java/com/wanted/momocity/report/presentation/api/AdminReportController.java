@@ -78,7 +78,7 @@ public class AdminReportController {
         ReportQueryUseCase.ReportDetail detail = reportQueryUseCase.getById(id);
 
         // 2. 도메인 → 응답 DTO 변환
-        ReportDetailResponse response = ReportDetailResponse.from(detail.report());
+        ReportDetailResponse response = ReportDetailResponse.from(detail);
 
         // 3. 200 OK 반환
         return ResponseEntity.ok(

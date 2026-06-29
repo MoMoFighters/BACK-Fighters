@@ -11,7 +11,6 @@ import com.wanted.momocity.viewing.application.port.LecturePort;
 import com.wanted.momocity.viewing.domain.model.Lecture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;

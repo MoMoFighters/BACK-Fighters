@@ -32,7 +32,10 @@ public class AdminNotice {
 
     // MS - 11 공지 생성 시 호출
     public static AdminNotice create(String title, String content, boolean isPinned) {
-        return new AdminNotice(null, title, content, isPinned, LocalDateTime.now(), null);
+
+        // LocalDateTime.now() 를 두 번 호출하면 나노초 단위로 createAt 과 updatedAt 이 달라질 수 있기 때문에 리팩
+        LocalDateTime now = LocalDateTime.now();
+        return new AdminNotice(null, title, content, isPinned, now, now);
     }
 
     // DB 에서 꺼낸 데이터를 도메인 객체로 복원
@@ -45,6 +48,19 @@ public class AdminNotice {
     public void update(String title, String content) {
         this.title = title;
         this.content = content;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // isPinned
+    // MS-21 공지 고정
+    public void pin() {
+        this.isPinned = true;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // MS-22 공지 고정 해제
+    public void unpin() {
+        this.isPinned = false;
         this.updatedAt = LocalDateTime.now();
     }
 

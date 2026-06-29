@@ -52,22 +52,25 @@ public class User {
     // 마이페이지에서 사용자에게 제시할 사용자 정보가 몇 개 없어서 user칼럼 전체 다 가져오면 널이 너무 만ㅎ음
     // -> 빌더 사용
     public static User restore(String profileImageUrl, String email,
-                               String name, Long point, String nickname,  Boolean isTempPwd, LocalDateTime createdAt) {
+                               String name, Long point, Role role, Category category, String nickname,  Boolean isTempPwd, LocalDateTime createdAt, Long suspensionCount) {
         return User.builder()
                 .profileImageUrl(profileImageUrl)
                 .email(email)
                 .name(name)
                 .point(point)
+                .role(role)
+                .category(category)
                 .nickname(nickname)
                 .isTempPwd(isTempPwd)
                 .createdAt(createdAt)
+                .suspensionCount(suspensionCount)
                 .build();
     }
 
     // 광리자 대시보드용 사용자 정보 덩어리 가져오기
     public static User restoreForAdmin(Long id, String name, Role role, String email,
                                        LocalDateTime createdAt, LocalDateTime deletedAt,
-                                       Status status, String proof) {
+                                       Status status, Long suspensionCount, LocalDateTime suspendedUntil, String proof) {
         return User.builder()
                 .id(id)
                 .name(name)
@@ -76,6 +79,8 @@ public class User {
                 .createdAt(createdAt)
                 .deletedAt(deletedAt)
                 .status(status)
+                .suspensionCount(suspensionCount)
+                .suspendedUntil(suspendedUntil)
                 .proof(proof)
                 .build();
     }

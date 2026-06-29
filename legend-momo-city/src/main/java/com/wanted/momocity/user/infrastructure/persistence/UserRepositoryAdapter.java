@@ -116,8 +116,8 @@ public class UserRepositoryAdapter implements UserRepository {
     }
 
     @Override
-    public void teacherApply(Long userId, String nickname , Category category, String proof) {
-        springDataUserRepository.teacherApply(userId,nickname,category,proof);
+    public void teacherApply(Long userId, String nickname , Category category, String proof, LocalDateTime updatedAt) {
+        springDataUserRepository.teacherApply(userId,nickname,category,proof, updatedAt);
     }
 
     // 강사 중복 신청 확인용
@@ -163,6 +163,27 @@ public class UserRepositoryAdapter implements UserRepository {
         springDataUserRepository.deleteById(userId);
     }
 
+    // 사용자 신고 횟수 +
+    @Override
+    public Long plusReportCount(Long userId) {
+        // 신고 횟수 +1 진행
+        springDataUserRepository.plusReportCount(userId);
+        // 변화된 신구 횟수 값 조회해서 리턴
+        return springDataUserRepository.findSuspensionCountById(userId);
+    }
+
+    // 신고 횟수에 따른 처리
+    @Override
+    public void reportApply(Long userId, Status status, LocalDateTime suspendedUntil) {
+        springDataUserRepository.reportApply(userId, status, suspendedUntil);
+    }
+
+    // 사용자 신고 횟수 -
+    @Override
+    public void minusReportCount(Long userId) {
+        springDataUserRepository.minusReportCount(userId);
+    }
+
 
     // 마이페이지 내 정보 조회용
     private User toDomain(UserJpaEntity entity) {
@@ -171,9 +192,12 @@ public class UserRepositoryAdapter implements UserRepository {
                 entity.getEmail(),
                 entity.getName(),
                 entity.getPoint(),
+                entity.getRole(),
+                entity.getCategory(),
                 entity.getNickname(),
                 entity.isTempPwd(),
-                entity.getCreatedAt()
+                entity.getCreatedAt(),
+                entity.getSuspensionCount()
         );
     }
 
@@ -205,6 +229,8 @@ public class UserRepositoryAdapter implements UserRepository {
                 entity.getCreatedAt(),
                 entity.getDeletedAt(),
                 entity.getStatus(),
+                entity.getSuspensionCount(),
+                entity.getSuspendedUntil(),
                 entity.getRole() == Role.TEACHER ? entity.getProof() : null
         );
     }

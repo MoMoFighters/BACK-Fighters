@@ -38,6 +38,7 @@ import com.wanted.momocity.lecture.presentation.api.response.StudentLectureRespo
 import com.wanted.momocity.lecture.presentation.api.response.TeacherLectureResponse.TeacherLectureDetailResponse;
 import com.wanted.momocity.lecture.presentation.api.response.TeacherLectureResponse.TeacherLecturePageResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -63,6 +64,9 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Lecture", description = "강의 등록, 조회, 챕터, 영상, 상태 관리 API")
 public class LectureController {
 
+    // 강의 썸네일을 저장할 S3 최상위 폴더명
+    private static final String LECTURE_S3_PREFIX = "lectures";
+
     // 강의 조회 UseCase
     private final LectureQueryUseCase lectureQueryUseCase;
     // 강의 상태 변경(WAITING) UseCase
@@ -75,6 +79,8 @@ public class LectureController {
     private final AdminLectureQueryUseCase adminLectureQueryUseCase;
     // 관리자 강의 상태 변경 UseCase
     private final AdminLectureCommandUseCase adminLectureCommandUseCase;
+
+
 
 
     /* comment
@@ -94,6 +100,13 @@ public class LectureController {
             summary = "강의 등록",
             description = "강사가 강의를 등록합니다. 썸네일 파일을 포함하므로 multipart/form-data로 요청합니다."
     )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "강의 등록 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "입력값 검증 실패"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "강사 권한 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "413", description = "썸네일 파일 크기 초과")
+    })
     @PostMapping(
             value = "",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -108,7 +121,13 @@ public class LectureController {
         request.validateCategory();
         request.validateThumbnailSize();
 
-        String thumbnailUrl = s3UploadPort.upload(request.thumbnail(), "lectures");
+        String thumbnailUrl = s3UploadPort.upload( // 강의 썸네일 파일을 S3에 업로드
+
+                request.thumbnail(), // 업로드할 강의 썸네일 파일
+
+                LECTURE_S3_PREFIX // 강의 썸네일이 저장될 S3 폴더 경로
+
+        ); // S3 업로드 후 접근 가능한 URL 반환
 
         LectureAggregate lecture = lectureCommandUseCase.createLecture(
                 request.toCommand(teacherId, thumbnailUrl)
@@ -139,6 +158,15 @@ public class LectureController {
             summary = "챕터 등록",
             description = "강사가 본인 강의에 챕터를 등록합니다. 프론트 통합 등록 흐름에 맞춰 multipart/form-data로 요청합니다."
     )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "챕터 등록 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "입력값 검증 실패"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "강사 권한 없음 또는 본인 강의가 아님"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "강의를 찾을 수 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "챕터 순서 중복 또는 챕터 개수 제한 초과"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "413", description = "챕터 썸네일 파일 크기 초과")
+    })
     @PostMapping(
             value = "/{lectureId}/chapters",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
@@ -184,6 +212,14 @@ public class LectureController {
             summary = "챕터 동영상 등록",
             description = "강사가 본인 강의의 챕터에 동영상을 등록합니다. 영상 파일을 포함하므로 multipart/form-data로 요청합니다."
     )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "챕터 동영상 등록 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "입력값 검증 실패"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "강사 권한 없음 또는 본인 강의가 아님"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "강의 또는 챕터를 찾을 수 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "413", description = "동영상 파일 크기 초과")
+    })
     @PatchMapping(
             value = "/{lectureId}/chapters/{chapterId}/video",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
@@ -233,6 +269,11 @@ public class LectureController {
             summary = "강의 목록 조회",
             description = "로그인 사용자의 권한에 따라 학생, 강사, 관리자 기준 강의 목록을 조회합니다."
     )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "강의 목록 조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 카테고리, 상태 또는 페이지 요청"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패")
+    })
     @GetMapping
     public ResponseEntity<ApiResponse<?>> getLectures(
             Authentication authentication,
@@ -322,6 +363,13 @@ public class LectureController {
             summary = "강의 상세 조회",
             description = "로그인 사용자의 권한에 따라 학생, 강사, 관리자 기준 강의 상세 정보를 조회합니다."
     )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "강의 상세 조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 강의 식별자"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "조회 권한 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "강의를 찾을 수 없음")
+    })
     @GetMapping("/{lectureId}")
     public ResponseEntity<ApiResponse<?>> getLectureDetail(
             Authentication authentication,
@@ -398,6 +446,14 @@ public class LectureController {
                     관리자는 강의를 승인(ACTIVE) 또는 거절(HOLD) 상태로 변경합니다.
                     """
     )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "강의 상태 변경 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "허용되지 않은 상태 변경 요청"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "상태 변경 권한 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "강의를 찾을 수 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "강의 상태 변경 조건 불충족")
+    })
     @PatchMapping("/{lectureId}/status")
     @PreAuthorize("hasAnyAuthority('ROLE_TEACHER', 'ROLE_ADMIN')")
     public ResponseEntity<ApiResponse<?>> changeLectureStatus(

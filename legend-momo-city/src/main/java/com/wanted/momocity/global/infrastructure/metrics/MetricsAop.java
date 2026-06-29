@@ -110,4 +110,76 @@ public class MetricsAop {
         }
     }
 
+    // 수강평 등록 소요 시간 측정
+    @Around("execution(* com.wanted.momocity.review.application.service.ReviewCommandService.createReview(..))")
+    public Object measureReviewCreate(ProceedingJoinPoint joinPoint) throws Throwable {
+        Timer.Sample sample = momoMetrics.startTimer();
+
+        try {
+            return joinPoint.proceed();
+        } finally {
+            momoMetrics.stopReviewCreateTimer(sample);
+        }
+    }
+
+    // 수강평 삭제 소요 시간 측정
+    @Around("execution(* com.wanted.momocity.review.application.service.ReviewCommandService.deleteReview(..))")
+    public Object measureReviewDelete(ProceedingJoinPoint joinPoint) throws Throwable {
+        Timer.Sample sample = momoMetrics.startTimer();
+
+        try {
+            return joinPoint.proceed();
+        } finally {
+            momoMetrics.stopReviewDeleteTimer(sample);
+        }
+    }
+
+    // 수강평 목록 조회 소요 시간 측정
+    @Around("execution(* com.wanted.momocity.review.application.service.ReviewQueryService.getReviews(..))")
+    public Object measureReviewList(ProceedingJoinPoint joinPoint) throws Throwable {
+        Timer.Sample sample = momoMetrics.startTimer();
+
+        try {
+            return joinPoint.proceed();
+        } finally {
+            momoMetrics.stopReviewListTimer(sample);
+        }
+    }
+
+    // 학습 진척도 조회 소요 시간 측정
+    @Around("execution(* com.wanted.momocity.enrollment.application.service.EnrollmentQueryService.getProgress(..))")
+    public Object measureEnrollmentProgress(ProceedingJoinPoint joinPoint) throws Throwable {
+        Timer.Sample sample = momoMetrics.startTimer();
+
+        try {
+            return joinPoint.proceed();
+        } finally {
+            momoMetrics.stopEnrollmentProgressTimer(sample);
+        }
+    }
+
+    // 챕터 등록 소요 시간 측정
+    @Around("execution(* com.wanted.momocity.lecture.application.service.LectureCommandService.createChapter(..))")
+    public Object measureChapterCreate(ProceedingJoinPoint joinPoint) throws Throwable {
+        Timer.Sample sample = momoMetrics.startTimer();
+
+        try {
+            return joinPoint.proceed();
+        } finally {
+            momoMetrics.stopChapterCreateTimer(sample);
+        }
+    }
+
+    // 챕터 동영상 등록 소요 시간 측정
+    @Around("execution(* com.wanted.momocity.lecture.application.service.LectureCommandService.registerChapterVideo(..))")
+    public Object measureChapterVideoRegister(ProceedingJoinPoint joinPoint) throws Throwable {
+        Timer.Sample sample = momoMetrics.startTimer();
+
+        try {
+            return joinPoint.proceed();
+        } finally {
+            momoMetrics.stopChapterVideoRegisterTimer(sample);
+        }
+    }
+
 }

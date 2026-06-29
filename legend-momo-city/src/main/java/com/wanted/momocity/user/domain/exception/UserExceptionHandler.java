@@ -85,4 +85,15 @@ public class UserExceptionHandler {
                 ));
     }
 
+    // 이미 정지된 사용자 또 정지할 떄
+    @ExceptionHandler(AlreadySuspendedException.class)
+    public ResponseEntity<ApiErrorResponse> handleAlreadySuspended(AlreadySuspendedException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiErrorResponse.of(
+                        HttpStatus.CONFLICT.value(),
+                        "ALREADY_SUSPENDED",
+                        e.getMessage()
+                ));
+    }
+
 }

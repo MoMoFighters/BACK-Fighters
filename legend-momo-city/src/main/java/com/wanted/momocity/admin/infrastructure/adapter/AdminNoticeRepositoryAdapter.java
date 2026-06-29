@@ -1,4 +1,4 @@
-package com.wanted.momocity.admin.infrastructure.persistence;
+package com.wanted.momocity.admin.infrastructure.adapter;
 
 /* comment.
     도메인이 선언한 AdminNoticeRepository 게약을 실제로 구현하는 어댑터.
@@ -7,6 +7,8 @@ package com.wanted.momocity.admin.infrastructure.persistence;
 
 import com.wanted.momocity.admin.domain.notice.AdminNotice;
 import com.wanted.momocity.admin.domain.notice.AdminNoticeRepository;
+import com.wanted.momocity.admin.infrastructure.persistence.AdminNoticeJpaEntity;
+import com.wanted.momocity.admin.infrastructure.persistence.SpringDataAdminNoticeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -56,6 +58,12 @@ public class AdminNoticeRepositoryAdapter implements AdminNoticeRepository {
     @Override
     public void delete(Long id) {
         springDataRepo.deleteById(id);
-
     }
+
+    // 현재 고정된 공지를 SpringData 에서 조회 후 도메인으로 변환, 없으면 Optional.empty() 반환
+    @Override
+    public Optional<AdminNotice> findPinned() {
+        return springDataRepo.findByIsPinnedTrue().map(AdminNoticeJpaEntity::toDomain);
+    }
+
 }

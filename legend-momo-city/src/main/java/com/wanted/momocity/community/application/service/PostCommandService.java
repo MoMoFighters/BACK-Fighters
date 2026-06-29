@@ -60,7 +60,10 @@ public class PostCommandService implements PostCommandUseCase {
     @Override
     @CacheEvict(value = "posts", allEntries = true, cacheManager = "redisCacheManager")
     public PostCreateResult createPost(Long userId, String title, PostCategory category, String thumbnailUrl) {
+
+        // 게시글 생성
         Post post = Post.create(userId, title, category, thumbnailUrl);
+        // 게시글 저장
         Post saved = postRepository.save(post);
 
         log.info("[Community] 게시글 생성 완료 | userId={}, postId={}", userId, saved.getId());
@@ -76,13 +79,17 @@ public class PostCommandService implements PostCommandUseCase {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CommunityNotFoundException("게시글을 찾을 수 없습니다."));
 
+        // 게시글 작성자 본인 검증
         validateAuthor(post.getUserId(), userId);
+        // 이미지 개수 검증 (최대 이미지 개수 초과 방지)
         validateImageCount(contents);
+        // 콘텐츠 타입별 필수값 검증 (TEXT -> content, IMAGE -> imageUrl)
         validateContents(contents);
 
         post.updateThumbnail(thumbnailUrl);
         postRepository.save(post);
 
+        // 새 컨텐츠 목록 생성
         List<PostContent> postContents = new ArrayList<>();
         for (int i = 0; i < contents.size(); i++) {
             PostContentCommand cmd = contents.get(i);
@@ -118,11 +125,16 @@ public class PostCommandService implements PostCommandUseCase {
     @Override
     @CacheEvict(value = "posts", allEntries = true, cacheManager = "redisCacheManager")
     public void updateContents(Long userId, Long postId, String thumbnailUrl, List<PostContentCommand> contents) {
+
+        // 게시글 존재 여부 확인
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CommunityNotFoundException("게시글을 찾을 수 없습니다."));
 
+        // 게시글 작성자 본인 검증
         validateAuthor(post.getUserId(), userId);
+        // 이미지 개수 검증 (최대 이미지 개수 초과 방지)
         validateImageCount(contents);
+        // 콘텐츠 타입별 필수값 검증 (TEXT -> content, IMAGE -> imageUrl)
         validateContents(contents);
 
         // 썸네일 업데이트
@@ -132,6 +144,7 @@ public class PostCommandService implements PostCommandUseCase {
         // 기존 콘텐츠 전체 소프트딜리트 -> 새 콘텐츠 저장
         postContentRepository.deleteAllByPostId(postId);
 
+        // 새 컨텐츠 목록 생성
         List<PostContent> postContents = new ArrayList<>();
         for (int i = 0; i < contents.size(); i++) {
             PostContentCommand cmd = contents.get(i);
@@ -144,6 +157,8 @@ public class PostCommandService implements PostCommandUseCase {
             ));
 
         }
+
+        // 새 컨텐츠 일괄 저장
         postContentRepository.saveAll(postContents);
         log.info("[Community] 콘텐츠 수정 완료 | postId={}, count={}", postId, postContents.size());
     }
@@ -309,6 +324,8 @@ public class PostCommandService implements PostCommandUseCase {
     // 소프트딜리트
     @Override
     public void deleteReply(Long userId, Long postId, Long commentId, Long replyId) {
+
+        // 대댓글 존재 검증
         Comment reply = commentRepository.findById(replyId)
                 .orElseThrow(() -> new CommunityNotFoundException("대댓글을 찾을 수 없습니다."));
 
