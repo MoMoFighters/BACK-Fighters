@@ -9,6 +9,7 @@ import com.wanted.momocity.viewing.domain.event.ChapterCompletedEvent;
 import com.wanted.momocity.viewing.domain.model.Chapter;
 import com.wanted.momocity.viewing.domain.model.LearningHistory;
 import com.wanted.momocity.viewing.domain.repository.LearningHistoryRepository;
+import com.wanted.momocity.viewing.infrastructure.metrics.ViewingMetrics;
 import com.wanted.momocity.viewing.presentation.api.response.SaveProgressResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +41,7 @@ public class ViewingCommandService implements ViewingCommandUseCase {
     private final LearningHistoryRepository learningHistoryRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final EnrollmentAccessPolicy enrollmentAccessPolicy;
+    private final ViewingMetrics viewingMetrics;
 
     @Override
     public SaveProgressResponse handle(SaveProgressCommand command) {
@@ -52,9 +54,13 @@ public class ViewingCommandService implements ViewingCommandUseCase {
             try {
                 // 저장 시도
                 return doSaveProgress(command);
+                // handle() - 낙관적 락 catch 블록에 메트릭 추가
             } catch (ObjectOptimisticLockingFailureException e) {
                 // 충돌 발생
                 retryCount++;
+
+                // 낙관적 락 충돌 횟수 카운트
+                viewingMetrics.recordOptimisticLockConflict();
 
                 log.warn("[Viewing] 낙관적 락 충돌 발생 | 재시도 {}/{} | userId={}, chapterId = {}",
                         retryCount, maxRetry,
@@ -82,67 +88,84 @@ public class ViewingCommandService implements ViewingCommandUseCase {
     // 실제 진척도 저장 로직 -> handle() 에서 재시도 시 반복 호출
     private SaveProgressResponse doSaveProgress(SaveProgressCommand command) {
 
-        // 수강 여부 확인 (Policy)
-        enrollmentAccessPolicy.ensureEnrolled(command.userId(), command.lectureId());
+        // doSaveProgress() - Timer 로 전체 감싸기
+        return viewingMetrics.getSaveProgressTimer().record(() -> {
 
-        // 챕터 정보 조회 (durationSec 필요)
-        Chapter chapter = chapterPort.findById(command.chapterId());
+            // 수강 여부 확인 (Policy)
+            enrollmentAccessPolicy.ensureEnrolled(command.userId(), command.lectureId());
 
-        // 시청 기록 조회 or 신규 생성
-        LearningHistory history = learningHistoryRepository
-                .findByUserIdAndChapterId(command.userId(), command.chapterId())
-                .orElse(LearningHistory.create(
-                        command.userId(), command.lectureId(), command.chapterId()
+            // 챕터 정보 조회 (durationSec 필요)
+            Chapter chapter = chapterPort.findById(command.chapterId());
+
+            // 시청 기록 조회 or 신규 생성
+            LearningHistory history = learningHistoryRepository
+                    .findByUserIdAndChapterId(command.userId(), command.chapterId())
+                    .orElse(LearningHistory.create(
+                            command.userId(), command.lectureId(), command.chapterId()
+                    ));
+
+            // 완료 전 상태 저장
+            // -> 이미 완료된 챕터 재시청 시 이벤트 중복 발행 방지
+            boolean wasCompleted = history.isCompleted();
+
+            // updateProgress() 반환값으로 skip 차단 여부 판단
+            boolean hasMeaningfulProgress = history.updateProgress(
+                    command.playbackSeconds(), chapter.getDurationSec()
+            );
+
+            // skip 차단 시 메트릭 증가
+            if (!hasMeaningfulProgress) {
+                viewingMetrics.recordSkipBlocked();
+            }
+
+            // watchedSeconds 분포 기록
+            viewingMetrics.recordWatchedSeconds(history.getWatchedSeconds());
+
+            // 진척도 업데이트 (도메인 메서드)
+            history.updateProgress(command.playbackSeconds(), chapter.getDurationSec());
+
+            // 챕터 완료 처리 (도메인 메서드)
+            history.complete(chapter.getDurationSec());
+
+            // lastPositionSec null 여부에 따라 저장 분기
+            if (command.lastPositionSec() != null) {
+                history.saveLastPosition(command.lastPositionSec());
+            }
+
+            // 시청 기록 저장
+            LearningHistory savedHistory = learningHistoryRepository.save(history);
+
+            // 챕터 완료 시 이벤트 발행
+            // wasCompleted = false -> isCompleted = true 일 때만 발행
+            if (!wasCompleted && savedHistory.isCompleted()) {
+                eventPublisher.publishEvent(new ChapterCompletedEvent(
+                        command.userId(),
+                        command.lectureId(),
+                        command.chapterId(),
+                        savedHistory.getWatchedSeconds(),
+                        Instant.now()
                 ));
+                log.info("[Viewing] ChapterCompletedEvent 발행 | userId={}, lectureId={}, chapterId={}",
+                        command.userId(), command.lectureId(), command.chapterId());
+            }
 
-        // 완료 전 상태 저장
-        // -> 이미 완료된 챕터 재시청 시 이벤트 중복 발행 방지
-        boolean wasCompleted = history.isCompleted();
+            // 전체 진척도 계산
+            int totalProgress = calculateTotalProgress(command.userId(), command.lectureId());
+            int completedCount = calculateCompletedCount(command.userId(), command.lectureId());
 
-        // 진척도 업데이트 (도메인 메서드)
-        history.updateProgress(command.playbackSeconds(), chapter.getDurationSec());
+            log.info("[Viewing] 진척도 저장 완료 | userId={}, lectureId={}, chapterId={}, isCompleted={}, totalProgress={}",
+                    command.userId(), command.lectureId(), command.chapterId(),
+                    savedHistory.isCompleted(), totalProgress);
 
-        // 챕터 완료 처리 (도메인 메서드)
-        history.complete(chapter.getDurationSec());
-
-        // lastPositionSec null 여부에 따라 저장 분기
-        if (command.lastPositionSec() != null) {
-            history.saveLastPosition(command.lastPositionSec());
-        }
-
-        // 시청 기록 저장
-        LearningHistory savedHistory = learningHistoryRepository.save(history);
-
-        // 챕터 완료 시 이벤트 발행
-        // wasCompleted = false -> isCompleted = true 일 때만 발행
-        if (!wasCompleted && savedHistory.isCompleted()) {
-            eventPublisher.publishEvent(new ChapterCompletedEvent(
-                    command.userId(),
-                    command.lectureId(),
-                    command.chapterId(),
+            return new SaveProgressResponse(
+                    savedHistory.getChapterId(),
                     savedHistory.getWatchedSeconds(),
-                    Instant.now()
-            ));
-            log.info("[Viewing] ChapterCompletedEvent 발행 | userId={}, lectureId={}, chapterId={}",
-                    command.userId(), command.lectureId(), command.chapterId());
-        }
-
-        // 전체 진척도 계산
-        int totalProgress = calculateTotalProgress(command.userId(), command.lectureId());
-        int completedCount = calculateCompletedCount(command.userId(), command.lectureId());
-
-        log.info("[Viewing] 진척도 저장 완료 | userId={}, lectureId={}, chapterId={}, isCompleted={}, totalProgress={}",
-                command.userId(), command.lectureId(), command.chapterId(),
-                savedHistory.isCompleted(), totalProgress);
-
-        return new SaveProgressResponse(
-                savedHistory.getChapterId(),
-                savedHistory.getWatchedSeconds(),
-                savedHistory.getProgressRate(),
-                savedHistory.isCompleted(),
-                totalProgress,
-                completedCount
-        );
+                    savedHistory.getProgressRate(),
+                    savedHistory.isCompleted(),
+                    totalProgress,
+                    completedCount
+            );
+        });
     }
 
     // private 메서드 (내부 로직)
