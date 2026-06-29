@@ -154,10 +154,10 @@ public class NotificationLifecycleEventHandler {
         );
     }
 
-    //강의 승인/거절 알림
+//    //강의 승인/거절 알림
 //    @Async("domainEventExecutor")
 //    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-//    public void handleLectureApproval( event) {
+//    public void handleLectureApproval(LectureStatusChangedEvent event) {
 //        log.info("[NotificationLifecycleEventHandler] 강의 알림 행 추가 이벤트 수신 -> 알림 서비스로 이동");
 //
 //        notificationHandlerService.lectureApprovalNotification(
@@ -165,8 +165,8 @@ public class NotificationLifecycleEventHandler {
 //                event.teacherId(), //강사 아이디
 //                event.adminId(), //관리자 아이디
 //                event.lectureTitle(), //강의명
-//                event.time(), //승인/거절 날짜
-//                event.type() //승인/거절 여부
+//                event.lectureStatus(), //승인/거절 여부
+//                event.occurredAt() //승인/거절 날짜
 //        );
 //    }
 }

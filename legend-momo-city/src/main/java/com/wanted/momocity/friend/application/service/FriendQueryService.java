@@ -10,6 +10,7 @@ import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 import com.wanted.momocity.friend.infrastructure.persistence.GuestBookJpaEntity;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import com.wanted.momocity.friend.lecture.LectureWithFMJpaEntity;
+import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -94,6 +95,9 @@ public class FriendQueryService implements FriendQueryUseCase {
     public List<FindView> findUserQueryHandle(FindUserQuery query) {
         log.info("[FindUserQueryService] 사용자 검색 시작 - 요청자ID: {}, 검색 키워드: '{}'", query.userId(), query.findNickname());
 
+        //시작 시점에 타이머 스타트!
+        Timer.Sample sample = io.micrometer.core.instrument.Timer.start();
+
         //어댑터들로부터 가공되지 않은 순수 데이터 로드
         List<UserWithFMJpaEntity> foundUsers = friendRepository.findUsersByNicknameKeyword(query.findNickname());
         List<FriendJpaEntity> myRelations = friendRepository.findAllMyRelations(query.userId());
@@ -165,9 +169,9 @@ public class FriendQueryService implements FriendQueryUseCase {
 
         log.info("[FindUserQueryService] 사용자 검색 가공 완료 - 최종 반환 결과: {}개", result.size());
 
-        // 🎯 메트릭 심기: 전체 스캔을 유발하는 키워드 검색 횟수 카운팅
-        friendMetrics.recordSearchFullScan();
-        
+        //return 직전에 딱 멈추고 시간 기록하기!
+        sample.stop(friendMetrics.getUserSearchTimer());
+
         return result;
     }
 

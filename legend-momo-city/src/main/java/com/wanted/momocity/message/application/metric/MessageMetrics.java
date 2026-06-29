@@ -10,40 +10,49 @@ import org.springframework.stereotype.Component;
 public class MessageMetrics {
     private final MeterRegistry meterRegistry;
 
-    // 1. 읽음 처리 요청 횟수 (벌크 연산 튜닝 지표)
-    private final Counter messageReadBulkCounter;
-
-    // 2. 메시지 내역 조회 타이머 (N+1 및 인덱스 부하 측정용)
-    private final Timer messageHistoryTimer;
-
-    // 3. 채팅방 멤버 수 분포 레코드
     private final DistributionSummary roomMemberDistribution;
+    private final Timer messageHistoryTimer;
+    private final Timer chatRoomListTimer;
+    private final Counter chatReenterCounter;
+    private final Counter messageSendCounter;                 // 🎯 5. 메시지 발송 TPS 추적 카운터 추가
 
     public MessageMetrics(MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;
 
-        this.messageReadBulkCounter = Counter.builder("momocity.message.read.bulk")
-                .description("메시지 읽음 처리 횟수 - @Modifying 벌크 연산 최적화 지표")
+        this.roomMemberDistribution = DistributionSummary.builder("momocity.chat.room.members")
+                .description("생성·복구되는 방의 멤버 수 분포 파악")
                 .register(meterRegistry);
 
         this.messageHistoryTimer = Timer.builder("momocity.message.history.latency")
-                .description("메시지 내역 조회 지연 시간 - N+1 및 인덱스 튜닝 성능 개선 지표")
+                .description("메시지 내역 조회 지연 시간 성능 개선 지표")
                 .register(meterRegistry);
 
-        this.roomMemberDistribution = DistributionSummary.builder("momocity.chat.room.members")
-                .description("채팅방 생성 시 멤버 수 분포 - 1:1 대화방 vs 다대다 활성 비율 파악")
+        this.chatRoomListTimer = Timer.builder("momocity.chat.room.list.latency")
+                .description("채팅방 목록 최적화 전/후 성능 측정 타이머")
                 .register(meterRegistry);
-    }
 
-    public void recordReadBulk() {
-        messageReadBulkCounter.increment();
-    }
+        this.chatReenterCounter = Counter.builder("momocity.chat.reenter.count")
+                .description("일대일 채팅방 퇴장 후 재입장 특수 트래픽 빈도 측정")
+                .register(meterRegistry);
 
-    public Timer getMessageHistoryTimer() {
-        return this.messageHistoryTimer;
+        this.messageSendCounter = Counter.builder("momocity.message.send.count")
+                .description("전체 실시간 메시지 발송 총량 및 TPS 모니터링 지표")
+                .register(meterRegistry);
     }
 
     public void recordRoomMemberCount(double memberCount) {
         roomMemberDistribution.record(memberCount);
     }
+
+    public void incrementChatReenterCount() {
+        chatReenterCounter.increment();
+    }
+
+    // 🎯 메시지 발송 카운터 체이닝 메서드
+    public void incrementMessageSendCount() {
+        messageSendCounter.increment();
+    }
+
+    public Timer getMessageHistoryTimer() { return this.messageHistoryTimer; }
+    public Timer getChatRoomListTimer() { return this.chatRoomListTimer; }
 }

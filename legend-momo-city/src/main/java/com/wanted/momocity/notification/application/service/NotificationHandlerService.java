@@ -324,17 +324,17 @@ public class NotificationHandlerService {
     }
 
     //강의 승인/거절 알림
-//    public void lectureApprovalNotification(Long lectureId, Long teacherId, Long adminId, String lectureTitle, LocalDateTime time, String type) {
+//    public void lectureApprovalNotification(Long lectureId, Long teacherId, Long adminId, String lectureTitle, String lectureStatus LocalDateTime occurredAt) {
 //        log.info("[NotificationHandlerService] 강의 승인/거절 알림 처리 시작 - 강의ID(refId): {}, 강사ID:{}", lectureId, teacherId);
 //
 //        String message;
-//        if ("APPROVAL".equals(type)) {
+//        if (ACTIVE.equals(lectureStatus)) {
 //            message = String.format("[%s] 강의가 승인되었습니다.", lectureTitle);
 //        } else {
 //            message = String.format("[%s] 강의가 거절되었습니다.", lectureTitle);
 //        }
 //
-//        Notification newNotification = Notification.lectureApproval(teacherId, message, lectureId);
+//        Notification newNotification = Notification.lectureApproval(teacherId, message, lectureId, occurredAt);
 //
 //        // 4. 레포지토리를 통해 알림 테이블에 적재
 //        Notification saved = notificationRepository.save(newNotification);

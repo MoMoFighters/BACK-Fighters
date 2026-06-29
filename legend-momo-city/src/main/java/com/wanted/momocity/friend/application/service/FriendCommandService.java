@@ -1,6 +1,7 @@
 package com.wanted.momocity.friend.application.service;
 
 import com.wanted.momocity.friend.application.command.*;
+import com.wanted.momocity.friend.application.metric.FriendMetrics;
 import com.wanted.momocity.friend.application.policy.FriendEligibilityPolicy;
 import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase;
 import com.wanted.momocity.friend.domain.event.*;
@@ -41,6 +42,8 @@ public class FriendCommandService implements FriendCommandUseCase {
     //포인트 주입
     private final PointChange pointChange;
     private final AddOrderHistory addOrderHistory;
+    //메트릭
+    private final FriendMetrics friendMetrics;
 
     //친구 요청
     @Override
@@ -324,6 +327,9 @@ public class FriendCommandService implements FriendCommandUseCase {
     public RegisterGuestBookView registerGuestBookCommandHandle(RegisterGuestBookCommand command) {
         log.info("[RegisterGuestBookCommandService] 방명록 작성 비즈니스 루틴 시작 - 작성자: {}, 도시주인: {}", command.userId(), command.ownerId());
 
+        // 🎯 1. 시작 한 줄: 이번 요청의 성공 여부를 추적할 플래그 선언
+        boolean isSuccess = false;
+
         LocalDateTime now =  LocalDateTime.now();
         //도시 주인 존재 확인
         // 1. 대상 도시 주인 유저 존재 여부 검증 (404 대응)
@@ -366,6 +372,9 @@ public class FriendCommandService implements FriendCommandUseCase {
                 now
         ));
         log.info("[RegisterGuestBookCommandService] 방명록 알림 유도 이벤트 발행 성공 - 수신 타겟 유저ID: {}", ownerUser.getId());
+
+        // 🎯 2. 끝 한 줄: 무사히 통과했으므로 성공 플래그 전달하며 메트릭 판단 위임
+        friendMetrics.recordGuestbookResult(isSuccess = true);
 
         // 8. 유스케이스 명세서에 약속된 출력 주머니(View Record) 반환
         // 응답 스펙의 데이터 매핑 흐름에 따라 도시 주인의 닉네임을 담아 전달합니다.

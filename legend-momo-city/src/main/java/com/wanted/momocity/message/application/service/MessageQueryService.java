@@ -13,6 +13,7 @@ import com.wanted.momocity.message.application.usecase.MessageQueryUseCase;
 import com.wanted.momocity.message.domain.repository.ChatRoomQueryProjection;
 import com.wanted.momocity.message.domain.repository.MessageRepository;
 import com.wanted.momocity.message.infrastructure.persistence.*;
+import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -37,6 +38,9 @@ public class MessageQueryService implements MessageQueryUseCase {
     @Override
     public List<ChatRoomView> getChatRoomQueryHandle(FindChatRoomQuery query) {
         log.info("[FindChatRoomQueryService] 채팅방 목록 조회 비즈니스 가공 시작 - 조회 요청 유저ID: {}", query.userId());
+
+        // 🎯 1. 시작 한 줄: 타이머 측정 시작!
+        Timer.Sample sample = io.micrometer.core.instrument.Timer.start();
 
         //현재 로그인한 유저 정보 확인(학생/강사 판별)
         UserWithFMJpaEntity loginUser = messageRepository.findUserWithFMById(query.userId())
@@ -286,14 +290,17 @@ public class MessageQueryService implements MessageQueryUseCase {
         });
 
         log.info("[FindChatRoomQueryService] 채팅 목록 최종 가공 완료. 노출할 채팅방 수: {}개", result.size());
+
+        // 🎯 2. 끝 한 줄: 루프 가공이 완전히 끝나고 리턴 직전에 타이머 기록 후 멈춤!
+        sample.stop(messageMetrics.getChatRoomListTimer());
+
         return result;
     }
 
     //메시지 내역
     @Override
     public List<MessageHistoryView> getMessageHistoryQueryHandle(GetMessageHistoryQuery query) {
-        // 🎯 메트릭 심기: Timer.record() 내부에 로직을 람다로 감싸서 실행 시간 측정
-        return messageMetrics.getMessageHistoryTimer().record(() -> {
+        Timer.Sample sample = io.micrometer.core.instrument.Timer.start();
 
             log.info("[GetMessageHistoryQueryService] 내역 조회 시작 - 유저: {}, 방: {}, 커서ID: {}", query.userId(), query.roomId(), query.lastMessageId());
 
@@ -527,11 +534,16 @@ public class MessageQueryService implements MessageQueryUseCase {
                     isOneToOne ? null : chatRoom.getRoomTitle()
             );
 
-            return List.of(new MessageHistoryView(
-                    roomInfoView,
-                    memberInfoViews,
-                    messagesView
-            ));
-        });
+        // 1. 변수로 우선 결과물 받기
+        List<MessageHistoryView> result = List.of(new MessageHistoryView(
+                roomInfoView,
+                memberInfoViews,
+                messagesView
+        ));
+
+        // 🎯 끝 한 줄: 리턴 직전에 타이머를 멈추고 메트릭에 기록!
+        sample.stop(messageMetrics.getMessageHistoryTimer());
+
+        return result;
     }
 }

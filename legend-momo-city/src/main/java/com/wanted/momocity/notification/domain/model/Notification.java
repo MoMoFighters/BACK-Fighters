@@ -161,4 +161,17 @@ public class Notification {
                 LocalDateTime.now()
         );
     }
+
+    //강의 승인/거절
+    public static Notification lectureApproval(Long teacherId, String message, Long lectureId, LocalDateTime occurredAt) {
+        return new Notification(
+                null,
+                teacherId,
+                "APPROVAL",
+                lectureId,
+                message,
+                false,
+                occurredAt
+        );
+    }
 }

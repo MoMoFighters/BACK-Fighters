@@ -106,6 +106,10 @@ public class MessageCommandService implements MessageCommandUseCase {
                 ));
 
                 RoomInfo existingRoomInfo = new RoomInfo(finalRoomId, null, 2L); // 일대일이므로 방제목은 확실하게 null 보장
+
+                // 🎯 딱 한 줄: 기존 방 조회 완료 시점에도 멤버 수(2명) 분포 기록
+                messageMetrics.recordRoomMemberCount(2.0);
+
                 return new CreateRoomView(true, existingRoomInfo, existingMembers);
             } else {
                 //2차 검증: 로그인한 사용자가 나갔을 때 혼자 남은 방 중 과거 대화 역추적
@@ -184,6 +188,10 @@ public class MessageCommandService implements MessageCommandUseCase {
                                     2L //기존 방 복구 시 무조건 일대일이므로 2명 고정
                             );
 
+                            // 🎯 딱 두 줄: 재입장 특수 트래픽 발생 카운트 증가 + 복구 방 멤버 수(2명) 기록
+                            messageMetrics.incrementChatReenterCount();
+                            messageMetrics.recordRoomMemberCount(2.0);
+
                             return new CreateRoomView(
                                     true,
                                     existingRoomInfo,
@@ -243,10 +251,8 @@ public class MessageCommandService implements MessageCommandUseCase {
                 inMemberCount //로그인 유저 포함 멤버수이므로 초대된 멤버 + 1
         );
 
-        long inMemberCountMetric = targetUsers.size() + 1;
-
-        // 🎯 메트릭 심기: 새로 만들어진 방의 멤버 수 분포를 수집
-        messageMetrics.recordRoomMemberCount(inMemberCountMetric);
+        // 🎯 딱 한 줄: 신규 개설 방의 멤버 수 분포 수집 (기존 코드가 명세서의 지표와 완벽히 일치하므로 유지)
+        messageMetrics.recordRoomMemberCount((double) inMemberCount);
 
         return new CreateRoomView(
                 false,
@@ -302,6 +308,9 @@ public class MessageCommandService implements MessageCommandUseCase {
         //메시지 테이블에 저장
         MessageJpaEntity newMessage = MessageJpaEntity.createNewMessage(chatRoom, sender, command.content());
         messageRepository.saveMessage(newMessage);
+
+        // 🎯 딱 한 줄: 메시지가 성공적으로 적재 및 유효 통과 시점에 글로벌 TPS 카운트 증가
+        messageMetrics.incrementMessageSendCount();
 
         List<MessageReadJpaEntity> readOtherUsers = new ArrayList<>();
 
