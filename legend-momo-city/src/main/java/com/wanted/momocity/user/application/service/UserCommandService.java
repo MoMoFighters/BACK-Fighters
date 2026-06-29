@@ -4,6 +4,7 @@ import com.wanted.momocity.auth.application.port.PasswordEncodePort;
 import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.user.application.port.GetItemUrlPort;
 import com.wanted.momocity.user.application.port.GoogleDriveUploadPort;
+import com.wanted.momocity.user.domain.event.DriveUploadEvent;
 import com.wanted.momocity.user.domain.event.TeacherApplicationEvent;
 import com.wanted.momocity.user.domain.exception.UserNotFoundException;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
@@ -21,6 +22,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.util.List;
 
 
@@ -36,7 +38,6 @@ public class UserCommandService implements UserCommandUsecase {
     private final S3UploadPort s3UploadPort;
     private final ApplicationEventPublisher eventPublisher;
     private final GetItemUrlPort getItemUrlPort;
-    private final GoogleDriveUploadPort googleDriveUploadPort;
 
 
     @Override
@@ -97,9 +98,15 @@ public class UserCommandService implements UserCommandUsecase {
         userRepository.teacherApply(command.userId(),command.nickname(),command.category(),proofKey);
 
         // 드라이브에 업로드
-        String originalFileName = command.proof().getOriginalFilename();
-        String driveFileName = name + " - " + command.category().name() + " - " + originalFileName;
-        googleDriveUploadPort.uploadGoogleDrive(command.proof(), driveFileName);
+        try {
+            byte[] fileBytes = command.proof().getBytes();
+            String contentType = command.proof().getContentType();
+            String originalFileName = command.proof().getOriginalFilename();
+            String driveFileName = name + " - " + command.category().name() + " - " + originalFileName;
+            eventPublisher.publishEvent(new DriveUploadEvent(fileBytes, contentType, driveFileName,proofKey, command.userId()));
+        } catch (IOException e) {
+            log.error("[teacherApply] 파일 읽기 실패 | userId={}", command.userId());
+        }
 
         log.info("[teacherApply] 강사 신청 완료 | userId={} | role=TEACHER", command.userId());
 

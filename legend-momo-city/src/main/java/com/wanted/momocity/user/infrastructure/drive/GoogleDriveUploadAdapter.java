@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.util.Collections;
 
 @Slf4j
@@ -31,7 +32,7 @@ public class GoogleDriveUploadAdapter implements GoogleDriveUploadPort {
     private String folderId;
 
     @Override
-    public void uploadGoogleDrive(MultipartFile file, String fileName) {
+    public void uploadGoogleDrive(byte[] fileBytes, String contentType, String fileName) {
         try {
             GoogleCredential credential = new GoogleCredential.Builder()
                     .setTransport(GoogleNetHttpTransport.newTrustedTransport())
@@ -52,8 +53,8 @@ public class GoogleDriveUploadAdapter implements GoogleDriveUploadPort {
             fileMetadata.setParents(Collections.singletonList(folderId));
 
             InputStreamContent mediaContent = new InputStreamContent(
-                    file.getContentType(),
-                    file.getInputStream()
+                    contentType,
+                    new ByteArrayInputStream(fileBytes)
             );
 
             drive.files().create(fileMetadata, mediaContent)
