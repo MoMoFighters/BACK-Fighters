@@ -77,33 +77,12 @@ public class AuthController {
                 .body(ApiResponse.success(
                         AuthResponseCode.SUCCESS,
                         AuthResponseMessage.LOGIN_SUCCESS,
-                        new LoginResponse(result.accessToken(), result.refreshToken(),result.status() ,result.expiresIn())
+                        new LoginResponse(result.accessToken(), result.refreshToken(),result.status() ,result.role(),
+                                            result.isTempPwd(), result.nickname(),result.expiresIn())
                 ));
 
     }
 
-
-    @GetMapping("/login/completed")
-    @Operation(
-            summary = "로그인 성공 시 페이지 로딩을 위한 사용자 정보 전달",
-            description = "로그인 한 사용자의 role, is_tempPWD, nickname 을 보내 그에 맞는 페이지를 랜더링한다"
-    )
-    @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "사용자 정보 조회 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)")
-    })
-    public ResponseEntity<ApiResponse<LoginCompletedResponse>> loginCompleted(
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
-
-        LoginCompletedResponse result = authQueryUsecase.getInfo(userDetails.getUsername()); // id
-
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(ApiResponse.success(
-                        AuthResponseCode.SUCCESS,
-                        AuthResponseMessage.LOGIN_COMPLETED,
-                        new LoginCompletedResponse(result.role(), result.is_tempPwd(), result.nickname())
-                ));
-    }
 
 
     @PostMapping("/email/send")
@@ -195,7 +174,8 @@ public class AuthController {
                 .body(ApiResponse.success(
                         AuthResponseCode.SUCCESS,
                         AuthResponseMessage.LOGIN_SUCCESS,
-                        new LoginResponse(result.accessToken(), result.refreshToken(),result.status() ,result.expiresIn())
+                        new LoginResponse(result.accessToken(), result.refreshToken(),result.status() ,result.role(),
+                                result.isTempPwd(), result.nickname(),result.expiresIn())
                 ));
     }
 
@@ -216,7 +196,8 @@ public class AuthController {
                 .body(ApiResponse.success(
                         AuthResponseCode.SUCCESS,
                         AuthResponseMessage.LOGIN_SUCCESS,
-                        new LoginResponse(result.accessToken(), result.refreshToken(),result.status() ,result.expiresIn())
+                        new LoginResponse(result.accessToken(), result.refreshToken(),result.status() ,result.role(),
+                                result.isTempPwd(), result.nickname(),result.expiresIn())
                 ));
     }
 
@@ -237,7 +218,8 @@ public class AuthController {
                 .body(ApiResponse.success(
                         AuthResponseCode.SUCCESS,
                         AuthResponseMessage.LOGIN_SUCCESS,
-                        new LoginResponse(result.accessToken(), result.refreshToken(),result.status() ,result.expiresIn())
+                        new LoginResponse(result.accessToken(), result.refreshToken(),result.status() ,result.role(),
+                                result.isTempPwd(), result.nickname(),result.expiresIn())
                 ));
     }
 

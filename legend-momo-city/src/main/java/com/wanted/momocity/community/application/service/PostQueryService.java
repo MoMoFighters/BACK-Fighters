@@ -13,6 +13,7 @@ import com.wanted.momocity.community.domain.model.PostLike;
 import com.wanted.momocity.community.domain.repository.CommentRepository;
 import com.wanted.momocity.community.domain.repository.PostLikeRepository;
 import com.wanted.momocity.community.domain.repository.PostRepository;
+import com.wanted.momocity.community.infrastructure.metrics.CommunityMetrics;
 import com.wanted.momocity.community.presentation.api.response.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +42,7 @@ public class PostQueryService implements PostQueryUseCase {
     // 조회수 증가 비동기 처리를 위해 단방향 참조
     // PostCommandService -> PostQueryService 참조 없음
     private final PostCommandService postCommandService;
+    private final CommunityMetrics communityMetrics;
 
     /*
      * comment.
@@ -67,7 +69,10 @@ public class PostQueryService implements PostQueryUseCase {
         int totalCount = postRepository.countByCategory(category);
 
         // 커서 기반 게시글 목록 조회
-        List<Post> posts = postRepository.findAllWithCursor(category, cursor, size);
+        // 커서 페이지네이션 Timer
+        List<Post> posts = communityMetrics.getPostListQueryTimer().record(
+                () -> postRepository.findAllWithCursor(category, cursor, size)
+        );
 
         // nextCursor 계산
         // size + 1 개 조회 후 실제 반환 = size 개 -> size + 1 번째 데이터 존재 = 다음 페이지 존재, 없으면 null 반환
@@ -484,7 +489,10 @@ public class PostQueryService implements PostQueryUseCase {
         int totalCount = postRepository.countByKeyword(keyword, category);
 
         // 커서 기반 키워드 검색 (size + 1개 조회 -> 다음 페이지 존재 여부 확인용)
-        List<Post> posts = postRepository.searchByKeyword(keyword, category, cursor, size);
+        // 검색 쿼리 Timer
+        List<Post> posts = communityMetrics.getPostSearchQueryTimer().record(
+                () -> postRepository.searchByKeyword(keyword, category, cursor, size)
+        );
 
         // postId 목록 추출 -> 댓글 수 일괄 조회용
         List<Long> postIds = posts.stream().map(Post::getId).toList();

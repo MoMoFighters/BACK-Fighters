@@ -9,6 +9,7 @@ import com.wanted.momocity.lecture.infrastructure.persistence.LectureJpaEntity;
 import com.wanted.momocity.lecture.infrastructure.persistence.SpringDataLectureRepository;
 import com.wanted.momocity.viewing.application.port.LecturePort;
 import com.wanted.momocity.viewing.domain.model.Lecture;
+import com.wanted.momocity.viewing.infrastructure.metrics.ViewingMetrics;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -63,6 +64,8 @@ public class LectureCatalogAdapter implements LecturePort {
     private final ObjectMapper plainObjectMapper = new ObjectMapper()
             .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
 
+    private final ViewingMetrics viewingMetrics;
+
 
     /*
      * comment.
@@ -83,14 +86,19 @@ public class LectureCatalogAdapter implements LecturePort {
 
         String cacheKey = "lecture::" + lectureId;
 
+        // 캐시 히트 / 미스 메트릭 추가
         // 1. Redis 캐시 조회
         try {
             String json = stringRedisTemplate.opsForValue().get(cacheKey);
             if (json != null) {
+                // 캐시 히트
+                viewingMetrics.recordCacheHit();
                 Lecture lecture = plainObjectMapper.readValue(json, Lecture.class);
                 log.debug("[Viewing] lecture 캐시 히트 | lectureId={}", lectureId);
                 return lecture;
             }
+            // 캐시 미스
+            viewingMetrics.recordCacheMiss();
         } catch (Exception e) {
             log.warn("[Viewing] lecture 캐시 조회 실패, DB 조회로 fallback | lectureId={} | 예외={}",
                     lectureId, e.getMessage());
