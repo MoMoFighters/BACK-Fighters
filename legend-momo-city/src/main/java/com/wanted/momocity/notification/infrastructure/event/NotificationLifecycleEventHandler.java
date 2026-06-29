@@ -4,6 +4,7 @@ import com.wanted.momocity.community.domain.event.CommentCreatedEvent;
 import com.wanted.momocity.community.domain.event.PostLikedEvent;
 import com.wanted.momocity.community.domain.event.ReplyCreatedEvent;
 import com.wanted.momocity.friend.domain.event.*;
+import com.wanted.momocity.lecture.domain.event.LectureStatusChangedEvent;
 import com.wanted.momocity.message.domain.event.SendMessagePublishedEvent;
 import com.wanted.momocity.notification.application.service.NotificationHandlerService;
 import lombok.RequiredArgsConstructor;
@@ -154,19 +155,19 @@ public class NotificationLifecycleEventHandler {
         );
     }
 
-//    //강의 승인/거절 알림
-//    @Async("domainEventExecutor")
-//    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-//    public void handleLectureApproval(LectureStatusChangedEvent event) {
-//        log.info("[NotificationLifecycleEventHandler] 강의 알림 행 추가 이벤트 수신 -> 알림 서비스로 이동");
-//
-//        notificationHandlerService.lectureApprovalNotification(
-//                event.lectureId(), //강의 아이디
-//                event.teacherId(), //강사 아이디
-//                event.adminId(), //관리자 아이디
-//                event.lectureTitle(), //강의명
-//                event.lectureStatus(), //승인/거절 여부
-//                event.occurredAt() //승인/거절 날짜
-//        );
-//    }
+    //강의 승인/거절 알림
+    @Async("domainEventExecutor")
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleLectureApproval(LectureStatusChangedEvent event) {
+        log.info("[NotificationLifecycleEventHandler] 강의 알림 행 추가 이벤트 수신 -> 알림 서비스로 이동");
+
+        notificationHandlerService.lectureApprovalNotification(
+                event.lectureId(), //강의 아이디
+                event.teacherId(), //강사 아이디
+                event.adminId(), //관리자 아이디
+                event.lectureTitle(), //강의명
+                event.lectureStatus(), //승인/거절 여부
+                event.occurredAt() //승인/거절 날짜
+        );
+    }
 }

@@ -1,6 +1,7 @@
 package com.wanted.momocity.notification.application.service;
 
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
+import com.wanted.momocity.lecture.domain.model.LectureStatus;
 import com.wanted.momocity.message.application.policy.MessageEligibilityPolicy;
 import com.wanted.momocity.notification.application.query.GetMainTotalCountsQuery;
 import com.wanted.momocity.notification.application.query.GetNotificationQuery;
@@ -16,6 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+
+import static com.wanted.momocity.lecture.domain.model.LectureStatus.ACTIVE;
 
 @Service
 @RequiredArgsConstructor
@@ -324,24 +327,24 @@ public class NotificationHandlerService {
     }
 
     //강의 승인/거절 알림
-//    public void lectureApprovalNotification(Long lectureId, Long teacherId, Long adminId, String lectureTitle, String lectureStatus LocalDateTime occurredAt) {
-//        log.info("[NotificationHandlerService] 강의 승인/거절 알림 처리 시작 - 강의ID(refId): {}, 강사ID:{}", lectureId, teacherId);
-//
-//        String message;
-//        if (ACTIVE.equals(lectureStatus)) {
-//            message = String.format("[%s] 강의가 승인되었습니다.", lectureTitle);
-//        } else {
-//            message = String.format("[%s] 강의가 거절되었습니다.", lectureTitle);
-//        }
-//
-//        Notification newNotification = Notification.lectureApproval(teacherId, message, lectureId, occurredAt);
-//
-//        // 4. 레포지토리를 통해 알림 테이블에 적재
-//        Notification saved = notificationRepository.save(newNotification);
-//        log.info("[NotificationHandlerService] 강의 승인/거절 알림 생성 완료 - 생성된 알림ID: {}", saved.getId());
-//
-//        notificationQueryUseCase.getMainTotalCountsQueryHandle(new GetMainTotalCountsQuery(teacherId));
-//        notificationQueryUseCase.getNotificationQueryHandle(new GetNotificationQuery(teacherId));
-//        log.info("[알림 핸들러 -> 쿼리 연동] 온라인 유저 {}번(강의주인)에게 실시간 강의 승인/거절 알림 웹소켓 전송 성공", teacherId);
-//    }
+    public void lectureApprovalNotification(Long lectureId, Long teacherId, Long adminId, String lectureTitle, LectureStatus lectureStatus, LocalDateTime occurredAt) {
+        log.info("[NotificationHandlerService] 강의 승인/거절 알림 처리 시작 - 강의ID(refId): {}, 강사ID:{}", lectureId, teacherId);
+
+        String message;
+        if (ACTIVE.equals(lectureStatus)) {
+            message = String.format("[%s] 강의가 승인되었습니다.", lectureTitle);
+        } else {
+            message = String.format("[%s] 강의가 거절되었습니다.", lectureTitle);
+        }
+
+        Notification newNotification = Notification.lectureApproval(teacherId, message, lectureId, occurredAt);
+
+        // 4. 레포지토리를 통해 알림 테이블에 적재
+        Notification saved = notificationRepository.save(newNotification);
+        log.info("[NotificationHandlerService] 강의 승인/거절 알림 생성 완료 - 생성된 알림ID: {}", saved.getId());
+
+        notificationQueryUseCase.getMainTotalCountsQueryHandle(new GetMainTotalCountsQuery(teacherId));
+        notificationQueryUseCase.getNotificationQueryHandle(new GetNotificationQuery(teacherId));
+        log.info("[알림 핸들러 -> 쿼리 연동] 온라인 유저 {}번(강의주인)에게 실시간 강의 승인/거절 알림 웹소켓 전송 성공", teacherId);
+    }
 }
