@@ -1,6 +1,7 @@
 package com.wanted.momocity.report.application.service;
 
 import com.wanted.momocity.report.application.port.ChapterParentPort;
+import com.wanted.momocity.report.application.port.ChatContentPort;
 import com.wanted.momocity.report.application.port.CommentContentPort;
 import com.wanted.momocity.report.application.port.ReportUserNamePort;
 import com.wanted.momocity.report.application.port.ReviewContentPort;
@@ -32,6 +33,8 @@ public class ReportQueryService implements ReportQueryUseCase {
     private final ReviewContentPort reviewContentPort;
     private final CommentContentPort commentContentPort;
     private final ChapterParentPort chapterParentPort;
+    // CHAT 타입 신고 상세에서 채팅 내용 조회 — 정림님 ChatContentAdapter 완료 후 활성화
+    private final ChatContentPort chatContentPort;
 
 
     @Override
@@ -85,10 +88,11 @@ public class ReportQueryService implements ReportQueryUseCase {
                 Set.of(report.getReporterUserId(), report.getReportedUserId())
         );
 
-        // 2. targetType 기준으로 내용 조회
+        // 2. targetType 기준으로 내용 조회 — CHAT 추가 (정림님 어댑터 연동)
         String targetContent = switch (report.getTargetType()) {
-            case REVIEW -> reviewContentPort.getContentById(report.getTargetId());
+            case REVIEW  -> reviewContentPort.getContentById(report.getTargetId());
             case COMMENT -> commentContentPort.getContentById(report.getTargetId());
+            case CHAT    -> chatContentPort.getContentById(report.getTargetId());
             default -> null;
         };
 
