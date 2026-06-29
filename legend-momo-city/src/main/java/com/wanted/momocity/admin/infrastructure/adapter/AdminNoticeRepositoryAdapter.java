@@ -30,10 +30,10 @@ public class AdminNoticeRepositoryAdapter implements AdminNoticeRepository {
         return springDataRepo.save(AdminNoticeJpaEntity.fromDomain(notice)).toDomain();
     }
 
-    // 전체 목록을 페어징 조회 후 각 엔티티를 도메인 객체로 변환해 반환
+    // 고정 공지 상단 우선 정렬(isPinned DESC → createdAt DESC) 후 도메인으로 변환해 반환
     @Override
     public Page<AdminNotice> findAll(Pageable pageable) {
-        return springDataRepo.findAll(pageable).map(AdminNoticeJpaEntity::toDomain);
+        return springDataRepo.findAllOrderByIsPinnedFirst(pageable).map(AdminNoticeJpaEntity::toDomain);
     }
 
     // isPinned 필터 조회 후 도메인으로 변환해 반환

@@ -1,6 +1,8 @@
 package com.wanted.momocity.admin.application.port;
 
+import com.wanted.momocity.admin.application.port.MonthlyCount;
 import java.time.LocalDate;
+import java.util.List;
 
 /* comment.
     MemberStatsPort 정리
@@ -21,5 +23,8 @@ public interface MemberStatsPort {
 
     // 승인 대기 중인 강사 수 (수영님 담당 어댑터에서 구현)
     long countPending();
+
+    // 월별 회원 수 집계 — 대시보드 그래프용 (수영님 담당 어댑터에서 구현)
+    List<MonthlyCount> countMemberByMonth(int year);
 
 }
