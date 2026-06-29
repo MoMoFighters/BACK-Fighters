@@ -1,6 +1,7 @@
 package com.wanted.momocity.viewing.application.service;
 
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
+import com.wanted.momocity.viewing.domain.event.ProgressSavedEvent;
 import com.wanted.momocity.viewing.application.command.SaveProgressCommand;
 import com.wanted.momocity.viewing.application.policy.EnrollmentAccessPolicy;
 import com.wanted.momocity.viewing.application.port.ChapterPort;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 
 /*
@@ -99,6 +101,9 @@ public class ViewingCommandService implements ViewingCommandUseCase {
         // -> 이미 완료된 챕터 재시청 시 이벤트 중복 발행 방지
         boolean wasCompleted = history.isCompleted();
 
+        // 이전 watchedSeconds 저장 (delta 계산용)
+        int prevWatchedSeconds = history.getWatchedSeconds();
+
         // 진척도 업데이트 (도메인 메서드)
         history.updateProgress(command.playbackSeconds(), chapter.getDurationSec());
 
@@ -113,7 +118,7 @@ public class ViewingCommandService implements ViewingCommandUseCase {
         // 시청 기록 저장
         LearningHistory savedHistory = learningHistoryRepository.save(history);
 
-        // 챕터 완료 시 이벤트 발행
+        // 챕터 완료 시 이벤트 발행 (포인트 지급용)
         // wasCompleted = false -> isCompleted = true 일 때만 발행
         if (!wasCompleted && savedHistory.isCompleted()) {
             eventPublisher.publishEvent(new ChapterCompletedEvent(
@@ -125,6 +130,43 @@ public class ViewingCommandService implements ViewingCommandUseCase {
             ));
             log.info("[Viewing] ChapterCompletedEvent 발행 | userId={}, lectureId={}, chapterId={}",
                     command.userId(), command.lectureId(), command.chapterId());
+        }
+
+        /*
+         * comment.
+         *  잔디 누적 이벤트 발행
+         *  - 미완료 챕터
+         *  hasMeaningfulProgress = true 일 때
+         *  -> delta = playbackSeconds - prevWatchedSeconds
+         *  -> 실제 앞으로 나아간 만큼만 누적
+         *  - 완료된 챕터 재시청
+         *  wasCompleted = true 일 때
+         *  -> delta = playbackSeconds (현재 재생 위치 그대로)
+         *  -> 5~10초마다 그 구간만큼 누적
+         *  -> 재시청도 학습으로 인정
+         */
+        boolean hasMeaningfulProgress = command.playbackSeconds() > prevWatchedSeconds
+                && command.playbackSeconds() - prevWatchedSeconds <= 10;
+
+        if (hasMeaningfulProgress && !wasCompleted) {
+            // 미완료 챕터: 실제 증분만큼 누적
+            int delta = command.playbackSeconds() - prevWatchedSeconds;
+            eventPublisher.publishEvent(new ProgressSavedEvent(
+                    command.userId(),
+                    command.lectureId(),
+                    command.chapterId(),
+                    delta,
+                    LocalDate.now()
+            ));
+        } else if (wasCompleted && command.playbackSeconds() > 0) {
+            // 완료된 챕터 재시청: playbackSeconds 만큼 누적
+            eventPublisher.publishEvent(new ProgressSavedEvent(
+                    command.userId(),
+                    command.lectureId(),
+                    command.chapterId(),
+                    command.playbackSeconds(),
+                    LocalDate.now()
+            ));
         }
 
         // 전체 진척도 계산
