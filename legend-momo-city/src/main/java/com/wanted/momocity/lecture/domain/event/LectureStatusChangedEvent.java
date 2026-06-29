@@ -2,7 +2,6 @@ package com.wanted.momocity.lecture.domain.event;
 
 import com.wanted.momocity.global.domain.common.event.DomainEvent;
 import com.wanted.momocity.lecture.domain.model.LectureStatus;
-import com.wanted.momocity.viewing.domain.model.Lecture;
 
 import java.time.Instant;
 

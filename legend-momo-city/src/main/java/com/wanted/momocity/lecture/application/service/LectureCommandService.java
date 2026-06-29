@@ -33,7 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 
-/**
+/*
  * Lecture 명령 기능을 처리하는 Application Service.
  *
  * 기존 LectureCommandService, ChapterCommandService,
