@@ -1,26 +1,32 @@
 package com.wanted.momocity.friend.application.service;
 
 import com.wanted.momocity.friend.application.command.*;
+import com.wanted.momocity.friend.application.metric.FriendMetrics;
 import com.wanted.momocity.friend.application.policy.FriendEligibilityPolicy;
 import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase;
-import com.wanted.momocity.friend.domain.event.AcceptRequestFriendPublishedEvent;
-import com.wanted.momocity.friend.domain.event.CancelRequestFriendPublishedEvent;
-import com.wanted.momocity.friend.domain.event.DeleteFriendPublishedEvent;
-import com.wanted.momocity.friend.domain.event.RequestFriendPublishedEvent;
+import com.wanted.momocity.friend.domain.event.*;
 import com.wanted.momocity.friend.domain.model.Friend;
 import com.wanted.momocity.friend.domain.repository.FriendRepository;
 import com.wanted.momocity.friend.fmexception.FMResourceAccessDeniedException;
 import com.wanted.momocity.friend.fmexception.FMResourceConflictException;
 import com.wanted.momocity.friend.fmexception.FMResourceNotFoundException;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
+import com.wanted.momocity.friend.infrastructure.persistence.GuestBookJpaEntity;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
+import com.wanted.momocity.global.application.point.AddOrderHistory;
+import com.wanted.momocity.global.application.point.PointChange;
+import com.wanted.momocity.message.application.policy.MessageEligibilityPolicy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
+
+import static com.wanted.momocity.order.domain.model.Reason.GUESTBOOK;
+import static com.wanted.momocity.order.domain.model.Type.GAINED;
 
 @Service
 @Transactional
@@ -32,6 +38,12 @@ public class FriendCommandService implements FriendCommandUseCase {
     private final ApplicationEventPublisher eventPublisher; //스프링 이벤트 발행기
     //비즈니스 정책 주입
     private final FriendEligibilityPolicy friendEligibilityPolicy;
+    private final MessageEligibilityPolicy messageEligibilityPolicy;
+    //포인트 주입
+    private final PointChange pointChange;
+    private final AddOrderHistory addOrderHistory;
+    //메트릭
+    private final FriendMetrics friendMetrics;
 
     //친구 요청
     @Override
@@ -93,28 +105,11 @@ public class FriendCommandService implements FriendCommandUseCase {
         //두 사람 사이의 친구 관계 행 조회
         Optional<FriendJpaEntity> relationOpt = friendRepository.findRelationBetween(command.userId(), command.targetUserId());
 
-        //404 사용자 없음(두 사람 사이에 아무런 요청 내역이 없을 때)
-        if (relationOpt.isEmpty()) {
-            log.warn("[CancelRequestFriendService] 철회 실패 - 요청 내역이 존재하지 않음");
-            throw new FMResourceNotFoundException("철회할 요청 내역이 존재하지 않습니다.");
-        }
+        //정책 클래스 위임
+        friendEligibilityPolicy.cancelRequest(relationOpt, command.userId());
 
         //relationOpt가 비어있지 않다는 걸 확인했으므로 주머니 속 진짜 객체를 꺼내 변수에 담기
         FriendJpaEntity relation = relationOpt.get();
-
-        //403 권한 없음(내가 보낸 요청이 아닐 때)
-        //기존 행의 fromUserId가 로그인한 유저가 아닐 때
-        if (!relation.getFromUserId().getId().equals(command.userId())) {
-            log.warn("[CancelRequestFriendService] 철회 실패 - 본인의 요청이 아님");
-            throw new FMResourceAccessDeniedException("본인의 요청만 철회할 수 있습니다.");
-        }
-
-        //409 상태 모순(이미 수락 or 거절)
-        //오직 SENT일 때만 철회 가능
-        if (!"SENT".equals(relation.getStatus())) {
-            log.warn("[CancelRequestFriendService] 철회 실패 - 이미 대기 상태가 아님 (현재 상태: {})", relation.getStatus());
-            throw new FMResourceConflictException("이미 수락되거나 거절된 요청입니다. 취소할 수 없습니다.");
-        }
 
         //friend 테이블에서 해당하는 행 삭제
         friendRepository.delete(relation);
@@ -149,7 +144,7 @@ public class FriendCommandService implements FriendCommandUseCase {
         Optional<FriendJpaEntity> relationOpt = friendRepository.findRelationBetween(command.fromUserId(), command.userId());
 
         //검증은 policy에게 전달 위임(409 대응)
-        friendEligibilityPolicy.ensureAcceptable(relationOpt);
+        friendEligibilityPolicy.ensureAcceptable(relationOpt, command.userId());
 
         FriendJpaEntity relation = relationOpt.get();
 
@@ -198,15 +193,9 @@ public class FriendCommandService implements FriendCommandUseCase {
         Optional<FriendJpaEntity> relationOpt = friendRepository.findRelationBetween(command.fromUserId(), command.userId());
 
         //404/409 검증 정책 위임
-        friendEligibilityPolicy.ensureRejectable(relationOpt);
+        friendEligibilityPolicy.ensureRejectable(relationOpt, command.userId());
 
         FriendJpaEntity relation = relationOpt.get();
-
-        //403(나에게 온 요청이 아닌 경우)
-        if (!relation.getToUserId().getId().equals(command.userId())) {
-            log.warn("[RejectRequestFriendCommandService] 거절 실패 - 본인에게 온 요청이 아님");
-            throw new FMResourceAccessDeniedException("본인에게 온 요청만 거절할 수 있습니다.");
-        }
 
         //거절 시 관계 행 완전 삭제
         Long targetFriendId = relation.getId();
@@ -234,6 +223,7 @@ public class FriendCommandService implements FriendCommandUseCase {
         String targetRole = "STUDENT";
         UserWithFMJpaEntity targetUser = null;
 
+
         if (relationOpt.isPresent()) {
             //검증 통과했으므로 무조건 행 존재
             FriendJpaEntity relation = relationOpt.get();
@@ -241,6 +231,7 @@ public class FriendCommandService implements FriendCommandUseCase {
                     ? relation.getToUserId() : relation.getFromUserId();
             targetRole = targetUser.getRole();
         }
+
         //FRIEND일 때만 통과
         friendEligibilityPolicy.ensureBlockable(relationOpt,  targetRole);
 
@@ -328,6 +319,71 @@ public class FriendCommandService implements FriendCommandUseCase {
                 targetUser.getNickname(),
                 targetUser.getRole(),
                 "none"
+        );
+    }
+
+    //방명록 작성
+    @Override
+    public RegisterGuestBookView registerGuestBookCommandHandle(RegisterGuestBookCommand command) {
+        log.info("[RegisterGuestBookCommandService] 방명록 작성 비즈니스 루틴 시작 - 작성자: {}, 도시주인: {}", command.userId(), command.ownerId());
+
+        LocalDateTime now =  LocalDateTime.now();
+        //도시 주인 존재 확인
+        // 1. 대상 도시 주인 유저 존재 여부 검증 (404 대응)
+        UserWithFMJpaEntity ownerUser = friendRepository.findUserById(command.ownerId())
+                .orElseThrow(() -> {
+                    friendMetrics.recordGuestbookResult(false); // 🎯 정림님 의도대로 실패 시 메트릭 기록
+                    return new FMResourceNotFoundException("존재하지 않는 사용자의 도시에 방명록을 작성할 수 없습니다.");
+                });
+
+
+        // 2. 로그인 유저(방문자) 정보 조회
+        UserWithFMJpaEntity loginUser = friendRepository.findUserById(command.userId())
+                .orElseThrow(() -> {
+                    friendMetrics.recordGuestbookResult(false); // 🎯 정림님 의도대로 실패 시 메트릭 기록
+                    return new FMResourceNotFoundException("존재하지 않는 사용자입니다.");
+                });
+
+        // 3. 두 사람 사이의 친구 관계 데이터 추출
+        Optional<FriendJpaEntity> relationOpt = friendRepository.findAnyRelationBetween(command.userId(), command.ownerId());
+
+        //1일 1회 제한
+        // 4. 오늘 이 유저가 해당 도시에 이미 방명록을 남겼는지 제약 확인용 카운팅 (JPA 쿼리 필요)
+        boolean hasWrittenToday = friendRepository.existsGuestBookWrittenToday(command.userId(), command.ownerId());
+
+        // 5. 비즈니스 정합성 및 정책 컴포넌트에 검증 위임 (409 대응)
+        friendEligibilityPolicy.ensureEligibleToRegisterGuestBook(ownerUser, relationOpt, hasWrittenToday, command.userId());
+        log.info("[RegisterGuestBookCommandService] 비즈니스 정책 조건 검증 통과 - 저장 절차 진행");
+
+        // 6. 영속성 인프라 레이어를 통해 guest_book 테이블에 신규 레코드 등록
+        // (GuestBookJpaEntity가 인프라에 정의되어 있다고 가정하여 작성)
+        GuestBookJpaEntity newBook = GuestBookJpaEntity.create(loginUser, ownerUser, command.content(), now);
+        GuestBookJpaEntity savedBook = friendRepository.saveGuestBook(newBook);
+        log.info("[RegisterGuestBookCommandService] guest_book 테이블에 데이터 적재 완료 - 발급된 방명록 ID: {}", savedBook.getId());
+
+        //포인트 +10
+        pointChange.gainPoint(command.userId(), 10L);
+        //추후 포트 생기면 주석 해제
+        addOrderHistory.saveOrderHistory(command.userId(), GUESTBOOK, GAINED, 10L);
+
+        // 7. 알림 도메인 시스템과의 느슨한 결합을 위한 비동기 알림 생성 이벤트 발행
+        // 스펙 명세: "{nickname}님이 회원님의 도시에 방명록을 남겼습니다."
+        eventPublisher.publishEvent(new RegisterGuestBookPublishedEvent(
+                savedBook.getId(),         // refId 용도 (방명록 인덱스)
+                loginUser.getId(),
+                loginUser.getNickname(),   // 알림 텍스트 조립용 작성자 닉네임
+                ownerUser.getId(),          // 알림을 최종 수신할 도시 주인 유저 ID
+                now
+        ));
+        log.info("[RegisterGuestBookCommandService] 방명록 알림 유도 이벤트 발행 성공 - 수신 타겟 유저ID: {}", ownerUser.getId());
+
+        // 8. 유스케이스 명세서에 약속된 출력 주머니(View Record) 반환
+        // 응답 스펙의 데이터 매핑 흐름에 따라 도시 주인의 닉네임을 담아 전달합니다.
+        return new RegisterGuestBookView(
+                savedBook.getId(),
+                ownerUser.getId(),
+                ownerUser.getNickname(),
+                savedBook.getCreatedAt()
         );
     }
 }

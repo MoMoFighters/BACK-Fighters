@@ -4,6 +4,7 @@ import com.wanted.momocity.global.domain.model.Category;
 import com.wanted.momocity.user.application.command.UpdateUserInfoCommand;
 import com.wanted.momocity.user.domain.model.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,7 +20,7 @@ public interface UserRepository {
     boolean existsByNickname(String nickname);
 
     // 사용자 정보 수정
-    void updateUserInfo(UpdateUserInfoCommand command);
+    void updateUserInfo(UpdateUserInfoData data);
 
     // 임시비밀번호 죽이기 - 임시비번으로 로그인 해서 비번 바꾸면 is_tempPwd false로 변경
     void clearTempPwd(Long userId);
@@ -51,7 +52,7 @@ public interface UserRepository {
     boolean setAlarm(Long userId);
 
     // 강사 신청
-    void teacherApply(Long userId, String nickname, Category category, String proof);
+    void teacherApply(Long userId, String nickname, Category category, String proof, LocalDateTime updatedAt);
 
     // 강사 중복 신청 확인/ 강사 role 확인 용
     boolean checkTeacherAvailable(Long userId, Role role, List<Status> status);
@@ -64,4 +65,23 @@ public interface UserRepository {
 
     // 승인할 강사의 프사 가져오기
     Category findCategoryById(Long userId);
+
+    // 회원탈퇴 (소프트 딜리트)
+    void changeStatusAndNickname(Long userId, Status status, String nickname);
+
+    // 하드딜리트 할 사용자 찾기
+    List<Long> findDeletedUserIdsBefore(LocalDateTime threshold);
+
+    // 사용자 하드 딜리트
+    void deleteById(Long aLong);
+
+    // 사용자 신고 횟수 +
+    Long plusReportCount(Long userId);
+
+    // 신고 횟수에 따른 처리
+    void reportApply(Long userId, Status status, LocalDateTime localDateTime);
+
+    // 사용자 신고 횟수 -
+    void minusReportCount(Long userId);
+
 }

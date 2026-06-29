@@ -12,6 +12,9 @@ public interface EnrollmentQueryUsecase {
     // 2. 마이페이지에서 건물 정보 렌더링 시
     List<RenderingBuildingsView> userBuildingInfo(Long userId);
 
+    // 친구 마을 건물 정보 조회하는 메서드
+    List<RenderingBuildingsView> friendBuildingInfo(Long loginUserId, Long targetUserId);
+
     // 학습 진척도 조회 기능입니다.
     EnrollmentProgressResponse getProgress(
             EnrollmentQuery.GetEnrollmentProgressQuery query
@@ -20,8 +23,9 @@ public interface EnrollmentQueryUsecase {
     record RenderingBuildingsView(
     Category category,
     Long position,
-    Integer level
-
+    Integer level,
+    // 카테고리에 맞는 빌딩 이미지 생성
+    String buildingUrl
     ){}
 
 

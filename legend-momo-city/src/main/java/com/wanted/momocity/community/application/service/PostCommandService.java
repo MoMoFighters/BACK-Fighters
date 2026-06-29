@@ -11,15 +11,14 @@ import com.wanted.momocity.community.domain.event.PostLikedEvent;
 import com.wanted.momocity.community.domain.event.ReplyCreatedEvent;
 import com.wanted.momocity.community.domain.exception.CommunityAccessDeniedException;
 import com.wanted.momocity.community.domain.exception.CommunityNotFoundException;
-import com.wanted.momocity.community.domain.model.Comment;
-import com.wanted.momocity.community.domain.model.Post;
-import com.wanted.momocity.community.domain.model.PostContent;
-import com.wanted.momocity.community.domain.model.PostLike;
+import com.wanted.momocity.community.domain.model.*;
 import com.wanted.momocity.community.domain.repository.CommentRepository;
 import com.wanted.momocity.community.domain.repository.PostContentRepository;
 import com.wanted.momocity.community.domain.repository.PostLikeRepository;
 import com.wanted.momocity.community.domain.repository.PostRepository;
+import com.wanted.momocity.community.infrastructure.metrics.CommunityMetrics;
 import com.wanted.momocity.global.application.s3.S3UploadPort;
+import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.global.infrastructure.cloudfront.CloudFrontUrlConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -55,15 +54,22 @@ public class PostCommandService implements PostCommandUseCase {
     private final CloudFrontUrlConverter cloudFrontUrlConverter;
     private final S3UploadPort s3UploadPort;
     private final ApplicationEventPublisher eventPublisher;
+    private final CommunityMetrics communityMetrics;
 
     // 게시글 생성
     // title, category 만 저장 -> postId 반환 후 콘텐츠 업로드 API 호출
     // 게시글 추가 시 목록 캐시 전체 무효화
     @Override
     @CacheEvict(value = "posts", allEntries = true, cacheManager = "redisCacheManager")
-    public PostCreateResult createPost(Long userId, String title, String category) {
-        Post post = Post.create(userId, title, category);
+    public PostCreateResult createPost(Long userId, String title, PostCategory category, String thumbnailUrl) {
+
+        // 게시글 생성
+        Post post = Post.create(userId, title, category, thumbnailUrl);
+        // 게시글 저장
         Post saved = postRepository.save(post);
+
+        // 게시글 작성 횟수 카운트
+        communityMetrics.recordPostCreated();
 
         log.info("[Community] 게시글 생성 완료 | userId={}, postId={}", userId, saved.getId());
         return new PostCreateResult(saved.getId());
@@ -78,12 +84,17 @@ public class PostCommandService implements PostCommandUseCase {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CommunityNotFoundException("게시글을 찾을 수 없습니다."));
 
+        // 게시글 작성자 본인 검증
         validateAuthor(post.getUserId(), userId);
+        // 이미지 개수 검증 (최대 이미지 개수 초과 방지)
         validateImageCount(contents);
+        // 콘텐츠 타입별 필수값 검증 (TEXT -> content, IMAGE -> imageUrl)
+        validateContents(contents);
 
         post.updateThumbnail(thumbnailUrl);
         postRepository.save(post);
 
+        // 새 컨텐츠 목록 생성
         List<PostContent> postContents = new ArrayList<>();
         for (int i = 0; i < contents.size(); i++) {
             PostContentCommand cmd = contents.get(i);
@@ -103,7 +114,7 @@ public class PostCommandService implements PostCommandUseCase {
     // 제목 / 카테고리 수정 시 목록 캐시 전체 무효화
     @Override
     @CacheEvict(value = "posts", allEntries = true, cacheManager = "redisCacheManager")
-    public void updatePost(Long userId, Long postId, String title, String category) {
+    public void updatePost(Long userId, Long postId, String title, PostCategory category) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CommunityNotFoundException("게시글을 찾을 수 없습니다."));
 
@@ -119,11 +130,17 @@ public class PostCommandService implements PostCommandUseCase {
     @Override
     @CacheEvict(value = "posts", allEntries = true, cacheManager = "redisCacheManager")
     public void updateContents(Long userId, Long postId, String thumbnailUrl, List<PostContentCommand> contents) {
+
+        // 게시글 존재 여부 확인
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CommunityNotFoundException("게시글을 찾을 수 없습니다."));
 
+        // 게시글 작성자 본인 검증
         validateAuthor(post.getUserId(), userId);
+        // 이미지 개수 검증 (최대 이미지 개수 초과 방지)
         validateImageCount(contents);
+        // 콘텐츠 타입별 필수값 검증 (TEXT -> content, IMAGE -> imageUrl)
+        validateContents(contents);
 
         // 썸네일 업데이트
         post.updateThumbnail(thumbnailUrl);
@@ -132,6 +149,7 @@ public class PostCommandService implements PostCommandUseCase {
         // 기존 콘텐츠 전체 소프트딜리트 -> 새 콘텐츠 저장
         postContentRepository.deleteAllByPostId(postId);
 
+        // 새 컨텐츠 목록 생성
         List<PostContent> postContents = new ArrayList<>();
         for (int i = 0; i < contents.size(); i++) {
             PostContentCommand cmd = contents.get(i);
@@ -144,6 +162,8 @@ public class PostCommandService implements PostCommandUseCase {
             ));
 
         }
+
+        // 새 컨텐츠 일괄 저장
         postContentRepository.saveAll(postContents);
         log.info("[Community] 콘텐츠 수정 완료 | postId={}, count={}", postId, postContents.size());
     }
@@ -172,6 +192,11 @@ public class PostCommandService implements PostCommandUseCase {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new CommunityNotFoundException("게시글을 찾을 수 없습니다."));
 
+        // 삭제된 게시글 좋아요 방지
+        if (post.isDeleted()) {
+            throw new CommunityAccessDeniedException("삭제된 게시글에는 좋아요를 누를 수 없습니다.");
+        }
+
         postLikeRepository.findByPostIdAndUserId(postId, userId)
                 .ifPresent(like -> {
                     throw new CommunityAccessDeniedException("이미 좋아요를 눌렀습니다.");
@@ -180,6 +205,9 @@ public class PostCommandService implements PostCommandUseCase {
         postLikeRepository.save(PostLike.create(postId, userId));
         post.increaseLikeCount();
         postRepository.save(post);
+
+        // 좋아요 횟수 카운트
+        communityMetrics.recordPostLiked();
 
         // 본인 게시글 좋아요 시 알림 제외
         if (!post.getUserId().equals(userId)) {
@@ -304,6 +332,8 @@ public class PostCommandService implements PostCommandUseCase {
     // 소프트딜리트
     @Override
     public void deleteReply(Long userId, Long postId, Long commentId, Long replyId) {
+
+        // 대댓글 존재 검증
         Comment reply = commentRepository.findById(replyId)
                 .orElseThrow(() -> new CommunityNotFoundException("대댓글을 찾을 수 없습니다."));
 
@@ -348,7 +378,19 @@ public class PostCommandService implements PostCommandUseCase {
                 .filter(cmd -> "IMAGE".equals(cmd.type()))
                 .count();
         if (imageCount > 5) {
-            throw new IllegalArgumentException("이미지는 최대 5장까지 업로드 가능합니다.");
+            throw new DomainRuleViolationException("이미지는 최대 5장까지 업로드 가능합니다.");
+        }
+    }
+
+    // TEXT / IMAGE 타입 null 검증
+    private void validateContents(List<PostContentCommand> contents) {
+        for (PostContentCommand cmd : contents) {
+            if ("TEXT".equals(cmd.type()) && (cmd.content() == null || cmd.content().isBlank())) {
+                throw new DomainRuleViolationException("TEXT 타입은 content 가 필수입니다.");
+            }
+            if ("IMAGE".equals(cmd.type()) && (cmd.imageUrl() == null || cmd.imageUrl().isBlank())) {
+                throw new DomainRuleViolationException("IMAGE 타입은 imageUrl 이 필수입니다.");
+            }
         }
     }
 
@@ -356,10 +398,18 @@ public class PostCommandService implements PostCommandUseCase {
     // S3 업로드 후 CloudFront URL 반환
     @Override
     public String uploadImage(MultipartFile image) {
-        String key = s3UploadPort.upload(image, "community/images");
-        String url = cloudFrontUrlConverter.convert(key);
-
-        log.info("[Community] 이미지 업로드 완료 | url={}", url);
-        return url;
-    }
+        try {
+            String key = communityMetrics.getImageUploadTimer().record(
+                    () -> s3UploadPort.upload(image, "community/images")
+            );
+            String url = cloudFrontUrlConverter.convert(key);
+            log.info("[Community] 이미지 업로드 완료 | url={}", url);
+            return url;
+        } catch (Exception e) {
+            // 업로드 실패 횟수 카운트
+            communityMetrics.recordImageUploadFailed();
+            log.error("[Community] 이미지 업로드 실패 | 예외={}", e.getMessage());
+            throw e;
+        }
+        }
 }

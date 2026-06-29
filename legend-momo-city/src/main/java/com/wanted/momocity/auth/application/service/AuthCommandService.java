@@ -136,7 +136,8 @@ public class AuthCommandService implements AuthCommandUsecase {
             String message = switch (user.getStatus()) {
                 case PENDING -> "강사 승인 대기중입니다.";
 //                case REJECTED -> "강사 신청이 반려되었습니다. 증빙자료를 다시 제출해주세요.";
-                case BANNED -> "정지된 계정입니다.";
+                case BANNED -> "정지된 계정입니다. 문의 사항이 있다면 yourmomocity@gmail.com 으로 문의 주시길 바람니다.";
+                case BLACK -> "정지 3회 누적으로 인해 계정이 영구적으로 정지 되었습니다.";
                 default -> "해당 계정은 현재 로그인이 불가능한 상태입니다.";
             };
             throw new InactiveUserException(message, user.getStatus());
@@ -167,7 +168,8 @@ public class AuthCommandService implements AuthCommandUsecase {
                 : tokenProviderPort.getAccessTokenValidityMilliseconds() / 1000;
 
         log.info("[login] 로그인 성공 | userId={} | isTempPwd={}", user.getId(), user.getIsTempPwd());
-        return new LoginResponse(accessToken, refreshToken, user.getStatus(), accessTokenExpiry);
+        return new LoginResponse(accessToken, refreshToken, user.getStatus(), user.getRole(),
+                                user.getIsTempPwd(),user.getNickname(),accessTokenExpiry);
     }
 
     // 로그아웃
@@ -204,7 +206,8 @@ public class AuthCommandService implements AuthCommandUsecase {
         // 인증 성공하면 JWT 토큰 발급
         String accessToken = tokenProviderPort.createAccessToken(
                 String.valueOf(user.getId()),
-                user.getRole().name()
+                "ROLE_" + user.getRole().name(),
+                user.getCategory()
         );
         String refreshToken = tokenProviderPort.createRefreshToken(
                 String.valueOf(user.getId())
@@ -219,8 +222,9 @@ public class AuthCommandService implements AuthCommandUsecase {
 
 
         // 응답
-        return new LoginResponse(accessToken, refreshToken, user.getStatus(),
-                tokenProviderPort.getAccessTokenValidityMilliseconds());
+        return new LoginResponse(accessToken, refreshToken, user.getStatus(),user.getRole(),
+                user.getIsTempPwd(),user.getNickname(),
+                tokenProviderPort.getAccessTokenValidityMilliseconds()/1000);
     }
 
     // 새로운 유저 db에 등록

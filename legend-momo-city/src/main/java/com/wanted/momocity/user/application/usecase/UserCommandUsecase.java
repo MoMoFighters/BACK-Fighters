@@ -2,6 +2,8 @@ package com.wanted.momocity.user.application.usecase;
 
 import com.wanted.momocity.user.application.command.*;
 
+import java.time.LocalDateTime;
+
 public interface UserCommandUsecase {
 
     String registerNickname(NicknameRegisterCommand command);
@@ -22,4 +24,13 @@ public interface UserCommandUsecase {
 
     // 강사 포기
     void teacherGiveup(Long userId);
+
+    // 회원탈퇴 (소프트 딜리트)
+    void softDeleteUser(Long userId);
+
+    // 사용자 신고 횟수 +
+    LocalDateTime plusReportCount(Long userId);
+
+    // 사용자 신고 횟수 -
+    void minusReportCount(Long userId);
 }

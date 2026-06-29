@@ -99,7 +99,7 @@ public class CatalogMessageAdapter implements MessageRepository {
         return springDataMessageRepository.findTop20ByRoomId_IdAndIdLessThanAndCreatedAtGreaterThanEqualOrderByIdDesc(roomId, lastMessageId, startTimeLie);
     }
 
-    //이거 무슨 용도지?
+    //프록시
     @Override
     public UserWithFMJpaEntity getUserWithFMReferenceById(Long userId) {
         return messageSideUserRepository.getReferenceById(userId);
@@ -292,7 +292,7 @@ public class CatalogMessageAdapter implements MessageRepository {
     public void saveLeaveAnnounce(ChatRoomJpaEntity chatRoom, UserWithFMJpaEntity leaveUser, String leaveMessage) {
         log.info("[CatalogMessageAdapter] 채팅방 퇴장 안내 문구 저장 시작 - 방ID:{}, 유저ID:{}", chatRoom.getId(), leaveUser.getId());
 
-        MessageAnnounceJpaEntity announce = MessageAnnounceJpaEntity.createLeaveAnnounce(
+        MessageAnnounceJpaEntity announce = MessageAnnounceJpaEntity.createAnnounce(
                 chatRoom,
                 leaveUser,
                 leaveMessage,
@@ -322,7 +322,7 @@ public class CatalogMessageAdapter implements MessageRepository {
     @Transactional
     public void saveEnterAnnounce(ChatRoomJpaEntity chatRoom, UserWithFMJpaEntity enterUser, String enterMessage) {
         log.info("[CatalogMessageAdapter] 일대일 채팅방 재입장 안내 문구 저장 시작 - 방ID:{}, 유저ID:{}", chatRoom.getId(), enterUser.getId());
-        MessageAnnounceJpaEntity announce = MessageAnnounceJpaEntity.createLeaveAnnounce(
+        MessageAnnounceJpaEntity announce = MessageAnnounceJpaEntity.createAnnounce(
                 chatRoom,
                 enterUser,
                 enterMessage,
@@ -351,7 +351,7 @@ public class CatalogMessageAdapter implements MessageRepository {
     @Transactional
     public void saveRenameAnnounce(ChatRoomJpaEntity chatRoom, UserWithFMJpaEntity loginUser, String announceContent, LocalDateTime updatedAt) {
         log.info("[CatalogMessageAdapter] 채팅방 이름 수정 저장 시작 - 방ID:{}, 수정 주체ID: {}", chatRoom.getId(), loginUser.getId());
-        MessageAnnounceJpaEntity announce = MessageAnnounceJpaEntity.createLeaveAnnounce(
+        MessageAnnounceJpaEntity announce = MessageAnnounceJpaEntity.createAnnounce(
                 chatRoom,
                 loginUser,
                 announceContent,
@@ -360,6 +360,35 @@ public class CatalogMessageAdapter implements MessageRepository {
         );
         springDataMessageAnnounceRepository.save(announce);
         log.info("[CatalogMessageAdapter] 다대다 방이름 수정 안내 문구 저장 완료 - ID: {}", announce.getId());
+    }
 
+    //다대다 초대자들 저장
+    @Override
+    @Transactional
+    public void saveInviteChatRoomMember(ChatRoomJpaEntity room, UserWithFMJpaEntity invitedUser, LocalDateTime joinedAt) {
+        log.info("[CatalogMessageAdapter] 다대다 채팅방 멤버 초대자들 저장 시작 - 방ID:{}", room.getId());
+        ChatRoomMemberJpaEntity newInviteMember = ChatRoomMemberJpaEntity.createInviteMembership(
+                room,
+                invitedUser,
+                joinedAt
+        );
+        springDataChatRoomMemberRepository.save(newInviteMember);
+        log.info("[CatalogMessageAdapter] 다대다 채팅방 멤버 초대자 저장 완료.");
+    }
+
+    //다대다 채팅방 멤버 초대 안내 문구
+    @Override
+    @Transactional
+    public void saveInviteAnnounce(ChatRoomJpaEntity chatRoom, UserWithFMJpaEntity loginUser, String inviteMessage, LocalDateTime createdAt) {
+        log.info("[CatalogMessageAdapter] 채팅방 멤버 초대 안내 문구 저장 시작 - 방ID:{}, 초대 주체ID: {}", chatRoom.getId(), loginUser.getId());
+        MessageAnnounceJpaEntity announce = MessageAnnounceJpaEntity.createAnnounce(
+                chatRoom,
+                loginUser,
+                inviteMessage,
+                "INVITE",
+                createdAt
+        );
+        springDataMessageAnnounceRepository.save(announce);
+        log.info("[CatalogMessageAdapter] 채팅방 멤버 초대 안내 문구 저장 완료 - ID: {}", announce.getId());
     }
 }

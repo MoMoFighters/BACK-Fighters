@@ -114,4 +114,10 @@ public interface MessageRepository {
 
     //채팅방 이름 변경 안내 문구
     void saveRenameAnnounce(ChatRoomJpaEntity chatRoom, UserWithFMJpaEntity loginUser, String announceContent, LocalDateTime updatedAt);
+
+    //다대다 채팅방 멤버 초대
+    void saveInviteChatRoomMember(ChatRoomJpaEntity room, UserWithFMJpaEntity invitedUser, LocalDateTime joinedAt);
+
+    //다대다 채팅방 멤버 초대 안내 문구
+    void saveInviteAnnounce(ChatRoomJpaEntity chatRoom, UserWithFMJpaEntity loginUser, String inviteMessage, LocalDateTime createdAt);
 }

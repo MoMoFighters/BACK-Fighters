@@ -1,5 +1,6 @@
 package com.wanted.momocity.order.infrastructure.persistence;
 
+import com.wanted.momocity.order.domain.model.ListResult;
 import com.wanted.momocity.order.domain.model.Reason;
 import com.wanted.momocity.order.domain.model.Type;
 import jakarta.persistence.*;
@@ -30,7 +31,7 @@ public class OrderJpaEntity {
     @Column(nullable = false)
     private Long amount;
 
-    @Column(nullable = false)
+    @Column(nullable = true) // 포인트 + 이면 itemId가 없음
     private Long itemId; // store테이블에 있는 상품의 pk
 
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -64,6 +65,10 @@ public class OrderJpaEntity {
         return type;
     }
 
+    public Long getAmount() {
+        return amount;
+    }
+
     public Long getItemId() {
         return itemId;
     }
@@ -71,4 +76,9 @@ public class OrderJpaEntity {
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
+
+    public ListResult toDomain() {
+        return new ListResult(type, reason, createdAt, amount);
+    }
+
 }

@@ -2,8 +2,10 @@ package com.wanted.momocity.friend.domain.repository;
 
 
 import com.wanted.momocity.friend.application.usecase.FriendQueryUseCase.FriendView;
+import com.wanted.momocity.friend.enrollment.EnrollmentWithFMJpaEntity;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 
+import com.wanted.momocity.friend.infrastructure.persistence.GuestBookJpaEntity;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -19,6 +21,9 @@ public interface FriendRepository {
     //사용자 검색 기능
     //사용자 검색을 위한 순수 유저 데이터 가져오기(친구가 아니어도 긁어옴)
     List<UserWithFMJpaEntity> findUsersByNicknameKeyword(String findNickname);
+
+    //수강 정보
+    List<EnrollmentWithFMJpaEntity> findEnrollmentsByUserId(Long userId);
 
     //로그인한 유저와 관련된 모든 친구 관계 행 가져오기(status 상태용)
     List<FriendJpaEntity> findAllMyRelations(Long userId);
@@ -45,4 +50,13 @@ public interface FriendRepository {
 
     //친구 차단(양방향 조회)
     Optional<FriendJpaEntity> findAnyRelationBetween(Long userA, Long userB);
+
+    //방명록 목록 조회
+    List<GuestBookJpaEntity> findAllByOwnerIdWithWriter(Long userId);
+
+    //방명록 작성 - 1일1제한
+    boolean existsGuestBookWrittenToday(Long userId, Long ownerId);
+
+    //방명록 저장
+    GuestBookJpaEntity saveGuestBook(GuestBookJpaEntity newBook);
 }

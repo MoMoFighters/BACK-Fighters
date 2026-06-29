@@ -49,9 +49,7 @@ public class NotificationJpaEntity {
         entity.type = domain.getType(); // 타입 고정
         entity.refId = domain.getRefId();
         entity.message = domain.getMessage();
-        //추후 주석 해제
-//        entity.isRead = domain.isRead;
-        entity.createdAt = LocalDateTime.now();
+        entity.createdAt = domain.getCreatedAt();
 
         if ("MESSAGE".equals(domain.getType())) {
             entity.isRead = null;
@@ -65,8 +63,6 @@ public class NotificationJpaEntity {
     public void updateMessageNotification(String message, LocalDateTime createdAt) {
         this.message = message;
         this.createdAt = createdAt;
-        //추후 isRead 생기면 주석 해제
-//        this.isRead = false;
         //메시지 관련 읽음 여부는 message_read 테이블로 연계
     }
 
@@ -78,8 +74,13 @@ public class NotificationJpaEntity {
                 this.type,
                 this.refId,
                 this.message,
-                this.isRead
+                this.isRead,
+                this.createdAt
         );
     }
 
+    //일반 알림 읽기(메시지 제외)
+    public void markAsRead() {
+        this.isRead = true;
+    }
 }

@@ -141,8 +141,8 @@ CREATE TABLE `post` (
                         `id`            BIGINT       NOT NULL AUTO_INCREMENT,
                         `user_id`       BIGINT       NOT NULL,
                         `title`         VARCHAR(200) NOT NULL,
-                        `view_count`    INT          NOT NULL DEFAULT 0,
                         `post_like`     INT          NOT NULL DEFAULT 0,
+                        `view_count`    INT          NOT NULL DEFAULT 0,
                         `category`      ENUM('FITNESS','STUDY','COOK','BEAUTY','ART','FREE') NOT NULL,
                         `thumbnail_url` VARCHAR(500) NULL,
                         `created_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -165,8 +165,8 @@ CREATE TABLE `post_content` (
                                 `post_id`    BIGINT                   NOT NULL,
                                 `order_no`   TINYINT                  NOT NULL DEFAULT 0,
                                 `type`       ENUM('TEXT','IMAGE')      NOT NULL,
-                                `content`    TEXT                     NULL,
                                 `image_url`  varchar(500)             NULL,
+                                `content`    TEXT                     NULL,
                                 `created_at` DATETIME                 NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                 PRIMARY KEY (`id`),
                                 KEY `idx_post_content_post` (`post_id`, `order_no`)
@@ -419,7 +419,6 @@ CREATE TABLE `guestbook` (
                              `writer_id`  BIGINT        NOT NULL,
                              `owner_id`   BIGINT        NOT NULL,
                              `content`    VARCHAR(1000) NOT NULL,
-                             `is_read`    BOOLEAN       NOT NULL DEFAULT FALSE,
                              `created_at` DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
                              PRIMARY KEY (`id`),
                              KEY `idx_guestbook_owner`  (`owner_id`),
@@ -432,32 +431,14 @@ CREATE TABLE `guestbook` (
 CREATE TABLE `notification` (
                                 `id`         BIGINT       NOT NULL AUTO_INCREMENT,
                                 `user_id`    BIGINT       NULL,
-                                `type`       ENUM('NOTICE','APPROVAL','REPORT','FRIEND_REQUEST','MESSAGE','GUESTBOOK','POST','CALENDAR') NOT NULL,
+                                `type`       ENUM('APPROVAL','FRIEND_REQUEST','MESSAGE','GUESTBOOK','POST','CALENDAR') NOT NULL,
                                 `ref_id`     BIGINT       NULL,
                                 `message`    VARCHAR(500) NOT NULL,
-                                `is_read`    BOOLEAN      NOT NULL DEFAULT FALSE,
+                                `is_read`    BOOLEAN      NULL DEFAULT FALSE,
                                 `created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                 PRIMARY KEY (`id`),
                                 KEY `idx_notification_user` (`user_id`),
                                 KEY `idx_notification_type` (`type`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- =====================================================================
---  17-1. announce_read
--- =====================================================================
-CREATE TABLE `announce_read` (
-                                 `id`         BIGINT       NOT NULL AUTO_INCREMENT,
-                                 `announ_id`  BIGINT       NOT NULL,
-                                 `user_id`    BIGINT       NOT NULL,
-                                 `created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                 PRIMARY KEY (`id`),
-                                 KEY `idx_announce_read_user` (`user_id`),
-                                 KEY `idx_announce_read_announ` (`announ_id`),
-                                 UNIQUE KEY `udx_user_announ` (`user_id`, `announ_id`),
-
-    -- 기존에 해오시던 방식대로 외래키 조건 추가
-                                 CONSTRAINT `fk_announce_read_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`),
-                                 CONSTRAINT `fk_announce_read_announ` FOREIGN KEY (`announ_id`) REFERENCES `notification` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================================
@@ -466,7 +447,7 @@ CREATE TABLE `announce_read` (
 CREATE TABLE `user_oauth` (
                               `id`          BIGINT       NOT NULL AUTO_INCREMENT,
                               `user_id`     BIGINT       NOT NULL,
-                              `provider`    ENUM('LOCAL','KAKAO','GOOGLE','NAVER') NOT NULL,
+                              `provider`    ENUM('KAKAO','GOOGLE','NAVER') NOT NULL,
                               `provider_id` VARCHAR(100) NULL,
                               `created_at`  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
                               PRIMARY KEY (`id`),
@@ -482,8 +463,6 @@ CREATE TABLE `access_log` (
                               `user_id`     BIGINT       NULL,
                               `ip`          VARCHAR(45)  NOT NULL,
                               `action`      ENUM('LOGIN','LOGOUT','FORBIDDEN') NOT NULL,
-                              `target_url`  VARCHAR(500) NOT NULL,
-                              `status_code` INT          NOT NULL,
                               `created_at`  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
                               PRIMARY KEY (`id`),
                               KEY `idx_access_log_user_id`    (`user_id`),
@@ -497,20 +476,19 @@ CREATE TABLE `access_log` (
 CREATE TABLE `report` (
                           `id`               BIGINT       NOT NULL AUTO_INCREMENT,
                           `reporter_user_id` BIGINT       NOT NULL,
-                          `target_type`      ENUM('REVIEW','COMMENT','PAGE') NOT NULL,
+                          `reported_user_id` BIGINT       NOT NULL,
+                          `target_type`      ENUM('LECTURE', 'CHAPTER', 'POST', 'REVIEW', 'COMMENT', 'CHAT', 'PAGE') NOT NULL,
                           `target_id`        BIGINT       NOT NULL,
                           `target_path`      VARCHAR(500) NULL,
                           `reason`           ENUM('SPAM','ABUSE','INAPPROPRIATE','COPYRIGHT','OTHER') NOT NULL,
-                          `detail`           VARCHAR(1000) NULL,
-                          `is_read`          BOOLEAN      NOT NULL DEFAULT FALSE,
-                          `handled_at`       DATETIME     NULL,
-                          `handler_admin_id` BIGINT       NULL,
+                          `detail`           TEXT         NULL,
+                          `is_resolved`      BOOLEAN      NOT NULL DEFAULT FALSE,
+                          `resolved_at`      DATETIME     NULL,
                           `created_at`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                          `updated_at`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                           PRIMARY KEY (`id`),
                           KEY `idx_report_reporter`        (`reporter_user_id`),
                           KEY `idx_report_target_created`  (`target_type`, `target_id`, `created_at` DESC),
-                          KEY `idx_report_is_read_created` (`is_read`, `created_at` DESC)
+                          KEY `idx_report_is_resolved_created` (`is_resolved`, `created_at` DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================================
@@ -536,57 +514,14 @@ CREATE TABLE `inquiry` (
 --  ※ sender   → SET NULL (발신 관리자 탈퇴 시 메시지 보존)
 --  ※ recipient → CASCADE  (수신 관리자 탈퇴 시 메시지 삭제)
 -- =====================================================================
-CREATE TABLE `admin_message` (
-                                 `id`                 BIGINT       NOT NULL AUTO_INCREMENT,
-                                 `send_group_id`      VARCHAR(50)  NULL,           -- 단체발송 그룹핑용
-                                 `sender_admin_id`    BIGINT       NULL,            -- SET NULL (발신자 탈퇴 대비)
-                                 `recipient_admin_id` BIGINT       NOT NULL,
-                                 `title`              VARCHAR(200) NOT NULL,
-                                 `content`            TEXT         NOT NULL,
-                                 `is_read`            BOOLEAN      NOT NULL DEFAULT FALSE,
-                                 `read_at`            DATETIME     NULL,
-                                 `created_at`         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                 PRIMARY KEY (`id`),
-                                 KEY `idx_admin_msg_sender`    (`sender_admin_id`),
-                                 KEY `idx_admin_msg_recipient` (`recipient_admin_id`),
-                                 KEY `idx_admin_msg_group`     (`send_group_id`),
-                                 CONSTRAINT `fk_admin_msg_sender`
-                                     FOREIGN KEY (`sender_admin_id`)    REFERENCES `user` (`id`) ON DELETE SET NULL,
-                                 CONSTRAINT `fk_admin_msg_recipient`
-                                     FOREIGN KEY (`recipient_admin_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- =====================================================================
---  23. audit_log
--- =====================================================================
-CREATE TABLE `audit_log` (
-                             `id`             BIGINT       NOT NULL AUTO_INCREMENT,
-                             `event_type`     VARCHAR(50)  NOT NULL,
-                             `detail`         VARCHAR(500) NOT NULL,
-                             `created_at`     DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-                             `actor_admin_id` BIGINT       NULL,
-                             `target_user_id` BIGINT       NULL,
-                             PRIMARY KEY (`id`),
-                             KEY `idx_audit_log_actor_admin` (`actor_admin_id`),
-                             KEY `idx_audit_log_target_user` (`target_user_id`),
-                             CONSTRAINT `fk_audit_log_actor_admin`
-                                 FOREIGN KEY (`actor_admin_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
-                             CONSTRAINT `fk_audit_log_target_user`
-                                 FOREIGN KEY (`target_user_id`) REFERENCES `user` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- =====================================================================
---  24. error_log
--- =====================================================================
-CREATE TABLE `error_log` (
-                             `id`          BIGINT        NOT NULL AUTO_INCREMENT,
-                             `level`       ENUM('CRITICAL','ERROR','WARNING') NOT NULL,
-                             `source`      VARCHAR(50)   NOT NULL,
-                             `message`     VARCHAR(1000) NOT NULL,
-                             `occurred_at` DATETIME(6)   NOT NULL,
-                             `created_at`  DATETIME(6)   NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-                             `updated_at`  DATETIME(6)   NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
-                             PRIMARY KEY (`id`)
+CREATE TABLE `admin_notice` (
+                                `id`                 BIGINT       NOT NULL AUTO_INCREMENT,
+                                `title`              VARCHAR(200) NOT NULL,
+                                `content`            TEXT         NOT NULL,
+                                `is_pinned`          BOOLEAN      NOT NULL DEFAULT FALSE,
+                                `created_at`         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                `updated_at`         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================================
@@ -594,12 +529,10 @@ CREATE TABLE `error_log` (
 -- =====================================================================
 CREATE TABLE `store` (
                          `id`         BIGINT       NOT NULL AUTO_INCREMENT,
-                         `name`       VARCHAR(500) NOT NULL,
                          `price`      BIGINT       NOT NULL,
                          `url`        VARCHAR(500) NOT NULL,
-                         `stock`      BIGINT       NULL,
+                         `name`       VARCHAR(500) NOT NULL,
                          `created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                         `updated_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                          PRIMARY KEY (`id`),
                          KEY `idx_store_created_at` (`created_at` DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -610,7 +543,7 @@ CREATE TABLE `store` (
 CREATE TABLE `order_history` (
                                  `id`         BIGINT   NOT NULL AUTO_INCREMENT,
                                  `user_id`    BIGINT   NOT NULL,
-                                 `reason`     ENUM('COMPLETED','FRIEND','BUY')  NULL,
+                                 `reason`     ENUM('COMPLETED', 'REVIEW', 'PROFILE', 'BUY', 'GUESTBOOK')  NULL,
                                  `type`       ENUM('GAINED','USED')              NULL,
                                  `amount`     BIGINT   NOT NULL,
                                  `item_id`    BIGINT   NULL,

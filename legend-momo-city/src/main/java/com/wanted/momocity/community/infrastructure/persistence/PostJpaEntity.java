@@ -1,6 +1,7 @@
 package com.wanted.momocity.community.infrastructure.persistence;
 
 import com.wanted.momocity.community.domain.model.Post;
+import com.wanted.momocity.community.domain.model.PostCategory;
 import com.wanted.momocity.global.infrastructure.persistence.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -18,10 +19,9 @@ import java.util.List;
 *  -
 *  연간관계
 *  @OneToMany contents : 게시글 콘텐츠 목록
-*  @OneToMany comments : 게시글 댓글 목록
 *  -
 *  fetch 전략 : LAZY - 실제 사용 시점에 조회
-*  -> 목록 조회 시 불필요한 contents, comments 조회 방지
+*  -> 목록 조회 시 불필요한 contents  조회 방지
 *  -> 단건 조회 시 fetch join 으로 한 번에 조회
 * */
 
@@ -47,8 +47,9 @@ public class PostJpaEntity extends BaseTimeEntity {
     @Column(name = "post_like", nullable = false)
     private int likeCount;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "category", nullable = false)
-    private String category;
+    private PostCategory category;
 
     @Column(name = "thumbnail_url")
     private String thumbnailUrl;
@@ -61,12 +62,6 @@ public class PostJpaEntity extends BaseTimeEntity {
     @OneToMany(mappedBy = "post", fetch = FetchType.LAZY)
     @OrderBy("orderNo ASC")
     private List<PostContentJpaEntity> contents = new ArrayList<>();
-
-    // 게시글 댓글 목록
-    // mappedBy = "post" : CommentJpaEntity.post 필드로 매핑
-    // 최상위 댓글만 (parentId IS NULL), deletedAt IS NULL 조건은 쿼리에서 처리
-    @OneToMany(mappedBy = "post", fetch = FetchType.LAZY)
-    private List<CommentJpaEntity> comments = new ArrayList<>();
 
     // Domain -> JpaEntity 변환 (저장용)
     public static PostJpaEntity from(Post domain) {

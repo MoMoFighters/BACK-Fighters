@@ -1,0 +1,70 @@
+### 회원 가입
+POST localhost:8080/api/v1/auth/signup/student
+Content-Type: application/json
+
+{
+  "email": "",
+  "password": "",
+  "name": ""
+}
+
+### 이메일 인증코드 발송
+POST localhost:8080/api/v1/auth/email/send
+Content-Type: application/json
+
+{
+  "email": ""
+}
+
+### 이메일 인증코드 값 인증
+POST localhost:8080/api/v1/auth/email/verify
+Content-Type: application/json
+
+{
+  "email": "",
+  "code": ""
+}
+
+
+### 로그인
+POST localhost:8080/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email" : "student2@momo.city",
+  "password": "password123"
+}
+
+> {%
+    client.global.set("auth_token", response.body.data.accessToken);
+%}
+
+### 알림 목록
+GET localhost:8080/api/v2/notice/notificationlist
+Authorization: Bearer {{auth_token}}
+
+### 로그인 후 메인 페이지 종에 띄워질 총 알림 개수
+GET localhost:8080/api/v2/notice/total-counts
+Authorization: Bearer {{auth_token}}
+
+### 휴대폰 속 앱별 알림 개수
+GET localhost:8080/api/v2/notice/app-counts
+Authorization: Bearer {{auth_token}}
+
+### 알림 읽기
+PATCH localhost:8080/api/v2/notice/read
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "targetId": [6]
+}
+
+### 알림 삭제
+DELETE localhost:8080/api/v2/notice/remove
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "targetId": [6]
+}

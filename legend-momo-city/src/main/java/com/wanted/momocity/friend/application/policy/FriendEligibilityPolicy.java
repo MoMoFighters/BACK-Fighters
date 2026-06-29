@@ -1,19 +1,26 @@
 package com.wanted.momocity.friend.application.policy;
 
+import com.wanted.momocity.friend.application.metric.FriendMetrics;
 import com.wanted.momocity.friend.fmexception.FMBusinessRuleViolationException;
+import com.wanted.momocity.friend.fmexception.FMResourceAccessDeniedException;
 import com.wanted.momocity.friend.fmexception.FMResourceConflictException;
 import com.wanted.momocity.friend.fmexception.FMResourceNotFoundException;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
-import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 
+import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.Objects;
 import java.util.Optional;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class FriendEligibilityPolicy {
+    private final FriendMetrics friendMetrics; // 🎯 정책 클래스에 메트릭 주입
+
     //친구 요청이 가능한 상태인지 검증하는 규칙
     public void ensureEligible(Long fromUserId, Long toUserId, Optional<FriendJpaEntity> existingRelation, String targetRole) {
 
@@ -65,8 +72,33 @@ public class FriendEligibilityPolicy {
         }
     }
 
+    //친구 요청 철회
+    public void cancelRequest(Optional<FriendJpaEntity> relationOpt, Long userId) {
+        //404 사용자 없음(두 사람 사이에 아무런 요청 내역이 없을 때)
+        if (relationOpt.isEmpty()) {
+            log.warn("[CancelRequestFriendService] 철회 실패 - 요청 내역이 존재하지 않음");
+            throw new FMResourceNotFoundException("철회할 요청 내역이 존재하지 않습니다.");
+        }
+
+        FriendJpaEntity relation = relationOpt.get();
+
+        //403 권한 없음(내가 보낸 요청이 아닐 때)
+        //기존 행의 fromUserId가 로그인한 유저가 아닐 때
+        if (!relation.getFromUserId().getId().equals(userId)) {
+            log.warn("[CancelRequestFriendService] 철회 실패 - 본인의 요청이 아님");
+            throw new FMResourceAccessDeniedException("본인의 요청만 철회할 수 있습니다.");
+        }
+
+        //409 상태 모순(이미 수락 or 거절)
+        //오직 SENT일 때만 철회 가능
+        if (!"SENT".equals(relation.getStatus())) {
+            log.warn("[CancelRequestFriendService] 철회 실패 - 이미 대기 상태가 아님 (현재 상태: {})", relation.getStatus());
+            throw new FMResourceConflictException("이미 수락되거나 거절된 요청입니다. 취소할 수 없습니다.");
+        }
+    }
+
     //친구 요청 수락
-    public void ensureAcceptable(Optional<FriendJpaEntity> existingRelation) {
+    public void ensureAcceptable(Optional<FriendJpaEntity> existingRelation, Long userId) {
         //수락 전에 철회함(행이 없음)
         if (existingRelation.isEmpty()) {
             log.warn("[FriendEligibilityPolicy] 검증 실패 - 요청 내역이 존재하지 않음(이미 취소됨)");
@@ -74,6 +106,13 @@ public class FriendEligibilityPolicy {
         }
 
         FriendJpaEntity relation = existingRelation.get();
+
+        //403 권한 없음(나에게 온 요청이 아닐 때)
+        //행이 toUserId가 현재 로그인한 사용자가 아니라면 수락 권한 없음
+        if (!relation.getToUserId().getId().equals(userId)) {
+            log.warn("[AcceptRequestFriendCommandService] 수락 실패 - 본인에게 온 요청이 아님");
+            throw new FMResourceAccessDeniedException("본인에게 온 요청만 수락할 수 있습니다.");
+        }
 
         //오직 SENT 상태일 때만 수락 가능(이미 수락되었거나 거절/취소됨)
         if (!"SENT".equals(relation.getStatus())) {
@@ -85,7 +124,8 @@ public class FriendEligibilityPolicy {
     }
 
     //친구 요청 거절 검증
-    public void ensureRejectable(Optional<FriendJpaEntity> existingRelation) {
+    public void ensureRejectable(Optional<FriendJpaEntity> existingRelation,Long userId) {
+
         //거절 전에 철회(404)
         if (existingRelation.isEmpty()) {
             log.warn("[FriendEligibilityPolicy] 거절 검증 실패 - 요청 내역이 존재하지 않음");
@@ -93,6 +133,12 @@ public class FriendEligibilityPolicy {
         }
 
         FriendJpaEntity relation = existingRelation.get();
+
+        //403(나에게 온 요청이 아닌 경우)
+        if (!relation.getToUserId().getId().equals(userId)) {
+            log.warn("[RejectRequestFriendCommandService] 거절 실패 - 본인에게 온 요청이 아님");
+            throw new FMResourceAccessDeniedException("본인에게 온 요청만 거절할 수 있습니다.");
+        }
 
         //오직 SENT일 때만 거절 가능(이미 친구 or 차단이면 에러)(409)
         if (!"SENT".equals(relation.getStatus())) {
@@ -172,5 +218,39 @@ public class FriendEligibilityPolicy {
         }
 
         log.info("[FriendEligibilityPolicy] 친구 삭제 자격 검증 완료 (정상 친구 상태 확인됨)");
+    }
+
+    //방명록 작성 정책
+    public void ensureEligibleToRegisterGuestBook(UserWithFMJpaEntity ownerUser, Optional<FriendJpaEntity> relationOpt, boolean hasWrittenToday, Long userId) {
+
+        if (userId.equals(ownerUser.getId())) {
+            log.warn("[FriendEligibilityPolicy] 방명록 작성 실패 - 본인에게 작성 시도. 로그인 유저ID:{}, 도시 주인ID:{}", userId, ownerUser.getId());
+            friendMetrics.recordGuestbookResult(false);
+            throw new FMBusinessRuleViolationException("본인의 도시에는 방명록을 작성할 수 없습니다.");
+        }
+
+        // 2. 관계 행 존재 여부 체크 (안전장치 추가)
+        if (relationOpt.isEmpty()) {
+            log.warn("[FriendEligibilityPolicy] 방명록 작성 실패 - 두 사람 간의 친구 관계 내역(행)이 존재하지 않음.");
+            friendMetrics.recordGuestbookResult(false);
+            throw new FMResourceConflictException("친구 상태에서만 방명록을 작성할 수 있습니다.");
+        }
+
+        // 이제 안전하게 .get()을 꺼내도 됩니다.
+        String status = relationOpt.get().getStatus();
+
+        // 3. 친구 상태 검증
+        if (!"FRIEND".equals(status)) {
+            log.warn("[FriendEligibilityPolicy] 방명록 작성 실패 - 친구 상태가 아님. 현재 상태:{}", status);
+            friendMetrics.recordGuestbookResult(false);
+            throw new FMResourceConflictException("친구 상태에서만 방명록을 작성할 수 있습니다.");
+        }
+
+        // 2. 1일 1회 작성 제약을 위반했을 때
+        if (hasWrittenToday) {
+            log.warn("[FriendEligibilityPolicy] 방명록 작성 실패 - 이미 작성됨.");
+            friendMetrics.recordGuestbookResult(false);
+            throw new FMResourceConflictException("방명록은 하루에 한 번 작성할 수 있습니다.");
+        }
     }
 }

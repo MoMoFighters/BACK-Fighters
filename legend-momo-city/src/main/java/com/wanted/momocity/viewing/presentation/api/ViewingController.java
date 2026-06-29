@@ -3,6 +3,7 @@ package com.wanted.momocity.viewing.presentation.api;
 import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.viewing.application.command.SaveProgressCommand;
+import com.wanted.momocity.viewing.application.port.CategoryProgressInfo;
 import com.wanted.momocity.viewing.application.usecase.*;
 import com.wanted.momocity.viewing.presentation.api.common.ViewingResponseCode;
 import com.wanted.momocity.viewing.presentation.api.request.SaveExitRequest;
@@ -118,7 +119,7 @@ public class ViewingController {
 
     }
 
-    // 강의실 나갈 때 진척고 저장
+    // 강의실 나갈 때 진척도 저장
     // PATCH /api/v1/lectures/{lectureId}/chapters/{chapterId}/exit
     @Operation(summary = "강의실 나가기",
             description = "나갈 때 마지막 재생 위치 저장. 팝업 예 버튼 클릭 시 호출.")
@@ -166,6 +167,39 @@ public class ViewingController {
                 viewingQueryUseCase.getChapterResume(userId, lectureId, chapterId)
         ));
 
+    }
+
+    // 카테고리별 이어보기
+    // GET /api/v1/enrollments/continue-learning
+    @Operation(summary = "카테고리별 이어보기", description = "카테고리별 최근 이어보기 정보를 조회합니다.")
+    @GetMapping("/enrollments/continue-learning")
+    public ResponseEntity<ApiResponse<ContinueLearningResponse>> getContinueLearning(
+            @RequestParam(required = false) String category,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long userId = userDetails.getUserId();
+        CategoryProgressInfo info = viewingQueryUseCase.getCategoryProgress(userId, category);
+
+        if (info.lectureId() == null) {
+            return ResponseEntity.ok(ApiResponse.success(
+                    ViewingResponseCode.CONTINUE_LEARNING_FOUND,
+                    "이어볼 강의가 없습니다.",
+                    null
+            ));
+        }
+
+        return ResponseEntity.ok(ApiResponse.success(
+                ViewingResponseCode.CONTINUE_LEARNING_FOUND,
+                "이어보기 정보를 조회했습니다.",
+                new ContinueLearningResponse(
+                        info.lectureId(),
+                        info.lectureTitle(),
+                        info.chapterId(),
+                        info.chapterTitle(),
+                        info.chapterProgress()
+                )
+
+        ));
     }
 
     // 전체 진척도 조회

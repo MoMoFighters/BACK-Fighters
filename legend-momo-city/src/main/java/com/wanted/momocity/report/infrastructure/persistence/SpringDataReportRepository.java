@@ -1,5 +1,6 @@
 package com.wanted.momocity.report.infrastructure.persistence;
 
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -11,12 +12,17 @@ import java.util.List;
  */
 public interface SpringDataReportRepository extends JpaRepository<ReportJpaEntity, Long> {
 
-    // 최근 N개 조회 (created_at 내림차순) — Adapter에서 PageRequest.of(0, limit)으로 호출
-    List<ReportJpaEntity> findAllByOrderByCreatedAtDesc(Pageable pageable);
+    // 페이지네이션 포함 전체 목록 — Page 로 반환해 totalElements 확보
+    // List → Page 반환으로 변경해 totalElements 포함
+    Page<ReportJpaEntity> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
-    // 처리 여부 기준 최근 N개 조회 (created_at 내림차순)
-    List<ReportJpaEntity> findAllByIsResolvedOrderByCreatedAtDesc(boolean isResolved, Pageable pageable);
+    // 처리 여부 기준도 동일하게 Page 반환
+    Page<ReportJpaEntity> findAllByIsResolvedOrderByCreatedAtDesc(boolean isResolved, Pageable pageable);
 
     // reportedUserId 는 컬럼 기준으로 해당 유저가 신고 당한 내역을 전부 조회
     List<ReportJpaEntity> findAllByReportedUserId(Long reportedUserId);
+
+    // 미처리 신고 수 (is_resolved = false) — ReportStatsAdapter 가 countUnresolved() 구현에 사용
+    long countByIsResolved(boolean isResolved);
+    
 }

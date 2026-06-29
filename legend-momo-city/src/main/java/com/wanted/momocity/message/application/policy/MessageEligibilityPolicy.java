@@ -3,6 +3,7 @@ package com.wanted.momocity.message.application.policy;
 import com.wanted.momocity.friend.fmexception.FMBusinessRuleViolationException;
 import com.wanted.momocity.friend.fmexception.FMResourceAccessDeniedException;
 import com.wanted.momocity.friend.fmexception.FMResourceConflictException;
+import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 
@@ -11,24 +12,22 @@ import com.wanted.momocity.message.infrastructure.persistence.ChatRoomJpaEntity;
 import com.wanted.momocity.message.infrastructure.persistence.ChatRoomMemberJpaEntity;
 import com.wanted.momocity.message.infrastructure.persistence.SpringDataChatRoomMemberRepository;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class MessageEligibilityPolicy {
 
     private final MessageRepository messageRepository;
-//    private final SpringDataChatRoomMemberRepository springDataChatRoomMemberRepository;
 
-    public MessageEligibilityPolicy(MessageRepository messageRepository) {
-        this.messageRepository = messageRepository;
-//        this.springDataChatRoomMemberRepository = springDataChatRoomMemberRepository;
-    }
 
     //유저 상태, 친구 상태, 역할을 종합하여 (알 수 없음) 가공 여부를 판별하는 규칙
     public boolean determineNotActive(UserWithFMJpaEntity targetUser, String friendStatus, Long loginUserId) {
@@ -45,7 +44,7 @@ public class MessageEligibilityPolicy {
 
         //상대방이 학생인 경우: user 테이블의 ACTIVE 확인, friend 테이블의 status(BLOCK, none) 확인
         //v2 -> 비활성 여부에 대한 가공은 user담당자가 처리하므로 친구 여부만 검증
-        return "BLOCK".equals(friendStatus) || "none".equals(friendStatus);
+        return !"FRIEND".equals(friendStatus);
     }
 
 
@@ -98,13 +97,14 @@ public class MessageEligibilityPolicy {
             UserWithFMJpaEntity targetUser = targetUsers.get(i);
             String friendStatus = friendStatuses.get(i);
 
-            //409 다대다의 경우 학생 외(강사, 관리자) 포함 불가
+            //409 다대다의 경우 학생 외(강사, 관리자) 포함 불가, 비활성 유저 포함 불가
             if (targetUsers.size() > 1){
-                if (!"STUDENT".equals(targetUser.getRole())) {
-                    log.warn("[MessageEligibilityPolicy] 대화창 개설 실패 - 학생 외 인물 초대 불가. 유저ID: {}, 역할: {}", targetUser.getId(), targetUser.getRole());
+                if (!"STUDENT".equals(targetUser.getRole()) || !"ACTIVE".equals(targetUser.getStatus())) {
+                    log.warn("[MessageEligibilityPolicy] 대화창 개설 실패 - 학생 외, 비활성 인물 초대 불가. 유저ID: {}, 역할: {}, 상태: {}", targetUser.getId(), targetUser.getRole(), targetUser.getStatus());
                     throw new FMResourceConflictException("대화창을 개설할 수 없는 사용자가 포함되어 있습니다.");
                 }
             }
+
 
             //v2 -> 초대할 멤버와 로그인 유저가 친구인지만 확인(초대된 멤버끼리는 친구 아닐 수 있음)
             //무조건 FRIEND 상태여야 개설 가능
@@ -112,6 +112,7 @@ public class MessageEligibilityPolicy {
                 log.warn("[MessageEligibilityPolicy] 대화창 개설 실패 - 친구 상태가 아닌 사용자가 포함됨. (유저ID: {}, 현재 상태: {})", targetUser.getId(), friendStatus);
                 throw new FMResourceConflictException("대화창을 개설할 수 없는 사용자가 포함되어 있습니다.");
             }
+
         }
 
     }
@@ -217,7 +218,11 @@ public class MessageEligibilityPolicy {
     public void modifyRoomTitle(Long roomId, Long userId, String newRoomTitle, ChatRoomJpaEntity chatRoom, List<ChatRoomMemberJpaEntity> members) {
 
         //해당 방에 멤버인지 권한 확인
-        if (!messageRepository.existsMemberByRoomIdAndUserId(roomId, userId)) {
+        //서비스 클래스에서 가져온 멤버 정보 재활용
+        boolean isRoomMember = members.stream()
+                .anyMatch(member -> member.getUserId().getId().equals(userId));
+
+        if (!isRoomMember) {
             log.warn("[MessageEligibilityPolicy] 채팅방 이름 변경 실패 - 해당 방 멤버가 아님. 방ID:{}, 유저ID:{}", roomId, userId);
             throw new FMResourceAccessDeniedException("해당 채팅방에 접근할 권한이 없습니다.");
         }
@@ -251,4 +256,62 @@ public class MessageEligibilityPolicy {
             throw new FMBusinessRuleViolationException("변경 사항이 없어 수정되지 않습니다.");
         }
     }
+
+    //다대다 채팅방 멤버 초대하기
+    //멤버 초대 기본 검증 - for문에서 중복 검증하는 거 따로 빼기.
+    public void validateBeforeLoop(ChatRoomJpaEntity chatRoom, Long userId, List<Long> chatMember) {
+        //빈 값 입력 시 예외
+        if (chatMember == null || chatMember.isEmpty()) {
+            log.warn("[MessageEligibilityPolicy] 채팅방 멤버 초대 실패 - 초대 멤버를 선택하지 않음");
+            throw new FMBusinessRuleViolationException("초대할 대상을 선택해주세요.");
+        }
+
+        //로그인 유저가 방 멤버인지 확인
+        if (!messageRepository.existsMemberByRoomIdAndUserId(chatRoom.getId(), userId)) {
+            log.warn("[MessageEligibilityPolicy] 채팅방 멤버 초대 실패 - 로그인 유저가 참여 중인 방이 아님. 방ID:{}, 유저ID:{}", chatRoom.getId(), userId);
+            throw new FMResourceAccessDeniedException("해당 채팅방에 접근할 권한이 없습니다.");
+        }
+
+        //중복 멤버 포함
+        long distinctCount = chatMember.stream().distinct().count();
+        if (distinctCount != chatMember.size()) {
+            log.warn("[MessageEligibilityPolicy] 채팅방 멤버 초대 실패 - 중복된 사용자 초대.");
+            throw new FMBusinessRuleViolationException("초대 대상자 중 중복된 사용자가 포함되어 있습니다.");
+        }
+    }
+    public void inviteRoomMember(ChatRoomJpaEntity chatRoom, Long userId, List<Long> chatMember, boolean hasMe, String friendStatus, boolean isExistMember, boolean isNotStudentOrActive) {
+        // 로그인 유저(초대 주체)와 초대 대상자들이 친구인지 검증, 일대일인지 확인, 중복 멤버 확인
+
+        //일대일 방인지 확인
+        if (chatRoom.getRoomTitle() == null || chatRoom.getRoomTitle().trim().isEmpty()) {
+            log.warn("[MessageEligibilityPolicy] 채팅방 멤버 초대 실패 - 일대일 채팅에서 초대 시도함. 방ID: {}", chatRoom.getId());
+            throw new FMBusinessRuleViolationException("채팅방 멤버 초대는 단체 채팅방에서만 가능합니다.");
+        }
+
+        //초대 대상자가 이미 멤버인지 확인
+        if (isExistMember) {
+            log.warn("[MessageEligibilityPolicy] 채팅방 멤버 초대 실패 - 초대 대상자 중 이미 멤버인 유저 존재.");
+            throw new FMBusinessRuleViolationException("이미 방에 참여중인 멤버가 포함되어 있습니다.");
+        }
+
+        // 본인 초대 불가
+        if (hasMe) {
+            log.warn("[MessageEligibilityPolicy] 채팅방 멤버 초대 실패 - 본인 초대. 방ID:{}, 유저ID:{}", chatRoom.getId(), userId);
+            throw new FMBusinessRuleViolationException("자기 자신은 초대할 수 없습니다.");
+        }
+
+        //초대 대상자가 학생 아닌 경우(강사, 관리자) + 비활성 유저
+        if (isNotStudentOrActive) {
+            log.warn("[MessageEligibilityPolicy] 채팅방 멤버 초대 실패 - 학생 아닌 유저 초대 시도함.");
+            throw new FMBusinessRuleViolationException("초대할 수 없는 사용자가 포함되어 있습니다.");
+        }
+
+
+        //로그인 유저와 미친구
+        if (!"FRIEND".equals(friendStatus)) {
+            log.warn("[MessageEligibilityPolicy] 채팅방 멤버 초대 실패 - 로그인 유저와 친구 상태가 아님. 상태: {}", friendStatus);
+            throw new FMBusinessRuleViolationException("친구 상태인 사용자만 초대할 수 있습니다.");
+        }
+    }
+
 }

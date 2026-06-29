@@ -3,7 +3,6 @@ package com.wanted.momocity.lecture.application.service;
 import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.lecture.application.command.LectureCommand.AdminChangeLectureStatusCommand;
-import com.wanted.momocity.lecture.application.command.LectureCommand.ChangeChapterVideoStatusCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.ChangeLectureStatusCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.CreateChapterCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.CreateLectureCommand;
@@ -13,6 +12,7 @@ import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCases.Ad
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCases.ChapterCommandUseCase;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCases.LectureCommandUseCase;
 import com.wanted.momocity.lecture.domain.event.LectureCreatedEvent;
+import com.wanted.momocity.lecture.domain.event.LectureStatusChangedEvent;
 import com.wanted.momocity.lecture.domain.exception.ChapterLimitExceededException;
 import com.wanted.momocity.lecture.domain.exception.ChapterNotFoundException;
 import com.wanted.momocity.lecture.domain.exception.ChapterVideoAlreadyExistsException;
@@ -21,7 +21,6 @@ import com.wanted.momocity.lecture.domain.exception.LectureNotFoundException;
 import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.model.LectureChapter;
 import com.wanted.momocity.lecture.domain.model.LectureStatus;
-import com.wanted.momocity.lecture.domain.model.VideoStatus;
 import com.wanted.momocity.lecture.domain.repository.ChapterRepository;
 import com.wanted.momocity.lecture.domain.repository.LectureRepository;
 import com.wanted.momocity.lecture.presentation.api.response.AdminLectureResponse.AdminChangeLectureStatusResponse;
@@ -34,7 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 
-/**
+/*
  * Lecture 명령 기능을 처리하는 Application Service.
  *
  * 기존 LectureCommandService, ChapterCommandService,
@@ -50,10 +49,21 @@ public class LectureCommandService implements
         AdminLectureCommandUseCase {
 
     // 강의당 등록 가능한 최대 챕터 수
-    private static final int MAX_CHAPTER_COUNT = 5;
+    private static final int MAX_CHAPTER_COUNT = 10;
 
     // 챕터 동영상 최대 업로드 크기: 500MB
-    private static final long MAX_VIDEO_SIZE_BYTES = 500 * 1024 * 1024;
+    // 1MB를 바이트 단위로 계산하기 위한 상수
+    private static final long BYTES_PER_MB = 1024L * 1024L;
+
+    // 챕터 동영상 최대 업로드 크기를 MB 단위로 표현한 상수
+    private static final long MAX_VIDEO_SIZE_MB = 500L;
+
+    // 챕터 동영상 최대 업로드 크기를 바이트 단위로 변환한 상수
+    private static final long MAX_VIDEO_SIZE_BYTES = MAX_VIDEO_SIZE_MB * BYTES_PER_MB;
+
+    // S3 경로
+    private static final String LECTURE_S3_PREFIX = "lectures"; // 강의 관련 S3 최상위 폴더명
+    private static final String CHAPTER_S3_PREFIX = "chapters"; // 챕터 관련 S3 하위 폴더명
 
     private final LectureRepository lectureRepository;
     private final ChapterRepository chapterRepository;
@@ -66,6 +76,12 @@ public class LectureCommandService implements
      */
     @Override
     public LectureAggregate createLecture(CreateLectureCommand command) {
+        long startTime = System.currentTimeMillis();
+        log.info("강의 등록 시작 - teacherId={}, category={}, title={}",
+                command.teacherId(),
+                command.category(),
+                command.title()
+                );
         Long teacherId = teacherAccountPort.getTeacherId(command.teacherId());
 
         LectureAggregate lecture = LectureAggregate.create(
@@ -85,26 +101,37 @@ public class LectureCommandService implements
                 Instant.now()
         ));
 
-        log.info("강의 등록 완료 - lectureId={}, teacherId={}, status={}",
+        long elapsedTime = System.currentTimeMillis()-startTime;
+        log.info("강의 등록 완료 - lectureId={}, teacherId={}, status={}, elapsedTime={}ms",
                 savedLecture.getId(),
                 savedLecture.getTeacherId(),
-                savedLecture.getStatus());
+                savedLecture.getStatus(),
+                elapsedTime
+        );
 
         return savedLecture;
     }
 
     /**
-     * 강사가 본인 강의를 심사 대기 상태로 변경.
+     * 강사가 강의 신청 시 강의 상태 변경 Waiting
      */
     @Override
     public LectureAggregate changeLectureStatus(ChangeLectureStatusCommand command) {
+
+        long startTime = System.currentTimeMillis();
+        log.info("강의 상태 변경 시작 - teacherId={}, lectureId={}, status={}",
+                command.teacherId(),
+                command.lectureId(),
+                command.lectureStatus()
+                );
+
         Long teacherId = teacherAccountPort.getTeacherId(command.teacherId());
 
         LectureAggregate lecture = lectureRepository.findById(command.lectureId())
                 .orElseThrow(() -> new LectureNotFoundException("강의를 찾을 수 없습니다."));
 
         if (!lecture.isOwnedBy(teacherId)) {
-            throw new AccessDeniedException("본인이 등록한 강의만 상태를 변경할 수 있습니다.");
+            throw new AccessDeniedException("본인이 등록한 강의만 상태를 확인 할 수 있습니다.");
         }
 
         if (command.lectureStatus() != LectureStatus.WAITING) {
@@ -115,7 +142,17 @@ public class LectureCommandService implements
 
         LectureAggregate changedLecture = lecture.changeStatus(command.lectureStatus());
 
-        return lectureRepository.save(changedLecture);
+        LectureAggregate savedLecture = lectureRepository.save(changedLecture); // 변경된 강의 상태 저장
+
+        long elapsedTime = System.currentTimeMillis() - startTime;
+
+        log.info("강사 강의 상태 변경 완료 - teacherId={}, lectureId={}, lectureStatus={}, elapsedTime={}ms",
+                teacherId,
+                savedLecture.getId(),
+                savedLecture.getStatus(),
+                elapsedTime
+        );
+        return savedLecture;
     }
 
     /**
@@ -123,6 +160,14 @@ public class LectureCommandService implements
      */
     @Override
     public LectureChapter createChapter(CreateChapterCommand command) {
+
+        long startTime = System.currentTimeMillis();
+        log.info("챕터 등록 시작 - teacherId={}, lectureId={}, orderNo={}, title={}",
+                command.teacherId(),
+                command.lectureId(),
+                command.orderNo(),
+                command.title()
+        );
         Long teacherId = teacherAccountPort.getTeacherId(command.teacherId());
 
         LectureAggregate lecture = lectureRepository.findById(command.lectureId())
@@ -135,7 +180,7 @@ public class LectureCommandService implements
         int chapterCount = chapterRepository.countByLectureId(command.lectureId());
 
         if (chapterCount >= MAX_CHAPTER_COUNT) {
-            throw new ChapterLimitExceededException("챕터는 최대 5개까지만 등록할 수 있습니다.");
+            throw new ChapterLimitExceededException("챕터는 최대 10개까지만 등록할 수 있습니다.");
         }
 
         boolean duplicatedOrderNo = chapterRepository.existsByLectureIdAndOrderNo(
@@ -147,7 +192,7 @@ public class LectureCommandService implements
             throw new DuplicateChapterOrderException("동일 강의 안에 이미 사용 중인 챕터 순서입니다.");
         }
 
-        LectureChapter chapter = LectureChapter.create(
+        LectureChapter chapter = LectureChapter.createWithoutThumbnail(
                 command.lectureId(),
                 command.title(),
                 command.orderNo()
@@ -155,12 +200,34 @@ public class LectureCommandService implements
 
         LectureChapter savedChapter = chapterRepository.save(chapter);
 
-        log.info("챕터 등록 완료 - chapterId={}, lectureId={}, orderNo={}",
+        // 챕터 썸네일 파일을 S3에 업로드
+        String chapterThumbnailUrl = s3UploadPort.upload(
+
+                // 업로드할 챕터 썸네일 파일
+                command.thumbnail(),
+
+                // 썸네일이 저장될 S3 폴더 경로 생성
+                createChapterFolder(
+                        command.lectureId(),
+                        savedChapter.getId()
+                )
+
+        ); // S3 업로드 후 접근 가능한 URL 반환
+        LectureChapter chapterWithThumbnail = savedChapter.changedChapterThumbnailUrl(
+                chapterThumbnailUrl
+        );
+
+        LectureChapter resultChapter = chapterRepository.save(chapterWithThumbnail);
+
+        long elapsedTime = System.currentTimeMillis()-startTime;
+        log.info("챕터 등록 완료 - chapterId={}, lectureId={}, orderNo={}, elapsedTime={}ms",
                 savedChapter.getId(),
                 savedChapter.getLectureId(),
-                savedChapter.getOrderNo());
+                savedChapter.getOrderNo(),
+                elapsedTime
+        );
 
-        return savedChapter;
+        return resultChapter;
     }
 
     /**
@@ -168,6 +235,14 @@ public class LectureCommandService implements
      */
     @Override
     public LectureChapter registerChapterVideo(RegisterChapterVideoCommand command) {
+        long startTime = System.currentTimeMillis();
+
+        log.info("챕터 동영상 등록 시작 - teacherId={}, lectureId={}, chapterId={}, durationSec={}",
+                command.teacherId(),
+                command.lectureId(),
+                command.chapterId(),
+                command.durationSec()
+        );
         Long teacherId = teacherAccountPort.getTeacherId(command.teacherId());
 
         LectureAggregate lecture = lectureRepository.findById(command.lectureId())
@@ -196,11 +271,17 @@ public class LectureCommandService implements
             throw new DomainRuleViolationException("동영상 파일 크기는 500MB 이하만 가능합니다.");
         }
 
-        // S3 파일 구조에 맞게 수정
-        // EX) Lecutures/1/chapters/1
+        // 챕터 동영상 파일을 S3에 업로드
         String videoUrl = s3UploadPort.upload(
+
                 command.video(),
-                "lectures/" + command.lectureId() + "/chapters/" + command.chapterId());
+
+                createChapterFolder(
+                        command.lectureId(),
+                        command.chapterId()
+                )
+
+        ); // S3 업로드 후 접근 가능한 URL 반환
 
         LectureChapter updatedChapter = chapter.registerVideo(
                 videoUrl,
@@ -211,48 +292,15 @@ public class LectureCommandService implements
 
         LectureChapter savedChapter = chapterRepository.save(updatedChapter);
 
-        log.info("챕터 동영상 등록 완료 - chapterId={}, lectureId={}, videoStatus={}, videoSizeBytes={}",
+        long elapsedTime = System.currentTimeMillis() - startTime;
+
+        log.info("챕터 동영상 등록 완료 - chapterId={}, lectureId={}, videoSizeBytes={}, durationSec={}, elapsedTime={}ms",
                 savedChapter.getId(),
                 savedChapter.getLectureId(),
-                savedChapter.getVideoStatus(),
-                savedChapter.getVideoSizeBytes());
-
-        return savedChapter;
-    }
-
-    /**
-     * 챕터 동영상 처리 상태 변경.
-     */
-    @Override
-    public LectureChapter changeChapterVideoStatus(ChangeChapterVideoStatusCommand command) {
-        Long teacherId = teacherAccountPort.getTeacherId(command.teacherId());
-
-        LectureAggregate lecture = lectureRepository.findById(command.lectureId())
-                .orElseThrow(() -> new LectureNotFoundException("강의를 찾을 수 없습니다."));
-
-        if (!lecture.isOwnedBy(teacherId)) {
-            throw new AccessDeniedException("본인이 등록한 강의의 챕터만 동영상 상태를 변경할 수 있습니다.");
-        }
-
-        LectureChapter chapter = chapterRepository.findById(command.chapterId())
-                .orElseThrow(() -> new ChapterNotFoundException("챕터를 찾을 수 없습니다."));
-
-        if (!chapter.belongsTo(command.lectureId())) {
-            throw new ChapterNotFoundException("유효하지 않은 챕터 식별자입니다.");
-        }
-
-        if (!chapter.hasVideo()) {
-            throw new DomainRuleViolationException("동영상이 등록된 챕터만 상태를 변경할 수 있습니다.");
-        }
-
-        LectureChapter changedChapter = chapter.changeVideoStatus(command.videoStatus());
-
-        LectureChapter savedChapter = chapterRepository.save(changedChapter);
-
-        log.info("챕터 동영상 상태 변경 완료 - chapterId={}, lectureId={}, videoStatus={}",
-                savedChapter.getId(),
-                savedChapter.getLectureId(),
-                savedChapter.getVideoStatus());
+                savedChapter.getVideoSizeBytes(),
+                savedChapter.getDurationSec(),
+                elapsedTime
+        );
 
         return savedChapter;
     }
@@ -262,6 +310,13 @@ public class LectureCommandService implements
      */
     @Override
     public AdminChangeLectureStatusResponse changeLectureStatus(AdminChangeLectureStatusCommand command) {
+        long startTime = System.currentTimeMillis();
+
+        log.info("관리자 강의 상태 변경 시작 - adminId={}, lectureId={}, targetStatus={}",
+                command.adminId(),
+                command.lectureId(),
+                command.lectureStatus()
+        );
         LectureAggregate lecture = lectureRepository.findById(command.lectureId())
                 .orElseThrow(() -> new LectureNotFoundException("강의를 찾을 수 없습니다."));
 
@@ -273,10 +328,25 @@ public class LectureCommandService implements
 
         LectureAggregate savedLecture = lectureRepository.save(changedLecture);
 
-        log.info("관리자 강의 상태 변경 완료 - adminId={}, lectureId={}, lectureStatus={}",
+        // 강의 승인/거절 상태 변경 이벤트 발행
+        eventPublisher.publishEvent(new LectureStatusChangedEvent(
+                savedLecture.getId(),
+                savedLecture.getTeacherId(),
+                command.adminId(),
+                savedLecture.getTitle(),
+                savedLecture.getStatus(),
+                Instant.now()
+        ));
+
+        long elapsedTime = System.currentTimeMillis() - startTime;
+
+        log.info("관리자 강의 상태 변경 완료 - adminId={}, lectureId={}, beforeStatus={}, afterStatus={}, elapsedTime={}ms",
                 command.adminId(),
                 savedLecture.getId(),
-                savedLecture.getStatus());
+                lecture.getStatus(),
+                savedLecture.getStatus(),
+                elapsedTime
+        );
 
         return AdminChangeLectureStatusResponse.from(savedLecture);
     }
@@ -312,9 +382,15 @@ public class LectureCommandService implements
         if (chapterRepository.existsByLectureIdAndVideoUrlIsNull(lectureId)) {
             throw new DomainRuleViolationException("강의를 승인하려면 모든 챕터에 동영상이 등록되어야 합니다.");
         }
+    }
 
-        if (chapterRepository.existsByLectureIdAndVideoStatusNot(lectureId, VideoStatus.READY)) {
-            throw new DomainRuleViolationException("강의를 승인하려면 모든 동영상이 READY 상태여야 합니다.");
-        }
+    // 특정 강의의 특정 챕터 S3 폴더 경로를 생성하는 메서드
+    private String createChapterFolder(Long lectureId, Long chapterId) {
+
+        return LECTURE_S3_PREFIX // lectures
+                + "/" + lectureId // lectures/{lectureId}
+                + "/" + CHAPTER_S3_PREFIX // lectures/{lectureId}/chapters
+                + "/" + chapterId; // lectures/{lectureId}/chapters/{chapterId}
+
     }
 }

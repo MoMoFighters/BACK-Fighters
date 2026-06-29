@@ -7,13 +7,18 @@ import com.wanted.momocity.enrollment.application.usecase.EnrollmentCommandUseCa
 import com.wanted.momocity.enrollment.domain.event.EnrollmentCompletedEvent;
 import com.wanted.momocity.enrollment.domain.exception.DuplicateEnrollmentException;
 import com.wanted.momocity.enrollment.domain.exception.InvalidEnrollmentLectureStatusException;
+import com.wanted.momocity.enrollment.domain.model.Building;
 import com.wanted.momocity.enrollment.domain.model.Enrollment;
+import com.wanted.momocity.enrollment.domain.repository.BuildingRepository;
 import com.wanted.momocity.enrollment.domain.repository.EnrollmentRepository;
-import com.wanted.momocity.enrollment.infrastructure.metrics.EnrollmentMetrics;
+import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
+import com.wanted.momocity.global.domain.model.Category;
+import com.wanted.momocity.lecture.domain.model.LectureCategory;
 import com.wanted.momocity.lecture.domain.model.LectureStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,16 +41,27 @@ public class EnrollmentCommandService implements EnrollmentCommandUseCase {
     // 수강신청 완료 이벤트를 발행하기 위한 Spring 이벤트 발행기
     private final ApplicationEventPublisher eventPublisher;
 
+    // 수강신청 시 카테고리 건물 존재 여부 확인
+    private final BuildingRepository buildingRepository;
+
     @Override
     public Enrollment createEnrollment(CreateEnrollmentCommand command) {
 
-        log.info("수강신청 시작 - lectureId={}", command.lectureId());
+        long startTime = System.currentTimeMillis();
+        log.info("수강신청 시작 - studentId={}, lectureId={}, position={}",
+                command.studentId(),
+                command.lectureId(),
+                command.position()
+                );
 
             // Authorization 토큰에서 꺼낸 email로 학생 ID를 조회
             Long userId = studentAccountPort.getStudentId(command.studentId());
 
             // 수강신청 대상 강의의 현재 상태를 조회
             LectureStatus lectureStatus = enrollmentLecturePort.getLectureStatus(command.lectureId());
+
+            // 수강신청할 강의의 카테고리 조회
+            LectureCategory lectureCategory = enrollmentLecturePort.getLectureCategory(command.lectureId());
 
             // 같은 학생이 같은 강의를 이미 수강신청했는지 확인
             boolean alreadyEnrolled = enrollmentRepository.existsByUserIdAndLectureId(
@@ -55,13 +71,29 @@ public class EnrollmentCommandService implements EnrollmentCommandUseCase {
 
             // 이미 수강신청한 강의라면 중복 수강신청 예외를 발생
             if (alreadyEnrolled) {
+                log.warn("수강신청 실패 - 중복 신청, userId={}, lectureId={}",
+                        userId,
+                        command.lectureId()
+                );
                 throw new DuplicateEnrollmentException("이미 수강신청한 강의입니다.");
             }
 
             // ACTIVE 상태의 강의만 수강신청할 수 있음
             if (lectureStatus != LectureStatus.ACTIVE) {
+                log.warn("수강신청 실패 - 비활성 강의, userId={}, lectureId={}, lectureStatus={}",
+                        userId,
+                        command.lectureId(),
+                        lectureStatus
+                );
                 throw new InvalidEnrollmentLectureStatusException("진행 중인 강의만 수강신청할 수 있습니다.");
             }
+
+            // 해당 카테고리 건물이 없으면 새 건물 생성
+            createBuildingIfAbsent(
+                    userId,
+                    lectureCategory,
+                    command.position()
+            );
 
             // 수강신청 도메인 객체를 생성
             Enrollment enrollment = Enrollment.create(
@@ -81,15 +113,82 @@ public class EnrollmentCommandService implements EnrollmentCommandUseCase {
                     savedEnrollment.getLectureId()
             ));
 
+            long elapsedTime = System.currentTimeMillis() - startTime;
             // 수강신청 완료와 이벤트 발행 여부를 추적하기 위한 로그
             // 수강신청 후 강사 자동 친구 추가 이벤트가 이어지므로 enrollmentId, userId, lectureId를 남긴다.
-            log.info("수강신청 완료 - enrollmentId={}, userId={}, lectureId={}",
+            log.info("수강신청 완료 - enrollmentId={}, userId={}, lectureId={}, elapsedTime={}ms",
                     savedEnrollment.getId(),
                     savedEnrollment.getUserId(),
-                    savedEnrollment.getLectureId());
+                    savedEnrollment.getLectureId(),
+                    elapsedTime
+            );
 
             // 저장된 수강신청 도메인 객체를 반환
             return savedEnrollment;
 
+    }
+
+    private void createBuildingIfAbsent(
+            Long userId,
+            LectureCategory lectureCategory,
+            Long position
+    ) {
+        Category buildingCategory = Category.valueOf(lectureCategory.name());
+        log.info("수강신청 건물 확인 시작 - userId={}, category={}, poition={}",
+                userId,
+                buildingCategory,
+                position
+        );
+        // 사용자가 해당 카테고리 건물을 가지고 있는지 확인
+        boolean hasBuilding = buildingRepository.existsByUserIdAndCategory(
+                userId,
+                buildingCategory
+        );
+
+        // 만약 건물을 이미 가지고 있으면 생성 X
+        if (hasBuilding) {
+            log.info("수강신청 건물 생성 생략 - 이미 보유, userId={}, category={}",
+                    userId,
+                    buildingCategory
+            );
+            return;
+        }
+
+        // position 값 검증
+        validateBuildingPosition(position);
+
+        Building building = Building.create(
+                userId,
+                buildingCategory,
+                position
+        );
+
+        // 동시 요청으로 같은 카테고리 건물이 먼저 생성 될 수 있으므로 예외 처리
+        try {
+            // 신규 건물 저장 시도
+            buildingRepository.save(building);
+            log.info("수강신청 건물 생성 완료 - userId={}, category={}, position={}, level={}",
+                    userId,
+                    buildingCategory,
+                    position,
+                    building.getLevel()
+            );
+            // unique 제약 위반이 발생한 경우
+        } catch (DataIntegrityViolationException exception) {
+            // 중복 생성 상황을 로그로 남김
+            log.info("이미 생성된 카테고리 건물이 있어서 건물 생성을 건너 뜁니다. userId={}, category={}", userId, buildingCategory);
+        }
+    }
+
+    private void validateBuildingPosition(Long position) {
+
+        // 새 건물을 생성해야 되는데 position이 없으면
+        if (position == null) {
+            throw new DomainRuleViolationException("건물 값은 필수입니다.");
+        }
+
+        if (position < 1 || position > 5) {
+            throw new DomainRuleViolationException("건물 위치 값은 1부터 5까지만 가능합니다.");
+        }
     }
 }

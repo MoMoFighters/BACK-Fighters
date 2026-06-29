@@ -55,7 +55,8 @@ public class LearningHistory {
     *  progressRate = watchedSeconds / durationSec * 100
     * */
 
-    public void updateProgress(
+    // 반환타입 boolean -> true = 정상 진척, false = skip 차단 (서비스에서 메트릭 찍을 때 사용)
+    public boolean updateProgress(
             int playbackSeconds, int durationSec
     ) {
 
@@ -77,6 +78,10 @@ public class LearningHistory {
         if (this.progressRate >= 100) {
             this.progressRate = 100;
         }
+
+        // 호출한 서비스에서 skip 차단 여부 판단용으로 반환
+        return hasMeaningfulProgress;
+
     }
 
     /*

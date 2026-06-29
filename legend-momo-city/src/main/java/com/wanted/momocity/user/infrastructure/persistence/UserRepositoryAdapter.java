@@ -1,7 +1,6 @@
 package com.wanted.momocity.user.infrastructure.persistence;
 
 import com.wanted.momocity.global.domain.model.Category;
-import com.wanted.momocity.user.application.command.UpdateUserInfoCommand;
 import com.wanted.momocity.user.domain.exception.UserNotFoundException;
 import com.wanted.momocity.user.domain.model.*;
 import com.wanted.momocity.user.domain.repository.UserRepository;
@@ -39,12 +38,12 @@ public class UserRepositoryAdapter implements UserRepository {
     }
 
     @Override
-    public void updateUserInfo(UpdateUserInfoCommand command) {
+    public void updateUserInfo(UpdateUserInfoData data) {
         springDataUserRepository.updateUserInfo(
-                command.userId(),
-                command.nickname(),
-                command.profileImageUrl(),
-                command.password()
+                data.userId(),
+                data.nickname(),
+                data.profileImageUrl(),
+                data.password()
         );
     }
 
@@ -117,8 +116,8 @@ public class UserRepositoryAdapter implements UserRepository {
     }
 
     @Override
-    public void teacherApply(Long userId, String nickname , Category category, String proof) {
-        springDataUserRepository.teacherApply(userId,nickname,category,proof);
+    public void teacherApply(Long userId, String nickname , Category category, String proof, LocalDateTime updatedAt) {
+        springDataUserRepository.teacherApply(userId,nickname,category,proof, updatedAt);
     }
 
     // 강사 중복 신청 확인용
@@ -146,6 +145,45 @@ public class UserRepositoryAdapter implements UserRepository {
         return springDataUserRepository.findCategoryById(userId);
     }
 
+    // 회원탈퇴 (소프트 딜리트)
+    @Override
+    public void changeStatusAndNickname(Long userId, Status status, String nickname) {
+        springDataUserRepository.changeStatusAndNickname(userId,status,nickname,LocalDateTime.now());
+    }
+
+    // 하드딜리트 할 사용자 찾기
+    @Override
+    public List<Long> findDeletedUserIdsBefore(LocalDateTime threshold) {
+        return springDataUserRepository.findDeletedUserIdsBefore(threshold);
+    }
+
+    // 사용자 하드 딜리트
+    @Override
+    public void deleteById(Long userId) {
+        springDataUserRepository.deleteById(userId);
+    }
+
+    // 사용자 신고 횟수 +
+    @Override
+    public Long plusReportCount(Long userId) {
+        // 신고 횟수 +1 진행
+        springDataUserRepository.plusReportCount(userId);
+        // 변화된 신구 횟수 값 조회해서 리턴
+        return springDataUserRepository.findSuspensionCountById(userId);
+    }
+
+    // 신고 횟수에 따른 처리
+    @Override
+    public void reportApply(Long userId, Status status, LocalDateTime suspendedUntil) {
+        springDataUserRepository.reportApply(userId, status, suspendedUntil);
+    }
+
+    // 사용자 신고 횟수 -
+    @Override
+    public void minusReportCount(Long userId) {
+        springDataUserRepository.minusReportCount(userId);
+    }
+
 
     // 마이페이지 내 정보 조회용
     private User toDomain(UserJpaEntity entity) {
@@ -153,9 +191,13 @@ public class UserRepositoryAdapter implements UserRepository {
                 entity.getProfileImageUrl(),
                 entity.getEmail(),
                 entity.getName(),
+                entity.getPoint(),
+                entity.getRole(),
+                entity.getCategory(),
                 entity.getNickname(),
                 entity.isTempPwd(),
-                entity.getCreatedAt()
+                entity.getCreatedAt(),
+                entity.getSuspensionCount()
         );
     }
 
@@ -187,6 +229,8 @@ public class UserRepositoryAdapter implements UserRepository {
                 entity.getCreatedAt(),
                 entity.getDeletedAt(),
                 entity.getStatus(),
+                entity.getSuspensionCount(),
+                entity.getSuspendedUntil(),
                 entity.getRole() == Role.TEACHER ? entity.getProof() : null
         );
     }

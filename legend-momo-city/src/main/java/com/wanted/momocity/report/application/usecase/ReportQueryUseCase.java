@@ -2,6 +2,7 @@ package com.wanted.momocity.report.application.usecase;
 
 import com.wanted.momocity.report.domain.model.Report;
 import java.util.List;
+import java.util.Map;
 
 /* comment.
     ReportQueryUseCase 정리
@@ -12,18 +13,30 @@ import java.util.List;
  */
 public interface ReportQueryUseCase {
 
-    ReportList getRecent(int limit);
-    ReportList getByIsResolved(boolean isResolved, int limit);
+    ReportList getRecent(int page, int size);
+    ReportList getByIsResolved(boolean isResolved, int page, int size);
 
     // id 값을 받기 위해서 필요한 data
     ReportDetail getById(Long id);
 
+    // targetContents 제거, 페이지 메타데이터 4개 추가
     record ReportList(
-            List<Report> reports
-    ) { }
+            List<Report> reports,
+            Map<Long, String> userNames,
+            long totalElements,
+            int totalPages,
+            // FE 컨벤션 통일 — 접근로그(page/size) 기준으로 필드명 맞춤
+            int page,
+            int size
+    ) {}
 
     // 해당 UseCase 가 어떤 것을 반환하는지 확인가능하기 때문에 여기에 둔다.
     record ReportDetail(
-            Report report
+            Report report,
+            String reporterName,
+            String reportedName,
+            String targetContent,
+            // CHAPTER 타입일 때 lectureId 담아준다. 나머지는 null 값
+            Long parentId
     ) {}
 }

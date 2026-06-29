@@ -1,6 +1,5 @@
 package com.wanted.momocity.report.infrastructure.persistence;
 
-import com.wanted.momocity.global.infrastructure.persistence.BaseTimeEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -13,7 +12,7 @@ import java.time.LocalDateTime;
 // report 테이블과 1:1 매핑되는 JPA 저장 모델
 @Entity
 @Table(name = "report")
-public class ReportJpaEntity extends BaseTimeEntity {
+public class ReportJpaEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

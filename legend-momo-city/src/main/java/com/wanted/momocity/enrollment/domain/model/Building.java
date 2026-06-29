@@ -23,6 +23,28 @@ public class Building {
         this.updatedAt = updatedAt;
     }
 
+    // 새 건물 도메인
+    public static Building create(
+            Long userId,
+            Category category,
+            Long position
+    ) {
+        return new Building(
+                null, // 신규 생성이라 아직 ID는 없음
+                userId,
+                category,
+                position,
+                1, // 모든 새 건물은 레벨 1로 생성
+                // create와 update는 DB 저장 시 생성
+                null,
+                null
+        );
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
     public Category getCategory() {
         return category;
     }

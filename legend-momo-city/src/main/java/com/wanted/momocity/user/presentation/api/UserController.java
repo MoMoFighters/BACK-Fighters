@@ -25,6 +25,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -105,7 +106,7 @@ public class UserController {
             @RequestBody @Valid UpdateUserInfoRequest request){
 
         userCommandUsecase.updateUserInfo(new UpdateUserInfoCommand(
-                userDetails.getUserId(),request.profileImageUrl(),request.nickname(),request.currentPassword(),request.password()
+                userDetails.getUserId(),request.itemName(),request.nickname(),request.currentPassword(),request.password()
         ));
 
         boolean isPwdChanged = request.password() != null;
@@ -226,6 +227,84 @@ public class UserController {
 
     }
 
+    @PatchMapping("/delete")
+    @Operation(summary = "회원탈퇴",
+                description = "탈퇴할 땐 status랑 nickname만 바꾸고 3개월 뒤 이벤트 발행해서 사용자 정보 하드 딜리트")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "회원탈퇴 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)")
+    })
+    public ResponseEntity<ApiResponse<Void>> deleteUser(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestHeader("Authorization") String bearerToken) {
+
+        userCommandUsecase.softDeleteUser(userDetails.getUserId());
+
+        // 토큰 무효화
+        String accessToken = bearerToken.substring(7);
+        long remaining = tokenProviderPort.getRemainingMillis(accessToken);
+        if (remaining > 0) {
+            blacklistPort.addBlacklist(accessToken, remaining);
+        }
+        redisRefreshTokenPort.deleteByUserId(String.valueOf(userDetails.getUserId()));
+
+        return ResponseEntity.ok(ApiResponse.success(
+                UserResponseCode.USER_SOFT_DELETED,
+                UserResponseMessage.USER_SOFT_DELETED,
+                null
+        ));
+    }
+
+
+    @PatchMapping("/plus/report-count/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "관리저의 신고 처리",
+                description = "신고 누적 횟수에 따라 status, suspensionCount, suspendedUntil 변경")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "신고 처리 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "이미 정지된 사용자")
+    })
+    public ResponseEntity<ApiResponse<Void>> plusReportCount(
+            @PathVariable Long userId){
+        LocalDateTime suspendedUntil = userCommandUsecase.plusReportCount(userId);
+
+        String suspendedDate = suspendedUntil != null
+                ? " (정지 기간 : ~ " + suspendedUntil.toLocalDate() + ")"
+                : " (영구 정지)";
+
+        return ResponseEntity.ok(ApiResponse.success(
+                UserResponseCode.USER_REPORT_PLUS,
+                UserResponseMessage.USER_REPORT_PLUS + suspendedDate,
+                null
+        ));
+
+    }
+
+    @PatchMapping("/minus/report-count/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "관리저가 실수로 +누른 경우에 사용자 복구 ")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "신고 복구 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "24시간 경과"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "ACTIVE 사용자"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
+    })
+    public ResponseEntity<ApiResponse<Void>> minusReportCount(
+            @PathVariable Long userId){
+
+        userCommandUsecase.minusReportCount(userId);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                UserResponseCode.USER_REPORT_MINUS,
+                UserResponseMessage.USER_REPORT_MINUS,
+                null
+        ));
+    }
 
 
 }

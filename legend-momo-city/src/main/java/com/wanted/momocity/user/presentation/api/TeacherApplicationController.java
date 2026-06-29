@@ -67,6 +67,7 @@ public class TeacherApplicationController {
 
 
     @PostMapping("/teacherApply")
+    @PreAuthorize("hasRole('STUDENT')") // 강사 신청은 학생만 가능
     @Operation(
             summary = "강사 신청",
             description = "강사는 해당 api를 통해 강사 증빙자료를 제출하고 강사 신청을 진행한다."

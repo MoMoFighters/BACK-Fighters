@@ -16,18 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 /* comment.
     AdminDashboardController 정리
-    1. 이 클래스의 역할 : 관리자 대시보드 통계 HTTP API 진입점. FE 대시보드 페이지 열 때 호출
-    2. 다루는 API :
-        - GET /api/v1/dashboard/summary
-    3. 클래스 레벨 어노테이션 :
-        - @RestController : REST API 컨트롤러, 반환값 자동 JSON 변환
-        - @RequestMapping("/api/v1") : 클래스 안 모든 핸들러 URL 앞에 공통 prefix
-        - @PreAuthorize("hasRole('ADMIN')") : 모든 핸들러 호출 전 권한 검사. ADMIN 아니면 403
-        - @Tag : Swagger UI 에서 "Admin - 대시보드" 그룹으로 표시
-    4. 의존성 :
-        - AdminDashboardQueryUseCase : UseCase 인터페이스 의존
-    5. MS-6 컨트롤러와 핵심 차이 :
-        - HTTP 메서드 : GET 방식과 PATCH 방식
+    DashboardSummary 를 DashboardSummaryResponse 변환 로직만 교체한다.
+    나머지 구조는 그대로 유지된다.
  */
 @RestController
 @RequestMapping("/api/v1")
@@ -38,12 +28,7 @@ public class AdminDashboardController {
 
     private final AdminDashboardQueryUseCase dashboardQueryUseCase;
 
-    /* comment.
-        getDashboardSummary 처리 흐름 3단계 :
-        1. UseCase 호출 → 여러 BC 통계를 모은 DashboardSummary(응용 출력) 획득
-        2. 응용 출력(DashboardSummary) → 응답 DTO(DashboardSummaryResponse) 변환 (계층 격리)
-        3. 공통 응답 엔벨로프(ApiResponse) 로 감싸 200 OK 반환 (전 컨트롤러 일관성)
-     */
+
     @GetMapping("/dashboard/summary")
     @Operation(
             summary = "관리자 대시보드 요약 통계",
@@ -55,12 +40,47 @@ public class AdminDashboardController {
 
         // 2. 응용 출력 → 응답 DTO 변환
         DashboardSummaryResponse response = new DashboardSummaryResponse(
-                summary.memberCount(),
-                summary.memberGrowthRate(),
-                summary.lectureCount(),
-                summary.lectureGrowthRate(),
-                summary.reportCount()
-        );
+
+                        // Cards : 수치 4개를 관리자 메인 페이지 반환
+                        new DashboardSummaryResponse.Cards(
+                                summary.cards().totalUsers(),
+                                summary.cards().unresolvedReports(),
+                                summary.cards().pendingTeachers(),
+                                summary.cards().activeLectures()
+                        ),
+
+                        // SystemHealth : 인프라 상태 변환
+                        new DashboardSummaryResponse.SystemHealth(
+                                summary.systemHealth().webService(),
+                                summary.systemHealth().database(),
+                                summary.systemHealth().fileStorage(),
+                                summary.systemHealth().mailService()
+                        ),
+
+                        // pendingTasks : 대기 작업 목록 변환
+                        summary.pendingTasks().stream()
+                                .map(t -> new DashboardSummaryResponse.PendingTask(
+                                        t.type(), t.title(), t.requester(), t.requestedAt()))
+                                .toList(),
+
+                        // recentReports : 최근 신고 목록 변환
+                        summary.recentReports().stream()
+                                .map(r -> new DashboardSummaryResponse.RecentReport(
+                                        r.reportId(), r.reporterName(), r.reason(), r.isResolved(), r.createdAt()))
+                                .toList(),
+
+                        // recentNotices : 최근 공지 목록 변환
+                        summary.recentNotices().stream()
+                                .map(n -> new DashboardSummaryResponse.RecentNotice(
+                                        n.noticeId(), n.title(), n.createdAt()))
+                                .toList(),
+
+                        // recentAccessLogs : 최근 접근 로그 목록 변환
+                        summary.recentAccessLogs().stream()
+                                .map(l -> new DashboardSummaryResponse.RecentAccessLog(
+                                        l.logId(), l.ip(), l.userName(), l.role(), l.isSuccess(), l.accessedAt()))
+                                .toList()
+                );
 
         // 3. 공통 응답 엔벨로프로 감싸 200 OK 반환
         return ResponseEntity.ok(

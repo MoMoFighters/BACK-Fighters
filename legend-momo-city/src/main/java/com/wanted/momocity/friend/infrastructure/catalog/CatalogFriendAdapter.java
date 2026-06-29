@@ -2,10 +2,8 @@ package com.wanted.momocity.friend.infrastructure.catalog;
 
 
 import com.wanted.momocity.friend.domain.repository.FriendRepository;
-import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
-import com.wanted.momocity.friend.infrastructure.persistence.FriendSideEnrollmentRepository;
-import com.wanted.momocity.friend.infrastructure.persistence.FriendSideUserRepository;
-import com.wanted.momocity.friend.infrastructure.persistence.SpringDataFriendRepository;
+import com.wanted.momocity.friend.enrollment.EnrollmentWithFMJpaEntity;
+import com.wanted.momocity.friend.infrastructure.persistence.*;
 
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +13,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.swing.text.html.Option;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -27,14 +26,12 @@ import java.util.Optional;
 @Slf4j
 public class CatalogFriendAdapter implements FriendRepository {
 
-    //🚨 기능 구현을 위해 다른 테이블의 JpaEntity를 만들어 진행함에 따라 머지 후 import 필요합니다.
-
-
     private final SpringDataFriendRepository springDataFriendRepository;
     //충돌 회피로 만든 수강신청 인터페이스 저장소
     private final FriendSideEnrollmentRepository friendSideEnrollmentRepository;
     //충돌 회피로 만든 사용자 인터페이스 저장소
     private final FriendSideUserRepository friendSideUserRepository;
+    private final SpringDataGuestBookRepository springDataGuestBookRepository;
 
 
     //내 친구 목록
@@ -59,6 +56,13 @@ public class CatalogFriendAdapter implements FriendRepository {
     public List<FriendJpaEntity> findAllMyRelations(Long userId) {
         log.info("[CatalogFriendAdapter] 로그인한 유저와 연관된 모든 친구 관계 조회 - 유저ID: {}", userId);
         return springDataFriendRepository.findByFromUserId_IdOrToUserId_Id(userId, userId);
+    }
+
+    //수강 목록
+    @Override
+    public List<EnrollmentWithFMJpaEntity> findEnrollmentsByUserId(Long userId) {
+        log.info("[CatalogFriendAdapter] 유저의 수강 신청 내역 DB 조회 - 유저ID: {}", userId);
+        return friendSideEnrollmentRepository.findByUserId_Id(userId);
     }
 
     //친구 요청
@@ -129,6 +133,32 @@ public class CatalogFriendAdapter implements FriendRepository {
 
         //없으면 B->A 방향 조회해서 반환
         return springDataFriendRepository.findByFromUserId_IdAndToUserId_Id(userB, userA);
+    }
+
+
+    //방명록 목록 조회
+    @Override
+    public List<GuestBookJpaEntity> findAllByOwnerIdWithWriter(Long userId) {
+        return springDataGuestBookRepository.findAllByOwnerIdWithWriter(userId);
+    }
+
+    //방명록 작성 1일1제한
+    @Override
+    public boolean existsGuestBookWrittenToday(Long userId, Long ownerId) {
+        log.info("[CatalogFriendAdapter] 1일 1회 방명록 작성 제약 조건 검사 수행 - 작성자: {}, 주인: {}", userId, ownerId);
+        // 오늘 날짜 구하기
+        LocalDate today = LocalDate.now();
+
+        // 🎯 깔끔하게 쿼리 메서드 호출
+        return springDataGuestBookRepository.existsWrittenToday(userId, ownerId, today);
+    }
+
+    //방명록 저장
+    @Override
+    @Transactional
+    public GuestBookJpaEntity saveGuestBook(GuestBookJpaEntity newBook) {
+        log.info("[CatalogFriendAdapter] 새 방명록 엔티티 영속화 시도");
+        return springDataGuestBookRepository.save(newBook);
     }
 
 }

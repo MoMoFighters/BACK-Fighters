@@ -6,25 +6,24 @@ import java.util.Optional;
 
 /* comment.
     ReportRepository 정리
-    1. 해당 클래스가 하는 일 : 신고(Report) 도메인 영속화 계약.
-    2. 도메인 계층에 인터페이스를 둠
-       → DIP. 도메인이 약속만 정의, 인프라가 구현.
-    3. limit(N) 방식
-       → 관리자 위젯이 작아 페이지네이션 불필요 (ErrorLogRepository 와 동일 정책).
+    도메인 계층의 저장소 계약 인터페이스이다.
  */
 public interface ReportRepository {
+
+    // 페이지네이션 결과 묶음 record : Spring 타입 없이 순수 도메인으로 메타데이터 전달
+    record ReportPage(List<Report> reports, long totalElements) {}
 
     // 신규 신고 저장
     Report save(Report report);
 
-    // 최근 신고 N개 (reportedAt DESC)
-    List<Report> findRecent(int limit);
+    // limit 방식 -> page/size 방식으로 시그니처 변경
+    ReportPage findRecent(int page, int size);
 
-    // 처리 여부 기준 최근 신고 N개 (false=미처리, true=처리완료)
-    List<Report> findByIsResolved(boolean isResolved, int limit);
+    // 동일하게 page/size 로 변경
+    ReportPage findByIsResolved(boolean isResolved, int page, int size);
 
-    // 전체 신고 수 (대시보드 통계용 - ReportStatsAdapter 가 호출)
-    long countAll();
+    // 미처리 신고 수 (대시보드 통계용 - ReportStatsAdapter 가 호출)
+    long countUnresolved();
 
     // ID 로 신고 단건 조회 (없으면 빈 Optional)
     Optional<Report> findById(Long id);

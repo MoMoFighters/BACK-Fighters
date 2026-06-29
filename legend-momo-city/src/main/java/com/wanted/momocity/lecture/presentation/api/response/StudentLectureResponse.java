@@ -4,9 +4,11 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.model.LectureChapter;
 import com.wanted.momocity.lecture.domain.model.VideoStatus;
+import com.wanted.momocity.viewing.application.port.ChapterProgressInfo;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 public class StudentLectureResponse {
 
@@ -24,22 +26,40 @@ public class StudentLectureResponse {
             // 강의 안에서 챕터가 보여질 순서
             int orderNo,
 
+            String chapterThumbnailUrl,
+
             // 동영상 재생 시간입니다. 단위는 초
             Integer durationSec,
 
-            // 동영상 처리 상태. 예: UPLOADING, ENCODING, READY, FAILED
-            String videoStatus
+            // 챕터별 진척도
+            Integer chapterProgress,
+
+            // 챕터 완료 여부
+            Boolean isCompleted,
+
+            // 챕터 접근 가능 여부
+            Boolean isAccessible
 
     ) {
 
         // LectureChapter 도메인 객체를 학생용 챕터 응답 DTO로 변환
-        public static StudentLectureChapterResponse from(LectureChapter chapter) {
+        public static StudentLectureChapterResponse from(
+                LectureChapter chapter,
+                ChapterProgressInfo progressInfo
+        ) {
             return new StudentLectureChapterResponse(
                     chapter.getId(),
                     chapter.getTitle(),
                     chapter.getOrderNo(),
+                    chapter.getChapterThumbnailUrl(),
                     chapter.getDurationSec(),
-                    chapter.getVideoStatus().name()
+                    // 챕터 진척도
+                    // null ? null : -> progressInfo가 없으면 null, 있으면 안에 있느 값을 꺼내라
+                    progressInfo == null ? null : progressInfo.ProgressRate(),
+                    // 완료 여부
+                    progressInfo == null ? null : progressInfo.isCompleted(),
+                    // 접근 가능 여부
+                    progressInfo == null ? null : progressInfo.isAccessible()
             );
         }
     }
@@ -78,6 +98,8 @@ public class StudentLectureResponse {
             // 수강 중인 학생의 강의 전체 진척도, 미수강이면 null
             Integer lectureProgress,
 
+            Boolean isCompleted,
+
             // 강의에 포함된 챕터 목록
             List<StudentLectureChapterResponse> chapters,
 
@@ -96,7 +118,9 @@ public class StudentLectureResponse {
                 double averageRating,
                 int reviewCount,
                 boolean isEnrolled,
-                Integer lectureProgress
+                Integer lectureProgress,
+                Boolean isCompleted,
+                Map<Long, ChapterProgressInfo> chapterProgressMap
         ) {
             return new StudentLectureDetailResponse(
                     lecture.getId(),
@@ -109,9 +133,12 @@ public class StudentLectureResponse {
                     reviewCount,
                     isEnrolled,
                     lectureProgress,
+                    isCompleted,
                     chapters.stream()
-                            .filter(chapter -> chapter.getVideoStatus() == VideoStatus.READY)
-                            .map(StudentLectureChapterResponse::from)
+                            .map(chapter -> StudentLectureChapterResponse.from(
+                                    chapter,
+                                    chapterProgressMap.get(chapter.getId())
+                            ))
                             .toList(),
                     lecture.getCreatedAt(),
                     lecture.getUpdatedAt()

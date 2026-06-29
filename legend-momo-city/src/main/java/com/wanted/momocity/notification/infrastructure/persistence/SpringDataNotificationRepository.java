@@ -1,7 +1,10 @@
 package com.wanted.momocity.notification.infrastructure.persistence;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface SpringDataNotificationRepository extends JpaRepository<NotificationJpaEntity, Long> {
@@ -11,4 +14,25 @@ public interface SpringDataNotificationRepository extends JpaRepository<Notifica
 
     //메시지 전송
     Optional<NotificationJpaEntity> findByRefIdAndTypeAndUserId_Id(Long refId, String type, Long userId);
+
+    //알림 목록
+    @Query("SELECT n, mr FROM NotificationJpaEntity n " +
+            "LEFT JOIN MessageReadJpaEntity mr ON n.type = 'MESSAGE' AND n.refId = mr.roomId.id AND mr.userId.id = :userId AND mr.isDeleted = false " +
+            "WHERE (n.type != 'MESSAGE' AND n.userId.id = :userId) " + // 일반 알림은 수신자가 나인 것
+            "   OR (n.type = 'MESSAGE' AND n.userId.id != :userId)")  // 메시지 알림은 발신자가 내가 아닌 것 (즉, 남이 보낸 것)
+    List<Object[]> findAllByUserId(@Param("userId") Long userId);
+
+    //메시지를 제외한 모든 알림 개수
+    @Query("SELECT COUNT(n) FROM NotificationJpaEntity n " +
+            "WHERE n.userId.id = :userId " +
+            "AND n.type != 'MESSAGE' " +
+            "AND n.isRead = false")
+    long countUnreadGeneralNotifications(@Param("userId") Long userId);
+
+    //휴대폰 속 앱별 알림 개수(캘린더, 커뮤니티, 친구)
+    @Query("SELECT COUNT(n) FROM NotificationJpaEntity n WHERE n.userId.id = :userId AND n.type = :type AND n.isRead = false")
+    long countByUserIdAndType(@Param("userId") Long userId, @Param("type") String type);
+
+    //알림 읽기 - 요청온 알림이 notification 테이블에 존재하는지.
+    List<NotificationJpaEntity> findAllByIdIn(List<Long> targetId);
 }
