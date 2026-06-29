@@ -99,7 +99,7 @@ public class CatalogMessageAdapter implements MessageRepository {
         return springDataMessageRepository.findTop20ByRoomId_IdAndIdLessThanAndCreatedAtGreaterThanEqualOrderByIdDesc(roomId, lastMessageId, startTimeLie);
     }
 
-    //이거 무슨 용도지?
+    //프록시
     @Override
     public UserWithFMJpaEntity getUserWithFMReferenceById(Long userId) {
         return messageSideUserRepository.getReferenceById(userId);
