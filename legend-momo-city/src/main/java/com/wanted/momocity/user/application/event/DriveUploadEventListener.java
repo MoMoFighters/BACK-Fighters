@@ -27,7 +27,7 @@ public class DriveUploadEventListener {
                     event.contentType(),
                     event.fileName()
             );
-            log.error("[drive] 비동기 업로드 성공 | fileName={}", event.fileName());
+            log.info("[drive] 비동기 업로드 성공 | fileName={}", event.fileName());
         } catch (Exception e) {
             log.error("[drive] 비동기 업로드 실패 | fileName={}", event.fileName());
             redisTemplate.opsForSet().add("drive:retry", String.valueOf(event.userId()));
