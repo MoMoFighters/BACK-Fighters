@@ -2,6 +2,7 @@ package com.wanted.momocity.lecture.infrastructure.adapter;
 
 import com.wanted.momocity.lecture.domain.exception.ChapterNotFoundException;
 import com.wanted.momocity.lecture.domain.repository.ChapterRepository;
+import com.wanted.momocity.report.application.port.ChapterParentPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
