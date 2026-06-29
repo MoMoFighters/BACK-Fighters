@@ -21,7 +21,8 @@ public class PendingReportAdapter implements PendingReportPort {
 
     @Override
     public List<PendingReportItem> getPending(int limit) {
-        return reportRepository.findByIsResolved(false, limit)
+        // ReportRepository 시그니처가 page/size 로 변경됨 — 대시보드용이라 page=1 고정
+        return reportRepository.findByIsResolved(false, 1, limit).reports()
                 .stream()
                 .map(report -> new PendingReportItem(
                         report.getId(),

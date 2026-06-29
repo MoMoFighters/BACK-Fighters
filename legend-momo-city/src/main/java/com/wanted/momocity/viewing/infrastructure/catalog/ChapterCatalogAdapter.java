@@ -7,6 +7,8 @@ import com.wanted.momocity.lecture.infrastructure.persistence.ChapterJpaEntity;
 import com.wanted.momocity.lecture.infrastructure.persistence.SpringDataChapterRepository;
 import com.wanted.momocity.viewing.application.port.ChapterPort;
 import com.wanted.momocity.viewing.domain.model.Chapter;
+import com.wanted.momocity.viewing.infrastructure.metrics.ViewingMetrics;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
@@ -43,6 +45,7 @@ import java.util.Optional;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class ChapterCatalogAdapter implements ChapterPort {
 
     // SpringDataChapterRepository 주입
@@ -65,13 +68,7 @@ public class ChapterCatalogAdapter implements ChapterPort {
     private final ObjectMapper plainObjectMapper = new ObjectMapper()
             .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
 
-    public ChapterCatalogAdapter(
-            SpringDataChapterRepository springDataChapterRepository,
-            StringRedisTemplate stringRedisTemplate
-    ) {
-        this.springDataChapterRepository = springDataChapterRepository;
-        this.stringRedisTemplate = stringRedisTemplate;
-    }
+    private final ViewingMetrics viewingMetrics;
 
     /*
      * comment.
@@ -92,14 +89,19 @@ public class ChapterCatalogAdapter implements ChapterPort {
 
         String cacheKey = "chapter::" + chapterId;
 
+        // 캐시 히트 / 미스 메트릭 추가
         // 1. Redis 캐시 조회
         try {
             String json = stringRedisTemplate.opsForValue().get(cacheKey);
             if (json != null) {
+                // 캐시 히트
+                viewingMetrics.recordCacheHit();
                 Chapter chapter = plainObjectMapper.readValue(json, Chapter.class);
                 log.debug("[Viewing] chapter 캐시 히트 | chapterId={}", chapterId);
                 return chapter;
             }
+            // 캐시 미스
+            viewingMetrics.recordCacheMiss();
         } catch (Exception e) {
             log.warn("[Viewing] chapter 캐시 조회 실패, DB 조회로 fallback | chapterId={} | 예외={}",
                     chapterId, e.getMessage());

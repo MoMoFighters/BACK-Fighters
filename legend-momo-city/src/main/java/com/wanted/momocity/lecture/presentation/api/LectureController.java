@@ -64,6 +64,9 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Lecture", description = "강의 등록, 조회, 챕터, 영상, 상태 관리 API")
 public class LectureController {
 
+    // 강의 썸네일을 저장할 S3 최상위 폴더명
+    private static final String LECTURE_S3_PREFIX = "lectures";
+
     // 강의 조회 UseCase
     private final LectureQueryUseCase lectureQueryUseCase;
     // 강의 상태 변경(WAITING) UseCase
@@ -76,6 +79,8 @@ public class LectureController {
     private final AdminLectureQueryUseCase adminLectureQueryUseCase;
     // 관리자 강의 상태 변경 UseCase
     private final AdminLectureCommandUseCase adminLectureCommandUseCase;
+
+
 
 
     /* comment
@@ -116,7 +121,13 @@ public class LectureController {
         request.validateCategory();
         request.validateThumbnailSize();
 
-        String thumbnailUrl = s3UploadPort.upload(request.thumbnail(), "lectures");
+        String thumbnailUrl = s3UploadPort.upload( // 강의 썸네일 파일을 S3에 업로드
+
+                request.thumbnail(), // 업로드할 강의 썸네일 파일
+
+                LECTURE_S3_PREFIX // 강의 썸네일이 저장될 S3 폴더 경로
+
+        ); // S3 업로드 후 접근 가능한 URL 반환
 
         LectureAggregate lecture = lectureCommandUseCase.createLecture(
                 request.toCommand(teacherId, thumbnailUrl)
