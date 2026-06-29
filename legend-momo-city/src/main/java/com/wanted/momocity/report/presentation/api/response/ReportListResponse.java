@@ -6,6 +6,7 @@ import com.wanted.momocity.report.domain.model.Report;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /* comment.
         MS -1 신고 목록 조회 응답 DTO
@@ -15,31 +16,37 @@ public record ReportListResponse(
         List<Item> items
 ) {
 
+    // UseCase 출력(ReportList)을 받아 응답 DTO 로 변환
     public static ReportListResponse from(ReportQueryUseCase.ReportList list) {
         List<Item> items = list.reports().stream()
-                .map(Item::from)
+                .map(r -> Item.from(r, list.userNames(), list.targetContents()))
                 .toList();
         return new ReportListResponse(items);
     }
 
-
+    // 신고 1건의 JSON 표현 — 이름·내용 포함
     public record Item(
             Long reportId,
             Long reporterUserId,
+            String reporterName,
             String targetType,
             Long targetId,
+            String targetContent,
             String reason,
             String detail,
             boolean isResolved,
             LocalDateTime reportedAt
     ) {
 
-        public static Item from(Report report) {
+        // Report 도메인 + 이름·내용 Map 을 받아 Item 으로 변환
+        public static Item from(Report report, Map<Long, String> userNames, Map<Long, String> targetContents) {
             return new Item(
                     report.getId(),
                     report.getReporterUserId(),
+                    userNames.getOrDefault(report.getReporterUserId(), "알 수 없음"),
                     report.getTargetType().name(),
                     report.getTargetId(),
+                    targetContents.getOrDefault(report.getTargetId(), null),
                     // 한국어 상태값을 위한 리팩
                     report.getReason().toKorean(),
                     report.getDetail(),
