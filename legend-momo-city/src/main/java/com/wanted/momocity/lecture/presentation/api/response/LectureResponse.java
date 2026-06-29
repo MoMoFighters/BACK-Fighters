@@ -60,7 +60,7 @@ public class LectureResponse {
             );
         }
 
-        public static Object from(LectureChapter chapter, LectureS3UrlResolver lectureS3UrlResolver) {
+        public static CreateChapterResponse from(LectureChapter chapter, LectureS3UrlResolver lectureS3UrlResolver) {
             return new CreateChapterResponse(
                     chapter.getId(),
                     chapter.getLectureId(),

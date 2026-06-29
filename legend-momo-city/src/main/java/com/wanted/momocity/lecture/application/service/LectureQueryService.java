@@ -388,10 +388,13 @@ public class LectureQueryService implements
                             new LectureReviewQueryPort.ReviewStats(0.0, 0)
                     );
 
+                    int chapterCount = chapterRepository.countByLectureId(lecture.getId());
+
                     return  AdminLectureListItemResponse.from(
                             lecture,
                             reviewStats.averageRating(),
-                            reviewStats.reviewCount()
+                            reviewStats.reviewCount(),
+                            chapterCount
                     );
                 })
                 .toList();
