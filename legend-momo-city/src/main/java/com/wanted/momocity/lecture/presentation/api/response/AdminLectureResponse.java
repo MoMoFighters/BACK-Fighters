@@ -112,6 +112,7 @@ public class AdminLectureResponse {
             int completedUserCount,      // 수강 완료 인원
             double averageRating,        // 평균 평점
             int reviewCount,             // 리뷰 개수
+            int chapterCount,
             LocalDateTime createdAt,     // 강의 생성일
             LocalDateTime updatedAt      // 강의 수정일
     ) {
@@ -123,7 +124,8 @@ public class AdminLectureResponse {
         public static AdminLectureListItemResponse from(
                 LectureAggregate lecture,
                 double averageRating,
-                int reviewCount
+                int reviewCount,
+                int chapterCount
         ) {
             return new AdminLectureListItemResponse(
                     lecture.getId(),
@@ -136,6 +138,7 @@ public class AdminLectureResponse {
                     lecture.getCompletedUserCount(),
                     averageRating,
                     reviewCount,
+                    chapterCount,
                     lecture.getCreatedAt(),
                     lecture.getUpdatedAt()
             );
