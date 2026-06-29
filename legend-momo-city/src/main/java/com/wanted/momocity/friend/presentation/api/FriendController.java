@@ -466,7 +466,7 @@ public class FriendController {
 
         String successMessage = String.format("%s님의 도시에 방명록을 남겼습니다.", view.nickname());
 
-        return ResponseEntity.ok(ApiResponse.success(
+        return ResponseEntity.ok(ApiResponse.created(
                 "SUCCESS",
                 successMessage,
                 response

@@ -3,6 +3,7 @@ package com.wanted.momocity.global.infrastructure.config;
 import com.wanted.momocity.auth.application.port.LoadUserPort;
 import com.wanted.momocity.auth.domain.model.User;
 
+import com.wanted.momocity.auth.infrastructure.jwt.JwtTokenProvider;
 import com.wanted.momocity.message.application.manager.ChatRoomSessionManager;
 import com.wanted.momocity.notification.application.manager.NotificationSessionManager;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,8 @@ import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.stereotype.Component;
 
 import java.security.Principal;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 @RequiredArgsConstructor
@@ -29,7 +32,7 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
     private final ChatRoomSessionManager sessionManager;
     //알림 관련 - 메인 페이지 종 모양에 띄워질 총 알림 개수
     private final NotificationSessionManager notificationSessionManager;
-    private final LoadUserPort loadUserPort;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -40,6 +43,11 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
         if (StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
             String destination = accessor.getDestination();
             Long userId = getUserIdFromAccessor(accessor); //세선이나 헤더에서 로그인 유저ID 추출
+
+            if (userId == null) {
+                log.warn("[웹소켓 인터셉터] 인증 실패로 구독 거부됨: {}", destination);
+                return null; // 🚨 프론트 브로커 에러 유발 차단 및 거부
+            }
 
             if (destination != null && destination.startsWith("/sub/chat/room/")) {
                 String roomIdStr = destination.replace("/sub/chat/room/", "");
@@ -55,6 +63,11 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
             if (destination != null && destination.contains("/sub/notice/total-counts")) {
                 notificationSessionManager.enterNotificationChannel(userId, accessor.getSessionId());
                 log.info("[웹소켓 인터셉터] 유저 {}번이 실시간 알림 개수 채널을 구독했습니다.", userId);
+            }
+
+            // 🎯 [추가 해결 2번항목] 채팅방 목록(/user/sub/chat/rooms)이나 다른 알림창 구독 시 에러 없이 통과 처리
+            if (destination != null && (destination.contains("/sub/chat/rooms") || destination.contains("/sub/notice/app-counts"))) {
+                log.info("[웹소켓 인터셉터] 유저 {}번이 공통 수신 채널을 안전하게 구독했습니다: {}", userId, destination);
             }
         }
 
@@ -104,34 +117,43 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
 
     //JWT 토큰 기반의 시큐리티 컨텍스트에서 유저ID 추출하기
     private Long getUserIdFromAccessor(StompHeaderAccessor accessor) {
-        //세션/헤더 값에서 빼내어 사용
-        Principal principal = accessor.getUser();
-
-        if (principal == null) {
-            log.warn("[웹소켓 인터셉터] 인증 정보가 존재하지 않는 접근입니다.");
-            return null;
+        // 1차: 타 담당자가 CONNECT 시점에 이미 저장해 둔 Security Context(Principal) 활용
+        if (accessor.getUser() != null) {
+            try {
+                // 수강 인터셉터 규격 그대로 형변환하여 userId(Long) 추출
+                org.springframework.security.core.Authentication authentication =
+                        (org.springframework.security.core.Authentication) accessor.getUser();
+                com.wanted.momocity.auth.infrastructure.security.CustomUserDetails userDetails =
+                        (com.wanted.momocity.auth.infrastructure.security.CustomUserDetails) authentication.getPrincipal();
+                return userDetails.getUserId(); // 🎯 깔끔하게 ID 반환!
+            } catch (Exception e) {
+                log.warn("[웹소켓 인터셉터] Principal 객체에서 유저 ID 추출 실패: {}", e.getMessage());
+            }
         }
 
-        // 1. 스프링 시큐리티 기본 User 객체 안에서 username(이메일)을 추출합니다.
-        // principal.getName()을 호출하면 담당자님이 세팅한 user.getEmail() 값이 튀어나옵니다.
-        String email = principal.getName();
-
-        if (email == null || email.isBlank()) {
-            log.warn("[웹소켓 인터셉터] 식별 가능한 이메일 정보가 없습니다.");
-            return null;
+        // 2차: 타 담당자가 세션 Attributes에 심어둔 "userId"가 있는지 확인
+        if (accessor.getSessionAttributes() != null && accessor.getSessionAttributes().containsKey("userId")) {
+            return (Long) accessor.getSessionAttributes().get("userId");
         }
 
-       try {
-           // 2. 가로챈 이메일을 가지고 LoadUserPort를 찔러서 우리 도메인의 User 객체를 꺼냅니다.
-           User user = loadUserPort.findByEmail(email)
-                   .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저 이메일입니다: " + email));
+        // 3차: SUBSCRIBE 프레임 전송 시 Native Header에 토큰이 들어왔을 경우 직접 파싱
+        String authHeader = accessor.getFirstNativeHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7).trim();
+            try {
+                if (jwtTokenProvider.validateToken(token)) {
+                    // 수강 인터셉터와 동일하게 Provider를 통해 유저 ID 바로 획득!
+                    org.springframework.security.core.Authentication authentication = jwtTokenProvider.getAuthentication(token);
+                    com.wanted.momocity.auth.infrastructure.security.CustomUserDetails userDetails =
+                            (com.wanted.momocity.auth.infrastructure.security.CustomUserDetails) authentication.getPrincipal();
+                    return userDetails.getUserId();
+                }
+            } catch (Exception e) {
+                log.error("[웹소켓 인터셉터] 토큰 직접 검증 및 유저 ID 파싱 실패: {}", e.getMessage());
+            }
+        }
 
-           // 3. 드디어 찾은 진짜 유저의 식별 PK ID(Long)를 리턴! 🎯
-           return user.getId();
-
-       } catch (Exception e) {
-           log.error("[웹소켓 인터셉터] 이메일로 유저 ID를 조회하는 중 실패했습니다. 이메일: {}, 에러: {}", email, e.getMessage());
-           throw new IllegalArgumentException("유저 정보 조회 실패");
-       }
+        log.warn("[웹소켓 인터셉터] 유효한 인증 토큰이나 세션 유저 정보를 찾을 수 없습니다.");
+        return null;
     }
 }

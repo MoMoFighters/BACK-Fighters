@@ -1,6 +1,10 @@
 package com.wanted.momocity.notification.infrastructure.event;
 
+import com.wanted.momocity.community.domain.event.CommentCreatedEvent;
+import com.wanted.momocity.community.domain.event.PostLikedEvent;
+import com.wanted.momocity.community.domain.event.ReplyCreatedEvent;
 import com.wanted.momocity.friend.domain.event.*;
+import com.wanted.momocity.lecture.domain.event.LectureStatusChangedEvent;
 import com.wanted.momocity.message.domain.event.SendMessagePublishedEvent;
 import com.wanted.momocity.notification.application.service.NotificationHandlerService;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +14,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
+
+import java.time.LocalDateTime;
 
 @Component
 @RequiredArgsConstructor
@@ -104,6 +110,66 @@ public class NotificationLifecycleEventHandler {
                 event.ownerId(),
                 event.writerNickname(),
                 event.now()
+        );
+    }
+
+    // 커뮤니티
+    //게시글 좋아요
+    @Async("domainEventExecutor")
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handlePostLiked(PostLikedEvent event) {
+        log.info("[NotificationLifecycleEventHandler] 게시글 좋아요 알림 행 추가 이벤트 수신 -> 알림 서비스로 이동");
+
+        notificationHandlerService.createPostLikedNotification(
+                event.postOwnerId(), //게시글 주인 아이디
+                event.likedUserName(), //좋아요 누른 주체 닉네임
+                event.postId(), //게시글 아이디
+                event.likeUserId() //좋아요 누른 주제 아이디
+        );
+    }
+
+    //댓글
+    @Async("domainEventExecutor")
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleCommentCreated(CommentCreatedEvent event) {
+        log.info("[NotificationLifecycleEventHandler] 게시글 댓글 알림 행 추가 이벤트 수신 -> 알림 서비스로 이동");
+
+        notificationHandlerService.createCommentNotification(
+                event.postOwnerId(), //게시글 주인 아이디
+                event.commentUserName(), //댓글 작성자 닉네임
+                event.postId(), //게시글 아이디
+                event.commentUserId() //댓글 작성자 아이디
+        );
+    }
+
+    //대댓글(게시글 작성자, 대댓글의 부모 댓글 작성자)
+    @Async("domainEventExecutor")
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleReplyCreated(ReplyCreatedEvent event) {
+        log.info("[NotificationLifecycleEventHandler] 게시글 대댓글 알림 행 추가 이벤트 수신 -> 알림 서비스로 이동");
+
+        notificationHandlerService.createReplyNotification(
+                event.parentCommentOwnerId(), //부모 댓글 주인 아이디
+                event.postOwnerId(), //게시글 주인 아이디
+                event.replyUserName(), //대댓글 작성자 닉네임
+                event.postId(), //게시글 아이디
+                event.replyUserId() //대댓글 작성자 아이디
+        );
+    }
+
+    //강의 승인/거절 알림
+    @Async("domainEventExecutor")
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleLectureApproval(LectureStatusChangedEvent event) {
+        log.info("[NotificationLifecycleEventHandler] 강의 알림 행 추가 이벤트 수신 -> 알림 서비스로 이동");
+
+        notificationHandlerService.lectureApprovalNotification(
+                event.lectureId(), //강의 아이디
+                event.teacherId(), //강사 아이디
+                event.adminId(), //관리자 아이디
+                event.lectureTitle(), //강의명
+                event.lectureStatus(), //승인/거절 여부
+                LocalDateTime.from(event.occurredAt()) //승인/거절 날짜
         );
     }
 }
