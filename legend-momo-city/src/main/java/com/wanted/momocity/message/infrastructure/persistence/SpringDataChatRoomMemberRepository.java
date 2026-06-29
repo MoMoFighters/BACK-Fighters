@@ -1,6 +1,8 @@
 package com.wanted.momocity.message.infrastructure.persistence;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,6 +25,18 @@ public interface SpringDataChatRoomMemberRepository extends JpaRepository<ChatRo
 
     //채팅방 조회 및 개설: 일대일 채팅방 연계를 위함(두 유저가 포함되고 방이름 없는 일대일 채팅방 정보 가져오기)
     List<ChatRoomMemberJpaEntity> findByUserId_IdInAndRoomId_RoomTitleIsNull(List<Long> userId);
+
+    //친구 삭제 후 채팅방 나가기 버그 수정
+    @Query("select m1.roomId.id " +
+            "from ChatRoomMemberJpaEntity m1 " +
+            "join ChatRoomMemberJpaEntity m2 on m1.roomId.id = m2.roomId.id " +
+            "where m1.userId.id = :userId " +
+            "  and m2.userId.id = :targetUserId " +
+            "  and (m1.roomId.roomTitle is null or m1.roomId.roomTitle = '')")
+    Optional<Long> findOneToOneChatRoomIdBetween(@Param("userId") Long userId, @Param("targetUserId") Long targetUserId);
+    //친구 삭제 후 채팅방 나가기 버그 수정
+    @Query("select m from ChatRoomMemberJpaEntity m where m.roomId.id = :roomId and m.userId.id = :userId")
+    Optional<ChatRoomMemberJpaEntity> findMemberByRoomIdAndUserId(@Param("roomId") Long roomId, @Param("userId") Long userId);
 
 //    //로그인한 유저가 참여하는 방중 가장 먼저 만들어진 방 찾기(나와의 채팅방)
 //    Long findFirstRoomIdByUserId(Long userId);

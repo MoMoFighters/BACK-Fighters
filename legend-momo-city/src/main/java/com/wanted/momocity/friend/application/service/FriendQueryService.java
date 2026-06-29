@@ -348,7 +348,7 @@ public class FriendQueryService implements FriendQueryUseCase {
     @Override
     @Transactional //읽음 처리가 필요함.
     public List<GuestBooksView> getGuestBooksQueryHandle(GetGuestBooksQuery query) {
-        log.info("[GuestBookQueryService] 방명록 목록 조회 및 읽음 처리 시작 - 주인ID: {}", query.userId());
+        log.info("[GuestBookQueryService] 방명록 목록 조회 시작 - 주인ID: {}", query.userId());
 
         // 2. 일괄 처리 후 최신 데이터 전체 조회 (Fetch Join)
         List<GuestBookJpaEntity> guestBooks = friendRepository.findAllByOwnerIdWithWriter(query.userId());
