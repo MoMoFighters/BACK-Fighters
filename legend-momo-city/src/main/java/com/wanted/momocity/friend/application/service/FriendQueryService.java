@@ -34,6 +34,9 @@ public class FriendQueryService implements FriendQueryUseCase {
     //친구 목록 조회
     @Override
     public List<FriendView> getFriendQueryHandle(GetFriendQuery query) {
+        // 🎯 1. 타이머 측정 시작
+        Timer.Sample sample = friendMetrics.start();
+
         log.info("[FriendQueryService] 친구 목록 조회 요청 진입 - 조회 요청 유저ID: {}", query.userId());
 
         //어댑터와 타 영역 저장소로부터 날 것의 데이터 로드
@@ -87,6 +90,10 @@ public class FriendQueryService implements FriendQueryUseCase {
 
         //가공이 끝나고 최종 리턴하기 직전 기록
         log.info("[FriendQueryService]최종 친구 목록 가공 완료 - 반환할 DTO 개수: {}개", result.size());
+
+        // 🎯 2. 타이머 측정 종료 및 메트릭 기록
+        sample.stop(friendMetrics.getFriendListTimer());
+
         return result;
     }
 
