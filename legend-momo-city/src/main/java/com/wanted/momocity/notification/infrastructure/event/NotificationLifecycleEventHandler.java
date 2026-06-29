@@ -15,6 +15,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import java.time.LocalDateTime;
+
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -167,7 +169,7 @@ public class NotificationLifecycleEventHandler {
                 event.adminId(), //관리자 아이디
                 event.lectureTitle(), //강의명
                 event.lectureStatus(), //승인/거절 여부
-                event.occurredAt() //승인/거절 날짜
+                LocalDateTime.from(event.occurredAt()) //승인/거절 날짜
         );
     }
 }
