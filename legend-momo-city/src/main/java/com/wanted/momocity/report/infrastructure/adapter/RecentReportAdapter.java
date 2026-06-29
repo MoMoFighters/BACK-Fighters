@@ -22,7 +22,8 @@ public class RecentReportAdapter implements RecentReportPort {
 
     @Override
     public List<RecentReportItem> getRecent(int limit) {
-        return reportRepository.findRecent(limit)
+        // ReportRepository 시그니처가 page/size 로 변경됨 — 대시보드용이라 page=1 고정
+        return reportRepository.findRecent(1, limit).reports()
                 .stream()
                 .map(report -> new RecentReportItem(
                         report.getId(),

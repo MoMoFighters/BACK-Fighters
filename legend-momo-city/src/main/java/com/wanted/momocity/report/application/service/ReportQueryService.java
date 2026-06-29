@@ -33,8 +33,10 @@ public class ReportQueryService implements ReportQueryUseCase {
 
 
     @Override
-    public ReportList getRecent(int limit) {
-        List<Report> reports = reportRepository.findRecent(limit);
+    public ReportList getRecent(int page, int size) {
+        // ReportPage 에서 목록+총건수 받아 totalPages 계산 후 반환
+        ReportRepository.ReportPage reportPage = reportRepository.findRecent(page, size);
+        List<Report> reports = reportPage.reports();
 
         // 1. userId 전체를 Set 으로 모음 (N+1 방지)
         Set<Long> userIds = reports.stream()
@@ -45,24 +47,16 @@ public class ReportQueryService implements ReportQueryUseCase {
         // 2. 한 번에 이름 조회
         Map<Long, String> userNames = reportUserNamePort.getNamesByUserIds(userIds);
 
-        // 3. targetType 기준으로 내용 조회
-        // REVIEW·COMMENT 가 동일한 targetId 를 가질 수 있어 복합 키(타입_id)로 충돌 방지
-        Map<String, String> targetContents = new HashMap<>();
-        for (Report r : reports) {
-            String content = switch (r.getTargetType()) {
-                case REVIEW -> reviewContentPort.getContentById(r.getTargetId());
-                case COMMENT -> commentContentPort.getContentById(r.getTargetId());
-                default -> null;
-            };
-            targetContents.put(r.getTargetType().name() + "_" + r.getTargetId(), content);
-        }
-
-        return new ReportList(reports, userNames, targetContents);
+        // 3. 페이지네이션 메타데이터 계산 후 반환
+        int totalPages = (int) Math.ceil((double) reportPage.totalElements() / size);
+        return new ReportList(reports, userNames, reportPage.totalElements(), totalPages, page, size);
     }
 
+    // 동일 패턴, isResolved 필터 추가
     @Override
-    public ReportList getByIsResolved(boolean isResolved, int limit) {
-        List<Report> reports = reportRepository.findByIsResolved(isResolved, limit);
+    public ReportList getByIsResolved(boolean isResolved, int page, int size) {
+        ReportRepository.ReportPage reportPage = reportRepository.findByIsResolved(isResolved, page, size);
+        List<Report> reports = reportPage.reports();
 
         // 1. userId 전체를 Set 으로 모음 (N+1 방지)
         Set<Long> userIds = reports.stream()
@@ -73,19 +67,9 @@ public class ReportQueryService implements ReportQueryUseCase {
         // 2. 한번에 이름 조회
         Map<Long, String> userNames = reportUserNamePort.getNamesByUserIds(userIds);
 
-        // 3. targetType 기준으로 내용 조회
-        // REVIEW·COMMENT 가 동일한 targetId 를 가질 수 있어 복합 키(타입_id)로 충돌 방지
-        Map<String, String> targetContents = new HashMap<>();
-        for (Report r : reports) {
-            String content = switch (r.getTargetType()) {
-                case REVIEW -> reviewContentPort.getContentById(r.getTargetId());
-                case COMMENT -> commentContentPort.getContentById(r.getTargetId());
-                default -> null;
-            };
-            targetContents.put(r.getTargetType().name() + "_" + r.getTargetId(), content);
-        }
-
-        return new ReportList(reports, userNames, targetContents);
+        // 3. 페이지네이션 메타데이터 계산 후 반환
+        int totalPages = (int) Math.ceil((double) reportPage.totalElements() / size);
+        return new ReportList(reports, userNames, reportPage.totalElements(), totalPages, page, size);
     }
 
     // id 값이 없으면 예외처리를 위한 메서드 재정의
@@ -106,12 +90,19 @@ public class ReportQueryService implements ReportQueryUseCase {
             default -> null;
         };
 
+        // 3. CHAPTER 타입일 때만 lectureId 조회 — 성진님 ChapterParentAdapter 완료 후 포트 주입 예정
+        Long parentId = switch (report.getTargetType()) {
+            case CHAPTER -> null; // TODO: chapterParentPort.getLectureIdByChapterId(report.getTargetId())
+            default -> null;
+        };
+
         // 3. 이름 & 내용 포함한 ReportDetail 반환
         return new ReportDetail(
                 report,
                 names.get(report.getReporterUserId()),
                 names.get(report.getReportedUserId()),
-                targetContent
+                targetContent,
+                parentId
         );
     }
 }
