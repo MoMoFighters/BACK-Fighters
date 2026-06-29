@@ -1,9 +1,11 @@
 package com.wanted.momocity.notification.application.service;
 
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
+import com.wanted.momocity.lecture.domain.model.LectureStatus;
 import com.wanted.momocity.message.application.policy.MessageEligibilityPolicy;
 import com.wanted.momocity.notification.application.query.GetMainTotalCountsQuery;
 import com.wanted.momocity.notification.application.query.GetNotificationQuery;
+import com.wanted.momocity.notification.application.query.GetPhoneAppCountsQuery;
 import com.wanted.momocity.notification.application.usecase.NotificationQueryUseCase;
 import com.wanted.momocity.notification.domain.model.Notification;
 import com.wanted.momocity.notification.infrastructure.persistence.NotificationJpaEntity;
@@ -15,6 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+
+import static com.wanted.momocity.lecture.domain.model.LectureStatus.ACTIVE;
 
 @Service
 @RequiredArgsConstructor
@@ -46,6 +50,7 @@ public class NotificationHandlerService {
         // 현재 화면에 붙어있는 유저라면 즉시 가공해서 푸시!
         notificationQueryUseCase.getMainTotalCountsQueryHandle(new GetMainTotalCountsQuery(toUserId));
         notificationQueryUseCase.getNotificationQueryHandle(new GetNotificationQuery(toUserId));
+        notificationQueryUseCase.getPhoneAppCountsQueryHandle(new GetPhoneAppCountsQuery(toUserId));
         log.info("[알림 핸들러 -> 쿼리 연동] 온라인 유저 {}번에게 실시간 알림 웹소켓 전송 완료", toUserId);
     }
 
@@ -59,6 +64,7 @@ public class NotificationHandlerService {
         // 현재 화면에 붙어있는 유저라면 즉시 가공해서 푸시!
         notificationQueryUseCase.getMainTotalCountsQueryHandle(new GetMainTotalCountsQuery(toUserId));
         notificationQueryUseCase.getNotificationQueryHandle(new GetNotificationQuery(toUserId));
+        notificationQueryUseCase.getPhoneAppCountsQueryHandle(new GetPhoneAppCountsQuery(toUserId));
         log.info("[알림 핸들러 -> 쿼리 연동] 온라인 유저 {}번에게 실시간 알림 웹소켓 전송 완료", toUserId);
     }
 
@@ -79,6 +85,7 @@ public class NotificationHandlerService {
         // 현재 화면에 붙어있는 유저라면 즉시 가공해서 푸시!
         notificationQueryUseCase.getMainTotalCountsQueryHandle(new GetMainTotalCountsQuery(fromUserId));
         notificationQueryUseCase.getNotificationQueryHandle(new GetNotificationQuery(fromUserId));
+        notificationQueryUseCase.getPhoneAppCountsQueryHandle(new GetPhoneAppCountsQuery(fromUserId));
         log.info("[알림 핸들러 -> 쿼리 연동] 온라인 유저 {}번에게 실시간 알림 웹소켓 전송 완료", fromUserId);
     }
 
@@ -115,7 +122,8 @@ public class NotificationHandlerService {
                     existingNotification.getRefId(),
                     message,
                     //추후 isRead 생기면 주석 해제
-                    null //notification 관련 알림은 message_read에서 처리하므로 null 처리
+                    null, //notification 관련 알림은 message_read에서 처리하므로 null 처리
+                    createdAt
             );
 
             notificationRepository.save(updatedNotification);
@@ -159,6 +167,7 @@ public class NotificationHandlerService {
         // ⭕ 누락된 실시간 푸시 추가 (학생 쪽 아이디인 fromUserId에게 푸시)
         notificationQueryUseCase.getMainTotalCountsQueryHandle(new GetMainTotalCountsQuery(fromUserId));
         notificationQueryUseCase.getNotificationQueryHandle(new GetNotificationQuery(fromUserId));
+        notificationQueryUseCase.getPhoneAppCountsQueryHandle(new GetPhoneAppCountsQuery(fromUserId));
         log.info("[알림 핸들러 -> 쿼리 연동] 온라인 유저 {}번(학생)에게 실시간 자동 친구 알림 웹소켓 전송 완료", fromUserId);
     }
 
@@ -189,5 +198,153 @@ public class NotificationHandlerService {
         notificationQueryUseCase.getMainTotalCountsQueryHandle(new GetMainTotalCountsQuery(ownerId));
         notificationQueryUseCase.getNotificationQueryHandle(new GetNotificationQuery(ownerId));
         log.info("[알림 핸들러 -> 쿼리 연동] 온라인 유저 {}번(도시주인)에게 실시간 방명록 알림 웹소켓 전송 성공", ownerId);
+    }
+
+    //게시글 좋아요 알림
+    public void createPostLikedNotification(Long postOwnerId, String likedUserName, Long postId, Long likeUserId) {
+        log.info("[NotificationHandlerService] 게시글 좋아요 알림 처리 시작 - 게시글ID(refId): {}, 좋아요주체: {}, 게시글주인: {}", postId, likeUserId, postOwnerId);
+
+        // 1. 자기 자신의 게시글에 좋아요 누른 경우 알림 생성을 건너뜁니다.
+        if (likeUserId.equals(postOwnerId)) {
+            log.info("[NotificationHandlerService] 본인 게시글에 누른 좋아요이므로 알림 생성을 건너뜀");
+            return;
+        }
+
+        String message = String.format("%s님이 회원님의 게시글을 좋아합니다.", likedUserName);
+
+        Notification newNotification = Notification.likePost(postOwnerId, message, postId);
+
+        // 4. 레포지토리를 통해 알림 테이블에 적재
+        Notification saved = notificationRepository.save(newNotification);
+        log.info("[NotificationHandlerService] 게시글 좋아요 알림 생성 완료 - 생성된 알림ID: {}", saved.getId());
+
+        notificationQueryUseCase.getMainTotalCountsQueryHandle(new GetMainTotalCountsQuery(postOwnerId));
+        notificationQueryUseCase.getNotificationQueryHandle(new GetNotificationQuery(postOwnerId));
+        notificationQueryUseCase.getPhoneAppCountsQueryHandle(new GetPhoneAppCountsQuery(postOwnerId));
+        log.info("[알림 핸들러 -> 쿼리 연동] 온라인 유저 {}번(게시글주인)에게 실시간 게시글 좋아요 알림 웹소켓 전송 성공", postOwnerId);
+    }
+
+    //게시글 댓글 -> 게시글 주인 알림
+    public void createCommentNotification(Long postOwnerId, String commentUserName, Long postId, Long commentUserId) {
+        log.info("[NotificationHandlerService] 게시글 댓글 알림 처리 시작 - 게시글ID(refId): {}, 댓글작성자: {}, 게시글주인: {}", postId, commentUserId, postOwnerId);
+
+        // 1. 자기 자신의 게시글에 댓글을 단 경우 알림 생성을 건너뜁니다.
+        if (commentUserId.equals(postOwnerId)) {
+            log.info("[NotificationHandlerService] 본인 게시글에 작성한 댓글이므로 알림 생성을 건너뜀");
+            return;
+        }
+
+        String message = String.format("%s님이 회원님의 게시글에 댓글을 달았습니다.", commentUserName);
+
+        Notification newNotification = Notification.commentPost(postOwnerId, message, postId);
+
+        // 4. 레포지토리를 통해 알림 테이블에 적재
+        Notification saved = notificationRepository.save(newNotification);
+        log.info("[NotificationHandlerService] 게시글 댓글 알림 생성 완료 - 생성된 알림ID: {}", saved.getId());
+
+        notificationQueryUseCase.getMainTotalCountsQueryHandle(new GetMainTotalCountsQuery(postOwnerId));
+        notificationQueryUseCase.getNotificationQueryHandle(new GetNotificationQuery(postOwnerId));
+        notificationQueryUseCase.getPhoneAppCountsQueryHandle(new GetPhoneAppCountsQuery(postOwnerId));
+        log.info("[알림 핸들러 -> 쿼리 연동] 온라인 유저 {}번(게시글주인)에게 실시간 게시글 댓글 알림 웹소켓 전송 성공", postOwnerId);
+    }
+
+    //게시글 대댓글 -> 게시글 주인, 대댓글 부모 댓글 작성자
+    public void createReplyNotification(Long parentCommentOwnerId, Long postOwnerId, String replyUserName, Long postId, Long replyUserId) {
+        // 로그의 commentUserId가 없어서 replyUserId로 수정했습니다.
+        log.info("[NotificationHandlerService] 게시글 대댓글 알림 처리 시작 - 게시글ID(refId): {}, 대댓글작성자: {}, 게시글주인: {}, 부모댓글주인: {}",
+                postId, replyUserId, postOwnerId, parentCommentOwnerId);
+
+        String replyMessage = String.format("%s님이 회원님의 댓글에 답글을 달았습니다.", replyUserName);
+        String postMessage = String.format("%s님이 회원님의 게시글에 답글을 달았습니다.", replyUserName);
+
+        // ----------------------------------------------------
+        // 1. 부모 댓글 작성자에게 알림 생성 (조건: 작성자 본인이 아니어야 함)
+        // ----------------------------------------------------
+        if (!replyUserId.equals(parentCommentOwnerId)) {
+            Notification newNotificationReply = Notification.replyComment(parentCommentOwnerId, replyMessage, postId);
+            Notification replySaved = notificationRepository.save(newNotificationReply);
+            log.info("[NotificationHandlerService] 대댓글 알림 생성 완료 - 알림ID: {}", replySaved.getId());
+
+            // 실시간 웹소켓 전송
+            notificationQueryUseCase.getMainTotalCountsQueryHandle(new GetMainTotalCountsQuery(parentCommentOwnerId));
+            notificationQueryUseCase.getNotificationQueryHandle(new GetNotificationQuery(parentCommentOwnerId));
+            notificationQueryUseCase.getPhoneAppCountsQueryHandle(new GetPhoneAppCountsQuery(parentCommentOwnerId));
+            log.info("[알림 핸들러] 유저 {}번(부모댓글주인)에게 실시간 웹소켓 전송", parentCommentOwnerId);
+        }
+
+        // ----------------------------------------------------
+        // 2. 게시글 작성자에게 알림 생성
+        // 🔥 중복 방지 조건 1: 게시글 주인과 부모 댓글 주인이 같으면 이미 위에서 알림이 갔으므로 건너뜀!
+        // 🔥 조건 2: 대댓글 작성자 본인이 아니어야 함
+        // ----------------------------------------------------
+        if (!postOwnerId.equals(parentCommentOwnerId) && !replyUserId.equals(postOwnerId)) {
+            Notification newNotificationPost = Notification.postComment(postOwnerId, postMessage, postId);
+            Notification postSaved = notificationRepository.save(newNotificationPost);
+            log.info("[NotificationHandlerService] 게시글 알림 생성 완료 - 알림ID: {}", postSaved.getId());
+
+            // 실시간 웹소켓 전송
+            notificationQueryUseCase.getMainTotalCountsQueryHandle(new GetMainTotalCountsQuery(postOwnerId));
+            notificationQueryUseCase.getNotificationQueryHandle(new GetNotificationQuery(postOwnerId));
+            notificationQueryUseCase.getPhoneAppCountsQueryHandle(new GetPhoneAppCountsQuery(postOwnerId));
+            log.info("[알림 핸들러] 유저 {}번(게시글주인)에게 실시간 웹소켓 전송", postOwnerId);
+        }
+    }
+
+    //캘린더 알림
+    public void createTodoNotification(Long userId, Long todoId, String title) {
+        log.info("[NotificationHandlerService] 캘린더 To-do 알림 처리 시작 - 투두ID(refId): {}", todoId);
+
+        String message = String.format("오늘 할 일 [%s] 을 완료해주세요!", title);
+
+        Notification newNotification = Notification.todoCalendar(userId, message, todoId);
+
+        // 4. 레포지토리를 통해 알림 테이블에 적재
+        Notification saved = notificationRepository.save(newNotification);
+        log.info("[NotificationHandlerService] 캘린더 To-do 알림 생성 완료 - 생성된 알림ID: {}", saved.getId());
+
+        notificationQueryUseCase.getMainTotalCountsQueryHandle(new GetMainTotalCountsQuery(userId));
+        notificationQueryUseCase.getNotificationQueryHandle(new GetNotificationQuery(userId));
+        notificationQueryUseCase.getPhoneAppCountsQueryHandle(new GetPhoneAppCountsQuery(userId));
+        log.info("[알림 핸들러 -> 쿼리 연동] 온라인 유저 {}번(투두주인)에게 실시간 캘린더 To-do 알림 웹소켓 전송 성공", userId);
+    }
+
+    //캘린더 메모 알림
+    public void createMemoNotification(Long userId, Long memoId, String title) {
+        log.info("[NotificationHandlerService] 캘린더 메모 알림 처리 시작 - 메모ID(refId): {}", memoId);
+
+        String message = String.format("오늘 일정 [%s] 이 있습니다!", title);
+
+        Notification newNotification = Notification.memoCalendar(userId, message, memoId);
+
+        // 4. 레포지토리를 통해 알림 테이블에 적재
+        Notification saved = notificationRepository.save(newNotification);
+        log.info("[NotificationHandlerService] 캘린더 메모 알림 생성 완료 - 생성된 알림ID: {}", saved.getId());
+
+        notificationQueryUseCase.getMainTotalCountsQueryHandle(new GetMainTotalCountsQuery(userId));
+        notificationQueryUseCase.getNotificationQueryHandle(new GetNotificationQuery(userId));
+        notificationQueryUseCase.getPhoneAppCountsQueryHandle(new GetPhoneAppCountsQuery(userId));
+        log.info("[알림 핸들러 -> 쿼리 연동] 온라인 유저 {}번(메모주인)에게 실시간 캘린더 메모 알림 웹소켓 전송 성공", userId);
+    }
+
+    //강의 승인/거절 알림
+    public void lectureApprovalNotification(Long lectureId, Long teacherId, Long adminId, String lectureTitle, LectureStatus lectureStatus, LocalDateTime occurredAt) {
+        log.info("[NotificationHandlerService] 강의 승인/거절 알림 처리 시작 - 강의ID(refId): {}, 강사ID:{}", lectureId, teacherId);
+
+        String message;
+        if (ACTIVE.equals(lectureStatus)) {
+            message = String.format("[%s] 강의가 승인되었습니다.", lectureTitle);
+        } else {
+            message = String.format("[%s] 강의가 거절되었습니다.", lectureTitle);
+        }
+
+        Notification newNotification = Notification.lectureApproval(teacherId, message, lectureId, occurredAt);
+
+        // 4. 레포지토리를 통해 알림 테이블에 적재
+        Notification saved = notificationRepository.save(newNotification);
+        log.info("[NotificationHandlerService] 강의 승인/거절 알림 생성 완료 - 생성된 알림ID: {}", saved.getId());
+
+        notificationQueryUseCase.getMainTotalCountsQueryHandle(new GetMainTotalCountsQuery(teacherId));
+        notificationQueryUseCase.getNotificationQueryHandle(new GetNotificationQuery(teacherId));
+        log.info("[알림 핸들러 -> 쿼리 연동] 온라인 유저 {}번(강의주인)에게 실시간 강의 승인/거절 알림 웹소켓 전송 성공", teacherId);
     }
 }

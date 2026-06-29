@@ -5,9 +5,6 @@ import com.wanted.momocity.auth.application.port.EmailCodePort;
 import com.wanted.momocity.auth.application.port.LoadUserPort;
 import com.wanted.momocity.auth.application.usecase.AuthQueryUsecase;
 import com.wanted.momocity.auth.domain.exception.InvalidVerificationCodeException;
-import com.wanted.momocity.auth.domain.exception.UserNotFoundException;
-import com.wanted.momocity.auth.domain.model.User;
-import com.wanted.momocity.auth.presentation.api.response.LoginCompletedResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthQueryService implements AuthQueryUsecase {
 
     private final EmailCodePort emailCodePort;
-    private final LoadUserPort loadUserPort;
 
     // 이메일 인증
     @Override
@@ -45,11 +41,4 @@ public class AuthQueryService implements AuthQueryUsecase {
     }
 
 
-    // 로그인 후 정보 전달
-    @Override
-    public LoginCompletedResponse getInfo(String userId) {
-        User loginUser = loadUserPort.findById(Long.parseLong(userId))
-                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
-        return new LoginCompletedResponse(loginUser.getRole(),loginUser.getIsTempPwd(),loginUser.getNickname());
-    }
 }

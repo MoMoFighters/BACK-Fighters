@@ -2,6 +2,7 @@ package com.wanted.momocity.auth.infrastructure.jwt;
 
 import com.wanted.momocity.auth.application.port.TokenProviderPort;
 import com.wanted.momocity.auth.domain.exception.InvalidTokenException;
+import com.wanted.momocity.auth.domain.model.Category;
 import com.wanted.momocity.auth.infrastructure.exception.ExpiredJwtCustomException;
 import com.wanted.momocity.auth.infrastructure.exception.InvalidJwtCustomException;
 import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
@@ -55,9 +56,13 @@ public class JwtTokenProvider implements TokenProviderPort {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(","));
 
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        Category category = userDetails.getCategory();
+
         return Jwts.builder()
                 .setSubject(username)
                 .claim("roles", authorities)
+                .claim("category", category != null ? category.name() : "null")
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_EXPIRE_TIME))
                 .signWith(SignatureAlgorithm.HS512, key) //  signWith만 전달하면 HS256 자동 적용
@@ -114,6 +119,10 @@ public class JwtTokenProvider implements TokenProviderPort {
         Claims claims = extractClaims(token, false); // 만료된 토큰은 여기서 걸러짐 (validateToken 이후 호출되므로)
         String userId = claims.getSubject();
         String rolesString = claims.get("roles", String.class);
+        String categoryStr = claims.get("category", String.class);
+        Category category = (categoryStr != null && !categoryStr.equals("null"))
+                ? Category.valueOf(categoryStr)
+                : null;
 
         Collection<? extends GrantedAuthority> authorities = Collections.emptyList();
         if (rolesString != null && !rolesString.trim().isEmpty()) {
@@ -127,7 +136,8 @@ public class JwtTokenProvider implements TokenProviderPort {
         CustomUserDetails customUserDetails = new CustomUserDetails(
                 Long.parseLong(userId),  // ← CustomUserDetails로 교체
                 "",
-                authorities
+                authorities,
+                category
         );
 
         return new UsernamePasswordAuthenticationToken(customUserDetails, token, authorities);
@@ -174,9 +184,13 @@ public class JwtTokenProvider implements TokenProviderPort {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(","));
 
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        Category category = userDetails.getCategory();
+
         return Jwts.builder()
                 .setSubject(username)
                 .claim("roles", authorities)
+                .claim("category", category != null ? category.name() : "null")
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 3 * 60 * 1000L)) // 3분
                 .signWith(SignatureAlgorithm.HS512, key)
@@ -185,10 +199,11 @@ public class JwtTokenProvider implements TokenProviderPort {
 
     // 소셜 로그인에서는 authentication이 없으니까 서비스에서 소셜로그인 하고 얻은
     @Override
-    public String createAccessToken(String userId, String role) {
+    public String createAccessToken(String userId, String role, Category category) {
         return Jwts.builder()
                 .setSubject(userId)
                 .claim("roles", role)
+                .claim("category", category != null ? category.name() : "null")
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_EXPIRE_TIME))
                 .signWith(SignatureAlgorithm.HS512, key)

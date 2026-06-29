@@ -4,6 +4,7 @@ import com.wanted.momocity.report.domain.model.Report;
 import com.wanted.momocity.report.domain.model.ReportReason;
 import com.wanted.momocity.report.domain.model.ReportTargetType;
 import com.wanted.momocity.report.domain.repository.ReportRepository;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,26 +37,22 @@ public class ReportRepositoryAdapter implements ReportRepository {
         return toDomain(saved);
     }
 
-    // 최근 N 개를 조회한다. - readOnly 로 성능을 최적화 시켰다.
-    // 페이지네이션 없이 limit 만 사용함
+    // 컨트롤러 1-based page -> JPA 0-based 로 변환 후 Page 객체로 목록 + 총건수 반환
     @Override
     @Transactional(readOnly = true)
-    public List<Report> findRecent(int limit) {
-        // PageRequest.of(0, limit) — 0페이지에서 limit개만 가져오는 방식으로 N개 제한
-        return repository.findAllByOrderByCreatedAtDesc(PageRequest.of(0, limit))
-                .stream()
-                .map(this::toDomain)
-                .toList();
+    public ReportRepository.ReportPage findRecent(int page, int size) {
+        Page<ReportJpaEntity> result = repository.findAllByOrderByCreatedAtDesc(PageRequest.of(page - 1, size));
+        List<Report> reports = result.getContent().stream().map(this::toDomain).toList();
+        return new ReportRepository.ReportPage(reports, result.getTotalElements());
     }
 
-    // 처리 여부(isResolved) 로 필터링한 최근 N 개 조회 로직
+    // 처리 여부 기준 동일 방식
     @Override
     @Transactional(readOnly = true)
-    public List<Report> findByIsResolved(boolean isResolved, int limit) {
-        return repository.findAllByIsResolvedOrderByCreatedAtDesc(isResolved, PageRequest.of(0, limit))
-                .stream()
-                .map(this::toDomain)
-                .toList();
+    public ReportRepository.ReportPage findByIsResolved(boolean isResolved, int page, int size) {
+        Page<ReportJpaEntity> result = repository.findAllByIsResolvedOrderByCreatedAtDesc(isResolved, PageRequest.of(page - 1, size));
+        List<Report> reports = result.getContent().stream().map(this::toDomain).toList();
+        return new ReportRepository.ReportPage(reports, result.getTotalElements());
     }
 
     // 전체 신고 수를 반환한다. (대시보드 통계용 MS-15)

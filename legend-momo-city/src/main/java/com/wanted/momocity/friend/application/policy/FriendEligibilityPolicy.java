@@ -1,5 +1,6 @@
 package com.wanted.momocity.friend.application.policy;
 
+import com.wanted.momocity.friend.application.metric.FriendMetrics;
 import com.wanted.momocity.friend.fmexception.FMBusinessRuleViolationException;
 import com.wanted.momocity.friend.fmexception.FMResourceAccessDeniedException;
 import com.wanted.momocity.friend.fmexception.FMResourceConflictException;
@@ -7,6 +8,7 @@ import com.wanted.momocity.friend.fmexception.FMResourceNotFoundException;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -15,7 +17,10 @@ import java.util.Optional;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class FriendEligibilityPolicy {
+    private final FriendMetrics friendMetrics; // 🎯 정책 클래스에 메트릭 주입
+
     //친구 요청이 가능한 상태인지 검증하는 규칙
     public void ensureEligible(Long fromUserId, Long toUserId, Optional<FriendJpaEntity> existingRelation, String targetRole) {
 
@@ -220,12 +225,14 @@ public class FriendEligibilityPolicy {
 
         if (userId.equals(ownerUser.getId())) {
             log.warn("[FriendEligibilityPolicy] 방명록 작성 실패 - 본인에게 작성 시도. 로그인 유저ID:{}, 도시 주인ID:{}", userId, ownerUser.getId());
+            friendMetrics.recordGuestbookResult(false);
             throw new FMBusinessRuleViolationException("본인의 도시에는 방명록을 작성할 수 없습니다.");
         }
 
         // 2. 관계 행 존재 여부 체크 (안전장치 추가)
         if (relationOpt.isEmpty()) {
             log.warn("[FriendEligibilityPolicy] 방명록 작성 실패 - 두 사람 간의 친구 관계 내역(행)이 존재하지 않음.");
+            friendMetrics.recordGuestbookResult(false);
             throw new FMResourceConflictException("친구 상태에서만 방명록을 작성할 수 있습니다.");
         }
 
@@ -235,12 +242,14 @@ public class FriendEligibilityPolicy {
         // 3. 친구 상태 검증
         if (!"FRIEND".equals(status)) {
             log.warn("[FriendEligibilityPolicy] 방명록 작성 실패 - 친구 상태가 아님. 현재 상태:{}", status);
+            friendMetrics.recordGuestbookResult(false);
             throw new FMResourceConflictException("친구 상태에서만 방명록을 작성할 수 있습니다.");
         }
 
         // 2. 1일 1회 작성 제약을 위반했을 때
         if (hasWrittenToday) {
             log.warn("[FriendEligibilityPolicy] 방명록 작성 실패 - 이미 작성됨.");
+            friendMetrics.recordGuestbookResult(false);
             throw new FMResourceConflictException("방명록은 하루에 한 번 작성할 수 있습니다.");
         }
     }

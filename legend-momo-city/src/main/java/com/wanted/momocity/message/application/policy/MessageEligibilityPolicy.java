@@ -44,7 +44,7 @@ public class MessageEligibilityPolicy {
 
         //상대방이 학생인 경우: user 테이블의 ACTIVE 확인, friend 테이블의 status(BLOCK, none) 확인
         //v2 -> 비활성 여부에 대한 가공은 user담당자가 처리하므로 친구 여부만 검증
-        return "BLOCK".equals(friendStatus) || "none".equals(friendStatus);
+        return !"FRIEND".equals(friendStatus);
     }
 
 

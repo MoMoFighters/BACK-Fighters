@@ -1,5 +1,7 @@
 package com.wanted.momocity.report.application.service;
 
+import com.wanted.momocity.report.application.port.ChapterParentPort;
+import com.wanted.momocity.report.application.port.ChatContentPort;
 import com.wanted.momocity.report.application.port.CommentContentPort;
 import com.wanted.momocity.report.application.port.ReportUserNamePort;
 import com.wanted.momocity.report.application.port.ReviewContentPort;
@@ -30,11 +32,16 @@ public class ReportQueryService implements ReportQueryUseCase {
     private final ReportUserNamePort reportUserNamePort;
     private final ReviewContentPort reviewContentPort;
     private final CommentContentPort commentContentPort;
+    private final ChapterParentPort chapterParentPort;
+    // CHAT 타입 신고 상세에서 채팅 내용 조회 — 정림님 ChatContentAdapter 완료 후 활성화
+    private final ChatContentPort chatContentPort;
 
 
     @Override
-    public ReportList getRecent(int limit) {
-        List<Report> reports = reportRepository.findRecent(limit);
+    public ReportList getRecent(int page, int size) {
+        // ReportPage 에서 목록+총건수 받아 totalPages 계산 후 반환
+        ReportRepository.ReportPage reportPage = reportRepository.findRecent(page, size);
+        List<Report> reports = reportPage.reports();
 
         // 1. userId 전체를 Set 으로 모음 (N+1 방지)
         Set<Long> userIds = reports.stream()
@@ -45,24 +52,16 @@ public class ReportQueryService implements ReportQueryUseCase {
         // 2. 한 번에 이름 조회
         Map<Long, String> userNames = reportUserNamePort.getNamesByUserIds(userIds);
 
-        // 3. targetType 기준으로 내용 조회
-        // REVIEW·COMMENT 가 동일한 targetId 를 가질 수 있어 복합 키(타입_id)로 충돌 방지
-        Map<String, String> targetContents = new HashMap<>();
-        for (Report r : reports) {
-            String content = switch (r.getTargetType()) {
-                case REVIEW -> reviewContentPort.getContentById(r.getTargetId());
-                case COMMENT -> commentContentPort.getContentById(r.getTargetId());
-                default -> null;
-            };
-            targetContents.put(r.getTargetType().name() + "_" + r.getTargetId(), content);
-        }
-
-        return new ReportList(reports, userNames, targetContents);
+        // 3. 페이지네이션 메타데이터 계산 후 반환
+        int totalPages = (int) Math.ceil((double) reportPage.totalElements() / size);
+        return new ReportList(reports, userNames, reportPage.totalElements(), totalPages, page, size);
     }
 
+    // 동일 패턴, isResolved 필터 추가
     @Override
-    public ReportList getByIsResolved(boolean isResolved, int limit) {
-        List<Report> reports = reportRepository.findByIsResolved(isResolved, limit);
+    public ReportList getByIsResolved(boolean isResolved, int page, int size) {
+        ReportRepository.ReportPage reportPage = reportRepository.findByIsResolved(isResolved, page, size);
+        List<Report> reports = reportPage.reports();
 
         // 1. userId 전체를 Set 으로 모음 (N+1 방지)
         Set<Long> userIds = reports.stream()
@@ -73,19 +72,9 @@ public class ReportQueryService implements ReportQueryUseCase {
         // 2. 한번에 이름 조회
         Map<Long, String> userNames = reportUserNamePort.getNamesByUserIds(userIds);
 
-        // 3. targetType 기준으로 내용 조회
-        // REVIEW·COMMENT 가 동일한 targetId 를 가질 수 있어 복합 키(타입_id)로 충돌 방지
-        Map<String, String> targetContents = new HashMap<>();
-        for (Report r : reports) {
-            String content = switch (r.getTargetType()) {
-                case REVIEW -> reviewContentPort.getContentById(r.getTargetId());
-                case COMMENT -> commentContentPort.getContentById(r.getTargetId());
-                default -> null;
-            };
-            targetContents.put(r.getTargetType().name() + "_" + r.getTargetId(), content);
-        }
-
-        return new ReportList(reports, userNames, targetContents);
+        // 3. 페이지네이션 메타데이터 계산 후 반환
+        int totalPages = (int) Math.ceil((double) reportPage.totalElements() / size);
+        return new ReportList(reports, userNames, reportPage.totalElements(), totalPages, page, size);
     }
 
     // id 값이 없으면 예외처리를 위한 메서드 재정의
@@ -94,15 +83,23 @@ public class ReportQueryService implements ReportQueryUseCase {
         Report report = reportRepository.findById(id)
                 .orElseThrow(() -> new ReportNotFoundException(id));
 
-        // 1. 신고자 & 피신고자 이름 한 번에 조회
-        Map<Long, String> names = reportUserNamePort.getNamesByUserIds(
-                Set.of(report.getReporterUserId(), report.getReportedUserId())
-        );
+        // 1. 신고자 & 피신고자 이름 한 번에 조회 (null 원소 허용 위해 stream + filter 사용)
+        Set<Long> userIds = Stream.of(report.getReporterUserId(), report.getReportedUserId())
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<Long, String> names = reportUserNamePort.getNamesByUserIds(userIds);
 
-        // 2. targetType 기준으로 내용 조회
+        // 2. targetType 기준으로 내용 조회 — CHAT 추가 (정림님 어댑터 연동)
         String targetContent = switch (report.getTargetType()) {
-            case REVIEW -> reviewContentPort.getContentById(report.getTargetId());
+            case REVIEW  -> reviewContentPort.getContentById(report.getTargetId());
             case COMMENT -> commentContentPort.getContentById(report.getTargetId());
+            case CHAT    -> chatContentPort.getContentById(report.getTargetId());
+            default -> null;
+        };
+
+        // 3. CHAPTER 타입일 때만 lectureId 조회, 나머지는 null
+        Long parentId = switch (report.getTargetType()) {
+            case CHAPTER -> chapterParentPort.getLectureIdByChapterId(report.getTargetId());
             default -> null;
         };
 
@@ -111,7 +108,8 @@ public class ReportQueryService implements ReportQueryUseCase {
                 report,
                 names.get(report.getReporterUserId()),
                 names.get(report.getReportedUserId()),
-                targetContent
+                targetContent,
+                parentId
         );
     }
 }

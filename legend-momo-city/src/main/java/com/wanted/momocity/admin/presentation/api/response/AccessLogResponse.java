@@ -1,11 +1,13 @@
 package com.wanted.momocity.admin.presentation.api.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.wanted.momocity.admin.application.port.UserNamePort;
 import com.wanted.momocity.admin.domain.access.AccessLog;
 import org.springframework.data.domain.Page;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 // FE 가 받을 JSON 최상위 구조
 public record AccessLogResponse(
@@ -16,11 +18,10 @@ public record AccessLogResponse(
         int totalPages
 ) {
 
-    // Controller 에서 한 줄로 변환할 수 있게 만든 메서드이다.
-    // Page <AccessLog> (도메인 + 페이지 정보) 를 받아서 AccessLogResponse 로 변환
-    public static AccessLogResponse from(Page<AccessLog> pageResult) {
+    // Page<AccessLog> + userId→이름/역할 Map 을 받아 AccessLogResponse 로 변환
+    public static AccessLogResponse from(Page<AccessLog> pageResult, Map<Long, UserNamePort.UserInfo> userInfoMap) {
         List<Item> items = pageResult.getContent().stream()
-                .map(Item::from)
+                .map(log -> Item.from(log, userInfoMap))
                 .toList();
         return new AccessLogResponse(
                 items,
@@ -41,23 +42,20 @@ public record AccessLogResponse(
             String ip,
             String action,
             LocalDateTime accessedAt,
-
-            // port 받아오는 값이 있다면
             String userName,
             String userRole
-
     ) {
-        // 도메인 객체 AccessLog 1건으로 변환한다.
-        // action.name() 으로 enum -> String 변환 처리
-        public static Item from(AccessLog log) {
+        // userId 로 Map 에서 이름/역할 조회 — 비로그인(null) 이면 둘 다 null
+        public static Item from(AccessLog log, Map<Long, UserNamePort.UserInfo> userInfoMap) {
+            UserNamePort.UserInfo info = log.getUserId() != null ? userInfoMap.get(log.getUserId()) : null;
             return new Item(
                     log.getId(),
                     log.getUserId(),
                     log.getIp(),
                     log.getAction().name(),
                     log.getCreatedAt(),
-                    null, // userName - 수영님 완료 후 교체
-                    null  // userRole - 수영님 완료 후 교체
+                    info != null ? info.name() : null,
+                    info != null ? info.role() : null
             );
         }
     }
