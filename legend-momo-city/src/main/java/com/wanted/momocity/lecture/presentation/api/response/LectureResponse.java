@@ -1,5 +1,6 @@
 package com.wanted.momocity.lecture.presentation.api.response;
 
+import com.wanted.momocity.lecture.application.service.LectureS3UrlResolver;
 import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.model.LectureChapter;
 
@@ -58,6 +59,22 @@ public class LectureResponse {
                     chapter.getUpdatedAt()
             );
         }
+
+        public static CreateChapterResponse from(LectureChapter chapter, LectureS3UrlResolver lectureS3UrlResolver) {
+            return new CreateChapterResponse(
+                    chapter.getId(),
+                    chapter.getLectureId(),
+                    chapter.getTitle(),
+                    chapter.getOrderNo(),
+                    chapter.getVideoUrl(), // 동영상은 public URL로 변환하지 않음
+                    chapter.getVideoSizeBytes(),
+                    lectureS3UrlResolver.toUrl(chapter.getChapterThumbnailUrl()), // 챕터 썸네일만 전체 S3 URL로 변환
+                    chapter.getDurationSec(),
+                    chapter.getOriginalFilename(),
+                    chapter.getCreatedAt(),
+                    chapter.getUpdatedAt()
+            );
+        }
     }
 
     // CreateLectureResponse는 강의 등록 성공 시 프론트에 내려주는 응답 DTO
@@ -75,13 +92,13 @@ public class LectureResponse {
     ) {
 
         // 도메인 모델 Lecture를 응답 DTO로 변환
-        public static CreateLectureResponse from(LectureAggregate lecture) {
+        public static CreateLectureResponse from(LectureAggregate lecture, LectureS3UrlResolver lectureS3UrlResolver) {
             return new CreateLectureResponse(
                     lecture.getId(),
                     lecture.getTeacherId(),
                     lecture.getTitle(),
                     lecture.getDescription(),
-                    lecture.getThumbnailUrl(),
+                    lectureS3UrlResolver.toUrl(lecture.getThumbnailUrl()),
                     lecture.getCategory().name(),
                     lecture.getStatus().name(),
                     lecture.getCompletedUserCount(),
@@ -160,7 +177,7 @@ public class LectureResponse {
     ) {
 
         // LectureChapter 도메인 모델을 응답 DTO로 변환
-        public static RegisterChapterVideoResponse from(LectureChapter chapter) {
+        public static RegisterChapterVideoResponse from(LectureChapter chapter, LectureS3UrlResolver lectureS3UrlResolver) {
             return new RegisterChapterVideoResponse(
                     chapter.getId(),
                     chapter.getLectureId(),
@@ -168,13 +185,11 @@ public class LectureResponse {
                     chapter.getOrderNo(),
                     chapter.getVideoUrl(),
                     chapter.getVideoSizeBytes(),
-                    chapter.getChapterThumbnailUrl(),
+                    lectureS3UrlResolver.toUrl(chapter.getChapterThumbnailUrl()),
                     chapter.getDurationSec(),
                     chapter.getOriginalFilename(),
                     chapter.getUpdatedAt()
             );
         }
     }
-
-
 }

@@ -1,7 +1,7 @@
 package com.wanted.momocity.streak.infrastructure.event;
 
 import com.wanted.momocity.streak.application.usecase.StreakCommandUseCase;
-import com.wanted.momocity.viewing.domain.event.ChapterCompletedEvent;
+import com.wanted.momocity.viewing.domain.event.ProgressSavedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -35,25 +35,18 @@ public class StreakEventHandler {
 
     @Async("domainEventExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void handle(ChapterCompletedEvent event) {
+    public void handle(ProgressSavedEvent event) {
 
-        log.info("[Streak] ChapterCompletedEvent 수신 | userId={}, chapterId={}",
+        log.info("[Streak] ProgressSavedEvent 수신 | userId={}, chapterId={}",
                 event.userId(), event.chapterId());
 
-        // occurredAt (Instant) -> LocalDate 변환
-        // -> 시스템 기본 시간대 기준으로 날짜 변환
-        LocalDate streakDate = event.occurredAt()
-                .atZone(ZoneId.systemDefault())
-                .toLocalDate();
-
         // 잔디 누적
-        // 챕터 완료 시 해당 챕터의 durationSec 을 daily_watched_seconds 에 누적
-        // -> StreakCommandUseCase.accumulate() 호출
+        // 미완료 챕터 : 실제 증분만큼 누적
+        // 완료된 챕터 : playbackSeconds 만큼 누적
         streakCommandUseCase.accumulate(
                 event.userId(),
-                streakDate,
+                event.date(),
                 event.watchedSeconds()
-
         );
 
     }
