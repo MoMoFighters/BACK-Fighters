@@ -16,11 +16,18 @@ public class Notification {
     //추후
     //v2
     private final Boolean isRead;
+    private final LocalDateTime createdAt;
 
     //친구 요청
     //순수한 도메인 모델 안에서 알림 객체 생성 비즈니스를 정의
     public static Notification createFriendRequest(Long userId, String message, Long refId) {
-        return new Notification(null, userId, "FRIEND_REQUEST", refId, message, false);
+        return new Notification(
+                null,
+                userId,
+                "FRIEND_REQUEST",
+                refId, message,
+                false,
+                LocalDateTime.now());
     }
 
     //친구 요청 수락
@@ -31,7 +38,8 @@ public class Notification {
                 "FRIEND_REQUEST",
                 acceptorUserId,
                 message,
-                false
+                false,
+                LocalDateTime.now()
         );
     }
 
@@ -44,7 +52,8 @@ public class Notification {
                 roomId,
                 message,
                 //isRead 생기면 주석 해제
-                null
+                null,
+                LocalDateTime.now()
         );
     }
 
@@ -56,7 +65,9 @@ public class Notification {
                 "FRIEND_REQUEST",
                 toUserId,
                 message,
-                false
+                false,
+                LocalDateTime.now()
+
         );
     }
 
@@ -68,7 +79,99 @@ public class Notification {
                 "GUESTBOOK",
                 bookId,
                 message,
-                false
+                false,
+                now
+        );
+    }
+
+    //게시글 좋아요 알림
+    public static Notification likePost(Long postOwnerId, String message, Long postId) {
+        return new Notification(
+                null,
+                postOwnerId,
+                "POST",
+                postId,
+                message,
+                false,
+                LocalDateTime.now()
+        );
+    }
+
+    //게시글 댓글 알림
+    public static Notification commentPost(Long postOwnerId, String message, Long postId) {
+        return new Notification(
+                null,
+                postOwnerId,
+                "POST",
+                postId,
+                message,
+                false,
+                LocalDateTime.now()
+        );
+    }
+
+    //대댓글 알림(부모 댓글의 주인에게 알림)
+    public static Notification replyComment(Long parentCommentOwnerId, String replyMessage, Long postId) {
+        return new Notification(
+                null,
+                parentCommentOwnerId,
+                "POST",
+                postId,
+                replyMessage,
+                false,
+                LocalDateTime.now()
+        );
+    }
+
+    //대댓글 알림(게시글 주인에게 알림)
+    public static Notification postComment(Long postOwnerId, String postMessage, Long postId) {
+        return new Notification(
+                null,
+                postOwnerId,
+                "POST",
+                postId,
+                postMessage,
+                false,
+                LocalDateTime.now()
+        );
+    }
+
+    //캘린더 투두 알림
+    public static Notification todoCalendar(Long userId, String message, Long todoId) {
+        return new Notification(
+                null,
+                userId,
+                "CALENDAR",
+                todoId,
+                message,
+                false,
+                LocalDateTime.now()
+        );
+    }
+
+    //캘린더 메모 알림
+    public static Notification memoCalendar(Long userId, String message, Long memoId) {
+        return new Notification(
+                null,
+                userId,
+                "CALENDAR",
+                memoId,
+                message,
+                false,
+                LocalDateTime.now()
+        );
+    }
+
+    //강의 승인/거절
+    public static Notification lectureApproval(Long teacherId, String message, Long lectureId, LocalDateTime occurredAt) {
+        return new Notification(
+                null,
+                teacherId,
+                "APPROVAL",
+                lectureId,
+                message,
+                false,
+                occurredAt
         );
     }
 }

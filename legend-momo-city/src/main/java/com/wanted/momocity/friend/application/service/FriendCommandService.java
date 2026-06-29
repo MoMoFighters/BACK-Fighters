@@ -1,6 +1,7 @@
 package com.wanted.momocity.friend.application.service;
 
 import com.wanted.momocity.friend.application.command.*;
+import com.wanted.momocity.friend.application.metric.FriendMetrics;
 import com.wanted.momocity.friend.application.policy.FriendEligibilityPolicy;
 import com.wanted.momocity.friend.application.usecase.FriendCommandUseCase;
 import com.wanted.momocity.friend.domain.event.*;
@@ -12,6 +13,7 @@ import com.wanted.momocity.friend.fmexception.FMResourceNotFoundException;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 import com.wanted.momocity.friend.infrastructure.persistence.GuestBookJpaEntity;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
+import com.wanted.momocity.global.application.point.AddOrderHistory;
 import com.wanted.momocity.global.application.point.PointChange;
 import com.wanted.momocity.message.application.policy.MessageEligibilityPolicy;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+
+import static com.wanted.momocity.order.domain.model.Reason.GUESTBOOK;
+import static com.wanted.momocity.order.domain.model.Type.GAINED;
 
 @Service
 @Transactional
@@ -36,7 +41,9 @@ public class FriendCommandService implements FriendCommandUseCase {
     private final MessageEligibilityPolicy messageEligibilityPolicy;
     //포인트 주입
     private final PointChange pointChange;
-    //private final AddOrderHistory addOrderHistory;
+    private final AddOrderHistory addOrderHistory;
+    //메트릭
+    private final FriendMetrics friendMetrics;
 
     //친구 요청
     @Override
@@ -216,8 +223,6 @@ public class FriendCommandService implements FriendCommandUseCase {
         String targetRole = "STUDENT";
         UserWithFMJpaEntity targetUser = null;
 
-        //FRIEND일 때만 통과
-        friendEligibilityPolicy.ensureBlockable(relationOpt,  targetRole);
 
         if (relationOpt.isPresent()) {
             //검증 통과했으므로 무조건 행 존재
@@ -226,6 +231,9 @@ public class FriendCommandService implements FriendCommandUseCase {
                     ? relation.getToUserId() : relation.getFromUserId();
             targetRole = targetUser.getRole();
         }
+
+        //FRIEND일 때만 통과
+        friendEligibilityPolicy.ensureBlockable(relationOpt,  targetRole);
 
         FriendJpaEntity relation = relationOpt.get();
         String finalStatus = "BLOCK";
@@ -323,11 +331,18 @@ public class FriendCommandService implements FriendCommandUseCase {
         //도시 주인 존재 확인
         // 1. 대상 도시 주인 유저 존재 여부 검증 (404 대응)
         UserWithFMJpaEntity ownerUser = friendRepository.findUserById(command.ownerId())
-                .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 사용자의 도시에 방명록을 작성할 수 없습니다."));
+                .orElseThrow(() -> {
+                    friendMetrics.recordGuestbookResult(false); // 🎯 정림님 의도대로 실패 시 메트릭 기록
+                    return new FMResourceNotFoundException("존재하지 않는 사용자의 도시에 방명록을 작성할 수 없습니다.");
+                });
+
 
         // 2. 로그인 유저(방문자) 정보 조회
         UserWithFMJpaEntity loginUser = friendRepository.findUserById(command.userId())
-                .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> {
+                    friendMetrics.recordGuestbookResult(false); // 🎯 정림님 의도대로 실패 시 메트릭 기록
+                    return new FMResourceNotFoundException("존재하지 않는 사용자입니다.");
+                });
 
         // 3. 두 사람 사이의 친구 관계 데이터 추출
         Optional<FriendJpaEntity> relationOpt = friendRepository.findAnyRelationBetween(command.userId(), command.ownerId());
@@ -349,7 +364,7 @@ public class FriendCommandService implements FriendCommandUseCase {
         //포인트 +10
         pointChange.gainPoint(command.userId(), 10L);
         //추후 포트 생기면 주석 해제
-        //addOrderHistory.saveOrderHistory(command.userId(), "GUESTBOOK", "GAINED", 10L);
+        addOrderHistory.saveOrderHistory(command.userId(), GUESTBOOK, GAINED, 10L);
 
         // 7. 알림 도메인 시스템과의 느슨한 결합을 위한 비동기 알림 생성 이벤트 발행
         // 스펙 명세: "{nickname}님이 회원님의 도시에 방명록을 남겼습니다."
@@ -368,7 +383,7 @@ public class FriendCommandService implements FriendCommandUseCase {
                 savedBook.getId(),
                 ownerUser.getId(),
                 ownerUser.getNickname(),
-                LocalDateTime.now()
+                savedBook.getCreatedAt()
         );
     }
 }
