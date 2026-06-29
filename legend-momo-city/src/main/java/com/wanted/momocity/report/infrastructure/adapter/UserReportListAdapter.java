@@ -5,6 +5,7 @@ package com.wanted.momocity.report.infrastructure.adapter;
     User BC 가 신고 목록을 요청할 때 report 테이블을 쿼리한다.
  */
 
+import com.wanted.momocity.report.domain.model.ReportReason;
 import com.wanted.momocity.report.domain.model.ReportTargetType;
 import com.wanted.momocity.report.infrastructure.persistence.SpringDataReportRepository;
 import com.wanted.momocity.user.application.port.UserReportListPort;
@@ -26,7 +27,7 @@ public class UserReportListAdapter implements UserReportListPort {
         return reportRepository.findAllByReportedUserId(userId).stream()
                 .map(e -> new ReportInfo(
                         ReportTargetType.valueOf(e.getTargetType()),
-                        e.getReason(),
+                        ReportReason.valueOf(e.getReason()).toKorean(),
                         e.getCreatedAt(),
                         e.isResolved()
                 ))
