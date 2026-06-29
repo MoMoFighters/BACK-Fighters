@@ -1,6 +1,9 @@
 package com.wanted.momocity.viewing.application.service;
 
+import com.wanted.momocity.global.application.point.AddOrderHistory;
 import com.wanted.momocity.global.application.point.PointChange;
+import com.wanted.momocity.order.domain.model.Reason;
+import com.wanted.momocity.order.domain.model.Type;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,10 +26,13 @@ import org.springframework.transaction.annotation.Transactional;
 public class PointGrantService {
 
     private final PointChange pointChange;
+    private final AddOrderHistory addOrderHistory;
 
     // 챕터 완료 시 포인트 지급
     public void grantChapterCompletionPoint(Long userId) {
         pointChange.gainPoint(userId, 10L);
+        // 포인트 지급 내욕을 order_history 테이블에 저장
+        addOrderHistory.saveOrderHistory(userId, Reason.COMPLETE, Type.GAINED, 10L);
         log.info("[Viewing] 포인트 지급 완료 | userId={}, amount=10", userId);
     }
 
