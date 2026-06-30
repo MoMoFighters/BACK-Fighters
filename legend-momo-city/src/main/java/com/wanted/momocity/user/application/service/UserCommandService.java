@@ -20,6 +20,7 @@ import com.wanted.momocity.user.domain.model.UpdateUserInfoData;
 import com.wanted.momocity.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -105,6 +106,7 @@ public class UserCommandService implements UserCommandUsecase {
 
     // 강사승인
     @Override
+    @CacheEvict(value = "adminUserList", allEntries = true)
     public void approve(ApproveTeacherCommand command) {
 
         command.userId().forEach(userId -> {
@@ -129,6 +131,7 @@ public class UserCommandService implements UserCommandUsecase {
 
     // 강사거절
     @Override
+    @CacheEvict(value = "adminUserList", allEntries = true)
     public void reject(RejectTeacherCommand command) {
 
         if (command.reason() == null || command.reason().length() < 10) {
@@ -166,6 +169,7 @@ public class UserCommandService implements UserCommandUsecase {
 
     // 회원탈퇴 (소프트 딜리트)
     @Override
+    @CacheEvict(value = "adminUserList", allEntries = true)
     public void softDeleteUser(Long userId) {
         userRepository.changeStatusAndNickname(userId, Status.DELETED, null);
     }

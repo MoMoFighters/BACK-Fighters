@@ -1,6 +1,7 @@
 package com.wanted.momocity.global.infrastructure.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -42,7 +43,8 @@ public class RedisConfig {
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory,
                                           @Qualifier("postsCacheConfiguration") RedisCacheConfiguration postsCacheConfiguration,
                                           @Qualifier("calendarCacheConfiguration") RedisCacheConfiguration calendarCacheConfiguration,
-                                          @Qualifier("streakCacheConfiguration") RedisCacheConfiguration streakCacheConfiguration
+                                          @Qualifier("streakCacheConfiguration") RedisCacheConfiguration streakCacheConfiguration,
+                                          @Qualifier("adminUserListCacheConfiguration") RedisCacheConfiguration adminUserListCacheConfiguration
     ) {
 
         /*
@@ -94,6 +96,8 @@ public class RedisConfig {
         // Streak 오늘 레벨 캐시
         cacheConfigs.put("streak", streakCacheConfiguration);
 
+        cacheConfigs.put("adminUserList", adminUserListCacheConfiguration);
+
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
                 .withInitialCacheConfigurations(cacheConfigs)
@@ -109,6 +113,24 @@ public class RedisConfig {
     *  @Cacheable 은 List<Chapter> 역직렬화 실패
     *  -> RedisTemplate 으로 직접 저장/조회 시 TypeReference 로 정확한 타입 지정 가능
     * */
+
+    @Bean(name = "adminUserListCacheConfiguration")
+    public RedisCacheConfiguration adminUserListCacheConfiguration() {
+        GenericJackson2JsonRedisSerializer serializer =
+                new GenericJackson2JsonRedisSerializer(redisObjectMapper());
+
+        return RedisCacheConfiguration.defaultCacheConfig()
+                .entryTtl(Duration.ofMinutes(1))
+                .serializeKeysWith(
+                        RedisSerializationContext.SerializationPair
+                                .fromSerializer(new StringRedisSerializer())
+                )
+                .serializeValuesWith(
+                        RedisSerializationContext.SerializationPair
+                                .fromSerializer(serializer)
+                )
+                .disableCachingNullValues();
+    }
 
     @Bean
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
@@ -134,7 +156,12 @@ public class RedisConfig {
         // JavaTimeModule : LocalDateTime 등 Java 8 날짜/시간 타입 처리
         // 없으면 enrolledAt 같은 날짜 직렬화 실패
         objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+        objectMapper.registerModule(new com.fasterxml.jackson.module.paramnames.ParameterNamesModule());
 
+        objectMapper.activateDefaultTyping(
+                LaissezFaireSubTypeValidator.instance,
+                ObjectMapper.DefaultTyping.EVERYTHING
+        );
         return objectMapper;
 
     }
