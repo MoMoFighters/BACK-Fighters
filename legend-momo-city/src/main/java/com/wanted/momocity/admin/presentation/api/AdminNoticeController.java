@@ -23,9 +23,13 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 
+/* comment.
+    @PreAuthorize 를 클래스 레벨이 아닌, 메서드 레벨로 내렸다.
+    이렇게 하지 않으면 학생들이 공지를 읽을 수 없기 때문이다.
+ */
+
 @RestController
 @RequestMapping("/api/v1/admin-notices")
-@PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
 @Tag(name = "Admin - 공지", description = "관리자 공지 CRUD")
 public class AdminNoticeController {
@@ -34,6 +38,7 @@ public class AdminNoticeController {
     private final AdminNoticeQueryUseCase queryUseCase;
 
     // MS-11 공지 작성 — 요청 body를 Command로 변환 후 저장
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     @Operation(summary = "공지 작성", description = "관리자가 공지를 작성한다.")
     public ResponseEntity<ApiResponse<Void>> createNotice(@RequestBody @Valid CreateNoticeRequest request) {
@@ -45,6 +50,7 @@ public class AdminNoticeController {
 
     // MS-12 공지 목록 조회 — isPinned 필터 + 페이징
     // FE 컨벤션(1-based page)에 맞춰 page-1 변환 후 처리하고, 응답은 items 래퍼로 감싸 FE 스펙과 일치시킴
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STUDENT')")
     @GetMapping
     @Operation(summary = "공지 목록 조회", description = "isPinned 파라미터가 없으면 전체 조회, 있으면 필터 조회한다.")
     public ResponseEntity<ApiResponse<AdminNoticePageResponse>> getNoticeList(
@@ -59,6 +65,7 @@ public class AdminNoticeController {
     }
 
     // MS-16 공지 상세 조회
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STUDENT')")
     @GetMapping("/{id}")
     @Operation(summary = "공지 상세 조회", description = "공지 id로 단건 상세 정보를 조회한다.")
     public ResponseEntity<ApiResponse<AdminNoticeDetailResponse>> getNoticeDetail(@PathVariable Long id) {
@@ -67,6 +74,7 @@ public class AdminNoticeController {
     }
 
     // MS-17 공지 수정
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     @Operation(summary = "공지 수정", description = "공지 title과 content를 수정한다. isPinned는 수정 불가.")
     public ResponseEntity<ApiResponse<Void>> updateNotice(@PathVariable Long id,
@@ -76,6 +84,7 @@ public class AdminNoticeController {
     }
 
     // MS-18 공지 단건 삭제
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     @Operation(summary = "공지 단건 삭제", description = "공지 id로 단건을 삭제한다.")
     public ResponseEntity<ApiResponse<Void>> deleteNotice(@PathVariable Long id) {
@@ -84,6 +93,7 @@ public class AdminNoticeController {
     }
 
     // MS-19 공지 선택 삭제 — body로 id 목록을 받아 한 번에 삭제
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping
     @Operation(summary = "공지 선택 삭제", description = "id 목록으로 여러 공지를 한 번에 삭제한다.")
     public ResponseEntity<ApiResponse<Void>> deleteNotices(@RequestBody @Valid DeleteNoticesRequest request) {
@@ -92,6 +102,7 @@ public class AdminNoticeController {
     }
 
     // MS-21 공지 고정
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}/pin")
     @Operation(summary = "공지 고정", description = "공지를 상단에 고정한다. 기존 고정 공지는 자동 해제된다.")
     public ResponseEntity<ApiResponse<Void>> pinNotice(@PathVariable Long id) {
@@ -100,6 +111,7 @@ public class AdminNoticeController {
     }
 
     // MS-22 공지 고정 해제
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}/unpin")
     @Operation(summary = "공지 고정 해제", description = "고정된 공지의 고정을 해제한다.")
     public ResponseEntity<ApiResponse<Void>> unpinNotice(@PathVariable Long id) {
