@@ -47,7 +47,7 @@ public class PostCommandService implements PostCommandUseCase {
     /*
      * comment.
      *  썸네일 결정 로직
-    성 *  1. IMAGE 타입 콘텐츠 존재 + thumbnailUrl 없음
+     *  1. IMAGE 타입 콘텐츠 존재 + thumbnailUrl 없음
      *     -> 에러 (사용자가 직접 썸네일 지정 필요)
      *  2. IMAGE 타입 콘텐츠 없음 + thumbnailUrl 없음
      *     -> 카테고리 기준 기본 썸네일 자동 설정
