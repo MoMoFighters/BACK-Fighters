@@ -9,6 +9,9 @@ public interface MonthlyStatsQueryUseCase {
 
     MonthlyStats getMonthlyStats(int year);
 
+    // 막대 그래프 새로운 기능
+    MonthlyStats getMonthlyNewStats(int year);
+
     record MonthlyStats(
             List<MonthlyCount> memberCounts,
             List<MonthlyCount> lectureCounts,
