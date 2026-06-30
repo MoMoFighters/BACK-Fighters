@@ -1,4 +1,4 @@
-package com.wanted.momocity.community.application.result;
+package com.wanted.momocity.community.application.post.result;
 
 import com.wanted.momocity.community.domain.model.Post;
 import com.wanted.momocity.community.domain.model.PostContent;
