@@ -1,11 +1,8 @@
 package com.wanted.momocity.community.domain.repository;
 
-import com.wanted.momocity.community.application.result.PostWithContents;
+import com.wanted.momocity.community.application.post.result.PostWithContents;
 import com.wanted.momocity.community.domain.model.Post;
 import com.wanted.momocity.community.domain.model.PostCategory;
-import com.wanted.momocity.community.infrastructure.persistence.PostJpaEntity;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;

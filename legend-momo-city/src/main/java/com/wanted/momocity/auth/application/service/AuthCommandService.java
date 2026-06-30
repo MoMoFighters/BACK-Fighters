@@ -98,14 +98,14 @@ public class AuthCommandService implements AuthCommandUsecase {
         signupPolicy.ensureEligible(command.email());
 
         // 이메일(id), 비밀번호, 이름 넘겨서 새로운 학생 자바 객체 생성
-        userRepository.register(User.signup(command.email(), passwordEncoder.encode(command.password()), command.name()));
+        User user = userRepository.register(User.signup(command.email(), passwordEncoder.encode(command.password()), command.name()));
 
         // 이메일 인증 하고서 인증됨 의 상태를 지움
         emailCodePort.deleteVerified(command.email());
 
         // 회원가입 하고서 이벤트 발행 - 나와의 채팅 생성용
         // 추후 결제 완료 후 해당 이벤트 발행
-//        eventPublisher.publishEvent(new SignupCompletedEvent(user.getId()));
+        eventPublisher.publishEvent(new SignupCompletedEvent(user.getId()));
 
         log.info("[signup] 회원가입 완료 | email={} | role=STUDENT", command.email());
 

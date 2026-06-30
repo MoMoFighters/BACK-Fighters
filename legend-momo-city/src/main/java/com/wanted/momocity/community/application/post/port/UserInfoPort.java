@@ -1,4 +1,4 @@
-package com.wanted.momocity.community.application.port;
+package com.wanted.momocity.community.application.post.port;
 
 import com.wanted.momocity.auth.domain.model.User;
 
