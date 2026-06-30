@@ -20,4 +20,13 @@ public interface MessageSideFriendRepository extends JpaRepository<FriendJpaEnti
     Optional<FriendJpaEntity> findByFromUserId_IdAndToUserId_Id(@Param("fromUserId") Long fromUserId,
                                                                 @Param("toUserId") Long toUserId);
 
+    //멤버 초대 개선 보강
+    // 2. 나와 초대 대상자들 간의 양방향 친구 관계를 IN 쿼리로 한방에 조회
+    @Query("select f from FriendJpaEntity f " +
+            "where (f.fromUserId.id = :myId and f.toUserId.id in :targetIds) " +
+            "   or (f.toUserId.id = :myId and f.fromUserId.id in :targetIds)")
+    List<FriendJpaEntity> findFriendRelationsByUserIdAndTargetIds(
+            @Param("myId") Long myId,
+            @Param("targetIds") List<Long> targetIds
+    );
 }

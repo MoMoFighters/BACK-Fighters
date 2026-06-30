@@ -1,6 +1,7 @@
 package com.wanted.momocity.message.infrastructure.persistence;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -61,7 +62,9 @@ public interface SpringDataMessageRepository extends JpaRepository<MessageJpaEnt
                                                                                                       @Param("timeline") LocalDateTime timeline);
 
     //채팅방 폭파 시 메시지 삭제
-    void deleteByRoomId_Id(Long aLong);
+    @Modifying(clearAutomatically = true)
+    @Query("delete from MessageJpaEntity m where m.roomId.id = :roomId")
+    void deleteByRoomId_Id(@Param("roomId") Long roomId);
 
     //메시지 내역 조회: 마지막 메시지의 시간
     @Query("select m.createdAt from MessageJpaEntity m where m.id = :messageId")

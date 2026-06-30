@@ -3,8 +3,9 @@ package com.wanted.momocity.message.infrastructure.event;
 import com.wanted.momocity.message.application.query.FindChatRoomQuery;
 import com.wanted.momocity.message.application.query.GetMessageHistoryQuery;
 import com.wanted.momocity.message.application.usecase.MessageQueryUseCase;
-import com.wanted.momocity.message.domain.event.ChatRoomReenteredPublishedEvent;
-import com.wanted.momocity.message.domain.event.LeaveChatRoomWebsocketPublishedEvent;
+import com.wanted.momocity.message.domain.event.*;
+import com.wanted.momocity.notification.application.query.GetPhoneAppCountsQuery;
+import com.wanted.momocity.notification.application.usecase.NotificationQueryUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -22,12 +23,14 @@ public class MessageWebsocketListener {
 
     private final MessageQueryUseCase messageQueryUseCase;
     private final SimpMessagingTemplate messagingTemplate; // 실시간 웹소켓 발송을 위한 템플릿
+    private final NotificationQueryUseCase notificationQueryUseCase;
 
     /**
      * 🎯 [성능 개선 핵심]
      * 원래 트랜잭션이 정상 커밋(AFTER_COMMIT)된 후, 메인 스레드와 분리된 별도 @Async 스레드 풀에서
      * 무거운 목록 무한 루프 및 히스토리 조회 쿼리를 비동기로 쏘아 올립니다.
      */
+    //친구 삭제로 인한 채팅방 나가기
     @Async("domainEventExecutor") // 프로젝트 환경에 맞는 Async 스레드 풀 지정
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleLeaveChatRoomWebSocketRefresh(LeaveChatRoomWebsocketPublishedEvent event) {
@@ -73,5 +76,130 @@ public class MessageWebsocketListener {
             messagingTemplate.convertAndSendToUser(memberId.toString(), "/sub/chat/rooms", chatRoomListPayload);
         }
         log.info("[MessageHandlerService] 일대일 채팅방 재입장 완료로 웹소켓 전송 완료");
+    }
+
+    @Async("domainEventExecutor") // 프로젝트 환경에 맞는 Async 스레드 풀 지정
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleChatMessageSentWebSocketRefresh(ChatMessageSentWebsocketPublishedEvent event) {
+        Long roomId = event.roomId();
+        Long senderId = event.senderId();
+        String destination = "/sub/chat/room/" + roomId;
+
+        for (Long receiverId : event.receiverIds()) {
+
+            // 💬 1) 각 수신자의 대화 히스토리 화면 리로드 데이터 조회 및 전송
+            List<MessageQueryUseCase.MessageHistoryView> historyPayload =
+                    messageQueryUseCase.getMessageHistoryQueryHandle(new GetMessageHistoryQuery(roomId, receiverId, null));
+            messagingTemplate.convertAndSendToUser(receiverId.toString(), destination, historyPayload);
+
+            // 🗂️ 2) 각 수신자의 전체 채팅방 리스트 화면 리로드 데이터 조회 및 전송
+            List<MessageQueryUseCase.ChatRoomView> chatRoomListPayload =
+                    messageQueryUseCase.getChatRoomQueryHandle(new FindChatRoomQuery(receiverId));
+            messagingTemplate.convertAndSendToUser(receiverId.toString(), "/sub/chat/rooms", chatRoomListPayload);
+
+            // 📱 3) 내가 보낸 게 아닐 때만, 수신자 휴대폰 앱 배지 카운트 실시간 전송
+            if (!receiverId.equals(senderId)) {
+                notificationQueryUseCase.getPhoneAppCountsQueryHandle(new GetPhoneAppCountsQuery(receiverId));
+            }
+        }
+        log.info("[MessageWebsocketListener] 메시지 발송에 따른 전원 실시간 화면 및 앱 배지 갱신 완료");
+    }
+
+    @Async("domainEventExecutor") // 프로젝트 환경에 맞는 Async 스레드 풀 지정
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleChatRoomReadWebSocketRefresh(ChatRoomReadWebsocketPublishedEvent event) {
+        Long roomId = event.roomId();
+        Long readerId = event.readerId();
+        String destination = "/sub/chat/room/" + roomId;
+
+        // 1. 방 안의 모든 사람(나 포함)의 대화 내역 및 채팅방 목록 배지 차감 실시간 배달
+        for (Long memberId : event.memberIds()) {
+
+            // 💬 대화 히스토리 화면 리로드 전송
+            var historyPayload = messageQueryUseCase.getMessageHistoryQueryHandle(new GetMessageHistoryQuery(roomId, memberId, null));
+            messagingTemplate.convertAndSendToUser(memberId.toString(), destination, historyPayload);
+
+            // 🗂️ 전체 채팅방 리스트 갱신 전송
+            var chatRoomListPayload = messageQueryUseCase.getChatRoomQueryHandle(new FindChatRoomQuery(memberId));
+            messagingTemplate.convertAndSendToUser(memberId.toString(), "/sub/chat/rooms", chatRoomListPayload);
+        }
+
+        // 📱 2. 읽은 사람 본인의 전체 앱 배지 실시간 차감 반영
+        notificationQueryUseCase.getPhoneAppCountsQueryHandle(new GetPhoneAppCountsQuery(readerId));
+        log.info("[MessageWebsocketListener] 방 진입/읽음에 따른 전원 화면 데이터 및 읽은이(ID: {})의 앱 배지 갱신 비동기 완료", readerId);
+    }
+
+    //채팅방 나가기
+    @Async("domainEventExecutor") // 프로젝트 환경에 맞는 Async 스레드 풀 지정
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleChatRoomLeaveWebSocketRefresh(ChatRoomLeaveWebsocketPublishedEvent event) {
+        Long roomId = event.roomId();
+        Long readerId = event.leaveUserId();
+        String destination = "/sub/chat/room/" + roomId;
+
+        // 1. 방 안의 모든 사람(나 포함)의 대화 내역 및 채팅방 목록 배지 차감 실시간 배달
+        for (Long memberId : event.receiverIds()) {
+
+            // 💬 대화 히스토리 화면 리로드 전송
+            var historyPayload = messageQueryUseCase.getMessageHistoryQueryHandle(new GetMessageHistoryQuery(roomId, memberId, null));
+            messagingTemplate.convertAndSendToUser(memberId.toString(), destination, historyPayload);
+
+            // 🗂️ 전체 채팅방 리스트 갱신 전송
+            var chatRoomListPayload = messageQueryUseCase.getChatRoomQueryHandle(new FindChatRoomQuery(memberId));
+            messagingTemplate.convertAndSendToUser(memberId.toString(), "/sub/chat/rooms", chatRoomListPayload);
+        }
+
+        // 📱 2. 읽은 사람 본인의 전체 앱 배지 실시간 차감 반영
+        notificationQueryUseCase.getPhoneAppCountsQueryHandle(new GetPhoneAppCountsQuery(readerId));
+        log.info("[LeaveChatRoomEventListener] 남은 전체 인원({})에게 웹소켓 전송 완료", event.receiverIds());
+    }
+
+    // 채팅방 이름 변경에 따른 전원 화면 갱신
+    @Async("domainEventExecutor")
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleChatRoomRenamedWebSocketRefresh(ChatRoomRenamedWebsocketPublishedEvent event) {
+        Long roomId = event.roomId();
+        String destination = "/sub/chat/room/" + roomId;
+
+        log.info("[MessageWebsocketListener] 방 이름 변경 비동기 웹소켓 갱신 시작 - 방ID: {}, 대상 인원: {}명", roomId, event.memberIds().size());
+
+        // 각 참여자들의 대화 히스토리 및 전체 채팅방 목록 화면을 독립된 쿼리로 가공하여 실시간 전송
+        for (Long memberId : event.memberIds()) {
+
+            // 💬 1) 대화 히스토리 화면 리로드 데이터 전송
+            List<MessageQueryUseCase.MessageHistoryView> historyPayload =
+                    messageQueryUseCase.getMessageHistoryQueryHandle(new GetMessageHistoryQuery(roomId, memberId, null));
+            messagingTemplate.convertAndSendToUser(memberId.toString(), destination, historyPayload);
+
+            // 🗂️ 2) 전체 채팅방 리스트 화면 리로드 데이터 전송
+            List<MessageQueryUseCase.ChatRoomView> chatRoomListPayload =
+                    messageQueryUseCase.getChatRoomQueryHandle(new FindChatRoomQuery(memberId));
+            messagingTemplate.convertAndSendToUser(memberId.toString(), "/sub/chat/rooms", chatRoomListPayload);
+        }
+
+        log.info("[MessageWebsocketListener] 채팅방 이름 변경에 따른 전원 실시간 대화방/목록 갱신 완료");
+    }
+
+    // 멤버 초대로 인한 신규 유저 포함 전원 웹소켓 화면 갱신
+    @Async("domainEventExecutor")
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleChatRoomMemberInvitedWebSocketRefresh(ChatRoomMemberInviteWebsocketPublishedEvent event) {
+        Long roomId = event.roomId();
+        String inviteDestination = "/sub/chat/room/" + roomId;
+
+        log.info("[MessageWebsocketListener] 멤버 초대 비동기 웹소켓 갱신 시작 - 방ID: {}, 대상 인원: {}명", roomId, event.targetMemberIds().size());
+
+        for (Long targetMemberId : event.targetMemberIds()) {
+            // 💬 1) 대화 히스토리 화면 리로드 데이터 전송
+            List<MessageQueryUseCase.MessageHistoryView> historyPayload =
+                    messageQueryUseCase.getMessageHistoryQueryHandle(new GetMessageHistoryQuery(roomId, targetMemberId, null));
+            messagingTemplate.convertAndSendToUser(targetMemberId.toString(), inviteDestination, historyPayload);
+
+            // 🗂️ 2) 전체 채팅방 리스트 화면 리로드 데이터 전송
+            List<MessageQueryUseCase.ChatRoomView> chatRoomListPayload =
+                    messageQueryUseCase.getChatRoomQueryHandle(new FindChatRoomQuery(targetMemberId));
+            messagingTemplate.convertAndSendToUser(targetMemberId.toString(), "/sub/chat/rooms", chatRoomListPayload);
+        }
+        log.info("[MessageWebsocketListener] 멤버 초대로 인한 전원 실시간 대화방/목록 갱신 완료");
     }
 }

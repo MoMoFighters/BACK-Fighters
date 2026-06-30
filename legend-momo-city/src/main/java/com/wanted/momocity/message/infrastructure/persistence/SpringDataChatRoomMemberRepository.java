@@ -29,7 +29,8 @@ public interface SpringDataChatRoomMemberRepository extends JpaRepository<ChatRo
     boolean existsByUserId_Id(Long userId);
 
     //나와의 채팅방 찾기 위함
-    Optional<ChatRoomMemberJpaEntity> findFirstRoomIdByUserId_Id(Long senderId);
+    @Query("select min(m.roomId.id) from ChatRoomMemberJpaEntity m where m.userId.id = :userId")
+    Optional<Long> findFirstRoomIdByUserId(@Param("userId") Long userId);
 
     //메시지 전송(로그인한 유저가 해당 채팅방의 멤버인지 확인)
     boolean existsByRoomId_IdAndUserId_Id(Long roomId, Long userId);

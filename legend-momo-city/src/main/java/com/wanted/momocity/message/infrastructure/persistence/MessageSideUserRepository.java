@@ -18,6 +18,10 @@ public interface MessageSideUserRepository extends JpaRepository<UserWithFMJpaEn
             "where u.id = :userId")
     Optional<UserWithFMJpaEntity> findUserWithFMById(@Param("userId") Long userId);
 
+    // 1. 초대 대상자 유저 리스트를 IN 쿼리로 한방에 조회
+    @Query("select u from FMUser u where u.id in :ids")
+    List<UserWithFMJpaEntity> findUsersWithFMByIds(@Param("ids") List<Long> ids);
+
     //사용자 찾기
     Optional<Object> findUserById(Long senderId);
 }

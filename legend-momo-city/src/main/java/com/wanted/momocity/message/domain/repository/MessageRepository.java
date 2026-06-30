@@ -136,4 +136,15 @@ public interface MessageRepository {
 
     //채팅방 조회 및 개설 개선 보강
     List<ChatRoomMemberJpaEntity> findOnePersonRoomsByUserId(Long targetUserId, Long loginUserId);
+
+    //메시지 읽음 벌크 처리
+    int bulkUpdateReadStatus(Long roomId, Long userId);
+
+    //메시지 내역 조회(말풍선 안읽음 수 인메모리)
+    List<Object[]> countUnreadMembersByMessageIdsIn(List<Long> currentMessageIds);
+
+    //멤버 초대 개선 보강
+    List<UserWithFMJpaEntity> findUsersWithFMByIds(List<Long> chatMemberIds);
+    //멤버 초대 개선 보강
+    List<FriendJpaEntity> findFriendRelationsByUserIdAndTargetIds(Long userId, List<Long> chatMemberIds);
 }

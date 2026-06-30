@@ -2,6 +2,7 @@ package com.wanted.momocity.message.infrastructure.persistence;
 
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -22,7 +23,9 @@ public interface SpringDataMessageAnnounceRepository extends JpaRepository<Messa
     Optional<MessageAnnounceJpaEntity> findFirstByRoomId_IdOrderByCreatedAtDesc(@Param("roomId") Long roomId);
 
     //채팅방 나가기: 안내 문구 삭제
-    void deleteByRoomId_Id(Long roomId);
+    @Modifying(clearAutomatically = true)
+    @Query("delete from MessageAnnounceJpaEntity ma where ma.roomId.id = :roomId")
+    void deleteByRoomId_Id(@Param("roomId") Long roomId);
 
     //안내 문구 내역 조회(재입장 고려)
     @Query("select ma from MessageAnnounceJpaEntity ma " +

@@ -446,6 +446,15 @@ public class MessageQueryService implements MessageQueryUseCase {
                         .collect(Collectors.groupingBy(e -> e.getUserId().getId()));
             }
         }
+
+        // 🔥 [추가된 튜닝 핵심]: 현재 조회 대상인 모든 메시지의 ID를 모아서 '안 읽은 멤버 수' 단 1방의 쿼리로 긁어오기
+        List<Long> currentMessageIds = rawMessages.stream().map(MessageJpaEntity::getId).toList();
+        Map<Long, Long> unreadCountMap = new HashMap<>();
+        if (!currentMessageIds.isEmpty()) {
+            List<Object[]> bulkUnreadCounts = messageRepository.countUnreadMembersByMessageIdsIn(currentMessageIds);
+            unreadCountMap = bulkUnreadCounts.stream()
+                    .collect(Collectors.toMap(arr -> (Long) arr[0], arr -> (Long) arr[1]));
+        }
         // =========================================================================
 
             //화면에 내려줄 리스트 선언
@@ -465,7 +474,7 @@ public class MessageQueryService implements MessageQueryUseCase {
                         .noneMatch(mem -> mem.getUserId().getId().equals(senderId));
 
                 //하나의 메시지를 읽지 않은 사람 수(공지는 읽음 수 없음)
-                Long unreadCount = messageRepository.countUnreadMembersForMessage(m.getId());
+                Long unreadCount = unreadCountMap.getOrDefault(m.getId(), 0L);
                 messagesView.add(new MessageDetail(
                         m.getId(),
                         senderId,
