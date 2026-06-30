@@ -252,7 +252,7 @@ public interface PostJpaRepository extends JpaRepository<PostJpaEntity, Long> {
     WHERE p.deletedAt IS NULL
     AND p.createdAt < :date
 """)
-    long countPostBefore(@Param("date") LocalDate date);
+    long countPostBefore(@Param("date") LocalDateTime date);
 
 
     // 하드딜리트 (스케줄러용)
