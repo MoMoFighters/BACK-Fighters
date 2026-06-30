@@ -37,6 +37,24 @@ public class MonthlyStatsQueryService implements MonthlyStatsQueryUseCase {
                 toCumulative(postStatsPort.countPostByMonth(year), currentMonth)
         );
     }
+
+    // year 가 올해라면 현재 월까지만 값을 보내줌
+    // year 가 과거라면 12월까지 전부 포함해서 보내줌
+    @Override
+    public MonthlyStats getMonthlyNewStats(int year) {
+        int currentMonth = (LocalDate.now().getYear() == year)
+                ? LocalDate.now().getMonthValue()
+                : 12;
+
+        // 포트 3개에서 각각 해당 연도 월별 신규 데이터 가져옴
+        // trimFuture 로 미래 달을 잘라낸 뒤 MonthlyStats 로 묶어서 반환
+        return new MonthlyStats(
+                trimFuture(memberStatsPort.countMemberByMonth(year), currentMonth),
+                trimFuture(lectureStatsPort.countLectureByMonth(year), currentMonth),
+                trimFuture(postStatsPort.countPostByMonth(year), currentMonth)
+        );
+    }
+
     private List<MonthlyCount> toCumulative(List<MonthlyCount> raw, int upToMonth) {
         // 누적 합계를 담는 변수
         long running = 0;
@@ -51,6 +69,14 @@ public class MonthlyStatsQueryService implements MonthlyStatsQueryUseCase {
             result.add(new MonthlyCount(mc.month(), running));
         }
         return result;
+    }
+
+
+    private List<MonthlyCount> trimFuture(List<MonthlyCount> raw, int upToMonth) {
+        //포트에서 받은 1~12월 리스트를 그대로 쓰되, currentMonth 초과 달만 제거
+        return raw.stream()
+                .filter(mc -> mc.month() <= upToMonth)
+                .toList();
     }
 
 }

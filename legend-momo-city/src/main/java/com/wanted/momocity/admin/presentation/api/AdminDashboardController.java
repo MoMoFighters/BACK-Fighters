@@ -114,4 +114,27 @@ public class AdminDashboardController {
                 ApiResponse.success(ApiResponseCode.SUCCESS, "월별 운영 추이 조회 성공", response)
         );
     }
+
+    @GetMapping("/dashboard/monthly-stats/sub")
+    @Operation(
+            summary = "대시보드 월별 신규 활동량",
+            description = "연도별 월별 신규 가입 회원/강의/게시글 수를 반환한다. year 미입력 시 현재 연도 기준."
+    )
+
+    // year 파라미터를 선택적으로 받는 API 엔드포인트 메서드 선언 (required = false 라서 보내지 않음)
+    public ResponseEntity<ApiResponse<MonthlyStatsResponse>> getMonthlyNewStats(
+            @RequestParam(required = false) Integer year
+    ) {
+
+        // year 가 들어오면 그걸 쓰고, 없으면 현재 연도를 기본값으로 설정
+        int targetYear = (year != null) ? year : LocalDate.now().getYear();
+        MonthlyStatsResponse response = MonthlyStatsResponse.from(
+                monthlyStatsQueryUseCase.getMonthlyNewStats(targetYear)
+        );
+
+        // UseCase 에서 받은 결과를 MonthlyStatsResponse 로 변환해 공통 응답 형식(ApiResponse) 으로 감싸서 200 반환
+        return ResponseEntity.ok(
+                ApiResponse.success(ApiResponseCode.SUCCESS, "월별 신규 활동량 조회 성공", response)
+        );
+    }
 }
