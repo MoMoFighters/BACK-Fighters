@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 
@@ -111,18 +112,30 @@ public class UserCommandService implements UserCommandUsecase {
 
         List<User> users = userRepository.findAllByIdsForApprove(userIds);
 
-        if (users.size() != userIds.size()) {
-            throw new UserNotFoundException("존재하지 않는 사용자가 포함되어 있습니다.");
+        Set<Long> foundIds = users.stream().map(User::getId).collect(Collectors.toSet());
+        List<Long> notFoundIds = userIds.stream()
+                .filter(id -> !foundIds.contains(id))
+                .toList();
+
+        if (!notFoundIds.isEmpty()) {
+            log.warn("[teacher] 존재하지 않는 사용자 제외 | notFoundIds={}", notFoundIds);
         }
 
-        users.forEach(user -> {
-            if (user.getStatus() != Status.PENDING) {
-                throw new DomainRuleViolationException("강사 신청 중인 사용자가 아닙니다. userId=" + user.getId());
-            }
-        });
+        List<Long> notPendingIds = users.stream()
+                .filter(user -> user.getStatus() != Status.PENDING)
+                .map(User::getId)
+                .toList();
+
+        if (!notPendingIds.isEmpty()) {
+            log.warn("[teacher] 강사 신청 중이 아닌 사용자 제외 | notPendingIds={}", notPendingIds);
+        }
+
+        List<User> approvableUsers = users.stream()
+                .filter(user -> user.getStatus() == Status.PENDING)
+                .toList();
 
         // 카테고리별로 그룹핑 -> 카테고리당 1번의 벌크 UPDATE (최대 5번)
-        Map<Category, List<Long>> idsByCategory = users.stream()
+        Map<Category, List<Long>> idsByCategory = approvableUsers.stream()
                 .collect(Collectors.groupingBy(
                         User::getCategory,
                         Collectors.mapping(User::getId, Collectors.toList())
@@ -135,7 +148,7 @@ public class UserCommandService implements UserCommandUsecase {
         );
 
         // 승인 처리 후 이벤트는 유저별로 발행 (이메일 발송은 개별 처리)
-        users.forEach(user -> {
+        approvableUsers.forEach(user -> {
             log.info("[teacher] 강사 승인 처리 | userId={}", user.getId());
             eventPublisher.publishEvent(new TeacherApplicationEvent(user.getEmail(), Status.ACTIVE, null));
         });
