@@ -25,7 +25,8 @@ public class MomoMetrics {
     private final Timer enrollmentProgressTimer;
     private final Timer chapterCreateTimer;
     private final Timer chapterVideoRegisterTimer;
-
+    private final Timer adminUserListTimer;
+    private final Timer teacherApproveTimer;
 
     // ===== Counter =====
     private final Counter s3UploadFailCounter;
@@ -124,6 +125,14 @@ public class MomoMetrics {
         this.chapterVideoRegisterTimer = Timer.builder("momocity.chapter.video.register.duration")
                 .description("챕터 동영상 등록 소요 시간")
                 .register(meterRegistry);
+
+        this.adminUserListTimer = Timer.builder("momocity.admin.user.list.duration")
+                .description("관리자 회원 목록 조회 소요 시간 - Redis 캐싱 전후 비교")
+                .register(meterRegistry);
+
+        this.teacherApproveTimer = Timer.builder("momocity.teacher.approve.duration")
+                .description("강사 승인 처리 소요 시간 - bulk UPDATE 최적화 전후 비교")
+                .register(meterRegistry);
     }
 
     // 작업 시작 시점의 시간을 기억
@@ -216,4 +225,9 @@ public class MomoMetrics {
     public void stopChapterVideoRegisterTimer(Timer.Sample sample) {
         sample.stop(chapterVideoRegisterTimer);
     }
+
+    public void stopAdminUserListTimer(Timer.Sample sample) { sample.stop(adminUserListTimer); }
+
+    public void stopTeacherApproveTimer(Timer.Sample sample) { sample.stop(teacherApproveTimer); }
+
 }
