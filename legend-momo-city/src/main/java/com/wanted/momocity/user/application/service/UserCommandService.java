@@ -188,6 +188,7 @@ public class UserCommandService implements UserCommandUsecase {
 
     // 사용자 신고 횟수 +
     @Override
+    @CacheEvict(value = "adminUserList", allEntries = true)
     public LocalDateTime plusReportCount(Long userId) {
 
         // 이미 정지 상태이면 더 신고 + 못 시킴
@@ -226,6 +227,7 @@ public class UserCommandService implements UserCommandUsecase {
 
     // 사용자 신고 횟수 -
     @Override
+    @CacheEvict(value = "adminUserList", allEntries = true)
     public void minusReportCount(Long userId) {
         // Active인 사람은 - 못 시킴
         if (userPolicy.isActive(userId)) {
