@@ -61,9 +61,6 @@ public class MonthlyStatsQueryService implements MonthlyStatsQueryUseCase {
         );
     }
 
-    private List<MonthlyCount> toCumulative(List<MonthlyCount> raw, int upToMonth) {
-        // 누적 합계를 담는 변수
-        long running = 0;
     private List<MonthlyCount> toCumulative(List<MonthlyCount> raw, int upToMonth, long baseline) {
         // 이전 연도까지의 누적값을 시작점으로 설정
         long running = baseline;
