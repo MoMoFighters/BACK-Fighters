@@ -13,10 +13,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, Long> {
 
@@ -217,4 +214,20 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
             "GROUP BY MONTH(u.createdAt) " +
             "ORDER BY MONTH(u.createdAt)")
     List<MonthlyCount> countByMonth(@Param("year") int year);
+
+    // 강사 일괄 승인용 id 여러개의 유저 정보 가져오기
+    @Query("SELECT u FROM UserUser u WHERE u.id IN :userIds")
+    List<UserJpaEntity> findAllByIds(@Param("userIds") List<Long> userIds);
+
+    // 강사 일괄 승인용 벌크 업데이트 - 카테고리별로 그룹핑해서 호출
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Transactional
+    @Query("UPDATE UserUser u SET u.role = :role, u.status = :status, " +
+            "u.profileImageUrl = :profileImageUrl, u.updatedAt = :updatedAt " +
+            "WHERE u.id IN :userIds")
+    void bulkUpdateAfterApply(@Param("userIds") List<Long> userIds,
+                              @Param("role") Role role,
+                              @Param("status") Status status,
+                              @Param("profileImageUrl") String profileImageUrl,
+                              @Param("updatedAt") LocalDateTime updatedAt);
 }

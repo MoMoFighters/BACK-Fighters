@@ -30,11 +30,17 @@ public class MonthlyStatsQueryService implements MonthlyStatsQueryUseCase {
                 ? LocalDate.now().getMonthValue()
                 : 12;
 
-        // 3개 BC 포트에서 월별 원시 데이터를 받아 누적값으로 변환 후 반환
+        // 해당 연도 1월 1일 이전의 누적 기준점 (연도 간 연속성 보장)
+        LocalDate baselineDate = LocalDate.of(year, 1, 1);
+        long memberBaseline  = memberStatsPort.countActiveBefore(baselineDate);
+        long lectureBaseline = lectureStatsPort.countActiveBefore(baselineDate);
+        long postBaseline    = postStatsPort.countPostBefore(baselineDate);
+
+        // 3개 BC 포트에서 월별 원시 데이터를 받아 기준점 + 누적값으로 변환 후 반환
         return new MonthlyStats(
-                toCumulative(memberStatsPort.countMemberByMonth(year), currentMonth),
-                toCumulative(lectureStatsPort.countLectureByMonth(year), currentMonth),
-                toCumulative(postStatsPort.countPostByMonth(year), currentMonth)
+                toCumulative(memberStatsPort.countMemberByMonth(year), currentMonth, memberBaseline),
+                toCumulative(lectureStatsPort.countLectureByMonth(year), currentMonth, lectureBaseline),
+                toCumulative(postStatsPort.countPostByMonth(year), currentMonth, postBaseline)
         );
     }
 
@@ -58,12 +64,15 @@ public class MonthlyStatsQueryService implements MonthlyStatsQueryUseCase {
     private List<MonthlyCount> toCumulative(List<MonthlyCount> raw, int upToMonth) {
         // 누적 합계를 담는 변수
         long running = 0;
+    private List<MonthlyCount> toCumulative(List<MonthlyCount> raw, int upToMonth, long baseline) {
+        // 이전 연도까지의 누적값을 시작점으로 설정
+        long running = baseline;
         // 누적 변환 결과를 담을 리스트
         List<MonthlyCount> result = new ArrayList<>();
         for (MonthlyCount mc : raw) {
             // 현재 월 초과 시 미래 달 데이터 제거
             if (mc.month() > upToMonth) break;
-            // 이전 달 합계에 이번 달 수치를 더해 누적시키기
+            // 이전 달 합계에 이번 달 수치를 더해 누적
             running += mc.count();
             // 해당 월 + 누적값으로 새 객체 생성 후 추가
             result.add(new MonthlyCount(mc.month(), running));

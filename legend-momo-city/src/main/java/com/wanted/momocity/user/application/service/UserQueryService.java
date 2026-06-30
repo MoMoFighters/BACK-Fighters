@@ -11,6 +11,7 @@ import com.wanted.momocity.user.domain.repository.UserRepository;
 import com.wanted.momocity.user.presentation.api.response.AdminUserDetailResponse;
 import com.wanted.momocity.user.presentation.api.response.AdminUserListResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -86,6 +87,12 @@ public class UserQueryService implements UserQueryUsecase {
 
     // 관리자 회원관리용 회원 조회
     @Override
+    @Cacheable(
+            value = "adminUserList",
+            key = "'page:' + #page + ':size:' + #size", // 키 예시 : page:1:size:10
+            condition = "#role == null && #status == null")
+    // role과 status 파라미터가 둘 다 null일 때만 캐싱 로직이 동작
+    // = 전체 회원조회 때만 캐시 적용
     public AdminUserListResult getAdminUserList(String role, String status, int page, int size) {
         Role roleEnum = role != null ? Role.valueOf(role) : null;
         Status statusEnum = status != null ? Status.valueOf(status) : null;

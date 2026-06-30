@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.security.core.parameters.P;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -236,6 +237,23 @@ public interface PostJpaRepository extends JpaRepository<PostJpaEntity, Long> {
     ORDER BY FUNCTION('MONTH', p.createdAt) ASC
 """)
     List<Object[]> countPostByMonth(@Param("year") int year);
+
+    /*
+     * comment.
+     *  특정 날짜 이전까지 등록된 게시글 총 개수
+     *  연도별 누적 그래프에서 연도가 바뀔 때
+     *  이전 연도까지의 누적값을 기준점으로 사용하기 위함
+     *  소프트딜리트 제외
+     */
+
+    @Query("""
+    SELECT COUNT(p)
+    FROM PostJpaEntity p
+    WHERE p.deletedAt IS NULL
+    AND p.createdAt < :date
+""")
+    long countPostBefore(@Param("date") LocalDateTime date);
+
 
     // 하드딜리트 (스케줄러용)
     // deletedAt IS NOT NULL : 소프트딜리트된 게시글만 대상
