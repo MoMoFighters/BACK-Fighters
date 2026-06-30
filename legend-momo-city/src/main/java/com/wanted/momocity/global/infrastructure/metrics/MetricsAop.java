@@ -182,4 +182,26 @@ public class MetricsAop {
         }
     }
 
+    // 관리자 회원 목록 조회 소요 시간 측정
+    @Around("execution(* com.wanted.momocity.user.application.service.UserQueryService.getAdminUserList(..))")
+    public Object measureAdminUserList(ProceedingJoinPoint joinPoint) throws Throwable {
+        Timer.Sample sample = momoMetrics.startTimer();
+        try {
+            return joinPoint.proceed();
+        } finally {
+            momoMetrics.stopAdminUserListTimer(sample);
+        }
+    }
+
+    // 강사 승인 처리 소요 시간 측정
+    @Around("execution(* com.wanted.momocity.user.application.service.UserCommandService.approve(..))")
+    public Object measureTeacherApprove(ProceedingJoinPoint joinPoint) throws Throwable {
+        Timer.Sample sample = momoMetrics.startTimer();
+        try {
+            return joinPoint.proceed();
+        } finally {
+            momoMetrics.stopTeacherApproveTimer(sample);
+        }
+    }
+
 }
