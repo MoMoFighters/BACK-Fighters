@@ -1,6 +1,7 @@
 package com.wanted.momocity.user.application.service;
 
 import com.wanted.momocity.global.application.s3.S3PresignedUrlPort;
+import com.wanted.momocity.user.application.port.GetUserBuildingsPort;
 import com.wanted.momocity.user.application.port.UserReportListPort;
 import com.wanted.momocity.user.domain.exception.UserNotFoundException;
 import com.wanted.momocity.user.application.policy.UserPolicy;
@@ -24,22 +25,23 @@ public class UserQueryService implements UserQueryUsecase {
     private final UserPolicy userPolicy;
     private final S3PresignedUrlPort s3PresignedUrlPort;
     private final UserReportListPort userReportListPort;
+    private final GetUserBuildingsPort getUserBuildingsPort;
 
     // 마이페이지 내 정보 조회용
     @Override
-    public UserDetailView userDetail(Long userId) {
+    public UserDetailResult userDetail(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(()->new UserNotFoundException("사용자를 찾을 수 없습니다."));
 
-        return new UserDetailView(
-                user.getProfileImageUrl(),
-                user.getEmail(),
-                user.getName(),
-                user.getPoint(),
-                user.getNickname(),
-                user.getTempPwd(),
-                user.getCreatedAt()
+        UserDetailView userDetail = new UserDetailView(
+                user.getProfileImageUrl(), user.getEmail(), user.getName(),
+                user.getPoint(), user.getNickname(), user.getTempPwd(), user.getCreatedAt()
         );
+
+        List<BuildingInfo> buildings =
+                getUserBuildingsPort.getUserBuildings(userId);
+
+        return new UserDetailResult(userDetail, buildings);
     }
 
     @Override

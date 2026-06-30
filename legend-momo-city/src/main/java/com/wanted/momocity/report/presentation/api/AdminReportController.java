@@ -47,15 +47,18 @@ public class AdminReportController {
                     responseCode = "403", description = "ADMIN 권한 없음")
     })
     public ResponseEntity<ApiResponse<ReportListResponse>> getReports(
-            @Parameter(description = "조회할 최대 개수", example = "10")
-            @RequestParam(defaultValue = "10") int limit,
+            // limit 파라미터 제거, page/size 로 교체
+            @Parameter(description = "페이지 번호 (1부터 시작)", example = "1")
+            @RequestParam(defaultValue = "1") int page,
+            @Parameter(description = "페이지당 개수", example = "10")
+            @RequestParam(defaultValue = "10") int size,
             @Parameter(description = "처리 여부 필터 (선택, false=미처리, true=처리완료)", example = "false")
             @RequestParam(required = false) Boolean isResolved
     ) {
         // 1. isResolved 유무에 따라 UseCase 메서드 선택
         ReportQueryUseCase.ReportList list = (isResolved == null)
-                ? reportQueryUseCase.getRecent(limit)
-                : reportQueryUseCase.getByIsResolved(isResolved, limit);
+                ? reportQueryUseCase.getRecent(page, size)
+                : reportQueryUseCase.getByIsResolved(isResolved, page, size);
 
         // 2. UseCase 출력 → 응답 DTO 변환
         ReportListResponse response = ReportListResponse.from(list);
@@ -78,7 +81,7 @@ public class AdminReportController {
         ReportQueryUseCase.ReportDetail detail = reportQueryUseCase.getById(id);
 
         // 2. 도메인 → 응답 DTO 변환
-        ReportDetailResponse response = ReportDetailResponse.from(detail.report());
+        ReportDetailResponse response = ReportDetailResponse.from(detail);
 
         // 3. 200 OK 반환
         return ResponseEntity.ok(

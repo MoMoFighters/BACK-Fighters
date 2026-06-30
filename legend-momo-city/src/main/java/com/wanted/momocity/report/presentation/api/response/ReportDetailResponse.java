@@ -1,7 +1,7 @@
 package com.wanted.momocity.report.presentation.api.response;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.wanted.momocity.report.domain.model.Report;
+import com.wanted.momocity.report.application.usecase.ReportQueryUseCase;
 
 import java.time.LocalDateTime;
 
@@ -13,10 +13,14 @@ import java.time.LocalDateTime;
 public record ReportDetailResponse(
         Long reportId,
         Long reporterUserId,
+        String reporterName,
         Long reportedUserId,
+        String reportedName,
         String targetType,
+        Long parentId,
         Long targetId,
         String targetPath,
+        String targetContent,
         String reason,
         String detail,
         boolean isResolved,
@@ -24,14 +28,20 @@ public record ReportDetailResponse(
         LocalDateTime resolvedAt
 ) {
 
-    public static ReportDetailResponse from(Report report) {
+    // ReportDetail (report + 이름과 내용)을 받아서 응답 DTO 로 반환
+    public static ReportDetailResponse from(ReportQueryUseCase.ReportDetail detail) {
+        Report report = detail.report();
         return new ReportDetailResponse(
                 report.getId(),
                 report.getReporterUserId(),
+                detail.reporterName(),
                 report.getReportedUserId(),
+                detail.reportedName(),
                 report.getTargetType().name(),
+                detail.parentId(),
                 report.getTargetId(),
                 report.getTargetPath(),
+                detail.targetContent(),
                 report.getReason().toKorean(),
                 report.getDetail(),
                 report.isResolved(),

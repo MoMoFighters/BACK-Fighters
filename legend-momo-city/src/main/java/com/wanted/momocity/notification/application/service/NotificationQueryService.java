@@ -4,12 +4,14 @@ import com.wanted.momocity.message.application.usecase.MessageQueryUseCase;
 import com.wanted.momocity.message.infrastructure.persistence.MessageJpaEntity;
 import com.wanted.momocity.message.infrastructure.persistence.MessageReadJpaEntity;
 import com.wanted.momocity.notification.application.manager.NotificationSessionManager;
+import com.wanted.momocity.notification.application.metric.NotificationMetrics;
 import com.wanted.momocity.notification.application.query.GetMainTotalCountsQuery;
 import com.wanted.momocity.notification.application.query.GetNotificationQuery;
 import com.wanted.momocity.notification.application.query.GetPhoneAppCountsQuery;
 import com.wanted.momocity.notification.application.usecase.NotificationQueryUseCase;
 import com.wanted.momocity.notification.domain.repository.NotificationRepository;
 import com.wanted.momocity.notification.infrastructure.persistence.NotificationJpaEntity;
+import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -29,11 +31,16 @@ public class NotificationQueryService implements NotificationQueryUseCase {
     //웹소켓 브로드캐스팅 템플릿 주입
     private final SimpMessagingTemplate messagingTemplate;
     private final NotificationSessionManager notificationSessionManager;
+    //메트릭
+    private final NotificationMetrics notificationMetrics;
 
     //알림 목록
     @Override
     public List<NotiView> getNotificationQueryHandle(GetNotificationQuery query) {
         log.info("[GetNotificationQueryService] 알림 목록 조회 시작 - 유저ID:{}", query.userId());
+
+        // 🎯 1. 시작 한 줄: 알림 목록 조회 및 가공 타이머 스타트!
+        Timer.Sample sample = io.micrometer.core.instrument.Timer.start();
 
         // 1. 개발자님이 완성하신 명칭과 조인 쿼리로 DB에서 데이터를 싹 들고옵니다.
         List<Object[]> rawLogs = notificationRepository.findAllByUserId(query.userId());
@@ -130,6 +137,9 @@ public class NotificationQueryService implements NotificationQueryUseCase {
         } else {
             log.info("[알림 쿼리 웹소켓] 유저 {}번이 오프라인(비구독)이므로 실시간 웹소켓 발송만 스킵합니다. (DB 조회 데이터는 정상 반환)", query.userId());
         }
+
+        // 🎯 2. 끝 한 줄: 반환 직전에 타이머를 안전하게 멈추고 지표 기록!
+        sample.stop(notificationMetrics.getNotificationListTimer());
 
         return finalResultList;
     }

@@ -12,6 +12,7 @@ import com.wanted.momocity.lecture.application.query.LectureQuery.GetLecturesQue
 import com.wanted.momocity.lecture.application.query.LectureQuery.GetStudentLectureDetailQuery;
 import com.wanted.momocity.lecture.application.query.LectureQuery.GetTeacherLectureDetailQuery;
 import com.wanted.momocity.lecture.application.query.LectureQuery.GetTeacherLecturesQuery;
+import com.wanted.momocity.lecture.application.service.LectureS3UrlResolver;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCases.AdminLectureCommandUseCase;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCases.ChapterCommandUseCase;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCases.LectureCommandUseCase;
@@ -64,6 +65,9 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Lecture", description = "강의 등록, 조회, 챕터, 영상, 상태 관리 API")
 public class LectureController {
 
+    // 강의 썸네일을 저장할 S3 최상위 폴더명
+    private static final String LECTURE_S3_PREFIX = "lectures";
+
     // 강의 조회 UseCase
     private final LectureQueryUseCase lectureQueryUseCase;
     // 강의 상태 변경(WAITING) UseCase
@@ -77,6 +81,7 @@ public class LectureController {
     // 관리자 강의 상태 변경 UseCase
     private final AdminLectureCommandUseCase adminLectureCommandUseCase;
 
+    private final LectureS3UrlResolver lectureS3UrlResolver;
 
     /* comment
      * 강의 등록 API
@@ -116,7 +121,13 @@ public class LectureController {
         request.validateCategory();
         request.validateThumbnailSize();
 
-        String thumbnailUrl = s3UploadPort.upload(request.thumbnail(), "lectures");
+        String thumbnailUrl = s3UploadPort.upload( // 강의 썸네일 파일을 S3에 업로드
+
+                request.thumbnail(), // 업로드할 강의 썸네일 파일
+
+                LECTURE_S3_PREFIX // 강의 썸네일이 저장될 S3 폴더 경로
+
+        ); // S3 업로드 후 접근 가능한 URL 반환
 
         LectureAggregate lecture = lectureCommandUseCase.createLecture(
                 request.toCommand(teacherId, thumbnailUrl)
@@ -126,7 +137,7 @@ public class LectureController {
                 .body(ApiResponse.created(
                         ApiResponseCode.CREATED,
                         "강의가 등록되었습니다.",
-                        CreateLectureResponse.from(lecture)
+                        CreateLectureResponse.from(lecture, lectureS3UrlResolver)
                 ));
     }
 
@@ -181,7 +192,7 @@ public class LectureController {
                 .body(ApiResponse.created(
                         ApiResponseCode.CREATED,
                         "챕터가 등록되었습니다.",
-                            CreateChapterResponse.from(chapter)
+                            CreateChapterResponse.from(chapter, lectureS3UrlResolver)
                 ));
     }
 
@@ -233,7 +244,7 @@ public class LectureController {
         return ResponseEntity.ok(ApiResponse.success(
                 ApiResponseCode.SUCCESS,
                 "챕터 동영상이 등록되었습니다.",
-                RegisterChapterVideoResponse.from(chapter)
+                RegisterChapterVideoResponse.from(chapter, lectureS3UrlResolver)
         ));
     }
 

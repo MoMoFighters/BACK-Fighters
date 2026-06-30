@@ -26,6 +26,10 @@ public interface SpringDataAdminNoticeRepository extends JpaRepository<AdminNoti
     @Query("DELETE FROM AdminNoticeJpaEntity a WHERE a.id IN :ids")
     void deleteAllByIdIn(@Param("ids") List<Long> ids);
 
+    // isPinned DESC → createdAt DESC 순으로 전체 목록 조회 : 고정 공지가 항상 상단에 오도록 정렬
+    @Query("SELECT a FROM AdminNoticeJpaEntity a ORDER BY a.isPinned DESC, a.createdAt DESC")
+    Page<AdminNoticeJpaEntity> findAllOrderByIsPinnedFirst(Pageable pageable);
+
     // isPinned = true 인 공지 단건 조회 : Spring Data 가 메서드 이름 보고 SQL 자동 생성
     Optional<AdminNoticeJpaEntity> findByIsPinnedTrue();
 

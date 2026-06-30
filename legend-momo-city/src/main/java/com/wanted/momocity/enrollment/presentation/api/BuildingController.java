@@ -40,7 +40,7 @@ public class BuildingController {
 
         return ResponseEntity.ok(ApiResponse.success(
                 ApiResponseCode.SUCCESS,
-                UserResponseMessage.VIEW_BUILDING_INFO,
+                "사용자 빌딩 정보가 조회되었습니다.",
                 enrollmentQueryUsecase.userBuildingInfo(userDetails.getUserId())
         ));
     }
@@ -73,7 +73,7 @@ public class BuildingController {
 
         return ResponseEntity.ok(ApiResponse.success(
                 ApiResponseCode.SUCCESS,
-                UserResponseMessage.VIEW_BUILDING_INFO,
+                "사용자 빌딩 정보가 조회되었습니다.",
                 buildings
         ));
     }

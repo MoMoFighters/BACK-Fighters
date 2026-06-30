@@ -1,5 +1,6 @@
 package com.wanted.momocity.enrollment.infrastructure.adapter;
 
+import com.wanted.momocity.enrollment.application.port.ProgressPort;
 import com.wanted.momocity.enrollment.infrastructure.persistence.EnrollmentJpaEntity;
 import com.wanted.momocity.enrollment.infrastructure.persistence.EnrollmentJpaRepository;
 import com.wanted.momocity.lecture.application.port.LectureEnrollmentQueryPort;
@@ -21,6 +22,8 @@ public class LectureEnrollmentQueryAdapter implements LectureEnrollmentQueryPort
 
     // enrollment 테이블 조회를 담당하는 JPA Repository
     private final EnrollmentJpaRepository enrollmentJpaRepository;
+
+    private final ProgressPort progressPort;
 
     /**
      * 사용자가 수강 신청한 강의 ID 목록을 조회
@@ -48,10 +51,16 @@ public class LectureEnrollmentQueryAdapter implements LectureEnrollmentQueryPort
 
     // EnrollmentJpaEntity를 lecture 쪽에서 필요한 진행 정보로 변환
     private EnrollmentProgress toProgress(EnrollmentJpaEntity entity) {
+        // enrollment.totalProgress는 저장 시점 이후 갱신되지 않을 수 있으므로
+        // 실제 진도율 원천인 viewing.learning_history 기준으로 다시 계산한다.
+        int totalProgress = progressPort.getTotalProgress(
+                entity.getUserId(),
+                entity.getLectureId()
+        );
         return new EnrollmentProgress(
                 entity.getId(),
                 entity.getLectureId(),
-                entity.getTotalProgress(),
+                totalProgress,
                 entity.getCompletedCount()
         );
     }

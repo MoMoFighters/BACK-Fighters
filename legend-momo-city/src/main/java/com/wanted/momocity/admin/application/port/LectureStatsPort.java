@@ -1,6 +1,7 @@
 package com.wanted.momocity.admin.application.port;
 
 import java.time.LocalDate;
+import java.util.List;
 
 /* comment.
     LectureStatsPort 정리
@@ -19,4 +20,7 @@ public interface LectureStatsPort {
 
      // 특정 날짜 이전 시점의 활성 강의 수 (증감률 계산용)
     long countActiveBefore(LocalDate date);
+
+    // 특정 연도의 월별 강의 등록 수 (1월 ~ 12월)
+    List<MonthlyCount> countLectureByMonth(int year);
 }
