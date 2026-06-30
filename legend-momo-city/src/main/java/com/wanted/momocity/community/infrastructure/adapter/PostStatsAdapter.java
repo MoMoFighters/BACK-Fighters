@@ -41,7 +41,7 @@ public class PostStatsAdapter implements PostStatsPort {
 
     // 특정 날짜 이전까지 등록된 게시글 총 개수
     // → 연도 간 누적 기준점 계산용
-//    @Override
+    @Override
     public long countPostBefore(LocalDate date) {
         return postJpaRepository.countPostBefore(date);
     }
