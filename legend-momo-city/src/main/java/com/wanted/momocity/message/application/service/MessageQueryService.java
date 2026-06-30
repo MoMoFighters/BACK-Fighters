@@ -86,6 +86,22 @@ public class MessageQueryService implements MessageQueryUseCase {
             targetEnrollmentsMap = bulkTargetEnrollments.stream()
                     .collect(Collectors.groupingBy(e -> e.getUserId().getId()));
         }
+
+        // ✨ [추가 최적화 A] 모든 상대방 유저와의 친구 관계를 단 1방의 쿼리로 로드하여 Map으로 변환
+        Map<Long, String> friendStatusMap = new HashMap<>();
+        if (!targetUserIds.isEmpty()) {
+            List<FriendJpaEntity> bulkFriends = messageRepository.findFriendRelationsByTargetUserIdsIn(query.userId(), targetUserIds);
+            for (FriendJpaEntity friend : bulkFriends) {
+                Long targetId = friend.getFromUserId().getId().equals(query.userId())
+                        ? friend.getToUserId().getId() : friend.getFromUserId().getId();
+                friendStatusMap.put(targetId, friend.getStatus()); // 상대방 ID별 친구 상태 저장
+            }
+        }
+
+        // ✨ [추가 최적화 B] 참여중인 모든 방의 안읽은 메시지 카운트를 단 1방의 쿼리로 로드하여 Map으로 변환
+        List<Object[]> bulkUnreadCounts = messageRepository.countUnreadMessagesByRoomIdsIn(allRoomIds, query.userId());
+        Map<Long, Long> unreadCountMap = bulkUnreadCounts.stream()
+                .collect(Collectors.toMap(arr -> (Long) arr[0], arr -> (Long) arr[1]));
         // =========================================================================
 
         List<ChatRoomView> result = new ArrayList<>();
@@ -159,9 +175,7 @@ public class MessageQueryService implements MessageQueryUseCase {
                 //친구 삭제의 경우에도 (알 수 없음) 처리, 있으면 실제 상태 추출
                 // 친구 상태 양방향 조회 (나와의 채팅이면 관계 조회 필요없이 me 상태로 처리)
                 if (!"me".equals(currentFriendStatus) && !targetUser.getId().equals(query.userId())) {
-                    currentFriendStatus = messageRepository.findFriendRelation(query.userId(), targetUser.getId())
-                            .map(FriendJpaEntity::getStatus)
-                            .orElse("none");
+                    currentFriendStatus = friendStatusMap.getOrDefault(targetUser.getId(), "none");
                 }
 
                 //학생끼리의 대화방
@@ -238,7 +252,7 @@ public class MessageQueryService implements MessageQueryUseCase {
                 LocalDateTime lastChattedAt = (pro.lastMessage() != null) ? pro.lastMessage().getCreatedAt() : null;
 
             // 💡 2. [핵심] 어댑터가 가져온 메시지 시간이 내 입장 시각(joinedAt)보다 과거라면 덮어쓰기!
-            if (pro.lastMessage() != null && pro.roomCreatedAt().isBefore(myJoinedAt)) {
+            if (pro.lastMessage() != null && pro.lastMessage().getCreatedAt().isBefore(myJoinedAt)) {
                 lastContent = "채팅방에 입장했습니다. 대화를 시작해 보세요!";
                 lastChattedAt = myJoinedAt; // 과거 톡 시간은 노출 및 정렬에서 제외하기 위해 null 처리
             }
@@ -277,7 +291,7 @@ public class MessageQueryService implements MessageQueryUseCase {
                     unreadCount = 0L;
                 } else {
                     //일반 채팅방만 안읽은 메시지 카운트
-                    unreadCount = messageRepository.countUnreadMessage(roomId, query.userId());
+                    unreadCount = unreadCountMap.getOrDefault(roomId, 0L);
                 }
 
                 //채팅방 멤버 수(로그인 유저 포함)
@@ -420,14 +434,20 @@ public class MessageQueryService implements MessageQueryUseCase {
         // 메시지 발신자 ID까지 추가 수집
         rawMessages.forEach(m -> roomUserIds.add(m.getSenderId().getId()));
 
+        // 🎯 [추가 방어] 친구 관계는 상대방 유저들과의 관계만 알면 되므로 내 ID는 검색 대상에서 제외
+        roomUserIds.remove(query.userId());
+
         // 2. [친구 관계 일괄 조회] 반복문 내부 단건 조회 제거용 Map 구성
         Map<Long, String> bulkFriendStatusMap = new HashMap<>();
-        for (Long memberUserId : roomUserIds) {
-            if (!memberUserId.equals(query.userId())) {
-                String status = messageRepository.findFriendRelation(query.userId(), memberUserId)
-                        .map(FriendJpaEntity::getStatus)
-                        .orElse("none");
-                bulkFriendStatusMap.put(memberUserId, status);
+        if (!roomUserIds.isEmpty()) {
+            // 🎯 앞서 선언해 둔 IN 절 기반의 벌크 쿼리 메서드 딱 1방만 호출!
+            List<FriendJpaEntity> bulkFriends = messageRepository.findFriendRelationsByTargetUserIdsIn(query.userId(), roomUserIds);
+
+            // 🎯 절대 DB를 다시 찌르지 않고, 받아온 자바 객체 리스트를 인메모리 상에서 매핑
+            for (FriendJpaEntity friend : bulkFriends) {
+                Long targetId = friend.getFromUserId().getId().equals(query.userId())
+                        ? friend.getToUserId().getId() : friend.getFromUserId().getId();
+                bulkFriendStatusMap.put(targetId, friend.getStatus());
             }
         }
 

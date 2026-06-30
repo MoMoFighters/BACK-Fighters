@@ -42,4 +42,11 @@ public interface SpringDataMessageReadRepository extends JpaRepository<MessageRe
             "where mr.messageId.id in :messageIds and mr.isMsgRead = false " +
             "group by mr.messageId.id")
     List<Object[]> countUnreadMembersByMessageIdsIn(@Param("messageIds") List<Long> messageIds);
+
+    //채팅방 목록 조회 개선 보강(내가 안읽은 메시지 수)
+    // 1. 참여한 모든 방의 안읽은 메시지 수를 한방에 카운트 (방 ID별로 COUNT)
+    @Query("SELECT m.roomId.id, COUNT(m) FROM MessageReadJpaEntity m " +
+            "WHERE m.roomId.id IN :roomIds AND m.userId.id = :userId AND m.isMsgRead = false " + // (비즈니스 요구사항 조건에 맞춤)
+            "GROUP BY m.roomId.id")
+    List<Object[]> countUnreadMessagesByRoomIdsIn(@Param("roomIds") List<Long> roomIds, @Param("userId") Long userId);
 }

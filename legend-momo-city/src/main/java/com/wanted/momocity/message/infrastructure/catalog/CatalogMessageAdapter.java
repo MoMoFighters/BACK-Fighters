@@ -423,6 +423,7 @@ public class CatalogMessageAdapter implements MessageRepository {
 
     //메시지 읽음 벌크 처리
     @Override
+    @Transactional
     public int bulkUpdateReadStatus(Long roomId, Long userId) {
         return springDataMessageReadRepository.bulkUpdateReadStatus(roomId, userId);
     }
@@ -442,6 +443,17 @@ public class CatalogMessageAdapter implements MessageRepository {
     @Override
     public List<FriendJpaEntity> findFriendRelationsByUserIdAndTargetIds(Long userId, List<Long> chatMemberIds) {
         return messageSideFriendRepository.findFriendRelationsByUserIdAndTargetIds(userId, chatMemberIds);
+    }
+
+    //채팅방 목록 조회 개선 보강
+    @Override
+    public List<FriendJpaEntity> findFriendRelationsByTargetUserIdsIn(Long userId, Set<Long> targetUserIds) {
+        return messageSideFriendRepository.findFriendRelationsByTargetUserIdsIn(userId,targetUserIds);
+    }
+    //채팅방 목록 조회 개선 보강
+    @Override
+    public List<Object[]> countUnreadMessagesByRoomIdsIn(List<Long> allRoomIds, Long userId) {
+        return springDataMessageReadRepository.countUnreadMessagesByRoomIdsIn(allRoomIds, userId);
     }
 
 }

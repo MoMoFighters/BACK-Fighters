@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 //포트 역할
 public interface MessageRepository {
@@ -147,4 +148,9 @@ public interface MessageRepository {
     List<UserWithFMJpaEntity> findUsersWithFMByIds(List<Long> chatMemberIds);
     //멤버 초대 개선 보강
     List<FriendJpaEntity> findFriendRelationsByUserIdAndTargetIds(Long userId, List<Long> chatMemberIds);
+
+    //채팅방 목록 조회 개선 보강
+    List<FriendJpaEntity> findFriendRelationsByTargetUserIdsIn(Long userId, Set<Long> targetUserIds);
+    //채팅방 목록 조회 개선 보강
+    List<Object[]> countUnreadMessagesByRoomIdsIn(List<Long> allRoomIds, Long userId);
 }

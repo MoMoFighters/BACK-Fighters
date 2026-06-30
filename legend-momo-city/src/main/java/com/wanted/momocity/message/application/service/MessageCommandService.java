@@ -77,7 +77,7 @@ public class MessageCommandService implements MessageCommandUseCase {
         }
 
         //나와의 채팅 차단, 친구 상태 검증 위임(409), 다대다 규칙
-        messageEligibilityPolicy.validateCreate(command.userId(), command.roomTitle(), targetUsers,friendStatuses);
+        messageEligibilityPolicy.validateCreate(command.userId(), command.roomTitle(), targetUsers, friendStatuses);
 
         //다대다 채팅인지 확인
         boolean isOneToOne = (command.roomTitle() == null || command.roomTitle().isEmpty()) && command.chatMembers().size() == 1;
@@ -150,53 +150,39 @@ public class MessageCommandService implements MessageCommandUseCase {
 
                         messageRepository.fastSaveChanges();
 
-                        //상대방이 참여 중인 그 방의 인원이 혼자인지 확인
-//                    List<ChatRoomMemberJpaEntity> roomMembers = messageRepository.findMembersByRoomId(candidateRoomId);
+                        // 🎯 백그라운드로 무거운 무한 루프 조회 및 웹소켓 전송 이관
+                        eventPublisher.publishEvent(new ChatRoomReenteredPublishedEvent(finalRoomId, List.of(command.userId(), targetUserId)));
+                        log.info("[CreateChatRoomCommandService] 과거 방 복구 완료에 따른 웹소켓 전송 이벤트 발행 성공");
 
-                    //인원이 1명이면서 방 제목이 없어야 일대일 과거방.
-//                    if (roomMembers.size() == 1 && (room.getRoomTitle() == null || room.getRoomTitle().trim().isEmpty())) {
+                        List<MemberInfo> existingMembers = new ArrayList<>();
+                        existingMembers.add(new MemberInfo(
+                                singleTargetUser.getId(),
+                                "TEACHER".equals(singleTargetUser.getRole()) ? singleTargetUser.getName() : null,
+                                singleTargetUser.getNickname(),
+                                singleTargetUser.getRole(),
+                                friendStatuses.get(0)
+                        ));
 
+                        RoomInfo existingRoomInfo = new RoomInfo(
+                                finalRoomId,
+                                null,
+                                2L //기존 방 복구 시 무조건 일대일이므로 2명 고정
+                        );
 
-//                            List<ChatRoomMemberJpaEntity> currentMembers = messageRepository.findMembersByRoomId(finalRoomId);
-//                            String destination = "/sub/chat/room/" + finalRoomId;
-//
-//
-//                            List<Long> currentMemberIds = currentMembers.stream()
-//                                    .map(m -> m.getUserId().getId())
-//                                    .toList();
+                        // 🎯 딱 두 줄: 재입장 특수 트래픽 발생 카운트 증가 + 복구 방 멤버 수(2명) 기록
+                        messageMetrics.incrementChatReenterCount();
+                        messageMetrics.recordRoomMemberCount(2.0);
 
-                            // 🎯 백그라운드로 무거운 무한 루프 조회 및 웹소켓 전송 이관
-                            eventPublisher.publishEvent(new ChatRoomReenteredPublishedEvent(finalRoomId, List.of(command.userId(), targetUserId)));
-                            log.info("[CreateChatRoomCommandService] 과거 방 복구 완료에 따른 웹소켓 전송 이벤트 발행 성공");
-
-                            List<MemberInfo> existingMembers = new ArrayList<>();
-                            existingMembers.add(new MemberInfo(
-                                    singleTargetUser.getId(),
-                                    "TEACHER".equals(singleTargetUser.getRole()) ? singleTargetUser.getName() : null,
-                                    singleTargetUser.getNickname(),
-                                    singleTargetUser.getRole(),
-                                    friendStatuses.get(0)
-                            ));
-
-                            RoomInfo existingRoomInfo = new RoomInfo(
-                                    finalRoomId,
-                                    null,
-                                    2L //기존 방 복구 시 무조건 일대일이므로 2명 고정
-                            );
-
-                            // 🎯 딱 두 줄: 재입장 특수 트래픽 발생 카운트 증가 + 복구 방 멤버 수(2명) 기록
-                            messageMetrics.incrementChatReenterCount();
-                            messageMetrics.recordRoomMemberCount(2.0);
-
-                            return new CreateRoomView(
-                                    true,
-                                    existingRoomInfo,
-                                    existingMembers
-                            );
-                        }
+                        return new CreateRoomView(
+                                true,
+                                existingRoomInfo,
+                                existingMembers
+                        );
                     }
                 }
             }
+        }
+
 
         //다대다이거나 기존방 없을 때
         //기존 채팅방 없으면 신규 개설

@@ -144,6 +144,7 @@ public class CatalogNotificationRepositoryAdapter implements NotificationReposit
 
     //알림 삭제 - 일반 알림
     @Override
+    @Transactional
     public void deleteAllInBatch(List<NotificationJpaEntity> generalNotisToDelete) {
         if (generalNotisToDelete == null || generalNotisToDelete.isEmpty()) {
             return;
@@ -161,6 +162,7 @@ public class CatalogNotificationRepositoryAdapter implements NotificationReposit
 
     //알림 삭제 - 메시지 알림
     @Override
+    @Transactional
     public void bulkMarkMessageNotificationsAsDeleted(List<Long> messageRoomIds, Long userId) {
         notificationSideMessageReadRepository.bulkUpdateIsDeletedTrue(messageRoomIds, userId);
     }
@@ -203,6 +205,7 @@ public class CatalogNotificationRepositoryAdapter implements NotificationReposit
 
     //일반 알림 벌크 읽음
     @Override
+    @Transactional
     public void bulkMarkGeneralNotificationsAsRead(List<NotificationJpaEntity> generalNotisToUpdate) {
         if (generalNotisToUpdate == null || generalNotisToUpdate.isEmpty()) {
             return;

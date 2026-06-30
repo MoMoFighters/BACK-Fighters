@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,4 +30,11 @@ public interface MessageSideFriendRepository extends JpaRepository<FriendJpaEnti
             @Param("myId") Long myId,
             @Param("targetIds") List<Long> targetIds
     );
+
+    //채팅방 목록 조회 개선 보강
+    // 2. 목록에 등장하는 모든 상대방 유저들과의 친구 관계를 한방에 로드
+    @Query("SELECT f FROM FriendJpaEntity f " +
+            "WHERE (f.fromUserId.id = :userId AND f.toUserId.id IN :targetUserIds) " +
+            "OR (f.toUserId.id = :userId AND f.fromUserId.id IN :targetUserIds)")
+    List<FriendJpaEntity> findFriendRelationsByTargetUserIdsIn(@Param("userId") Long userId, @Param("targetUserIds") Collection<Long> targetUserIds);
 }
