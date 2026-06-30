@@ -42,7 +42,7 @@ public class PostCommandService implements PostCommandUseCase {
     // 카테고리별 기본 썸네일
     // thumbnailUrl 미지정 + 이미지 없는 게시글에 한해 카테고리 기준 기본 썸네일 자동 생성
     private static final String DEFAULT_THUMBNAIL_BASE_URL =
-            "https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/community/thubnails/";
+            "https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/community/thumbnails/";
 
     /*
      * comment.
@@ -58,7 +58,8 @@ public class PostCommandService implements PostCommandUseCase {
             String thumbnailUrl, List<PostContentCommand> contents, PostCategory category
     ) {
         // thumbnailUrl 이미 지정됨 → 그대로 사용
-        if (thumbnailUrl != null && !thumbnailUrl.isBlank()) {
+        // "null" 문자열도 미지정으로 처리 (프론트 직렬화 이슈 방지)
+        if (thumbnailUrl != null && !thumbnailUrl.isBlank() && !"null".equalsIgnoreCase(thumbnailUrl)) {
             return thumbnailUrl;
         }
 
@@ -109,7 +110,7 @@ public class PostCommandService implements PostCommandUseCase {
         String resolvedThumbnailUrl = resolveThumbnailUrl(thumbnailUrl, contents, post.getCategory());
 
         // 썸네일 업데이트
-        post.updateThumbnail(thumbnailUrl);
+        post.updateThumbnail(resolvedThumbnailUrl);
         postRepository.save(post);
 
         // 새 컨텐츠 목록 생성
@@ -173,7 +174,7 @@ public class PostCommandService implements PostCommandUseCase {
         String resolvedThumbnailUrl = resolveThumbnailUrl(thumbnailUrl, contents, post.getCategory());
 
         // 썸네일 업데이트
-        post.updateThumbnail(thumbnailUrl);
+        post.updateThumbnail(resolvedThumbnailUrl);
         postRepository.save(post);
 
         // 기존 콘텐츠 전체 소프트딜리트 -> 새 콘텐츠 저장
