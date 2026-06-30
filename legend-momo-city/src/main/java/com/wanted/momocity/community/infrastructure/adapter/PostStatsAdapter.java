@@ -6,6 +6,7 @@ import com.wanted.momocity.community.infrastructure.persistence.PostJpaRepositor
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,4 +38,13 @@ public class PostStatsAdapter implements PostStatsPort {
                 .mapToObj(m -> new MonthlyCount(m, monthMap.get(m)))
                 .collect(Collectors.toList());
     }
+
+    // 특정 날짜 이전까지 등록된 게시글 총 개수
+    // → 연도 간 누적 기준점 계산용
+//    @Override
+    public long countPostBefore(LocalDate date) {
+        return postJpaRepository.countPostBefore(date);
+    }
+
+
 }

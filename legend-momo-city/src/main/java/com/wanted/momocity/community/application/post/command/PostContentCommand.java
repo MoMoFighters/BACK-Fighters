@@ -1,4 +1,4 @@
-package com.wanted.momocity.community.application.command;
+package com.wanted.momocity.community.application.post.command;
 
 /*
 * comment.
