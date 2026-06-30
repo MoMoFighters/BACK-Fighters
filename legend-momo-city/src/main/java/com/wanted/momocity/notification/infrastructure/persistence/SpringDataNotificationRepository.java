@@ -1,6 +1,7 @@
 package com.wanted.momocity.notification.infrastructure.persistence;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -16,10 +17,12 @@ public interface SpringDataNotificationRepository extends JpaRepository<Notifica
     Optional<NotificationJpaEntity> findByRefIdAndTypeAndUserId_Id(Long refId, String type, Long userId);
 
     //알림 목록
+    // 🎯 [최적화] 알림 목록 조회 시 발신자/수신자 유저 객체를 한방에 패치 조인!
     @Query("SELECT n, mr FROM NotificationJpaEntity n " +
+            "JOIN FETCH n.userId u " + // 👈 유저 객체 미리 묶어오기 (N+1 방어)
             "LEFT JOIN MessageReadJpaEntity mr ON n.type = 'MESSAGE' AND n.refId = mr.roomId.id AND mr.userId.id = :userId AND mr.isDeleted = false " +
-            "WHERE (n.type != 'MESSAGE' AND n.userId.id = :userId) " + // 일반 알림은 수신자가 나인 것
-            "   OR (n.type = 'MESSAGE' AND n.userId.id != :userId)")  // 메시지 알림은 발신자가 내가 아닌 것 (즉, 남이 보낸 것)
+            "WHERE (n.type != 'MESSAGE' AND n.userId.id = :userId) " +
+            "   OR (n.type = 'MESSAGE' AND n.userId.id != :userId)")
     List<Object[]> findAllByUserId(@Param("userId") Long userId);
 
     //메시지를 제외한 모든 알림 개수
@@ -34,5 +37,27 @@ public interface SpringDataNotificationRepository extends JpaRepository<Notifica
     long countByUserIdAndType(@Param("userId") Long userId, @Param("type") String type);
 
     //알림 읽기 - 요청온 알림이 notification 테이블에 존재하는지.
+    // 🎯 [최적화 추가] 알림 읽기 처리 시 요청 타겟 알림들과 수신자 유저 정보를 한방에 긁어옵니다.
+    @Query("SELECT n FROM NotificationJpaEntity n " +
+            "JOIN FETCH n.userId u " + // 👈 N+1 원천 차단용 패치 조인
+            "WHERE n.id IN :targetId")
     List<NotificationJpaEntity> findAllByIdIn(List<Long> targetId);
+
+    @Query("SELECT n.type, COUNT(n) FROM NotificationJpaEntity n " +
+            "WHERE n.userId.id = :userId " +
+            "AND n.type IN ('CALENDAR', 'POST', 'FRIEND_REQUEST') " +
+            "AND n.isRead = false " +
+            "GROUP BY n.type")
+    List<Object[]> countUnreadGroupByType(@Param("userId") Long userId);
+
+    //친구 거절 알림 읽음 처리
+    // 🎯 [추가] 1방의 JPQL UPDATE 쿼리로 알림 상태만 '읽음'으로 변경
+    @Modifying
+    @Query("update NotificationJpaEntity n set n.isRead = true " +
+            "where n.refId = :refId and n.userId.id = :userId and n.type = :type and n.isRead = false")
+    int bulkMarkAsReadByRefIdAndUserIdAndType(
+            @Param("refId") Long refId,
+            @Param("userId") Long userId,
+            @Param("type") String type
+    );
 }

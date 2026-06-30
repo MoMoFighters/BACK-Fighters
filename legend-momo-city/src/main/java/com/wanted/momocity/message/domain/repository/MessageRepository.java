@@ -6,6 +6,7 @@ import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import com.wanted.momocity.message.infrastructure.persistence.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -125,4 +126,14 @@ public interface MessageRepository {
     Optional<Long> findOneToOneChatRoomIdBetween(Long userId, Long targetUserId);
     //친구 삭제 후 채팅방 나가기 버그 수정
     Optional<ChatRoomMemberJpaEntity> findMemberByRoomIdAndUserId(Long foundRoomId, Long userId);
+
+    //채팅방 목록 조회 개선 보강
+    List<ChatRoomMemberJpaEntity> findByRoomId_IdIn(List<Long> allRoomIds);
+    //채팅방 목록 조회 개선 보강
+    List<Object[]> findLatestAnnounceTimeByRoomIdsIn(List<Long> allRoomIds);
+    //채팅방 목록 조회 개선 보강
+    List<EnrollmentWithFMJpaEntity> findByUserId_IdIn(List<Long> longs);
+
+    //채팅방 조회 및 개설 개선 보강
+    List<ChatRoomMemberJpaEntity> findOnePersonRoomsByUserId(Long targetUserId, Long loginUserId);
 }

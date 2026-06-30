@@ -76,6 +76,17 @@ public class NotificationQueryService implements NotificationQueryUseCase {
         }
 
         // 2. 🔥 메시지 알림 합치기 및 읽음 상태 동기화
+        // 🎯 [최적화] 루프 돌기 전, 묶여있는 모든 roomId 세트를 추출합니다.
+        List<Long> allRoomIds = new ArrayList<>(messageGroupByRoom.keySet());
+
+        // 🎯 [최적화 핵심]: 루프에 진입하기 전에 IN 절로 방 제목을 단 1방의 쿼리로 다 쓸어 담아 Map으로 바인딩합니다.
+        List<Object[]> roomTitlesRaw = notificationRepository.findRoomTitlesByIdsIn(allRoomIds);
+        Map<Long, String> roomTitleMap = roomTitlesRaw.stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],      // ChatRoom ID
+                        row -> row[1] != null ? (String) row[1] : ""  // Room Title
+                ));
+
         for (Map.Entry<Long, List<Object[]>> entry : messageGroupByRoom.entrySet()) {
             Long roomId = entry.getKey();
             List<Object[]> roomRows = entry.getValue();
@@ -97,7 +108,9 @@ public class NotificationQueryService implements NotificationQueryUseCase {
                     .toList();
 
             // DB에서 룸 타이틀 조회
-            String roomTitle = notificationRepository.findRoomTitleById(roomId).orElse(null);
+            // 🎯 [개선 코드]: DB에 가기 않고, 미리 만들어둔 메모리 Map에서 O(1) 속도로 꺼내옵니다.
+            String roomTitle = roomTitleMap.getOrDefault(roomId, null);
+
             // 🚨 [문구 가공]: notification 테이블의 userId(발신자)를 꺼내서 닉네임들을 조립
             String finalCombinedMessage = latestNoti.getMessage();
             if (roomRows.size() > 1) {
@@ -176,14 +189,20 @@ public class NotificationQueryService implements NotificationQueryUseCase {
 
         Long userId = query.userId();
 
-        // 1. 캘린더 알림 개수 (type = 'CALENDAR' 이면서 내 것)
-        long calendarCount = notificationRepository.countByUserIdAndType(userId, "CALENDAR");
+        // 🎯 [개선 핵심] 원래 3방 나가던 쿼리를 단 1방으로 통합!
+        List<Object[]> rawCounts = notificationRepository.countUnreadGroupByType(userId);
 
-        // 2. 커뮤니티 알림 개수 (type = 'POST' 이면서 내 것)
-        long communityCount = notificationRepository.countByUserIdAndType(userId, "POST");
+        // 결과를 찾기 쉽게 Map으로 가공 (Key: 타입명, Value: 개수)
+        Map<String, Long> countMap = rawCounts.stream()
+                .collect(Collectors.toMap(
+                        row -> (String) row[0],
+                        row -> (Long) row[1]
+                ));
 
-        // 3. 친구 요청 알림 개수 (type = 'FRIEND_REQUEST' 이면서 내 것)
-        long friendRequestCount = notificationRepository.countByUserIdAndType(userId, "FRIEND_REQUEST");
+        // 맵에서 꺼내 쓰고, 없으면(0개면) 0으로 처리
+        long calendarCount = countMap.getOrDefault("CALENDAR", 0L);
+        long communityCount = countMap.getOrDefault("POST", 0L);
+        long friendRequestCount = countMap.getOrDefault("FRIEND_REQUEST", 0L);
 
         // 4. 🔥 안 읽은 메시지 전체 개수 (message_read 테이블에서 isMsgRead = false 인 건수)
         // 💡 룸 개수가 아니라 '쌓인 메시지 총 개수'를 가져오는 포트/어댑터 메서드로 매핑합니다.

@@ -90,6 +90,8 @@ public class CatalogFriendAdapter implements FriendRepository {
     }
 
     //수강신청 완료 후 friend 테이블에 강사-학생 행 추가
+    @Override
+    @Transactional
     public void save(FriendJpaEntity newFriendRelation) {
         log.info("[CatalogFriendAdapter] 강사-학생 자동 친구 행 삽입 시도 - 학생: {}, 강사: {}",
                 newFriendRelation.getFromUserId().getId(),
@@ -99,6 +101,7 @@ public class CatalogFriendAdapter implements FriendRepository {
 
     //친구 요청 철회
     @Override
+    @Transactional
     public void delete(FriendJpaEntity friendRelation) {
         log.info("[CatalogFriendAdapter] friend 테이블에서 행 삭제 시도 - ID: {}", friendRelation.getId());
         springDataFriendRepository.delete(friendRelation);
@@ -125,14 +128,9 @@ public class CatalogFriendAdapter implements FriendRepository {
     public Optional<FriendJpaEntity> findAnyRelationBetween(Long userA, Long userB) {
         log.info("[CatalogFriendAdapter] 양방향 친구 관계 존재 여부 조회 시도 - 유저A: {}, 유저B: {}", userA, userB);
 
-        //A->B 방향 조회
-        Optional<FriendJpaEntity> forward = springDataFriendRepository.findByFromUserId_IdAndToUserId_Id(userA, userB);
-        if (forward.isPresent()) {
-            return forward;
-        }
-
-        //없으면 B->A 방향 조회해서 반환
-        return springDataFriendRepository.findByFromUserId_IdAndToUserId_Id(userB, userA);
+        // 기존에 A->B 확인하고 없으면 B->A 따로 쏘던 무식한 2방 구조를
+        // OR 조건과 FETCH JOIN을 섞어 완전한 단 1방의 단건 조회로 개선합니다.
+        return springDataFriendRepository.findAnyRelationBetweenWithUsers(userA, userB);
     }
 
 
@@ -161,4 +159,10 @@ public class CatalogFriendAdapter implements FriendRepository {
         return springDataGuestBookRepository.save(newBook);
     }
 
+    //개선
+    @Override
+    public List<UserWithFMJpaEntity> findUsersByIds(List<Long> userIds) {
+        log.info("[CatalogFriendAdapter] 유저 복수 단건 일괄 조회 (IN 절) - 요청 IDs: {}", userIds);
+        return friendSideUserRepository.findAllById(userIds); // JPA 기본 findAllById 활용
+    }
 }

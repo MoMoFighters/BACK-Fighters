@@ -65,6 +65,19 @@ public class NotificationLifecycleEventHandler {
 
     }
 
+    //친구 요청 거절(알림 읽음 처리)
+    @Async("domainEventExecutor")
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT) // 거절 커밋 성공 후
+    public void handleFriendReject(RejectRequestFriendPublishedEvent event) {
+        // 1. 거절한 유저(event.userId)에게 쌓여있던 'FRIEND_REQUEST' 알림 행을 한방에 삭제하거나 읽음 처리
+        // 이미 뚫려있는 deleteByRefIdAndUserId_IdAndType 또는 벌크 쿼리 활용!
+        notificationHandlerService.readRequestFriendNotification(
+                event.userId(), //거절자
+                event.fromUserId(),
+                event.refId()); //요청자
+
+    }
+
     //메시지 전송
     @Async("domainEventExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
