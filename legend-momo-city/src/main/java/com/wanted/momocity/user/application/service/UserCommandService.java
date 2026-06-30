@@ -2,6 +2,7 @@ package com.wanted.momocity.user.application.service;
 
 import com.wanted.momocity.auth.application.port.PasswordEncodePort;
 import com.wanted.momocity.global.application.s3.S3UploadPort;
+import com.wanted.momocity.global.domain.model.Category;
 import com.wanted.momocity.user.application.port.GetItemUrlPort;
 import com.wanted.momocity.user.application.port.GoogleDriveUploadPort;
 import com.wanted.momocity.user.application.port.ReportRedisPort;
@@ -15,10 +16,7 @@ import com.wanted.momocity.user.application.command.*;
 import com.wanted.momocity.user.application.policy.UserPolicy;
 import com.wanted.momocity.user.application.usecase.UserCommandUsecase;
 import com.wanted.momocity.user.domain.exception.InvalidReasonException;
-import com.wanted.momocity.user.domain.model.CheckStatusResult;
-import com.wanted.momocity.user.domain.model.Role;
-import com.wanted.momocity.user.domain.model.Status;
-import com.wanted.momocity.user.domain.model.UpdateUserInfoData;
+import com.wanted.momocity.user.domain.model.*;
 import com.wanted.momocity.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +28,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -121,25 +122,52 @@ public class UserCommandService implements UserCommandUsecase {
     @CacheEvict(value = "adminUserList", allEntries = true)
     public void approve(ApproveTeacherCommand command) {
 
-        command.userId().forEach(userId -> {
-            String email = userRepository.findById(userId)
-                    .orElseThrow(()-> new UserNotFoundException("사용자를 찾을 수 없습니다."))
-                    .getEmail();
+        List<Long> userIds = command.userId();
 
-            // PENDING 상태인지 검증
-            Status status = userRepository.findStatusById(userId);
-            if (status != Status.PENDING) {
-                throw new DomainRuleViolationException("강사 신청 중인 사용자가 아닙니다.");
-            }
+        List<User> users = userRepository.findAllByIdsForApprove(userIds);
 
-            String categoryProfileImage = userRepository.findCategoryById(userId)
-                    .getCategoryProfileImage();
+        Set<Long> foundIds = users.stream().map(User::getId).collect(Collectors.toSet());
+        List<Long> notFoundIds = userIds.stream()
+                .filter(id -> !foundIds.contains(id))
+                .toList();
 
-            userRepository.updateAfterApply(userId, Role.TEACHER, Status.ACTIVE,categoryProfileImage);
-            log.info("[teacher] 강사 승인 처리 | userId={}", userId);
-            eventPublisher.publishEvent(new TeacherApplicationEvent(email, Status.ACTIVE, null));
+        if (!notFoundIds.isEmpty()) {
+            log.warn("[teacher] 존재하지 않는 사용자 제외 | notFoundIds={}", notFoundIds);
+        }
+
+        List<Long> notPendingIds = users.stream()
+                .filter(user -> user.getStatus() != Status.PENDING)
+                .map(User::getId)
+                .toList();
+
+        if (!notPendingIds.isEmpty()) {
+            log.warn("[teacher] 강사 신청 중이 아닌 사용자 제외 | notPendingIds={}", notPendingIds);
+        }
+
+        List<User> approvableUsers = users.stream()
+                .filter(user -> user.getStatus() == Status.PENDING)
+                .toList();
+
+        // 카테고리별로 그룹핑 -> 카테고리당 1번의 벌크 UPDATE (최대 5번)
+        Map<Category, List<Long>> idsByCategory = approvableUsers.stream()
+                .collect(Collectors.groupingBy(
+                        User::getCategory,
+                        Collectors.mapping(User::getId, Collectors.toList())
+                ));
+
+        LocalDateTime now = LocalDateTime.now();
+        idsByCategory.forEach((category, ids) ->
+                userRepository.bulkUpdateAfterApply(ids, Role.TEACHER, Status.ACTIVE,
+                        category.getCategoryProfileImage(), now)
+        );
+
+        // 승인 처리 후 이벤트는 유저별로 발행 (이메일 발송은 개별 처리)
+        approvableUsers.forEach(user -> {
+            log.info("[teacher] 강사 승인 처리 | userId={}", user.getId());
+            eventPublisher.publishEvent(new TeacherApplicationEvent(user.getEmail(), Status.ACTIVE, null));
         });
     }
+
 
     // 강사거절
     @Override

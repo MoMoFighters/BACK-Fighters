@@ -84,4 +84,9 @@ public interface UserRepository {
     // 사용자 신고 횟수 -
     void minusReportCount(Long userId);
 
+    // 강사 일괄 승인용 id 여러개의 유저 정보 가져오기
+    List<User> findAllByIdsForApprove(List<Long> userIds);
+
+    // 강사 일괄처리
+    void bulkUpdateAfterApply(List<Long> ids, Role role, Status status, String categoryProfileImage, LocalDateTime now);
 }
