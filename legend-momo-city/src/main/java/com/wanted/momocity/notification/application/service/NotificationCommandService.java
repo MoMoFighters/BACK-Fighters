@@ -11,9 +11,11 @@ import com.wanted.momocity.notification.application.query.GetPhoneAppCountsQuery
 import com.wanted.momocity.notification.application.usecase.NotificationCommandUseCase;
 import com.wanted.momocity.notification.application.usecase.NotificationQueryUseCase;
 import com.wanted.momocity.notification.domain.repository.NotificationRepository;
+import com.wanted.momocity.notification.infrastructure.event.NotificationCreatedPublishedEvent;
 import com.wanted.momocity.notification.infrastructure.persistence.NotificationJpaEntity;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +31,7 @@ public class NotificationCommandService implements NotificationCommandUseCase {
     private final NotificationRepository notificationRepository;
     private final NotificationEligibilityPolicy notificationEligibilityPolicy;
     private final NotificationQueryUseCase notificationQueryUseCase;
+    private final ApplicationEventPublisher eventPublisher;
 
     //알림 읽기
     @Override
@@ -66,11 +69,11 @@ public class NotificationCommandService implements NotificationCommandUseCase {
                 // 내 알림이 아니라면 일반 알림 권한 플래그를 false로 변경
                 if (!noti.getUserId().getId().equals(command.userId())) {
                     hasGeneralAccess = false;
+                    break;
                 }
 
                 // 아직 안 읽은 일반 알림만 수정 대상으로 수집 (자원 절약)
                 if (!noti.getIsRead()) {
-                    noti.markAsRead();
                     generalNotisToUpdate.add(noti);
                 }
             }
@@ -100,7 +103,7 @@ public class NotificationCommandService implements NotificationCommandUseCase {
 
         // 4. 상태 변경이 필요한 진짜 안 읽은 데이터들만 최종 반영 (자원 낭비 원천 차단)
         if (!generalNotisToUpdate.isEmpty()) {
-            notificationRepository.saveAll(generalNotisToUpdate);
+            notificationRepository.bulkMarkGeneralNotificationsAsRead(generalNotisToUpdate);
         }
         if (!messageRoomIds.isEmpty()) {
             notificationRepository.bulkMarkMessageNotificationsAsRead(messageRoomIds, command.userId());
@@ -110,16 +113,7 @@ public class NotificationCommandService implements NotificationCommandUseCase {
         log.info("[ReadNotificationCommandService] 읽음 처리 완료 (일반: {}건, 메시지: {}건) -> 실시간 웹소켓 갱신 진행",
                 generalNotisToUpdate.size(), messageRoomIds.size());
 
-        // 5. 🎯 [유기적 웹소켓 연동]: 지적하신 대로 불필요한 try-catch를 완전히 제거하고 깔끔하게 3종 호출
-        // 알림 목록(list) 실시간 전송 트리거
-        notificationQueryUseCase.getNotificationQueryHandle(new GetNotificationQuery(command.userId()));
-
-        // 상단 종 모양 배지 수(total-counts) 실시간 전송 트리거
-        notificationQueryUseCase.getMainTotalCountsQueryHandle(new GetMainTotalCountsQuery(command.userId()));
-
-        // 앱별 배지 수(app-counts) 실시간 전송 트리거
-        notificationQueryUseCase.getPhoneAppCountsQueryHandle(new GetPhoneAppCountsQuery(command.userId()));
-
+        eventPublisher.publishEvent(new NotificationCreatedPublishedEvent(command.userId(), "ALL"));
         log.info("[ReadNotificationCommandService] 유저 {}번 화면 실시간 데이터 브로드캐스팅 완료", command.userId());
     }
 
@@ -159,6 +153,7 @@ public class NotificationCommandService implements NotificationCommandUseCase {
                 // 내 알림이 아니라면 일반 알림 권한 플래그를 false로 변경
                 if (!noti.getUserId().getId().equals(command.userId())) {
                     hasGeneralAccess = false;
+                    break;
                 }
                 generalNotisToDelete.add(noti);
             }
@@ -197,16 +192,7 @@ public class NotificationCommandService implements NotificationCommandUseCase {
         log.info("[RemoveNotificationCommandService] 삭제 처리 완료 (일반: {}건, 메시지: {}건) -> 실시간 웹소켓 갱신 진행",
                 generalNotisToDelete.size(), messageRoomIds.size());
 
-        // 5. 🎯 [유기적 웹소켓 연동]: 지적하신 대로 불필요한 try-catch를 완전히 제거하고 깔끔하게 3종 호출
-        // 알림 목록(list) 실시간 전송 트리거
-        notificationQueryUseCase.getNotificationQueryHandle(new GetNotificationQuery(command.userId()));
-
-        // 상단 종 모양 배지 수(total-counts) 실시간 전송 트리거
-        notificationQueryUseCase.getMainTotalCountsQueryHandle(new GetMainTotalCountsQuery(command.userId()));
-
-        // 앱별 배지 수(app-counts) 실시간 전송 트리거
-        notificationQueryUseCase.getPhoneAppCountsQueryHandle(new GetPhoneAppCountsQuery(command.userId()));
-
+        eventPublisher.publishEvent(new NotificationCreatedPublishedEvent(command.userId(), "ALL"));
         log.info("[RemoveNotificationCommandService] 유저 {}번 화면 실시간 데이터 브로드캐스팅 완료", command.userId());
     }
 }

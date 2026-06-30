@@ -60,4 +60,17 @@ public interface SpringDataNotificationRepository extends JpaRepository<Notifica
             @Param("userId") Long userId,
             @Param("type") String type
     );
+
+    //일반 알림 읽기 벌크 처리
+    @Modifying(clearAutomatically = true) // 벌크 연산 후 영속성 컨텍스트 싱크 유지
+    @Query("UPDATE NotificationJpaEntity n " +
+            "SET n.isRead = true " +
+            "WHERE n.id IN :notificationIds " +
+            "  AND n.isRead = false")
+    void bulkMarkGeneralNotificationsAsRead(@Param("notificationIds") List<Long> notificationIds);
+
+    //일반 알림 삭제 벌크 처리
+    @Modifying(clearAutomatically = true) // 🎯 벌크 연산 후 영속성 컨텍스트 클리어 필수
+    @Query("DELETE FROM NotificationJpaEntity n WHERE n.id IN :notificationIds")
+    void bulkDeleteGeneralNotifications(@Param("notificationIds") List<Long> notificationIds);
 }

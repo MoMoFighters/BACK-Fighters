@@ -68,4 +68,7 @@ public interface NotificationRepository {
 
     //친구 거절 알림 읽음 처리
     void bulkMarkAsReadByRefIdAndUserIdAndType(Long refId, Long userId, String friendRequest);
+
+    //일반 알림 벌크 읽음
+    void bulkMarkGeneralNotificationsAsRead(List<NotificationJpaEntity> generalNotisToUpdate);
 }

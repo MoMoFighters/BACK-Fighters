@@ -33,7 +33,7 @@ public interface NotificationSideMessageReadRepository extends JpaRepository<Mes
     List<MessageReadJpaEntity> findByRoomId_IdIn(@Param("messageRoomIds") List<Long> messageRoomIds, @Param("userId") Long userId);
 
     //알림 읽기 - 메시지 알림의 refId(roomId)에 로그인 유저가 속하는지 검증
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("UPDATE MessageReadJpaEntity mr " +
             "SET mr.isNotiRead = true " +
             "WHERE mr.roomId.id IN :roomIds " +

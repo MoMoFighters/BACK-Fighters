@@ -145,8 +145,19 @@ public class CatalogNotificationRepositoryAdapter implements NotificationReposit
     //알림 삭제 - 일반 알림
     @Override
     public void deleteAllInBatch(List<NotificationJpaEntity> generalNotisToDelete) {
-        springDataNotificationRepository.deleteAllInBatch(generalNotisToDelete);
-    }
+        if (generalNotisToDelete == null || generalNotisToDelete.isEmpty()) {
+            return;
+        }
+
+        // 🎯 서비스에서 넘어온 엔티티 뭉치에서 순수 고유 Long ID 목록만 쏙 추출합니다.
+        List<Long> notificationIds = generalNotisToDelete.stream()
+                .map(NotificationJpaEntity::getId)
+                .toList();
+
+        log.info("[Adapter] 일반 알림 벌크 삭제 쿼리 실행 - 대상 개수: {}건", notificationIds.size());
+
+        // 🎯 새로 만든 Spring Data JPA의 벌크 DELETE 메서드로 최종 토스!
+        springDataNotificationRepository.bulkDeleteGeneralNotifications(notificationIds);    }
 
     //알림 삭제 - 메시지 알림
     @Override
@@ -188,5 +199,23 @@ public class CatalogNotificationRepositoryAdapter implements NotificationReposit
         // 🎯 벌크 쿼리 실행 후 영속성 컨텍스트를 비워 웹소켓 재조회 시 DB 최신 데이터가 반영되도록 강제
         em.flush();
         em.clear();
+    }
+
+    //일반 알림 벌크 읽음
+    @Override
+    public void bulkMarkGeneralNotificationsAsRead(List<NotificationJpaEntity> generalNotisToUpdate) {
+        if (generalNotisToUpdate == null || generalNotisToUpdate.isEmpty()) {
+            return;
+        }
+
+        // 🎯 서비스가 넘겨준 엔티티 리스트에서 순수 Long ID만 쏙 뽑아서 변환합니다.
+        List<Long> notificationIds = generalNotisToUpdate.stream()
+                .map(NotificationJpaEntity::getId)
+                .toList();
+
+        log.info("[Adapter] 일반 알림 벌크 업데이트 쿼리 실행 - 대상 개수: {}건", notificationIds.size());
+
+        // 🎯 ID 리스트를 원하는 Spring Data JPA의 벌크 메서드로 최종 전달!
+        springDataNotificationRepository.bulkMarkGeneralNotificationsAsRead(notificationIds);
     }
 }
