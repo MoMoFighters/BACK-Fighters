@@ -61,7 +61,7 @@ public class SecurityConfig {
         configuration.setAllowedOriginPatterns(Arrays.asList(
                 "http://localhost:3000", // React, Vue 등의 개발서버
                 "http://localhost:8081", // 다른 로컬 개발 환경
-                "https://your-production-frontend.com", // 배포하게 될 경우
+                "https://momocity-qxjsx87a4-kjls515-3396s-projects.vercel.app", // 배포하게 될 경우
                 "*"
         ));
 
