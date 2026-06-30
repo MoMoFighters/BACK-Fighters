@@ -39,6 +39,41 @@ public class PostCommandService implements PostCommandUseCase {
     private final PostContentRepository postContentRepository;
     private final CloudFrontUrlConverter cloudFrontUrlConverter;
     private final S3UploadPort s3UploadPort;
+    // 카테고리별 기본 썸네일
+    // thumbnailUrl 미지정 + 이미지 없는 게시글에 한해 카테고리 기준 기본 썸네일 자동 생성
+    private static final String DEFAULT_THUMBNAIL_BASE_URL =
+            "https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/community/thubnails/";
+
+    /*
+     * comment.
+     *  썸네일 결정 로직
+     *  1. IMAGE 타입 콘텐츠 존재 + thumbnailUrl 없음
+     *     -> 에러 (사용자가 직접 썸네일 지정 필요)
+     *  2. IMAGE 타입 콘텐츠 없음 + thumbnailUrl 없음
+     *     -> 카테고리 기준 기본 썸네일 자동 설정
+     *  3. thumbnailUrl 있음
+     *     -> 그대로 사용
+     */
+    private String resolveThumbnailUrl(
+            String thumbnailUrl, List<PostContentCommand> contents, PostCategory category
+    ) {
+        // thumbnailUrl 이미 지정됨 → 그대로 사용
+        if (thumbnailUrl != null && !thumbnailUrl.isBlank()) {
+            return thumbnailUrl;
+        }
+
+        // IMAGE 타입 콘텐츠 존재 여부 확인
+        boolean hasImage = contents.stream()
+                .anyMatch(cmd -> "IMAGE".equals(cmd.type()));
+
+        // 이미지 업로드했는데 썸네일 미지정 → 에러
+        if (hasImage) {
+            throw new DomainRuleViolationException("이미지를 업로드했다면 썸네일을 지정해주세요.");
+        }
+
+        // 이미지 없는 게시글 → 카테고리 기준 기본 썸네일 자동 설정
+        return DEFAULT_THUMBNAIL_BASE_URL + category.name() + ".png";
+    }
 
     // 게시글 생성
     // title, category 만 저장 -> postId 반환 후 콘텐츠 업로드 API 호출
@@ -69,6 +104,9 @@ public class PostCommandService implements PostCommandUseCase {
         validateImageCount(contents);
         // 콘텐츠 타입별 필수값 검증 (TEXT -> content, IMAGE -> imageUrl)
         validateContents(contents);
+
+        // 썸네일 URL 결정 (미지정 시 기본 썸네일 또는 에러)
+        String resolvedThumbnailUrl = resolveThumbnailUrl(thumbnailUrl, contents, post.getCategory());
 
         // 썸네일 업데이트
         post.updateThumbnail(thumbnailUrl);
@@ -130,6 +168,9 @@ public class PostCommandService implements PostCommandUseCase {
 
         // 콘텐츠 타입별 필수값 검증 (TEXT -> content, IMAGE -> imageUrl)
         validateContents(contents);
+
+        // 썸네일 URL 결정 (미지정 시 기본 썸네일 또는 에러)
+        String resolvedThumbnailUrl = resolveThumbnailUrl(thumbnailUrl, contents, post.getCategory());
 
         // 썸네일 업데이트
         post.updateThumbnail(thumbnailUrl);
