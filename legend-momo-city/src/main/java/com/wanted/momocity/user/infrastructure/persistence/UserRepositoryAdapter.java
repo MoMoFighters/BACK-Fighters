@@ -17,7 +17,8 @@ import java.util.Optional;
 @Repository("userRepositoryAdapter")
 @Transactional
 @RequiredArgsConstructor
-public class UserRepositoryAdapter implements UserRepository {
+public
+class UserRepositoryAdapter implements UserRepository {
 
     private final SpringDataUserRepository springDataUserRepository;
 
@@ -182,6 +183,27 @@ public class UserRepositoryAdapter implements UserRepository {
     @Override
     public void minusReportCount(Long userId) {
         springDataUserRepository.minusReportCount(userId);
+    }
+
+    // 강사 일괄 승인용 id 여러개의 유저 정보 가져오기
+    @Override
+    @Transactional(readOnly = true)
+    public List<User> findAllByIdsForApprove(List<Long> userIds) {
+        return springDataUserRepository.findAllByIds(userIds)
+                .stream()
+                .map(entity -> User.builder()
+                        .id(entity.getId())
+                        .email(entity.getEmail())
+                        .status(entity.getStatus())
+                        .category(entity.getCategory())
+                        .build())
+                .toList();
+    }
+
+    // 강사 일괄 승인
+    @Override
+    public void bulkUpdateAfterApply(List<Long> userIds, Role role, Status status, String url, LocalDateTime updatedAt) {
+        springDataUserRepository.bulkUpdateAfterApply(userIds, role, status, url, updatedAt);
     }
 
 
