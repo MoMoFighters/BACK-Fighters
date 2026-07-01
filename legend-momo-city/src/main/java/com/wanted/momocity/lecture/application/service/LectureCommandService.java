@@ -406,9 +406,7 @@ public class LectureCommandService implements
     private String createLectureThumbnailFolder(Long lectureId) {
 
         return LECTURE_S3_PREFIX // lectures
-                + "/" + lectureId // lectures/{lectureId}
-                + "/thumbnail"; // lectures/{lectureId}/thumbnail
-
+                + "/" + lectureId; // lectures/{lectureId}
     }
 
     // 특정 강의의 특정 챕터 S3 폴더 경로를 생성하는 메서드
