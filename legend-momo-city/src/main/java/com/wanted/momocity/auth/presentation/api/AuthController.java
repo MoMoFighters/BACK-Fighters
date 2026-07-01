@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -45,6 +46,7 @@ public class AuthController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "이메일 중복")
     })
     public ResponseEntity<ApiResponse<Void>> signup (
+
             @Valid @RequestBody SignupRequest request){
 
         authCommandUsecase.signup(new SignupCommand(request.email(),request.password(),request.name()));
@@ -68,10 +70,12 @@ public class AuthController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "유효하지 않은 요청 값 (@Valid 실패)"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "이메일 또는 비밀번호 불일치")
     })
+    // [MS-4 접근로그] admin BC 접근로그 저장을 위해 IP 값이 필요해서 추가함 (auth BC 담당자 승인, 예외적 BC 간 수정)
     public ResponseEntity<ApiResponse<LoginResponse>> login(
-            @Valid @RequestBody LoginRequest request){
+            @Valid @RequestBody LoginRequest request,
+            HttpServletRequest httpRequest){
 
-        LoginResponse result =authCommandUsecase.login(new LoginCommand(request.email(),request.password()));
+        LoginResponse result =authCommandUsecase.login(new LoginCommand(request.email(),request.password(), httpRequest.getRemoteAddr()));
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(
@@ -233,11 +237,13 @@ public class AuthController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "로그아웃 성공"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "access 토큰 또는 refresh 토큰 없음")
     })
+    // [MS-4 접근로그] admin BC 접근로그 저장을 위해 IP 값이 필요해서 추가함 (auth BC 담당자 승인, 예외적 BC 간 수정)
     public ResponseEntity<ApiResponse<Void>> logout(
             @Parameter(name = "Authorization", description = "Bearer 액세스 토큰", required = true)
             @RequestHeader(value = "Authorization", required = false) String bearerToken,
             @Parameter(name = "Refresh-Token", description = "리프레시 토큰", required = true)
-            @RequestHeader(value = "Refresh-Token", required = false) String refreshToken)
+            @RequestHeader(value = "Refresh-Token", required = false) String refreshToken,
+            HttpServletRequest httpRequest)
     // required = true 면 헤더 없으면 Spring이 기본 400을 던지지만
     // 커스텀 메시지 보여주고 싶어서
     // 헤더 없으면 null로 들어옴 → 내 if문 실행 → 커스텀 메시지 출력되도록
@@ -253,7 +259,7 @@ public class AuthController {
         // Authorization: Bearer {accessToken} 에서 앞부분 떼고 액세스 토큰만 가져옴
         String accessToken = bearerToken.replace("Bearer ", "");
 
-        authCommandUsecase.logout(new LogoutCommand(accessToken,refreshToken));
+        authCommandUsecase.logout(new LogoutCommand(accessToken,refreshToken, httpRequest.getRemoteAddr()));
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(

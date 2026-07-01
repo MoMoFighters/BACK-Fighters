@@ -48,4 +48,15 @@ public class AccessLogRepositoryAdapter implements AccessLogRepository {
                 .map(AccessLogJpaEntity::toDomain)
                 .toList();
     }
+
+    // 도메인 객체를 엔티티로 변환 -> 저장 -> 저장된 결과를
+    // 다시 도메인 객체로 변환해서 반환
+
+    @Override
+    public AccessLog save(AccessLog accessLog) {
+        AccessLogJpaEntity entity = AccessLogJpaEntity.toEntity(accessLog);
+        AccessLogJpaEntity saved = springDataAccessLogRepository.save(entity);
+        return saved.toDomain();
+    }
+
 }
