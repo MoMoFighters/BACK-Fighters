@@ -57,6 +57,22 @@ public class LectureRepositoryAdapter implements LectureRepository {
         return toDomain(saved);
     }
 
+    // LectureRepository의 썸네일 업데이트 메서드 구현
+    // 강의 썸네일 S3 key 업데이트
+    @Override
+    public LectureAggregate updateThumbnailUrl(Long lectureId, String thumbnailUrl) {
+
+        // 강의 ID로 기존 강의 엔티티 조회
+        LectureJpaEntity entity = repository.findById(lectureId)
+                .orElseThrow(() -> new IllegalArgumentException("강의를 찾을 수 없습니다."));
+
+        // 조회한 엔티티의 썸네일 key 변경
+        entity.changeThumbnailUrl(thumbnailUrl);
+
+        return toDomain(entity);
+
+    }
+
     // 강의 ID로 강의를 조회
     @Override
     @Transactional(readOnly = true)

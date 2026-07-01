@@ -88,28 +88,41 @@ public class LectureCommandService implements
                 teacherId,
                 command.title(),
                 command.description(),
-                command.thumbnailUrl(),
+                null,
                 command.category()
         );
 
         LectureAggregate savedLecture = lectureRepository.save(lecture);
 
-        eventPublisher.publishEvent(new LectureCreatedEvent(
+        // 강의 썸네일 파일을 S3에 업로드
+        String thumbnailUrl = s3UploadPort.upload(
+                command.thumbnail(),
+                // lectures/{lectureId} 경로 생성
+                createLectureThumbnailFolder(savedLecture.getId())
+        );
+
+        // 저장된 강의의 thumbnailUrl만 업데이트
+        LectureAggregate resultLecture = lectureRepository.updateThumbnailUrl(
                 savedLecture.getId(),
-                savedLecture.getTeacherId(),
-                savedLecture.getTitle(),
+                thumbnailUrl
+        );
+
+        eventPublisher.publishEvent(new LectureCreatedEvent(
+                resultLecture.getId(),
+                resultLecture.getTeacherId(),
+                resultLecture.getTitle(),
                 Instant.now()
         ));
 
         long elapsedTime = System.currentTimeMillis()-startTime;
         log.info("강의 등록 완료 - lectureId={}, teacherId={}, status={}, elapsedTime={}ms",
-                savedLecture.getId(),
-                savedLecture.getTeacherId(),
-                savedLecture.getStatus(),
+                resultLecture.getId(),
+                resultLecture.getTeacherId(),
+                resultLecture.getStatus(),
                 elapsedTime
         );
 
-        return savedLecture;
+        return resultLecture;
     }
 
     /**
@@ -201,6 +214,7 @@ public class LectureCommandService implements
         LectureChapter savedChapter = chapterRepository.save(chapter);
 
         // 챕터 썸네일 파일을 S3에 업로드
+        // S3에 파일을 업로드하고, 업로드 결과를 chapterThumbnailUrl 변수에 저장
         String chapterThumbnailUrl = s3UploadPort.upload(
 
                 // 업로드할 챕터 썸네일 파일
@@ -272,10 +286,14 @@ public class LectureCommandService implements
         }
 
         // 챕터 동영상 파일을 S3에 업로드
+        // S3 업로드를 실행하고, 업로드 결과로 반환된 값을 videoUrl
+        // 동영상은 KEY로 응답
         String videoUrl = s3UploadPort.upload(
 
                 command.video(),
 
+                // 동영상이 저장될 S3 폴더 경로
+                // ex) videoUrl = "lectures/6/chapters/1/uuid_chapter01.mp4"
                 createChapterFolder(
                         command.lectureId(),
                         command.chapterId()
@@ -382,6 +400,13 @@ public class LectureCommandService implements
         if (chapterRepository.existsByLectureIdAndVideoUrlIsNull(lectureId)) {
             throw new DomainRuleViolationException("강의를 승인하려면 모든 챕터에 동영상이 등록되어야 합니다.");
         }
+    }
+
+    // 강의 썸네일 S3 폴더 경로를 생성하는 메서드
+    private String createLectureThumbnailFolder(Long lectureId) {
+
+        return LECTURE_S3_PREFIX // lectures
+                + "/" + lectureId; // lectures/{lectureId}
     }
 
     // 특정 강의의 특정 챕터 S3 폴더 경로를 생성하는 메서드
