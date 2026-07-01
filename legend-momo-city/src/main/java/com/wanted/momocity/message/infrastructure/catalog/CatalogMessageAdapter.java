@@ -391,4 +391,16 @@ public class CatalogMessageAdapter implements MessageRepository {
         springDataMessageAnnounceRepository.save(announce);
         log.info("[CatalogMessageAdapter] 채팅방 멤버 초대 안내 문구 저장 완료 - ID: {}", announce.getId());
     }
+
+    //친구 삭제 후 채팅방 나가기 버그 수정
+    @Override
+    public Optional<Long> findOneToOneChatRoomIdBetween(Long userId, Long targetUserId) {
+        return springDataChatRoomMemberRepository.findOneToOneChatRoomIdBetween(userId, targetUserId);
+    }
+    //친구 삭제 후 채팅방 나가기 버그 수정
+    @Override
+    public Optional<ChatRoomMemberJpaEntity> findMemberByRoomIdAndUserId(Long foundRoomId, Long userId) {
+        return springDataChatRoomMemberRepository.findMemberByRoomIdAndUserId(foundRoomId, userId);
+    }
+
 }

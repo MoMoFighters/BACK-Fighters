@@ -120,4 +120,9 @@ public interface MessageRepository {
 
     //다대다 채팅방 멤버 초대 안내 문구
     void saveInviteAnnounce(ChatRoomJpaEntity chatRoom, UserWithFMJpaEntity loginUser, String inviteMessage, LocalDateTime createdAt);
+
+    //친구 삭제 후 채팅방 나가기 버그 수정
+    Optional<Long> findOneToOneChatRoomIdBetween(Long userId, Long targetUserId);
+    //친구 삭제 후 채팅방 나가기 버그 수정
+    Optional<ChatRoomMemberJpaEntity> findMemberByRoomIdAndUserId(Long foundRoomId, Long userId);
 }

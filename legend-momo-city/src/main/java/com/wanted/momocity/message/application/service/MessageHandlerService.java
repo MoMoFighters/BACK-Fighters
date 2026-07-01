@@ -57,92 +57,28 @@ public class MessageHandlerService {
     public void leaveChatRoom(Long userId, Long targetUserId) {
         log.info("[MessageHandlerService] 친구 삭제 이벤트 수신 -> 채팅방 퇴장 처리 시작 - 요청자: {}, 대상자: {}", userId, targetUserId);
 
-        UserWithFMJpaEntity targetUser = messageRepository.getUserWithFMReferenceById(targetUserId);
+        // 1. 내가 참여 중이면서 상대가 같이 있고, 방 이름이 없는 1:1 방 ID를 DB에서 바로 찾기
+        Long foundRoomId = messageRepository.findOneToOneChatRoomIdBetween(userId, targetUserId).orElse(null);
 
-        // 1. 두 유저가 동시에 참여하고 있는 1:1 채팅방 ID 찾아오기
-        // (JPA 규칙이나 편의를 위해 member 테이블에서 나(userId)의 방 목록 중 상대방(targetUserId)이 껴있는 방을 조회합니다)
-        List<ChatRoomMemberJpaEntity> myRooms = messageRepository.findChatRoomMembersByUserId(userId);
-        Long foundRoomId = null;
-
-        for (ChatRoomMemberJpaEntity myRoom : myRooms) {
-            Long roomId = myRoom.getRoomId().getId();
-
-            ChatRoomJpaEntity room = messageRepository.findChatRoomById(roomId)
-                    .orElse(null);
-
-            if (room == null) {
-                log.warn("[MessageHandlerService] 조회된 방(ID:{})이 DB에 존재하지 않아 건너뜁니다.", roomId);
-                continue;
-            }
-
-            //상대방이 먼저 나간 경우 메시지로 확인(+안내 문구도 같이 확인)
-            boolean hasHistory = messageRepository.existsMessageByRoomIdAndSenderId(roomId, targetUserId)
-                    || messageRepository.existsAnnounceByRoomIdAndTargetId(room, targetUser);
-
-            //일대일, 다대다 분기(방제목 유무
-            String title = myRoom.getRoomId().getRoomTitle();
-            boolean isOneToOne = (title == null || title.isBlank());
-
-            // 해당 방의 전체 멤버를 긁어서 상대방이 포함되어 있는지 확인
-            List<ChatRoomMemberJpaEntity> roomMembers = messageRepository.findMembersByRoomId(roomId);
-            for (ChatRoomMemberJpaEntity member : roomMembers) {
-                if (isOneToOne && member.getUserId().getId().equals(targetUserId)) {
-                    foundRoomId = roomId;
-                    break;
-                }
-            }
-            if (isOneToOne && foundRoomId == null && hasHistory) {
-                foundRoomId = roomId;
-            }
-
-            if (foundRoomId != null) break;
-        }
-
-        // 만약 두 사람 사이에 개설된 채팅방이 없다면 나갈 일도 없으니 가볍게 종료
+        // 만약 그 친구와 단둘이 쓰던 활성화된 1:1 채팅방이 없다면 나갈 것도 없으니 즉시 종료
         if (foundRoomId == null) {
-            log.info("[MessageHandlerService] 두 유저 사이에 활성화된 채팅방이 존재하지 않아 퇴장 처리를 스킵합니다.");
+            log.info("[MessageHandlerService] 해당 친구와 활성화된 1:1 채팅방이 존재하지 않아 퇴장 처리를 스킵합니다.");
             return;
         }
 
-        // 2. 해당 방의 찐 전체 멤버 다시 확보
-        List<ChatRoomMemberJpaEntity> allMembers = messageRepository.findMembersByRoomId(foundRoomId);
+        // 2. 그 방에서 '나(userId)'의 멤버십 정보 딱 하나만 가져오기
+        ChatRoomMemberJpaEntity myMembership = messageRepository.findMemberByRoomIdAndUserId(foundRoomId, userId).orElse(null);
         ChatRoomJpaEntity chatRoom = messageRepository.findChatRoomById(foundRoomId).orElse(null);
 
-        //친구 삭제 시점에 채팅방이 존재하지 않은 경우
-        if (chatRoom == null) {
-            log.warn("[MessageHandlerService] 채팅방 정보(ID:{})가 DB에 존재하지 않아 퇴장 처리를 중단.", foundRoomId);
-            return;
+        if (myMembership == null || chatRoom == null) {
+            log.warn("[MessageHandlerService] 채팅방 정보(ID:{}) 또는 멤버십 데이터가 DB에 존재하지 않아 퇴장 처리를 중단.", foundRoomId);
+            return; // 방어 코드
         }
 
-        // 3. 내 멤버 정보(삭제 대상) 솎아내기
-        ChatRoomMemberJpaEntity myMembership = null;
-        for (ChatRoomMemberJpaEntity member : allMembers) {
-            if (member.getUserId().getId().equals(userId)) {
-                myMembership = member;
-                break;
-            }
-        }
-
-        if (myMembership == null) return; // 방어 코드
-
-        int currentMemberCount = allMembers.size();
-
-        // [분기 케이스 A]: 내가 이 방의 마지막 남은 사용자일 때 ➡️ 방 완전히 폭파
-        if (currentMemberCount <= 1) {
-            log.info("[MessageHandlerService] 마지막 사용자 퇴장 -> 방 완전히 폭파. 방ID: {}", foundRoomId);
-            messageRepository.deleteMessagesByRoomId(foundRoomId);
-            messageRepository.deleteChatRoomMember(myMembership);
-            if (chatRoom != null) {
-                messageRepository.deleteChatRoom(chatRoom);
-            }
-            return;
-        }
-
-        // [분기 케이스 B]: 상대방이 남아있을 때 ➡️ 나만 나가기 (chat_room_member에서 나만 삭제)
-        // 이렇게 하면 남겨진 사람 입장에선 방과 기존 내역이 다 보이지만, 전송 검증(Ensure) 시점에
-        // 튕겨나가고 상대방 유저 상태에 따라 (알 수 없음) 가공 처리가 유기적으로 발동합니다!
-        log.info("[MessageHandlerService] 상대방이 존재함 -> 삭제자 멤버 데이터만 제거. 방ID: {}", foundRoomId);
+        // 3. [나만 나가기 처리] 내 멤버 데이터만 삭제
+        log.info("[MessageHandlerService] 1:1 방(ID:{}) 확인 완료 -> 나(ID:{})의 참여 데이터만 제거합니다.", foundRoomId, userId);
         messageRepository.deleteChatRoomMember(myMembership);
+
 
         UserWithFMJpaEntity loginUser = myMembership.getUserId();
 
@@ -166,3 +102,4 @@ public class MessageHandlerService {
         log.info("[MessageHandlerService] 친구 삭제로 채팅방 나가기 완료 및 상대방(ID:{})에게 웹소켓 전송 완료", targetUserId);
     }
 }
+
