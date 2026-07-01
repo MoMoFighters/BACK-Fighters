@@ -118,7 +118,7 @@ public class LectureCommandService implements
         log.info("강의 등록 완료 - lectureId={}, teacherId={}, status={}, elapsedTime={}ms",
                 resultLecture.getId(),
                 resultLecture.getTeacherId(),
-                resultLecture.getTitle(),
+                resultLecture.getStatus(),
                 elapsedTime
         );
 
