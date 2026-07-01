@@ -8,6 +8,7 @@ import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.auth.application.usecase.*;
 import com.wanted.momocity.auth.presentation.api.request.*;
 import com.wanted.momocity.auth.presentation.api.response.*;
+import com.wanted.momocity.global.infrastructure.util.ClientIpResolver;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -75,7 +76,8 @@ public class AuthController {
             @Valid @RequestBody LoginRequest request,
             HttpServletRequest httpRequest){
 
-        LoginResponse result =authCommandUsecase.login(new LoginCommand(request.email(),request.password(), httpRequest.getRemoteAddr()));
+        // [MS-4 접근로그] 리버스 프록시 뒤에서 getRemoteAddr()가 루프백 주소를 반환하는 문제 수정 (auth BC 담당자 협의됨)
+        LoginResponse result =authCommandUsecase.login(new LoginCommand(request.email(),request.password(), ClientIpResolver.resolve(httpRequest)));
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(
@@ -259,7 +261,8 @@ public class AuthController {
         // Authorization: Bearer {accessToken} 에서 앞부분 떼고 액세스 토큰만 가져옴
         String accessToken = bearerToken.replace("Bearer ", "");
 
-        authCommandUsecase.logout(new LogoutCommand(accessToken,refreshToken, httpRequest.getRemoteAddr()));
+        // [MS-4 접근로그] 리버스 프록시 뒤에서 getRemoteAddr()가 루프백 주소를 반환하는 문제 수정 (auth BC 담당자 협의됨)
+        authCommandUsecase.logout(new LogoutCommand(accessToken,refreshToken, ClientIpResolver.resolve(httpRequest)));
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(
