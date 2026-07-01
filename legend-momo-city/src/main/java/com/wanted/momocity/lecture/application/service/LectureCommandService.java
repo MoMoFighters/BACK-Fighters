@@ -97,7 +97,7 @@ public class LectureCommandService implements
         // 강의 썸네일 파일을 S3에 업로드
         String thumbnailUrl = s3UploadPort.upload(
                 command.thumbnail(),
-                // lectures/{lectureId}/thumbnail 경로 생성
+                // lectures/{lectureId} 경로 생성
                 createLectureThumbnailFolder(savedLecture.getId())
         );
 
