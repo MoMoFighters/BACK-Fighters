@@ -21,7 +21,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         //프론트엔드가 웹소켓 연결을 처음 맺을 주소
         registry.addEndpoint("/ws-chat")
-                .setAllowedOriginPatterns("*")
+                .setAllowedOriginPatterns("http://localhost:4444", "https://momocity-six.vercel.app")
                 .withSockJS();
     }
 

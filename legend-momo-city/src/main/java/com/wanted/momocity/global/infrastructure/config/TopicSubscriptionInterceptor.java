@@ -43,13 +43,36 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
 
         // 1. 프론트엔드가 최초 연결(CONNECT)할 때 토큰 인증 및 Principal 세팅
         if (StompCommand.CONNECT.equals(command)) {
+            // 1. 기존 방식대로 헤더에서 먼저 토큰을 찾아봅니다. (로컬 테스트용)
             String authHeader = accessor.getFirstNativeHeader("Authorization");
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                log.warn("[웹소켓] CONNECT 인증 헤더 없음/형식 불일치");
-                return null;
+            String token = null;
+
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                token = authHeader.substring(7).trim();
+            } else {
+                // 🎯 2. [배포 환경 우회용] 헤더에 없다면 쿼리 스트링(?token=xxxx)에서 추출합니다.
+                // STOMP CONNECT 프레임의 nativeHeaders나 simpConnectMessage의 쿼리 파라미터를 활용
+                Object simpConnectMessage = accessor.getHeader("simpConnectMessage");
+                if (simpConnectMessage instanceof Message<?>) {
+                    // 웹소켓 연결 주소 뒤에 붙은 쿼리 파라미터를 파싱하는 로직
+                    String nativeHeaderUrl = accessor.getFirstNativeHeader("Authorization");
+                    // 위 방법 대신, 프론트엔드에서 'connectHeaders' 내부에 파라미터를 실어 보낼 수도 있습니다.
+                    token = accessor.getFirstNativeHeader("token"); // 프론트가 connectHeaders: { token: '...' } 로 보낼 경우
+                }
             }
 
-            String token = authHeader.substring(7).trim();
+            // 만약 주소 창 쿼리 스트링으로 들어온다면 accessor에서 직접 꺼낼 수도 있습니다.
+            if (token == null) {
+                // 가장 확실한 방법: 프론트가 최초 stompClient.connect({ token: '토큰값' }, ...)
+                // 형태로 헤더 대신 커스텀 Key로 직접 찔러 넣어주게 조율하는 것이 좋습니다.
+                token = accessor.getFirstNativeHeader("token");
+            }
+
+            if (token == null) {
+                log.warn("[웹소켓] CONNECT 인증 토큰을 찾을 수 없습니다.");
+                return null; // 연결 거부
+            }
+
             try {
                 if (blacklistPort.isBlacklisted(token) || !jwtTokenProvider.validateToken(token)) {
                     log.warn("[웹소켓] CONNECT 토큰 검증 실패");
