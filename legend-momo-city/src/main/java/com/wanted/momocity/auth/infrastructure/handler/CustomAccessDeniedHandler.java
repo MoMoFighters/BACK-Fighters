@@ -5,6 +5,7 @@ import com.wanted.momocity.admin.domain.access.AccessLog;
 import com.wanted.momocity.admin.domain.access.AccessLogAction;
 import com.wanted.momocity.admin.domain.access.AccessLogRepository;
 import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
+import com.wanted.momocity.global.infrastructure.util.ClientIpResolver;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -40,7 +41,13 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
         Long userId = (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails userDetails)
                 ? userDetails.getUserId()
                 : null;
-        accessLogRepository.save(AccessLog.create(userId, request.getRemoteAddr(), AccessLogAction.FORBIDDEN));
+
+        // [MS-4 접근로그] 리버스 프록시 뒤에서 getRemoteAddr () 가 루프백 주소를 반환하는 문제 수정 (auth BC 담당자 수영님과 협의됨)
+        accessLogRepository.save(AccessLog.create(
+                userId,
+                ClientIpResolver.resolve(request),
+                AccessLogAction.FORBIDDEN
+        ));
     }
 
 }
