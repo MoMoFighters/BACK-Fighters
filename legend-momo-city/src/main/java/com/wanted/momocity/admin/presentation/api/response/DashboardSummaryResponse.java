@@ -20,7 +20,7 @@ public record DashboardSummaryResponse(
     public record SystemHealth(String webService, String database, String fileStorage, String mailService) {}
     public record PendingTask(String type, String title, String requester, LocalDateTime requestedAt) {}
     public record RecentReport(Long reportId, String reporterName, String reason, boolean isResolved, LocalDateTime createdAt) {}
-    public record RecentNotice(Long noticeId, String title, LocalDateTime createdAt) {}
+    public record RecentNotice(Long noticeId, String title, LocalDateTime createdAt, boolean isPinned) {}
     // role 추가 — FE MS-4 연동 요청
     public record RecentAccessLog(Long logId, String ip, String userName, String role, boolean isSuccess, LocalDateTime accessedAt) {}
 }

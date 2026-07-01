@@ -1,4 +1,4 @@
-package com.wanted.momocity.community.application.result;
+package com.wanted.momocity.community.application.like.result;
 
 public record LikeResult(
         Long postId,

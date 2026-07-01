@@ -45,8 +45,8 @@ public class AdminDashboardQueryService implements AdminDashboardQueryUseCase {
         4. recentReports  — 최근 신고 3개 + UserNamePort 로 신고자 이름 조회
         5. recentNotices  — 공지 저장소에서 직접 최근 7개 조회
         6. recentAccessLogs — 비로그인 포함 최근 5개 + UserNamePort 로 이름 조회
-        3, 4, 6 공통 패턴 : Port 호출 → userId Set → UserNamePort → stream 변환
- */
+        최적화: 3, 4, 6 에서 필요한 userId 를 먼저 모아 UserNamePort 를 단 1회 호출
+     */
 
 
     @Override
@@ -69,23 +69,39 @@ public class AdminDashboardQueryService implements AdminDashboardQueryUseCase {
                 health.mailService()
         );
 
-        // 3. pendingTasks — 신고 + 강사 합쳐서 최신 5개
+        // 3, 4, 6 에서 필요한 데이터 먼저 조회
         List<PendingReportPort.PendingReportItem> pendingReports = pendingReportPort.getPending(5);
         List<PendingTeacherPort.PendingTeacherItem> pendingTeachers = pendingTeacherPort.getPending(5);
+        List<RecentReportPort.RecentReportItem> recentItems = recentReportPort.getRecent(3);
+        List<AccessLog> logs = accessLogRepository.findRecent(5);
 
+        // 3개 섹션에서 필요한 userId 를 한 번에 모아 UserNamePort 단 1회 호출
         Set<Long> reporterIds = pendingReports.stream()
                 .map(PendingReportPort.PendingReportItem::reporterUserId)
-                // null 값 500번 막기 위해서 리팩토링
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
-        // UserNamePort 스펙이 Map<Long,String> → Map<Long,UserInfo>(name+role)로 변경됨에 따라 타입·메서드명 교체
-        Map<Long, UserNamePort.UserInfo> pendingNameMap = userNamePort.getUserInfoByUserIds(reporterIds);
 
+        Set<Long> recentReporterIds = recentItems.stream()
+                .map(RecentReportPort.RecentReportItem::reporterUserId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Set<Long> logUserIds = logs.stream()
+                .map(AccessLog::getUserId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Set<Long> allUserIds = Stream.of(reporterIds, recentReporterIds, logUserIds)
+                .flatMap(Set::stream)
+                .collect(Collectors.toSet());
+        Map<Long, UserNamePort.UserInfo> nameMap = userNamePort.getUserInfoByUserIds(allUserIds);
+
+        // 3. pendingTasks — 신고 + 강사 합쳐서 최신 5개
         List<PendingTask> pendingTasks = Stream.concat(
                         pendingReports.stream().map(r -> new PendingTask(
                                 "REPORT",
                                 r.reasonKo(),
-                                pendingNameMap.getOrDefault(r.reporterUserId(), new UserNamePort.UserInfo("알 수 없음", null)).name(),
+                                nameMap.getOrDefault(r.reporterUserId(), new UserNamePort.UserInfo("알 수 없음", null)).name(),
                                 r.requestedAt()
                         )),
                         pendingTeachers.stream().map(t -> new PendingTask(
@@ -99,20 +115,10 @@ public class AdminDashboardQueryService implements AdminDashboardQueryUseCase {
                 .toList();
 
         // 4. recentReports — 최근 3개 + 신고자 이름 조회
-        List<RecentReportPort.RecentReportItem> recentItems = recentReportPort.getRecent(3);
-
-        Set<Long> recentReporterIds = recentItems.stream()
-                .map(RecentReportPort.RecentReportItem::reporterUserId)
-                // 500 번 상태 코드를 방지하기 위해 있는 코드
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-        // 동일 이유 — UserInfo.name() 으로 이름 추출
-        Map<Long, UserNamePort.UserInfo> recentNameMap = userNamePort.getUserInfoByUserIds(recentReporterIds);
-
         List<RecentReport> recentReports = recentItems.stream()
                 .map(r -> new RecentReport(
                         r.reportId(),
-                        recentNameMap.getOrDefault(r.reporterUserId(), new UserNamePort.UserInfo("알 수 없음", null)).name(),
+                        nameMap.getOrDefault(r.reporterUserId(), new UserNamePort.UserInfo("알 수 없음", null)).name(),
                         r.reasonKo(),
                         r.isResolved(),
                         r.createdAt()
@@ -123,26 +129,16 @@ public class AdminDashboardQueryService implements AdminDashboardQueryUseCase {
         List<RecentNotice> recentNotices = adminNoticeRepository
                 .findAll(PageRequest.of(0, 7, Sort.by(Sort.Direction.DESC, "createdAt")))
                 .stream()
-                .map(n -> new RecentNotice(n.getId(), n.getTitle(), n.getCreatedAt()))
+                .map(n -> new RecentNotice(n.getId(), n.getTitle(), n.getCreatedAt(), n.isPinned()))
                 .toList();
 
         // 6. recentAccessLogs — 최근 5개 (비로그인 포함)
-        List<AccessLog> logs = accessLogRepository.findRecent(5);
-
-        Set<Long> logUserIds = logs.stream()
-                .map(AccessLog::getUserId)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-        // 동일 이유 — 접근 로그 사용자 이름도 UserInfo.name() 으로 추출
-        Map<Long, UserNamePort.UserInfo> logNameMap = userNamePort.getUserInfoByUserIds(logUserIds);
-
         List<RecentAccessLog> recentAccessLogs = logs.stream()
                 .map(log -> new RecentAccessLog(
                         log.getId(),
                         log.getIp(),
-                        log.getUserId() != null ? logNameMap.getOrDefault(log.getUserId(), new UserNamePort.UserInfo("알 수 없음", null)).name() : "비로그인",
-                        // role — 비로그인이면 null, 이름 조회 실패 시 null
-                        log.getUserId() != null ? logNameMap.getOrDefault(log.getUserId(), new UserNamePort.UserInfo("알 수 없음", null)).role() : null,
+                        log.getUserId() != null ? nameMap.getOrDefault(log.getUserId(), new UserNamePort.UserInfo("알 수 없음", null)).name() : "비로그인",
+                        log.getUserId() != null ? nameMap.getOrDefault(log.getUserId(), new UserNamePort.UserInfo("알 수 없음", null)).role() : null,
                         log.getAction() != AccessLogAction.FORBIDDEN,
                         log.getCreatedAt()
                 ))
@@ -155,6 +151,5 @@ public class AdminDashboardQueryService implements AdminDashboardQueryUseCase {
     }
 
 }
-
 
 

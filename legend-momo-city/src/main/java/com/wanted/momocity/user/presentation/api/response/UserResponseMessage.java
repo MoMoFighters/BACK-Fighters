@@ -11,7 +11,6 @@ public final class UserResponseMessage {
     public static final String USER_INFO_UPDATE_SUCCESS = "정보가 수정되었습니다. ";
     public static final String NICKNAME_AVAILABLE = "사용 가능한 닉네임입니다.";
 
-    public static final String VIEW_BUILDING_INFO = "사용자 빌딩 정보가 조회되었습니다.";
 
     public static final String USER_REPORT_PLUS = "사용자 제재 완료";
     public static final String USER_REPORT_MINUS = "사용자 제재 취소";

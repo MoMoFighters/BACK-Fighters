@@ -2,6 +2,34 @@ include:
   - src/main/resources/docker-compose.yml
 
 services:
+  # 애플리케이션 (로컬 풀스택 도커 배포용, 2026-07-01 추가)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: momo-app
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      LOKI_URL: http://loki:3100
+      # .env 파일에서 시크릿 주입 (git 추적 제외, 2026-07-01)
+      GOOGLE_DRIVE_CLIENT_ID: ${GOOGLE_DRIVE_CLIENT_ID}
+      GOOGLE_DRIVE_CLIENT_SECRET: ${GOOGLE_DRIVE_CLIENT_SECRET}
+      GOOGLE_DRIVE_REFRESH_TOKEN: ${GOOGLE_DRIVE_REFRESH_TOKEN}
+      AWS_ACCESS_KEY: ${AWS_ACCESS_KEY}
+      AWS_SECRET_KEY: ${AWS_SECRET_KEY}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      loki:
+        condition: service_started
   # MySQL 설정
   mysql:
     image: mysql:8.0
@@ -10,7 +38,8 @@ services:
       - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: 1234
-      MYSQL_DATABASE: legend_momocity
+      # 실제 서비스 데이터가 momo 스키마에 있어 통일 (2026-07-01)
+      MYSQL_DATABASE: momo
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
@@ -58,8 +87,6 @@ services:
     volumes:
       - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
 
 volumes:
   mysql_data:

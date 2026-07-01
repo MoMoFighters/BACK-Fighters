@@ -3,3 +3,9 @@ services:
     image: redis:latest
     ports:
       - "6379:6379"
+    # 로컬 풀스택 도커 배포용 헬스체크 (2026-07-01 추가)
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5

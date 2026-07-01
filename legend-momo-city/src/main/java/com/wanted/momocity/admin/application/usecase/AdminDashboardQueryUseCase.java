@@ -60,7 +60,8 @@ public interface AdminDashboardQueryUseCase {
     record RecentNotice(
             Long noticeId,
             String title,
-            LocalDateTime createdAt
+            LocalDateTime createdAt,
+            boolean isPinned
     ) {}
 
     // 최근 접속한 사람들 로그 — role 추가 (FE MS-4 연동 요청)

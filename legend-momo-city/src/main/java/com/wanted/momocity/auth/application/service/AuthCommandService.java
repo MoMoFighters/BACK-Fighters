@@ -14,6 +14,10 @@ import com.wanted.momocity.auth.domain.repository.UserOauthRepository;
 import com.wanted.momocity.auth.domain.repository.UserRepository;
 import com.wanted.momocity.auth.presentation.api.response.EmailSendResponse;
 import com.wanted.momocity.auth.presentation.api.response.LoginResponse;
+// [MS-4 접근로그] admin BC 접근로그 저장을 위해 import (auth BC 담당자 승인, 예외적 BC 간 참조)
+import com.wanted.momocity.admin.domain.access.AccessLog;
+import com.wanted.momocity.admin.domain.access.AccessLogAction;
+import com.wanted.momocity.admin.domain.access.AccessLogRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationEventPublisher;
@@ -56,6 +60,9 @@ public class AuthCommandService implements AuthCommandUsecase {
     private final UpdatePasswordPort updatePasswordPort;
     private final PasswordEncodePort passwordEncodePort;
 
+    // [MS-4 접근로그] admin BC 접근로그 저장을 위해 추가 (auth BC 담당자 승인, 예외적 BC 간 참조)
+    private final AccessLogRepository accessLogRepository;
+
     private static final long EXPIRES_IN_SECONDS = 180L; // 임시 비번 만료시간 3분
 
 
@@ -66,7 +73,8 @@ public class AuthCommandService implements AuthCommandUsecase {
             @Qualifier("naverOAuthClient") OAuthClientPort naverOAuthClientPort,
             UserRepository userRepository,
             UserOauthRepository userOauthRepository, PasswordEncoder passwordEncoder, BlacklistPort blacklistPort, AuthenticationManager authenticationManager,
-            TokenProviderPort tokenProviderPort, ApplicationEventPublisher eventPublisher, RedisRefreshTokenPort redisRefreshTokenPort, EmailCodePort emailCodePort, EmailSendPort emailSendPort, UpdatePasswordPort updatePasswordPort, PasswordEncodePort passwordEncodePort
+            TokenProviderPort tokenProviderPort, ApplicationEventPublisher eventPublisher, RedisRefreshTokenPort redisRefreshTokenPort, EmailCodePort emailCodePort, EmailSendPort emailSendPort, UpdatePasswordPort updatePasswordPort, PasswordEncodePort passwordEncodePort,
+            AccessLogRepository accessLogRepository
     ) {
         this.loadUserPort = loadUserPort;
         this.signupPolicy = signupPolicy;
@@ -79,6 +87,7 @@ public class AuthCommandService implements AuthCommandUsecase {
         this.emailSendPort = emailSendPort;
         this.updatePasswordPort = updatePasswordPort;
         this.passwordEncodePort = passwordEncodePort;
+        this.accessLogRepository = accessLogRepository;
         this.oAuthClientPorts = Map.of(
                 Provider.KAKAO, kakaoOAuthClientPort,
                 Provider.GOOGLE, googleOAuthClientPort,
@@ -98,14 +107,14 @@ public class AuthCommandService implements AuthCommandUsecase {
         signupPolicy.ensureEligible(command.email());
 
         // 이메일(id), 비밀번호, 이름 넘겨서 새로운 학생 자바 객체 생성
-        userRepository.register(User.signup(command.email(), passwordEncoder.encode(command.password()), command.name()));
+        User user = userRepository.register(User.signup(command.email(), passwordEncoder.encode(command.password()), command.name()));
 
         // 이메일 인증 하고서 인증됨 의 상태를 지움
         emailCodePort.deleteVerified(command.email());
 
         // 회원가입 하고서 이벤트 발행 - 나와의 채팅 생성용
         // 추후 결제 완료 후 해당 이벤트 발행
-//        eventPublisher.publishEvent(new SignupCompletedEvent(user.getId()));
+        eventPublisher.publishEvent(new SignupCompletedEvent(user.getId()));
 
         log.info("[signup] 회원가입 완료 | email={} | role=STUDENT", command.email());
 
@@ -128,6 +137,8 @@ public class AuthCommandService implements AuthCommandUsecase {
 
         }catch (BadCredentialsException e){
             log.warn("[login] 로그인 실패 | email={} | 사유= 인증 실패", command.email());
+            // [MS-4 접근로그] 로그인 실패도 LOGIN 액션으로 기록 (auth BC 담당자 승인)
+            accessLogRepository.save(AccessLog.create(user.getId(), command.ip(), AccessLogAction.LOGIN));
             throw new InvalidCredentialsException("이메일 또는 비밀번호가 올바르지 않습니다.");
         }
 
@@ -168,6 +179,8 @@ public class AuthCommandService implements AuthCommandUsecase {
                 : tokenProviderPort.getAccessTokenValidityMilliseconds() / 1000;
 
         log.info("[login] 로그인 성공 | userId={} | isTempPwd={}", user.getId(), user.getIsTempPwd());
+        // [MS-4 접근로그] 로그인 성공 시 LOGIN 액션 기록 (auth BC 담당자 승인)
+        accessLogRepository.save(AccessLog.create(user.getId(), command.ip(), AccessLogAction.LOGIN));
         return new LoginResponse(accessToken, refreshToken, user.getStatus(), user.getRole(),
                                 user.getIsTempPwd(),user.getNickname(),accessTokenExpiry);
     }
@@ -185,6 +198,9 @@ public class AuthCommandService implements AuthCommandUsecase {
         }
 
         log.info("[logout] 로그아웃 완료 | remainingMillis={}", remainingMillis);
+        // [MS-4 접근로그] 로그아웃 완료 시 LOGOUT 액션 기록 (auth BC 담당자 승인)
+        Long userId = Long.valueOf(tokenProviderPort.getIdFromToken(command.accessToken()));
+        accessLogRepository.save(AccessLog.create(userId, command.ip(), AccessLogAction.LOGOUT));
     }
 
     @Override

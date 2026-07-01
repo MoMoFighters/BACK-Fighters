@@ -18,4 +18,7 @@ public interface AccessLogRepository {
 
     // 최근 접근 로그 N 개 ( userId null 포함 - 비로그인 FORBIDDEN 접근도 포함 )
     List<AccessLog> findRecent(int limit);
+
+    // 접근 로그 한 건 저장
+    AccessLog save(AccessLog accessLog);
 }

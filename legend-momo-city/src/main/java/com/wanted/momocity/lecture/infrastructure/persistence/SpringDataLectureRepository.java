@@ -76,6 +76,26 @@ public interface SpringDataLectureRepository extends JpaRepository<LectureJpaEnt
     );
 
     /* comment
+     * 특정 연도에 등록된 강의 수를 월별로 집계한다.
+     * 0건인 달은 DB 결과에 포함되지 않으므로 Adapter에서 1~12월을 채운다.
+     */
+    @Query("""
+        select month(l.createdAt) as month,
+               count(l.id) as lectureCount
+        from LectureJpaEntity l
+        where year(l.createdAt) = :year
+        group by month(l.createdAt)
+        order by month(l.createdAt)
+        """)
+    List<MonthlyLectureCount> countLectureByMonth(@Param("year") int year);
+
+    interface MonthlyLectureCount {
+        Integer getMonth();
+
+        Long getLectureCount();
+    }
+
+    /* comment
      * 강사가 본인이 등록한 강의 목록을 조회합니다.
      *  Query문 쓴 이유 :  선택 필터가 있는 목록 조회를 메서드 여러 개로 나누지 않고, 하나의 조회 메서드에서 처리하기 위해서
      * 조회 결과로 LectureJpaEntity 객체 전체를 가져와서 LectureJpaEntity에서 데이터를 조회하고,

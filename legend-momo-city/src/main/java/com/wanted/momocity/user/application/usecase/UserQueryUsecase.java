@@ -1,5 +1,6 @@
 package com.wanted.momocity.user.application.usecase;
 
+import com.wanted.momocity.user.domain.model.BuildingInfo;
 import com.wanted.momocity.user.domain.model.TeacherApplication;
 import com.wanted.momocity.user.presentation.api.response.AdminUserDetailResponse;
 
@@ -9,7 +10,12 @@ import java.util.List;
 
 public interface UserQueryUsecase {
 
-    UserDetailView userDetail(Long userId);
+    UserDetailResult userDetail(Long userId);
+
+    record UserDetailResult(
+            UserDetailView userDetail,
+            List<BuildingInfo> buildings
+    ) {}
 
     void checkNickname(String nickname);
 

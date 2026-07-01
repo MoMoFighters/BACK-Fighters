@@ -1,7 +1,6 @@
 package com.wanted.momocity.lecture.domain.model;
 
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
-import com.wanted.momocity.lecture.presentation.api.response.AdminLectureResponse.AdminLectureListItemResponse;
 
 import java.time.LocalDateTime;
 
@@ -150,28 +149,6 @@ public class LectureAggregate {
                 completedUserCount,
                 createdAt,
                 updatedAt
-        );
-    }
-
-    // 강의 목록 조회 응답 메서드
-    public static AdminLectureListItemResponse from(
-            LectureAggregate lecture,
-            double averageRating,
-            int reviewCount
-    ) {
-        return new AdminLectureListItemResponse(
-                lecture.getId(),
-                lecture.getTeacherId(),
-                lecture.getTitle(),
-                lecture.getDescription(),
-                lecture.getThumbnailUrl(),
-                lecture.getCategory().name(),
-                lecture.getStatus().name(),
-                lecture.getCompletedUserCount(),
-                averageRating,
-                reviewCount,
-                lecture.getCreatedAt(),
-                lecture.getUpdatedAt()
         );
     }
 

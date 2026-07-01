@@ -1,9 +1,13 @@
 package com.wanted.momocity.review.application.service;
 
 import com.wanted.momocity.enrollment.domain.repository.EnrollmentRepository;
+import com.wanted.momocity.global.application.point.AddOrderHistory;
+import com.wanted.momocity.global.application.point.PointChange;
 import com.wanted.momocity.global.infrastructure.metrics.MomoMetrics;
 import com.wanted.momocity.lecture.domain.exception.LectureNotFoundException;
 import com.wanted.momocity.lecture.domain.repository.LectureRepository;
+import com.wanted.momocity.order.domain.model.Reason;
+import com.wanted.momocity.order.domain.model.Type;
 import com.wanted.momocity.review.application.command.ReviewCommand;
 import com.wanted.momocity.review.application.usecase.ReviewCommandUseCase;
 import com.wanted.momocity.review.domain.event.ReviewCreatedEvent;
@@ -33,6 +37,10 @@ public class ReviewCommandService implements ReviewCommandUseCase {
     private final EnrollmentRepository enrollmentRepository;
     private final MomoMetrics momoMetrics;
     private final ApplicationEventPublisher eventPublisher;
+
+    private final PointChange pointChange; // user 테이블의 point 값을 증가/감소시키는 포트
+
+    private final AddOrderHistory addOrderHistory; // order_history 테이블에 포인트 변동 내역을 저장하는 포트
 
     // 등록 API는 응답 데이터가 필요 없으므로 반환하지 않습니다.
     @Override
@@ -99,6 +107,18 @@ public class ReviewCommandService implements ReviewCommandUseCase {
             // 동시에 중복 요청이 들어와 DB unique 제약조건이 발생한 경우 409 예외로 변환합니다.
             throw new DuplicateReviewException("이미 수강평을 작성한 강의입니다.");
         }
+
+        pointChange.gainPoint( // user 테이블의 point 값을 증가시킴
+                savedReview.getUserId(), // 포인트를 받을 사용자 ID
+                30L // 수강평 작성 보상 포인트
+        );
+
+        addOrderHistory.saveOrderHistory( // order_history 테이블에 포인트 지급 내역 저장
+                savedReview.getUserId(), // 포인트 변동 대상 사용자 ID
+                Reason.REVIEW, // 수강평 작성으로 인한 포인트 지급
+                Type.GAINED, // 포인트 획득
+                30L // 지급 포인트
+        );
 
         eventPublisher.publishEvent(new ReviewCreatedEvent(
                 savedReview.getId(),

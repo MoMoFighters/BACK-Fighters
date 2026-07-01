@@ -1,6 +1,7 @@
 package com.wanted.momocity.user.infrastructure.persistence;
 
 
+import com.wanted.momocity.admin.application.port.MonthlyCount;
 import com.wanted.momocity.global.domain.model.Category;
 import com.wanted.momocity.user.domain.model.Role;
 import com.wanted.momocity.user.domain.model.Status;
@@ -12,9 +13,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, Long> {
 
@@ -112,8 +111,7 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
     @Query("SELECT COUNT(u) FROM UserUser u WHERE " +
             "u.role <> 'ADMIN' AND u.status <> 'REJECTED' AND (" +
             "(:status = 'DELETED' AND u.status = :status) OR " +
-            "(:status IS NULL AND u.status <> 'DELETED' AND (:role IS NULL OR u.role = :role))) " +
-            "ORDER BY u.createdAt DESC")
+            "(:status IS NULL AND u.status <> 'DELETED' AND (:role IS NULL OR u.role = :role))) " )
     long countForAdmin(
             @Param("role") Role role,
             @Param("status") Status status
@@ -207,4 +205,28 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
 
     // 탈퇴회원 제외 전체 조회
     long countByStatusNot(Status status);
+
+    // 탈퇴한 회원을 제외한 해당 연도의 원별 사용자 수
+    @Query("SELECT new com.wanted.momocity.admin.application.port.MonthlyCount(MONTH(u.createdAt), COUNT(u)) " +
+            "FROM UserUser u " +
+            "WHERE YEAR(u.createdAt) = :year AND u.status != 'DELETED' " +
+            "GROUP BY MONTH(u.createdAt) " +
+            "ORDER BY MONTH(u.createdAt)")
+    List<MonthlyCount> countByMonth(@Param("year") int year);
+
+    // 강사 일괄 승인용 id 여러개의 유저 정보 가져오기
+    @Query("SELECT u FROM UserUser u WHERE u.id IN :userIds")
+    List<UserJpaEntity> findAllByIds(@Param("userIds") List<Long> userIds);
+
+    // 강사 일괄 승인용 벌크 업데이트 - 카테고리별로 그룹핑해서 호출
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Transactional
+    @Query("UPDATE UserUser u SET u.role = :role, u.status = :status, " +
+            "u.profileImageUrl = :profileImageUrl, u.updatedAt = :updatedAt " +
+            "WHERE u.id IN :userIds")
+    void bulkUpdateAfterApply(@Param("userIds") List<Long> userIds,
+                              @Param("role") Role role,
+                              @Param("status") Status status,
+                              @Param("profileImageUrl") String profileImageUrl,
+                              @Param("updatedAt") LocalDateTime updatedAt);
 }

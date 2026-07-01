@@ -104,9 +104,43 @@ public final class LectureCommand {
             Long teacherId,
             String title,
             String description,
-            String thumbnailUrl,
+            MultipartFile thumbnail,
             LectureCategory category
     ) {
+        public CreateLectureCommand { // Compact Constructor로 Command 생성 시점에 값 검증
+
+            if (teacherId == null) { // 강사 ID가 없는지 확인
+
+                throw new DomainRuleViolationException("강사 ID는 필수입니다."); // 강사 ID가 없으면 예외 발생
+
+            } // if 종료
+
+            if (title == null || title.isBlank()) { // 강의 제목이 비어 있는지 확인
+
+                throw new DomainRuleViolationException("강의 제목은 필수입니다."); // 제목이 없으면 예외 발생
+
+            } // if 종료
+
+            if (description == null || description.isBlank()) { // 강의 설명이 비어 있는지 확인
+
+                throw new DomainRuleViolationException("강의 설명은 필수입니다."); // 설명이 없으면 예외 발생
+
+            } // if 종료
+
+            if (thumbnail == null || thumbnail.isEmpty()) { // 썸네일 파일이 없는지 확인
+
+                throw new DomainRuleViolationException("썸네일 이미지는 필수입니다."); // 썸네일이 없으면 예외 발생
+
+            } // if 종료
+
+            if (category == null) { // 강의 카테고리가 없는지 확인
+
+                throw new DomainRuleViolationException("강의 카테고리는 필수입니다."); // 카테고리가 없으면 예외 발생
+
+            } // if 종료
+
+        } // Compact Constructor 종료
+
     }
 
     // 강사가 챕터에 동영상 파일을 등록할 때 사용하는 Command.
