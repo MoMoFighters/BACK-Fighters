@@ -39,6 +39,36 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
         StompCommand command = accessor.getCommand();
 
+        // 1. 프론트엔드가 최초 연결(CONNECT)할 때 토큰 인증 및 Principal 세팅
+        if (StompCommand.CONNECT.equals(command)) {
+            String authHeader = accessor.getFirstNativeHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring(7).trim();
+                try {
+                    if (jwtTokenProvider.validateToken(token)) {
+                        // 토큰이 유효하면 Authentication 객체를 가져옴
+                        org.springframework.security.core.Authentication authentication =
+                                jwtTokenProvider.getAuthentication(token);
+
+                        // 🎯 핵심: STOMP 세션에 유저 Principal을 강제로 주입!
+                        // 이렇게 해야 이후 SUBSCRIBE나 다른 프레임에서 accessor.getUser()로 꺼낼 수 있음
+                        accessor.setUser(authentication);
+
+                        // 세션 어트리뷰트에도 보관
+                        if (accessor.getSessionAttributes() != null) {
+                            com.wanted.momocity.auth.infrastructure.security.CustomUserDetails userDetails =
+                                    (com.wanted.momocity.auth.infrastructure.security.CustomUserDetails) authentication.getPrincipal();
+                            accessor.getSessionAttributes().put("userId", userDetails.getUserId());
+                        }
+                        log.info("[웹소켓] CONNECT 시점 인증 성공. 유저 인증 객체 등록 완료.");
+                    }
+                } catch (Exception e) {
+                    log.error("[웹소켓] CONNECT 토큰 인증 실패: {}", e.getMessage());
+                    return null; // 연결 거부
+                }
+            }
+        }
+
         //프론트엔드가 웹소켓 연결 후 특정 방을 구독할 때 주소 가로채기
         if (StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
             String destination = accessor.getDestination();
