@@ -32,7 +32,8 @@
 
     <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
         <http>
-            <url>http://localhost:3100/loki/api/v1/push</url>
+            <!-- 도커 배포 시 LOKI_URL=http://loki:3100 주입, 로컬 실행 시 기본값 유지 (2026-07-01) -->
+            <url>${LOKI_URL:-http://localhost:3100}/loki/api/v1/push</url>
         </http>
         <format>
             <label>
