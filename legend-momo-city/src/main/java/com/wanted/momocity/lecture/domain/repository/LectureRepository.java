@@ -18,6 +18,9 @@ public interface LectureRepository {
     // 강의를 저장
     LectureAggregate save(LectureAggregate lecture);
 
+    // 강의 썸네일 S3 key만 업데이트
+    LectureAggregate updateThumbnailUrl(Long lectureId, String thumbnailUrl);
+
     // 강의 ID로 강의를 조회
     Optional<LectureAggregate> findById(Long lectureId);
 

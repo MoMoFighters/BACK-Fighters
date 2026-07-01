@@ -102,4 +102,11 @@ public class LectureJpaEntity extends BaseTimeEntity {
     public void changeStatus(LectureStatus status) {
         this.status = status;
     }
+
+    // 강의 썸네일 S3 key를 변경하는 메서드
+    public void changeThumbnailUrl(String thumbnailUrl) {
+
+        this.thumbnailUrl = thumbnailUrl;
+
+    }
 }

@@ -135,14 +135,14 @@ public final class LectureRequest {
         private static final long MAX_THUMBNAIL_SIZE_BYTES = 5 * 1024 * 1024;
 
         // 중복 검증 추가
-        public LectureCommand.CreateLectureCommand toCommand(Long teacherId, String thumbnailUrl) {
+        public LectureCommand.CreateLectureCommand toCommand(Long teacherId) {
             LectureCategory lectureCategory = parseCategory(category);
 
             return new LectureCommand.CreateLectureCommand(
                     teacherId,
                     title,
                     description,
-                    thumbnailUrl,
+                    thumbnail,
                     lectureCategory
             );
         }
