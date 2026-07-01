@@ -1,5 +1,6 @@
 package com.wanted.momocity.global.infrastructure.config;
 
+import com.wanted.momocity.auth.application.port.BlacklistPort;
 import com.wanted.momocity.auth.application.port.LoadUserPort;
 import com.wanted.momocity.auth.domain.model.User;
 
@@ -33,6 +34,7 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
     //알림 관련 - 메인 페이지 종 모양에 띄워질 총 알림 개수
     private final NotificationSessionManager notificationSessionManager;
     private final JwtTokenProvider jwtTokenProvider;
+    private final BlacklistPort blacklistPort;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -42,10 +44,17 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
         // 1. 프론트엔드가 최초 연결(CONNECT)할 때 토큰 인증 및 Principal 세팅
         if (StompCommand.CONNECT.equals(command)) {
             String authHeader = accessor.getFirstNativeHeader("Authorization");
-            if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                String token = authHeader.substring(7).trim();
-                try {
-                    if (jwtTokenProvider.validateToken(token)) {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                log.warn("[웹소켓] CONNECT 인증 헤더 없음/형식 불일치");
+                return null;
+            }
+
+            String token = authHeader.substring(7).trim();
+            try {
+                if (blacklistPort.isBlacklisted(token) || !jwtTokenProvider.validateToken(token)) {
+                    log.warn("[웹소켓] CONNECT 토큰 검증 실패");
+                    return null;
+                }
                         // 토큰이 유효하면 Authentication 객체를 가져옴
                         org.springframework.security.core.Authentication authentication =
                                 jwtTokenProvider.getAuthentication(token);
@@ -61,11 +70,9 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
                             accessor.getSessionAttributes().put("userId", userDetails.getUserId());
                         }
                         log.info("[웹소켓] CONNECT 시점 인증 성공. 유저 인증 객체 등록 완료.");
-                    }
-                } catch (Exception e) {
-                    log.error("[웹소켓] CONNECT 토큰 인증 실패: {}", e.getMessage());
-                    return null; // 연결 거부
-                }
+            } catch (Exception e) {
+                log.error("[웹소켓] CONNECT 토큰 인증 실패: {}", e.getMessage());
+                return null; // 연결 거부
             }
         }
 
