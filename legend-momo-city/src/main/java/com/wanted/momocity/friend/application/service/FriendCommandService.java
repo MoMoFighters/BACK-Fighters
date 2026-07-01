@@ -238,7 +238,7 @@ public class FriendCommandService implements FriendCommandUseCase {
         log.info("[RejectRequestFriendCommandService] friend 테이블 행 삭제 완료");
 
         // RejectRequestFriendCommandService 내부 하단
-        eventPublisher.publishEvent(new RejectRequestFriendPublishedEvent(command.userId(), command.fromUserId(), targetFriendId));
+        eventPublisher.publishEvent(new RejectRequestFriendPublishedEvent(command.userId(), command.fromUserId(), command.fromUserId()));
         log.info("[RejectRequestFriendCommandService] 친구 거절 비동기 연동 이벤트 발행 성공");
 
         //none 세팅 후 반환

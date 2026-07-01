@@ -143,6 +143,9 @@ public class NotificationQueryService implements NotificationQueryUseCase {
         // 3. 최종 전체 목록 최신순 정렬
         finalResultList.sort((a, b) -> b.createdAt().compareTo(a.createdAt()));
 
+        // 🔒 안전하게 불변 리스트나 복사본으로 복사해서 내보내기
+        List<NotiView> immutableResult = List.copyOf(finalResultList);
+
         // 🎯 [핵심]: 조회된 알림 목록을 즉시 웹소켓 채널로 발송! (순서, 내용, 시간 다 가공된 상태)
         if (notificationSessionManager.isUserSubscribed(query.userId())) {
             messagingTemplate.convertAndSendToUser(query.userId().toString(), "/sub/notice/list", finalResultList);
@@ -154,7 +157,7 @@ public class NotificationQueryService implements NotificationQueryUseCase {
         // 🎯 2. 끝 한 줄: 반환 직전에 타이머를 안전하게 멈추고 지표 기록!
         sample.stop(notificationMetrics.getNotificationListTimer());
 
-        return finalResultList;
+        return immutableResult;
     }
 
     //메인페이지 종 총 알림 개수
