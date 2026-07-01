@@ -31,6 +31,11 @@ public class AccessLog {
         return new AccessLog(id, userId, ip, action, createdAt);
     }
 
+    // 신규 접근 로그 한 건을 새로 생성할 때 사용 (id는 DB 저장 전이라 없음)
+    public static AccessLog create(Long userId, String ip, AccessLogAction action) {
+        return new AccessLog(null, userId, ip, action, LocalDateTime.now());
+    }
+
     // setter 없이 getter 만
     public Long getId() { return id; }
     public Long getUserId() { return userId; }

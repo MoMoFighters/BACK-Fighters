@@ -6,6 +6,8 @@ import com.wanted.momocity.auth.application.port.LoadUserPort;
 import com.wanted.momocity.auth.application.port.RedisRefreshTokenPort;
 import com.wanted.momocity.auth.application.port.TokenProviderPort;
 import com.wanted.momocity.auth.application.service.AuthCommandService;
+// [MS-4 접근로그] AuthCommandService 생성자에 AccessLogRepository 추가되어 Mock 필요 (auth BC 담당자 승인)
+import com.wanted.momocity.admin.domain.access.AccessLogRepository;
 import com.wanted.momocity.auth.domain.exception.InactiveUserException;
 import com.wanted.momocity.auth.domain.exception.InvalidCredentialsException;
 import com.wanted.momocity.auth.domain.exception.TempPasswordExpiredException;
@@ -38,6 +40,8 @@ public class LoginTest {
     @Mock private LoadUserPort loadUserPort;
     @Mock private RedisRefreshTokenPort redisRefreshTokenPort;
     @Mock private EmailCodePort emailCodePort;
+    // [MS-4 접근로그] AuthCommandService 생성자에 AccessLogRepository 추가되어 Mock 필요 (auth BC 담당자 승인)
+    @Mock private AccessLogRepository accessLogRepository;
 
     @InjectMocks
     private AuthCommandService loginService;
@@ -56,7 +60,8 @@ public class LoginTest {
         // when & then
         InvalidCredentialsException exception = assertThrows(
                 InvalidCredentialsException.class,
-                () -> loginService.login(new LoginCommand("none@test.com", "password123!"))
+                // [MS-4 접근로그] LoginCommand에 ip 필드 추가되어 테스트용 더미 IP 전달 (auth BC 담당자 승인)
+                () -> loginService.login(new LoginCommand("none@test.com", "password123!", "127.0.0.1"))
         );
 
         assertEquals("이메일 또는 비밀번호가 올바르지 않습니다.", exception.getMessage());
@@ -74,7 +79,8 @@ public class LoginTest {
         // when & then
         InvalidCredentialsException exception = assertThrows(
                 InvalidCredentialsException.class,
-                () -> loginService.login(new LoginCommand("test@test.com", "wrongpassword!"))
+                // [MS-4 접근로그] LoginCommand에 ip 필드 추가되어 테스트용 더미 IP 전달 (auth BC 담당자 승인)
+                () -> loginService.login(new LoginCommand("test@test.com", "wrongpassword!", "127.0.0.1"))
         );
 
         assertEquals("이메일 또는 비밀번호가 올바르지 않습니다.", exception.getMessage());
@@ -93,7 +99,8 @@ public class LoginTest {
         // when & then
         InactiveUserException exception = assertThrows(
                 InactiveUserException.class,
-                () -> loginService.login(new LoginCommand("test@test.com", "password123!"))
+                // [MS-4 접근로그] LoginCommand에 ip 필드 추가되어 테스트용 더미 IP 전달 (auth BC 담당자 승인)
+                () -> loginService.login(new LoginCommand("test@test.com", "password123!", "127.0.0.1"))
         );
 
         assertEquals("로그인이 제한된 계정입니다.", exception.getMessage());
@@ -114,7 +121,8 @@ public class LoginTest {
         // when & then
         TempPasswordExpiredException exception = assertThrows(
                 TempPasswordExpiredException.class,
-                () -> loginService.login(new LoginCommand("test@test.com", "password123!"))
+                // [MS-4 접근로그] LoginCommand에 ip 필드 추가되어 테스트용 더미 IP 전달 (auth BC 담당자 승인)
+                () -> loginService.login(new LoginCommand("test@test.com", "password123!", "127.0.0.1"))
         );
 
         assertEquals("임시 비밀번호가 만료되었습니다. 다시 발급해주세요.", exception.getMessage());
