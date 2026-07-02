@@ -170,7 +170,7 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
                     log.info("[웹소켓 인터셉터] 유저 {}번 채팅방 세션 제거 완료 (주소 역추적: {})", userId, destination);
                 }
                 // 🔔 알림 채널 구독 해제 (이제 완벽하게 매칭되어 정상 작동함!)
-                else if (destination.contains("/notice/total-counts")) {
+                else if (destination.contains("/notice/total-counts") || destination.contains("/total-counts")) {
                     notificationSessionManager.leaveNotificationChannel(userId, sessionId);
                     log.info("[웹소켓 인터셉터] 유저 {}번 실시간 알림 채널 세션 제거 완료 (주소 역추적: {})", userId, destination);
                 }
