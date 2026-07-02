@@ -55,7 +55,9 @@ public class ProgressAdapter
                 .mapToInt(Chapter::getDurationSec)
                 .sum();
 
-        if (totalDurationSum == 0) return 0;
+        if (totalDurationSum == 0) {
+            return new ProgressPort.ProgressInfo(0, 0);
+        }
 
         int result = (int) Math.round(
                 (double)(completedDurationSum + inProgressWatchedSum)
