@@ -1,11 +1,13 @@
 package com.wanted.momocity.message.application.manager;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
+@Slf4j
 public class ChatRoomSessionManager {
 
     //key: 유저ID, value: 현재 머물고 있는 방ID(방에서 나가면 삭제)
@@ -17,8 +19,18 @@ public class ChatRoomSessionManager {
     }
 
     //유저가 방에서 나갔을 때
-    public void leaveRoom(Long userId) {
-        userLocationMap.remove(userId);
+    public void leaveRoom(Long userId, Long roomId) {
+        Long currentRoomId = userLocationMap.get(userId);
+
+        // 현재 장부에 등록된 방 번호가 내가 방금 구독 해제(UNSUBSCRIBE) 요청한 방 번호와 정확히 일치할 때만 삭제!
+        if (currentRoomId != null && currentRoomId.equals(roomId)) {
+            userLocationMap.remove(userId);
+            log.info("[SessionManager] 유저 {}번의 {}번 방 세션 정상 제거 완료", userId, roomId);
+        } else {
+            // 그 사이에 다른 방(새로 진입한 방)으로 업데이트되었다면 지우지 않고 유지하여 레이스 컨디션 방어
+            log.info("[SessionManager] 유저 {}번은 이미 다른 방({})에 진입해 있으므로 {}번 방 제거 요청을 무시합니다.",
+                    userId, currentRoomId, roomId);
+        }
     }
 
     //상대방이 지금 이 방에 들어와있는 상태인지 검증

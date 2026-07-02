@@ -166,8 +166,15 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
             if (userId != null && destination != null) {
                 // 실제 채팅방 상세 채널(/sub/chat/room/)을 나갈 때만 세션에서 제거!
                 if (destination.contains("/chat/room/")) {
-                    sessionManager.leaveRoom(userId);
-                    log.info("[웹소켓 인터셉터] 유저 {}번 채팅방 세션 제거 완료 (주소 역추적: {})", userId, destination);
+                    try {
+                        // 주소 역추적 장부에서 해제하려는 방의 roomId를 정확하게 파싱해냅니다.
+                        String roomIdStr = destination.substring(destination.lastIndexOf("/") + 1);
+                        Long roomId = Long.parseLong(roomIdStr);
+                        sessionManager.leaveRoom(userId, roomId);
+                        log.info("[웹소켓 인터셉터] 유저 {}번 채팅방 세션 제거 완료 (주소 역추적: {})", userId, destination);
+                    } catch (NumberFormatException e) {
+                        log.error("[웹소켓 인터셉터] UNSUBSCRIBE 방 ID 파싱 실패: {}", destination);
+                    }
                 }
                 // 🔔 알림 채널 구독 해제 (이제 완벽하게 매칭되어 정상 작동함!)
                 else if (destination.contains("/notice/total-counts") || destination.contains("/total-counts")) {
