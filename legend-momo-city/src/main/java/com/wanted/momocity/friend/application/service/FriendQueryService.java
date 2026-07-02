@@ -105,7 +105,6 @@ public class FriendQueryService implements FriendQueryUseCase {
         //어댑터들로부터 가공되지 않은 순수 데이터 로드
         List<UserWithFMJpaEntity> foundUsers = friendRepository.findUsersByNicknameKeyword(query.findNickname());
         List<FriendJpaEntity> myRelations = friendRepository.findAllMyRelations(query.userId());
-        List<EnrollmentWithFMJpaEntity> myEnrollments = friendRepository.findEnrollmentsByUserId(query.userId());
 
         log.info("[FindUserQueryService] 원본 데이터 로드 완료 - 검색된 총 유저: {}명, 나와 엮인 전체 관계: {}건", foundUsers.size(), myRelations.size());
 
@@ -147,16 +146,6 @@ public class FriendQueryService implements FriendQueryUseCase {
 
             //강사 쪽에는 강의명
             List<String> lectureTitleList = new ArrayList<>();
-            if ("ACTIVE".equals(targetUser.getStatus()) && "TEACHER".equals(targetUser.getRole()) && "FRIEND".equals(status)) {
-                for (EnrollmentWithFMJpaEntity enrollment : myEnrollments) {
-                    LectureWithFMJpaEntity lecture = enrollment.getLectureId();
-
-                    //로그인한 유저와 친구인 강사와 연결된 수강 강의명
-                    if (lecture.getTeacherId().getId().equals(targetUser.getId())) {
-                        lectureTitleList.add(lecture.getTitle());
-                    }
-                }
-            }
 
             //내부 전용 주머니(FinView)에 결과 담기
             result.add(new FindView(
@@ -346,7 +335,6 @@ public class FriendQueryService implements FriendQueryUseCase {
 
     //방명록 목록 조회
     @Override
-    @Transactional //읽음 처리가 필요함.
     public List<GuestBooksView> getGuestBooksQueryHandle(GetGuestBooksQuery query) {
         log.info("[GuestBookQueryService] 방명록 목록 조회 시작 - 주인ID: {}", query.userId());
 

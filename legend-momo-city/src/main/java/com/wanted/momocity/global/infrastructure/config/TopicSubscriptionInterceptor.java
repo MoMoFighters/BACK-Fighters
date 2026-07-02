@@ -1,5 +1,6 @@
 package com.wanted.momocity.global.infrastructure.config;
 
+import com.wanted.momocity.auth.application.port.BlacklistPort;
 import com.wanted.momocity.auth.application.port.LoadUserPort;
 import com.wanted.momocity.auth.domain.model.User;
 
@@ -33,11 +34,70 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
     //알림 관련 - 메인 페이지 종 모양에 띄워질 총 알림 개수
     private final NotificationSessionManager notificationSessionManager;
     private final JwtTokenProvider jwtTokenProvider;
+    private final BlacklistPort blacklistPort;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
         StompCommand command = accessor.getCommand();
+
+        // 1. 프론트엔드가 최초 연결(CONNECT)할 때 토큰 인증 및 Principal 세팅
+        if (StompCommand.CONNECT.equals(command)) {
+            // 1. 기존 방식대로 헤더에서 먼저 토큰을 찾아봅니다. (로컬 테스트용)
+            String authHeader = accessor.getFirstNativeHeader("Authorization");
+            String token = null;
+
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                token = authHeader.substring(7).trim();
+            } else {
+                // 🎯 2. [배포 환경 우회용] 헤더에 없다면 쿼리 스트링(?token=xxxx)에서 추출합니다.
+                // STOMP CONNECT 프레임의 nativeHeaders나 simpConnectMessage의 쿼리 파라미터를 활용
+                Object simpConnectMessage = accessor.getHeader("simpConnectMessage");
+                if (simpConnectMessage instanceof Message<?>) {
+                    // 웹소켓 연결 주소 뒤에 붙은 쿼리 파라미터를 파싱하는 로직
+                    String nativeHeaderUrl = accessor.getFirstNativeHeader("Authorization");
+                    // 위 방법 대신, 프론트엔드에서 'connectHeaders' 내부에 파라미터를 실어 보낼 수도 있습니다.
+                    token = accessor.getFirstNativeHeader("token"); // 프론트가 connectHeaders: { token: '...' } 로 보낼 경우
+                }
+            }
+
+            // 만약 주소 창 쿼리 스트링으로 들어온다면 accessor에서 직접 꺼낼 수도 있습니다.
+            if (token == null) {
+                // 가장 확실한 방법: 프론트가 최초 stompClient.connect({ token: '토큰값' }, ...)
+                // 형태로 헤더 대신 커스텀 Key로 직접 찔러 넣어주게 조율하는 것이 좋습니다.
+                token = accessor.getFirstNativeHeader("token");
+            }
+
+            if (token == null) {
+                log.warn("[웹소켓] CONNECT 인증 토큰을 찾을 수 없습니다.");
+                return null; // 연결 거부
+            }
+
+            try {
+                if (blacklistPort.isBlacklisted(token) || !jwtTokenProvider.validateToken(token)) {
+                    log.warn("[웹소켓] CONNECT 토큰 검증 실패");
+                    return null;
+                }
+                        // 토큰이 유효하면 Authentication 객체를 가져옴
+                        org.springframework.security.core.Authentication authentication =
+                                jwtTokenProvider.getAuthentication(token);
+
+                        // 🎯 핵심: STOMP 세션에 유저 Principal을 강제로 주입!
+                        // 이렇게 해야 이후 SUBSCRIBE나 다른 프레임에서 accessor.getUser()로 꺼낼 수 있음
+                        accessor.setUser(authentication);
+
+                        // 세션 어트리뷰트에도 보관
+                        if (accessor.getSessionAttributes() != null) {
+                            com.wanted.momocity.auth.infrastructure.security.CustomUserDetails userDetails =
+                                    (com.wanted.momocity.auth.infrastructure.security.CustomUserDetails) authentication.getPrincipal();
+                            accessor.getSessionAttributes().put("userId", userDetails.getUserId());
+                        }
+                        log.info("[웹소켓] CONNECT 시점 인증 성공. 유저 인증 객체 등록 완료.");
+            } catch (Exception e) {
+                log.error("[웹소켓] CONNECT 토큰 인증 실패: {}", e.getMessage());
+                return null; // 연결 거부
+            }
+        }
 
         //프론트엔드가 웹소켓 연결 후 특정 방을 구독할 때 주소 가로채기
         if (StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {

@@ -59,4 +59,7 @@ public interface FriendRepository {
 
     //방명록 저장
     GuestBookJpaEntity saveGuestBook(GuestBookJpaEntity newBook);
+
+    // 요청자와 대상자 유저를 단 1방의 IN 절 쿼리로 묶어서 조회
+    List<UserWithFMJpaEntity> findUsersByIds(List<Long> userIds);
 }

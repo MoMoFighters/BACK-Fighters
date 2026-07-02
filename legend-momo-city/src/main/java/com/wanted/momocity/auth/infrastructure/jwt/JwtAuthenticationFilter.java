@@ -25,6 +25,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final RefreshService refreshService;
     private final BlacklistPort blacklistPort;
 
+    //웹소켓
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String path = request.getRequestURI();
+        // 웹소켓 연결 및 SockJS 관련 주소는 JWT 필터를 타지 않도록 완전 제외
+        return path.startsWith("/ws-chat");
+    }
 
     // 로그인 후 프론트는 우리가 준 토큰값을 가지고 Authorization: Bearer eyJhbGci... 헤더를 붙여서 요청을 보냄
     // 그럼 이 흐름이 실행 됨

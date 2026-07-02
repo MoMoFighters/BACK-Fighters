@@ -35,8 +35,8 @@ public class CatalogNotificationRepositoryAdapter implements NotificationReposit
         log.info("[CatalogNotificationRepositoryAdapter] 알림 테이블 새 행 삽입 시도 - 대상자ID: {}, 타입: {}",
                 notification.getUserId(), notification.getType());
         //도메인 모델에 담긴 userId로 연관된 UserJpaEntity 조회
-        UserWithFMJpaEntity targetUser = notificationSideUserRepository.findById(notification.getUserId())
-                .orElseThrow(() -> new DomainRuleViolationException("해당 유저를 찾을 수 없습니다. ID: " + notification.getUserId()));
+        // 🎯 [기존 병목 제거] findById 단건 SELECT 쿼리 삭제 후 프록시 참조로 대체! (SELECT 1방 절약)
+        UserWithFMJpaEntity targetUser = getUserReference(notification.getUserId());
 
         //도메인 모델 -> JPA 엔티티 변환
         NotificationJpaEntity jpaEntity = NotificationJpaEntity.toEntity(notification,targetUser);
@@ -144,13 +144,81 @@ public class CatalogNotificationRepositoryAdapter implements NotificationReposit
 
     //알림 삭제 - 일반 알림
     @Override
+    @Transactional
     public void deleteAllInBatch(List<NotificationJpaEntity> generalNotisToDelete) {
-        springDataNotificationRepository.deleteAllInBatch(generalNotisToDelete);
-    }
+        if (generalNotisToDelete == null || generalNotisToDelete.isEmpty()) {
+            return;
+        }
+
+        // 🎯 서비스에서 넘어온 엔티티 뭉치에서 순수 고유 Long ID 목록만 쏙 추출합니다.
+        List<Long> notificationIds = generalNotisToDelete.stream()
+                .map(NotificationJpaEntity::getId)
+                .toList();
+
+        log.info("[Adapter] 일반 알림 벌크 삭제 쿼리 실행 - 대상 개수: {}건", notificationIds.size());
+
+        // 🎯 새로 만든 Spring Data JPA의 벌크 DELETE 메서드로 최종 토스!
+        springDataNotificationRepository.bulkDeleteGeneralNotifications(notificationIds);    }
 
     //알림 삭제 - 메시지 알림
     @Override
+    @Transactional
     public void bulkMarkMessageNotificationsAsDeleted(List<Long> messageRoomIds, Long userId) {
         notificationSideMessageReadRepository.bulkUpdateIsDeletedTrue(messageRoomIds, userId);
+    }
+
+    //채팅방 이름 조회
+    @Override
+    public List<Object[]> findRoomTitlesByIdsIn(List<Long> roomIds) {
+        if (roomIds == null || roomIds.isEmpty()) {
+            return List.of();
+        }
+        log.info("[CatalogNotificationRepositoryAdapter] {}개의 채팅방 타이틀 일괄 조회(IN 절)", roomIds.size());
+        return notificationSideChatRoomRepository.findTitlesByRoomIdsIn(roomIds);
+    }
+
+    //개선 - 앱별 알림 통합해서 가져오기
+    @Override
+    public List<Object[]> countUnreadGroupByType(Long userId) {
+        log.info("[CatalogNotificationRepositoryAdapter] 앱별 안읽은 알림 카운트 일괄 조회(GROUP BY) - 유저ID: {}", userId);
+        return springDataNotificationRepository.countUnreadGroupByType(userId);
+    }
+
+    @Override
+    public UserWithFMJpaEntity getUserReference(Long userId) {
+        // 🎯 [최적화] 실제 DB를 조회하지 않고 가짜 프록시 객체만 즉시 반환하여 연관관계 매핑용 키값으로만 사용
+        return em.getReference(UserWithFMJpaEntity.class, userId);
+    }
+
+    //친구 거절 알림 읽음 처리
+    @Override
+    @Transactional // 데이터 쓰기 작업이므로 필수
+    public void bulkMarkAsReadByRefIdAndUserIdAndType(Long refId, Long userId, String type) {
+        log.info("[CatalogNotificationRepositoryAdapter] 친구 거절 알림 벌크 읽음 처리 시도 - refId(관계ID): {}, 거절자ID: {}", refId, userId);
+
+        springDataNotificationRepository.bulkMarkAsReadByRefIdAndUserIdAndType(refId, userId, type);
+
+        // 🎯 벌크 쿼리 실행 후 영속성 컨텍스트를 비워 웹소켓 재조회 시 DB 최신 데이터가 반영되도록 강제
+        em.flush();
+        em.clear();
+    }
+
+    //일반 알림 벌크 읽음
+    @Override
+    @Transactional
+    public void bulkMarkGeneralNotificationsAsRead(List<NotificationJpaEntity> generalNotisToUpdate) {
+        if (generalNotisToUpdate == null || generalNotisToUpdate.isEmpty()) {
+            return;
+        }
+
+        // 🎯 서비스가 넘겨준 엔티티 리스트에서 순수 Long ID만 쏙 뽑아서 변환합니다.
+        List<Long> notificationIds = generalNotisToUpdate.stream()
+                .map(NotificationJpaEntity::getId)
+                .toList();
+
+        log.info("[Adapter] 일반 알림 벌크 업데이트 쿼리 실행 - 대상 개수: {}건", notificationIds.size());
+
+        // 🎯 ID 리스트를 원하는 Spring Data JPA의 벌크 메서드로 최종 전달!
+        springDataNotificationRepository.bulkMarkGeneralNotificationsAsRead(notificationIds);
     }
 }
