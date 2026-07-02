@@ -1,5 +1,6 @@
 package com.wanted.momocity.lecture.presentation.api.response;
 
+import com.wanted.momocity.lecture.application.service.LectureS3UrlResolver;
 import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.model.LectureChapter;
 
@@ -45,14 +46,14 @@ public class TeacherLectureResponse {
     ) {
 
         // 도메인 모델 LectureChapter를 응답 DTO로 변환
-        public static TeacherLectureChapterResponse from(LectureChapter chapter) {
+        public static TeacherLectureChapterResponse from(LectureChapter chapter, LectureS3UrlResolver lectureS3UrlResolver) {
             return new TeacherLectureChapterResponse(
                     chapter.getId(),
                     chapter.getTitle(),
                     chapter.getOrderNo(),
                     chapter.getVideoUrl(),
                     chapter.getVideoSizeBytes(),
-                    chapter.getChapterThumbnailUrl(),
+                    lectureS3UrlResolver.toUrl(chapter.getChapterThumbnailUrl()),
                     chapter.getDurationSec(),
                     chapter.getOriginalFilename(),
                     chapter.getCreatedAt(),
@@ -104,19 +105,24 @@ public class TeacherLectureResponse {
                 LectureAggregate lecture,
                 List<LectureChapter> chapters,
                 double averageRating,
-                int reviewCount
+                int reviewCount,
+                LectureS3UrlResolver lectureS3UrlResolver
         ) {
             return new TeacherLectureDetailResponse(
                     lecture.getId(),
                     lecture.getTitle(),
                     lecture.getDescription(),
-                    lecture.getThumbnailUrl(),
+                    lectureS3UrlResolver.toUrl(lecture.getThumbnailUrl()),
                     lecture.getCategory().name(),
                     lecture.getStatus().name(),
                     averageRating,
-                    reviewCount,                chapters.stream()
-                    .map(TeacherLectureChapterResponse::from)
-                    .toList(),
+                    reviewCount,
+                    chapters.stream()
+                            .map(chapter -> TeacherLectureChapterResponse.from(
+                                    chapter,
+                                    lectureS3UrlResolver
+                            ))
+                            .toList(),
                     lecture.getCreatedAt(),
                     lecture.getUpdatedAt()
             );
@@ -148,14 +154,15 @@ public class TeacherLectureResponse {
         public static TeacherLectureListItemResponse from(
                 LectureAggregate lecture,
                 double averageRating,
-                int reviewCount
+                int reviewCount,
+                LectureS3UrlResolver lectureS3UrlResolver
         ) {
             return new TeacherLectureListItemResponse(
                     lecture.getId(),
                     lecture.getTeacherId(),
                     lecture.getTitle(),
                     lecture.getDescription(),
-                    lecture.getThumbnailUrl(),
+                    lectureS3UrlResolver.toUrl(lecture.getThumbnailUrl()),
                     lecture.getCategory().name(),
                     lecture.getStatus().name(),
                     lecture.getCompletedUserCount(),

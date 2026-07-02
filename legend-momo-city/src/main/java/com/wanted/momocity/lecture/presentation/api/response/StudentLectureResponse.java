@@ -1,9 +1,9 @@
 package com.wanted.momocity.lecture.presentation.api.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.wanted.momocity.lecture.application.service.LectureS3UrlResolver;
 import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.model.LectureChapter;
-import com.wanted.momocity.lecture.domain.model.VideoStatus;
 import com.wanted.momocity.viewing.application.port.ChapterProgressInfo;
 
 import java.time.LocalDateTime;
@@ -45,13 +45,14 @@ public class StudentLectureResponse {
         // LectureChapter 도메인 객체를 학생용 챕터 응답 DTO로 변환
         public static StudentLectureChapterResponse from(
                 LectureChapter chapter,
-                ChapterProgressInfo progressInfo
+                ChapterProgressInfo progressInfo,
+                LectureS3UrlResolver lectureS3UrlResolver
         ) {
             return new StudentLectureChapterResponse(
                     chapter.getId(),
                     chapter.getTitle(),
                     chapter.getOrderNo(),
-                    chapter.getChapterThumbnailUrl(),
+                    lectureS3UrlResolver.toUrl(chapter.getChapterThumbnailUrl()),
                     chapter.getDurationSec(),
                     // 챕터 진척도
                     // null ? null : -> progressInfo가 없으면 null, 있으면 안에 있느 값을 꺼내라
@@ -120,13 +121,14 @@ public class StudentLectureResponse {
                 boolean isEnrolled,
                 Integer lectureProgress,
                 Boolean isCompleted,
-                Map<Long, ChapterProgressInfo> chapterProgressMap
+                Map<Long, ChapterProgressInfo> chapterProgressMap,
+                LectureS3UrlResolver lectureS3UrlResolver
         ) {
             return new StudentLectureDetailResponse(
                     lecture.getId(),
                     lecture.getTitle(),
                     lecture.getDescription(),
-                    lecture.getThumbnailUrl(),
+                    lectureS3UrlResolver.toUrl(lecture.getThumbnailUrl()),
                     lecture.getCategory().name(),
                     lecture.getStatus().name(),
                     averageRating,
@@ -137,7 +139,8 @@ public class StudentLectureResponse {
                     chapters.stream()
                             .map(chapter -> StudentLectureChapterResponse.from(
                                     chapter,
-                                    chapterProgressMap.get(chapter.getId())
+                                    chapterProgressMap.get(chapter.getId()),
+                                    lectureS3UrlResolver
                             ))
                             .toList(),
                     lecture.getCreatedAt(),
@@ -185,13 +188,14 @@ public class StudentLectureResponse {
                 int reviewCount,
                 Integer lectureProgress,
                 Boolean isCompleted,
-                int chapterCount
+                int chapterCount,
+                LectureS3UrlResolver lectureS3UrlResolver
         ) {
             return new StudentLectureListItemResponse(
                     lecture.getId(),
                     lecture.getTitle(),
                     lecture.getDescription(),
-                    lecture.getThumbnailUrl(),
+                    lectureS3UrlResolver.toUrl(lecture.getThumbnailUrl()),
                     lecture.getCategory().name(),
                     lecture.getStatus().name(),
                     averageRating,
