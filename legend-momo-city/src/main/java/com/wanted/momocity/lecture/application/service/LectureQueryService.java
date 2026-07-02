@@ -71,6 +71,7 @@ public class LectureQueryService implements
 
     // 학생 상세 조회에서 챕터별 진척도 조회
     private final LectureChapterProgressPort lectureChapterProgressPort;
+    private final LectureS3UrlResolver lectureS3UrlResolver;
 
     // 학생/비로그인 기준 강의 목록 조회.
     @Override
@@ -223,7 +224,8 @@ public class LectureQueryService implements
                 isEnrolled,
                 lectureProgress,
                 isCompleted,
-                chapterProgressMap
+                chapterProgressMap,
+                lectureS3UrlResolver
         );
 
         long elapsedTime = System.currentTimeMillis() - startTime;
@@ -282,7 +284,8 @@ public class LectureQueryService implements
                     return TeacherLectureListItemResponse.from(
                             lecture,
                             reviewStats.averageRating(),
-                            reviewStats.reviewCount()
+                            reviewStats.reviewCount(),
+                            lectureS3UrlResolver
                     );
                 }).toList();
 
@@ -346,7 +349,8 @@ public class LectureQueryService implements
                 lecture,
                 chapters,
                 reviewStats.averageRating(),
-                reviewStats.reviewCount()
+                reviewStats.reviewCount(),
+                lectureS3UrlResolver
         );
     }
 
@@ -394,7 +398,8 @@ public class LectureQueryService implements
                             lecture,
                             reviewStats.averageRating(),
                             reviewStats.reviewCount(),
-                            chapterCount
+                            chapterCount,
+                            lectureS3UrlResolver
                     );
                 })
                 .toList();
@@ -445,7 +450,8 @@ public class LectureQueryService implements
                 lecture,
                 chapters,
                 reviewStats.averageRating(),
-                reviewStats.reviewCount()
+                reviewStats.reviewCount(),
+                lectureS3UrlResolver
         );
 
         long elapsedTime = System.currentTimeMillis() - startTime;
@@ -520,7 +526,8 @@ public class LectureQueryService implements
                 reviewCount,
                 lectureProgress,
                 isCompleted,
-                chapterCount
+                chapterCount,
+                lectureS3UrlResolver
         );
     }
 
