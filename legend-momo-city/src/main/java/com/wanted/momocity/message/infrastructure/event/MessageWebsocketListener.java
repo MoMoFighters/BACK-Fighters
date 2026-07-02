@@ -163,12 +163,12 @@ public class MessageWebsocketListener {
             }
         }
 
-        try {
-            // 📱 2. 읽은 사람 본인의 전체 앱 배지 실시간 차감 반영
-            notificationQueryUseCase.getPhoneAppCountsQueryHandle(new GetPhoneAppCountsQuery(readerId));
-        } catch (Exception e) {
-            log.error("[ChatRoomRead] 읽은 유저 본인(ID: {}) 앱 배지 갱신 실패", readerId, e);
-        }
+//        try {
+//            // 📱 2. 읽은 사람 본인의 전체 앱 배지 실시간 차감 반영
+//            notificationQueryUseCase.getPhoneAppCountsQueryHandle(new GetPhoneAppCountsQuery(readerId));
+//        } catch (Exception e) {
+//            log.error("[ChatRoomRead] 읽은 유저 본인(ID: {}) 앱 배지 갱신 실패", readerId, e);
+//        }
         log.info("[MessageWebsocketListener] 방 진입/읽음에 따른 전원 화면 데이터 및 읽은이(ID: {})의 앱 배지 갱신 비동기 완료", readerId);
     }
 
@@ -199,12 +199,12 @@ public class MessageWebsocketListener {
             }
         }
 
-        try {
-            // 📱 2. 읽은 사람 본인의 전체 앱 배지 실시간 차감 반영
-            notificationQueryUseCase.getPhoneAppCountsQueryHandle(new GetPhoneAppCountsQuery(readerId));
-        } catch (Exception e) {
-            log.error("[ChatRoomLeave] 나간 유저(ID: {}) 앱 배지 최종 차감 실패", readerId, e);
-        }
+//        try {
+//            // 📱 2. 읽은 사람 본인의 전체 앱 배지 실시간 차감 반영
+//            notificationQueryUseCase.getPhoneAppCountsQueryHandle(new GetPhoneAppCountsQuery(readerId));
+//        } catch (Exception e) {
+//            log.error("[ChatRoomLeave] 나간 유저(ID: {}) 앱 배지 최종 차감 실패", readerId, e);
+//        }
         log.info("[LeaveChatRoomEventListener] 남은 전체 인원({})에게 웹소켓 전송 완료", event.receiverIds());
     }
 
