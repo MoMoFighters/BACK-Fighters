@@ -109,24 +109,32 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
                 return null; // 🚨 프론트 브로커 에러 유발 차단 및 거부
             }
 
-            if (destination != null && destination.startsWith("/sub/chat/room/")) {
-                String roomIdStr = destination.replace("/sub/chat/room/", "");
-                Long roomId = Long.parseLong(roomIdStr);
-
-                //세션 매니저에 "이 유저 들어왔다"고 기록
-                sessionManager.enterRoom(userId, roomId);
-                log.info("[웹소켓 인터셉터] 유저 {}번이 {}번 채팅방에 입장했습니다.", userId, roomId);
+            // 1. 메시지 내역 조회 (/user/sub/chat/room/{roomId})
+            if (destination != null && destination.contains("/chat/room/")) {
+                String roomIdStr = destination.substring(destination.lastIndexOf("/") + 1);
+                try {
+                    Long roomId = Long.parseLong(roomIdStr);
+                    sessionManager.enterRoom(userId, roomId);
+                    log.info("[웹소켓 인터셉터] 유저 {}번이 {}번 채팅방에 입장했습니다.", userId, roomId);
+                } catch (NumberFormatException e) {
+                    log.error("[웹소켓 인터셉터] 채팅방 ID 파싱 실패 주소: {}", destination);
+                }
             }
 
-            // 알림 개수 채널 구독 처리
-            // 프론트가 /user/sub/notice/total-counts로 구독 시, 내장 브러커 통과 경로 매칭
-            if (destination != null && destination.contains("/sub/notice/total-counts")) {
+            // 2. 🎯 [핵심 수정] 종 모양 알림 개수 채널 구독 처리
+            // 스프링이 주소를 변환하므로 앞의 접두사를 제외하고 핵심 키워드로만 낚아챕니다.
+            if (destination != null && destination.contains("/notice/total-counts")) {
                 notificationSessionManager.enterNotificationChannel(userId, accessor.getSessionId());
-                log.info("[웹소켓 인터셉터] 유저 {}번이 실시간 알림 개수 채널을 구독했습니다.", userId);
+                log.info("[웹소켓 인터셉터] 유저 {}번이 실시간 알림 개수 채널을 구독했습니다. (최종매핑주소: {})", userId, destination);
             }
 
-            // 🎯 [추가 해결 2번항목] 채팅방 목록(/user/sub/chat/rooms)이나 다른 알림창 구독 시 에러 없이 통과 처리
-            if (destination != null && (destination.contains("/sub/chat/rooms") || destination.contains("/sub/notice/app-counts"))) {
+            // 3. 🎯 채팅방 목록, 휴대폰 속 앱별 알림 개수, 일반 알림 목록 공통 안전 통과 처리
+            if (destination != null && (
+                    destination.contains("/chat/rooms") ||
+                            destination.contains("/notice/app-counts") ||
+                            destination.contains("/notice/list") ||
+                            destination.contains("/notice/notificationlist")
+            )) {
                 log.info("[웹소켓 인터셉터] 유저 {}번이 공통 수신 채널을 안전하게 구독했습니다: {}", userId, destination);
             }
         }

@@ -176,13 +176,19 @@ public class NotificationQueryService implements NotificationQueryUseCase {
 
         MainTotalCountsView response = new MainTotalCountsView(totalCount);
 
-        // 🎯 [핵심]: 조회된 안읽은 총 개수를 즉시 웹소켓 채널로 발송!
-        messagingTemplate.convertAndSendToUser(query.userId().toString(), "/sub/notice/total-counts", response);
-        log.info("[알림 쿼리 웹소켓] 유저 {}번에게 안읽은 총 알림 개수({}) 실시간 전송 완료", query.userId(), totalCount);
+        // 🎯 [수정 핵심]: 유저가 실시간 알림 채널을 '구독'하고 있는 상태일 때만 웹소켓 발송을 합니다!
+        // 이렇게 해야 구독도 안 했는데 먼저 쏴버려서 유실되는 현상을 막을 수 있습니다.
+        if (notificationSessionManager.isUserSubscribed(query.userId())) {
+            messagingTemplate.convertAndSendToUser(query.userId().toString(), "/sub/notice/total-counts", response);
+            log.info("[알림 쿼리 웹소켓] 유저 {}번에게 안읽은 총 알림 개수({}) 실시간 전송 완료", query.userId(), totalCount);
+        } else {
+            log.info("[알림 쿼리 웹소켓] 유저 {}번이 아직 알림 채널을 구독하지 않았으므로 실시간 웹소켓 발송은 스킵합니다. (HTTP 리턴으로 데이터가 들어갑니다.)", query.userId());
+        }
 
         log.info("[GetMainTotalCountsQueryService] 조회 완료 - 일반 알림 줄수: {}, 메시지 안읽은 방수: {}, 총 배지수: {}",
                 generalCount, messageRoomCount, totalCount);
-        return new MainTotalCountsView(totalCount);
+
+        return response; // HTTP 응답으로 정상 반환
     }
 
     //휴대폰 속 앱별 알림 개수(친구+메시지, 캘린더, 커뮤니티)

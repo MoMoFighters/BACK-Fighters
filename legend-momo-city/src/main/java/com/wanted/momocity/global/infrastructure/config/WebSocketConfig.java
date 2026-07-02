@@ -18,7 +18,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
             "http://localhost:3000",
             "http://localhost:4444",
             "https://momocity-six.vercel.app",
-            "https://*.vercel.app"
+            "https://*.vercel.app",
+            "https://*.ngrok-free.dev"
     };
 
     private final TopicSubscriptionInterceptor subscriptionInterceptor;

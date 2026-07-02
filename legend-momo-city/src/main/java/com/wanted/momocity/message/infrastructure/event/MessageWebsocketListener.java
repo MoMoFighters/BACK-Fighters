@@ -4,6 +4,7 @@ import com.wanted.momocity.message.application.query.FindChatRoomQuery;
 import com.wanted.momocity.message.application.query.GetMessageHistoryQuery;
 import com.wanted.momocity.message.application.usecase.MessageQueryUseCase;
 import com.wanted.momocity.message.domain.event.*;
+import com.wanted.momocity.notification.application.query.GetMainTotalCountsQuery;
 import com.wanted.momocity.notification.application.query.GetPhoneAppCountsQuery;
 import com.wanted.momocity.notification.application.usecase.NotificationQueryUseCase;
 import lombok.RequiredArgsConstructor;
@@ -127,6 +128,7 @@ public class MessageWebsocketListener {
                 // 📱 3) 내가 보낸 게 아닐 때만, 수신자 휴대폰 앱 배지 카운트 실시간 전송
                 if (!receiverId.equals(senderId)) {
                     notificationQueryUseCase.getPhoneAppCountsQueryHandle(new GetPhoneAppCountsQuery(receiverId));
+                    notificationQueryUseCase.getMainTotalCountsQueryHandle(new GetMainTotalCountsQuery(receiverId));
                 }
             } catch (Exception e) {
                 log.error("[ChatMessageSent] 수신자(ID: {}) 웹소켓 및 알림 카운트 갱신 실패 (건너뛰고 계속 진행)", receiverId, e);
