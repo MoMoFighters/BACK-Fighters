@@ -33,6 +33,14 @@ public class ChatRoomSessionManager {
         }
     }
 
+    // 🎯 2. [DISCONNECT 전용 추가] 연결 종료 시 방 번호 안 따지고 무조건 제거 (인터셉터 에러 해결책)
+    public void leaveRoom(Long userId) {
+        Long removedRoomId = userLocationMap.remove(userId);
+        if (removedRoomId != null) {
+            log.info("[SessionManager] 웹소켓 끊김으로 유저 {}번의 {}번 방 세션 강제 청소 완료", userId, removedRoomId);
+        }
+    }
+
     //상대방이 지금 이 방에 들어와있는 상태인지 검증
     public boolean isUserInRoom(Long userId, Long roomId) {
         Long currentRoomId = userLocationMap.get(userId);
