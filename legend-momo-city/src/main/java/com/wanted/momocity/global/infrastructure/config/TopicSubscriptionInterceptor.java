@@ -36,10 +36,14 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
     private final JwtTokenProvider jwtTokenProvider;
     private final BlacklistPort blacklistPort;
 
+    // 🎯 [핵심 추가]: 세션ID + 구독ID 조합을 key로 삼아 실제 destination 주소를 기억하는 메모리 지도
+    private final Map<String, String> subscriptionRegistry = new ConcurrentHashMap<>();
+
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
         StompCommand command = accessor.getCommand();
+        String sessionId = accessor.getSessionId();
 
         // 1. 프론트엔드가 최초 연결(CONNECT)할 때 토큰 인증 및 Principal 세팅
         if (StompCommand.CONNECT.equals(command)) {
@@ -102,6 +106,7 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
         //프론트엔드가 웹소켓 연결 후 특정 방을 구독할 때 주소 가로채기
         if (StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
             String destination = accessor.getDestination();
+            String subId = accessor.getSubscriptionId();
             Long userId = getUserIdFromAccessor(accessor); //세선이나 헤더에서 로그인 유저ID 추출
 
             if (userId == null) {
@@ -109,24 +114,37 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
                 return null; // 🚨 프론트 브로커 에러 유발 차단 및 거부
             }
 
-            if (destination != null && destination.startsWith("/sub/chat/room/")) {
-                String roomIdStr = destination.replace("/sub/chat/room/", "");
-                Long roomId = Long.parseLong(roomIdStr);
-
-                //세션 매니저에 "이 유저 들어왔다"고 기록
-                sessionManager.enterRoom(userId, roomId);
-                log.info("[웹소켓 인터셉터] 유저 {}번이 {}번 채팅방에 입장했습니다.", userId, roomId);
+            // 🎯 [추가]: 나중에 UNSUBSCRIBE 할 때 찾아 쓰려고 장부에 적어둠
+            if (sessionId != null && subId != null && destination != null) {
+                subscriptionRegistry.put(sessionId + "_" + subId, destination);
             }
 
-            // 알림 개수 채널 구독 처리
-            // 프론트가 /user/sub/notice/total-counts로 구독 시, 내장 브러커 통과 경로 매칭
-            if (destination != null && destination.contains("/sub/notice/total-counts")) {
+            // 1. 메시지 내역 조회 (/user/sub/chat/room/{roomId})
+            if (destination != null && destination.contains("/chat/room/")) {
+                String roomIdStr = destination.substring(destination.lastIndexOf("/") + 1);
+                try {
+                    Long roomId = Long.parseLong(roomIdStr);
+                    sessionManager.enterRoom(userId, roomId);
+                    log.info("[웹소켓 인터셉터] 유저 {}번이 {}번 채팅방에 입장했습니다.", userId, roomId);
+                } catch (NumberFormatException e) {
+                    log.error("[웹소켓 인터셉터] 채팅방 ID 파싱 실패 주소: {}", destination);
+                }
+            }
+
+            // 2. 🎯 [핵심 수정] 종 모양 알림 개수 채널 구독 처리
+            // 스프링이 주소를 변환하므로 앞의 접두사를 제외하고 핵심 키워드로만 낚아챕니다.
+            if (destination != null && destination.contains("/notice/total-counts")) {
                 notificationSessionManager.enterNotificationChannel(userId, accessor.getSessionId());
-                log.info("[웹소켓 인터셉터] 유저 {}번이 실시간 알림 개수 채널을 구독했습니다.", userId);
+                log.info("[웹소켓 인터셉터] 유저 {}번이 실시간 알림 개수 채널을 구독했습니다. (최종매핑주소: {})", userId, destination);
             }
 
-            // 🎯 [추가 해결 2번항목] 채팅방 목록(/user/sub/chat/rooms)이나 다른 알림창 구독 시 에러 없이 통과 처리
-            if (destination != null && (destination.contains("/sub/chat/rooms") || destination.contains("/sub/notice/app-counts"))) {
+            // 3. 🎯 채팅방 목록, 휴대폰 속 앱별 알림 개수, 일반 알림 목록 공통 안전 통과 처리
+            if (destination != null && (
+                    destination.contains("/chat/rooms") ||
+                            destination.contains("/notice/app-counts") ||
+                            destination.contains("/notice/list") ||
+                            destination.contains("/notice/notificationlist")
+            )) {
                 log.info("[웹소켓 인터셉터] 유저 {}번이 공통 수신 채널을 안전하게 구독했습니다: {}", userId, destination);
             }
         }
@@ -136,24 +154,32 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
         // 1. UNSUBSCRIBE 처리 (뒤로가기 등으로 특정 채널 구독 해제할 때)
         if (StompCommand.UNSUBSCRIBE.equals(command)) {
             Long userId = getUserIdFromAccessor(accessor);
+            String subId = accessor.getSubscriptionId();
 
             // 🎯 [핵심] STOMP 명세상 accessor.getDestination()이 null이어도,
             // 네이티브 메시지 헤더 내부에는 원래 구독 주소 정보가 남아있습니다.
             String destination = null;
-            Object simpDestination = accessor.getMessageHeaders().get("simpDestination");
-            if (simpDestination != null) {
-                destination = simpDestination.toString();
+            if (sessionId != null && subId != null) {
+                destination = subscriptionRegistry.remove(sessionId + "_" + subId);
             }
 
             if (userId != null && destination != null) {
                 // 실제 채팅방 상세 채널(/sub/chat/room/)을 나갈 때만 세션에서 제거!
-                if (destination.startsWith("/sub/chat/room/")) {
-                    sessionManager.leaveRoom(userId);
-                    log.info("[웹소켓 인터셉터] 유저 {}번이 채팅방({}) 구독을 취소하여 세션에서 제거되었습니다.", userId, destination);
-                } // 2) 알림 채널 구독 해제
-                else if (destination.contains("/sub/notice/total-counts")) {
-                    notificationSessionManager.leaveNotificationChannel(userId, accessor.getSessionId());
-                    log.info("[웹소켓 인터셉터] 유저 {}번이 실시간 알림 개수 채널 구독을 취소했습니다.", userId);
+                if (destination.contains("/chat/room/")) {
+                    try {
+                        // 주소 역추적 장부에서 해제하려는 방의 roomId를 정확하게 파싱해냅니다.
+                        String roomIdStr = destination.substring(destination.lastIndexOf("/") + 1);
+                        Long roomId = Long.parseLong(roomIdStr);
+                        sessionManager.leaveRoom(userId, roomId);
+                        log.info("[웹소켓 인터셉터] 유저 {}번 채팅방 세션 제거 완료 (주소 역추적: {})", userId, destination);
+                    } catch (NumberFormatException e) {
+                        log.error("[웹소켓 인터셉터] UNSUBSCRIBE 방 ID 파싱 실패: {}", destination);
+                    }
+                }
+                // 🔔 알림 채널 구독 해제 (이제 완벽하게 매칭되어 정상 작동함!)
+                else if (destination.contains("/notice/total-counts") || destination.contains("/total-counts")) {
+                    notificationSessionManager.leaveNotificationChannel(userId, sessionId);
+                    log.info("[웹소켓 인터셉터] 유저 {}번 실시간 알림 채널 세션 제거 완료 (주소 역추적: {})", userId, destination);
                 }
                 else {
                     log.info("[웹소켓 인터셉터] 일반 채널 구독 취소이므로 방 세션을 유지합니다. (경로: {})", destination);
@@ -169,6 +195,10 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
                 sessionManager.leaveRoom(userId);
 
                 notificationSessionManager.leaveNotificationChannel(userId, accessor.getSessionId());
+                // 🎯 해당 세션의 모든 장부 기록 싹 청소
+                if (sessionId != null) {
+                    subscriptionRegistry.keySet().removeIf(key -> key.startsWith(sessionId + "_"));
+                }
                 log.info("[웹소켓 인터셉터] 유저 {}번의 웹소켓 연결이 종료되어 세션에서 완전히 제거되었습니다.", userId);
             }
         }

@@ -14,6 +14,14 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
+    private static final String[] ALLOWED_ORIGIN_PATTERNS = {
+            "http://localhost:3000",
+            "http://localhost:4444",
+            "https://momocity-six.vercel.app",
+//            "https://*.vercel.app",
+//            "https://*.ngrok-free.dev"
+    };
+
     private final TopicSubscriptionInterceptor subscriptionInterceptor;
     private final ViewingProgressChannelInterceptor viewingProgressChannelInterceptor;
 
@@ -21,7 +29,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         //프론트엔드가 웹소켓 연결을 처음 맺을 주소
         registry.addEndpoint("/ws-chat")
-                .setAllowedOriginPatterns("http://localhost:4444", "https://momocity-six.vercel.app")
+                .setAllowedOriginPatterns(ALLOWED_ORIGIN_PATTERNS);
+
+        registry.addEndpoint("/ws-chat")
+                .setAllowedOriginPatterns(ALLOWED_ORIGIN_PATTERNS)
                 .withSockJS();
     }
 
