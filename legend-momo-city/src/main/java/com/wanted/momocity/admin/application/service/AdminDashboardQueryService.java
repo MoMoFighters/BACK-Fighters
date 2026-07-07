@@ -147,7 +147,7 @@ public class AdminDashboardQueryService implements AdminDashboardQueryUseCase {
         return new DashboardSummary(
                 cards, systemHealth, pendingTasks,
                 recentReports, recentNotices, recentAccessLogs
-        ); 
+        );
     }
 
 }
