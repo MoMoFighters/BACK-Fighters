@@ -48,5 +48,8 @@ public class BuildingRepositoryAdapter implements BuildingRepository {
         return toDomain(savedEntity);
     }
 
-
+    @Override
+    public boolean existsByUserIdAndPosition(Long userId, Long position) {
+        return springDataBuildingRepository.existsByUserIdAndPosition(userId, position);
+    }
 }

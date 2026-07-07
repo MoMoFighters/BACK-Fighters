@@ -157,6 +157,9 @@ public class EnrollmentCommandService implements EnrollmentCommandUseCase {
         // position 값 검증
         validateBuildingPosition(position);
 
+        // 같은 사용자의 같은 위치에 이미 건물이 있는 경우 새 건물 생성을 막기 위해 검증
+        validateBuildingPositionAvailable(userId, position);
+
         Building building = Building.create(
                 userId,
                 buildingCategory,
@@ -189,6 +192,17 @@ public class EnrollmentCommandService implements EnrollmentCommandUseCase {
 
         if (position < 1 || position > 5) {
             throw new DomainRuleViolationException("건물 위치 값은 1부터 5까지만 가능합니다.");
+        }
+    }
+
+    // 새 건물을 생성하기 전에 해당 위치가 비어있는지 확인
+    private void validateBuildingPositionAvailable(Long userId, Long position) {
+
+        // DB에 같은 사용자와 같은 위치의 건물이 이미 있는지 조회
+        boolean positionOccupied = buildingRepository.existsByUserIdAndPosition(userId, position);
+
+        if (!positionOccupied) {
+            throw new DomainRuleViolationException("이미 해당 위치에 건물이 있습니다.");
         }
     }
 }

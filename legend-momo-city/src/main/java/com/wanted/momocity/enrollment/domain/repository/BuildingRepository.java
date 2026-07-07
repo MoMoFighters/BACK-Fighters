@@ -13,4 +13,7 @@ public interface BuildingRepository {
 
     // 건물 저장
     Building save(Building building);
+
+    // 사용자 Id와 건물 위치로 해당 위치레 이미 건물이 존재하는지 확인
+    boolean existsByUserIdAndPosition(Long userId, Long position);
 }
