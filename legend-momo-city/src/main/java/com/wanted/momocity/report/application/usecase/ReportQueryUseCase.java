@@ -36,6 +36,7 @@ public interface ReportQueryUseCase {
             String reporterName,
             String reportedName,
             String targetContent,
+            boolean isDeleted,
             // CHAPTER 타입일 때 lectureId 담아준다. 나머지는 null 값
             Long parentId
     ) {}
