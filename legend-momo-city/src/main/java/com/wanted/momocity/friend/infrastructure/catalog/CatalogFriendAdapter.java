@@ -165,4 +165,11 @@ public class CatalogFriendAdapter implements FriendRepository {
         log.info("[CatalogFriendAdapter] 유저 복수 단건 일괄 조회 (IN 절) - 요청 IDs: {}", userIds);
         return friendSideUserRepository.findAllById(userIds); // JPA 기본 findAllById 활용
     }
+
+    //내가 남긴 방명록 목록 조회
+    @Override
+    public List<GuestBookJpaEntity> findAllByWriterIdAndOwnerIdWithWriter(Long loginUserId, Long cityOwnerId) {
+        log.info("[CatalogFriendAdapter] 내가 특정 도시에 남긴 방명록 조회 - 작성자: {}, 도시 주인: {}", loginUserId, cityOwnerId);
+        return springDataGuestBookRepository.findAllByWriterIdAndOwnerIdWithWriter(loginUserId, cityOwnerId);
+    }
 }
