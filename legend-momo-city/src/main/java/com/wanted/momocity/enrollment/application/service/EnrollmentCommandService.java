@@ -18,7 +18,6 @@ import com.wanted.momocity.lecture.domain.model.LectureStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -139,6 +138,31 @@ public class EnrollmentCommandService implements EnrollmentCommandUseCase {
                 buildingCategory,
                 position
         );
+
+        // position 값 검증
+        validateBuildingPosition(position);
+
+        // 해당 위치에 이미 생성된 건물이 있는지 확인
+        Building existingBuilding = buildingRepository.findByUserIdAndPosition(userId, position)
+                // 없으면 해당 자리에 건물 생성
+                .orElse(null);
+
+        // 해당 건물이 이미 있다면?
+        if (existingBuilding != null) {
+            // 기존 건물의 카테고리가 지금 수강하려는 강의 카테고리와 같다면?
+            if (existingBuilding.getCategory() == buildingCategory) {
+                log.info("수강신청 건물 생성 생략 - 같은 위치에 같은 카테고리 건물 보유, userId={}, category={}, position={}",
+                        userId,
+                        buildingCategory,
+                        position
+                );
+                // 건물은 새로 짓지 않고 수강신청 계속 진행
+                return;
+            }
+            // 같은 위치에 다른 카테고리 건물이 있다면 예외 발생
+            throw new DomainRuleViolationException("이미 다른 건물이 생성되어 있습니다.");
+        }
+
         // 사용자가 해당 카테고리 건물을 가지고 있는지 확인
         boolean hasBuilding = buildingRepository.existsByUserIdAndCategory(
                 userId,
@@ -154,33 +178,21 @@ public class EnrollmentCommandService implements EnrollmentCommandUseCase {
             return;
         }
 
-        // position 값 검증
-        validateBuildingPosition(position);
-
-        // 같은 사용자의 같은 위치에 이미 건물이 있는 경우 새 건물 생성을 막기 위해 검증
-        validateBuildingPositionAvailable(userId, position);
-
+        // 새 건물 도메인 객체를 생성
         Building building = Building.create(
                 userId,
                 buildingCategory,
                 position
         );
 
-        // 동시 요청으로 같은 카테고리 건물이 먼저 생성 될 수 있으므로 예외 처리
-        try {
-            // 신규 건물 저장 시도
-            buildingRepository.save(building);
-            log.info("수강신청 건물 생성 완료 - userId={}, category={}, position={}, level={}",
-                    userId,
-                    buildingCategory,
-                    position,
-                    building.getLevel()
-            );
-            // unique 제약 위반이 발생한 경우
-        } catch (DataIntegrityViolationException exception) {
-            // 중복 생성 상황을 로그로 남김
-            log.info("이미 생성된 카테고리 건물이 있어서 건물 생성을 건너 뜁니다. userId={}, category={}", userId, buildingCategory);
-        }
+        buildingRepository.save(building); // 생성한 건물을 DB에 저장
+
+        log.info("수강신청 건물 생성 완료 - userId={}, category={}, position={}, level={}",
+                userId,
+                buildingCategory,
+                position,
+                building.getLevel()
+        );
     }
 
     private void validateBuildingPosition(Long position) {
@@ -192,17 +204,6 @@ public class EnrollmentCommandService implements EnrollmentCommandUseCase {
 
         if (position < 1 || position > 5) {
             throw new DomainRuleViolationException("건물 위치 값은 1부터 5까지만 가능합니다.");
-        }
-    }
-
-    // 새 건물을 생성하기 전에 해당 위치가 비어있는지 확인
-    private void validateBuildingPositionAvailable(Long userId, Long position) {
-
-        // DB에 같은 사용자와 같은 위치의 건물이 이미 있는지 조회
-        boolean positionOccupied = buildingRepository.existsByUserIdAndPosition(userId, position);
-
-        if (!positionOccupied) {
-            throw new DomainRuleViolationException("이미 해당 위치에 건물이 있습니다.");
         }
     }
 }
