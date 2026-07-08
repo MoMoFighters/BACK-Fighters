@@ -10,14 +10,9 @@ import com.wanted.momocity.auth.domain.model.User;
 import com.wanted.momocity.auth.infrastructure.exception.InvalidRefreshTokenException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @Slf4j
@@ -71,15 +66,13 @@ public class RefreshService implements NewTokenUsecase {
                 blacklistPort.addBlacklist(oldAccessToken, remainingMillis);
             }
         }
-
-        Authentication authentication = new UsernamePasswordAuthenticationToken(
-                String.valueOf(user.getId()),
-                null,
-                List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
-        );
+        
 
         log.info("[refresh] 액세스 토큰 재발급 | userId={}", userId);
-        // 새 액세스 토큰 발급
-        return tokenProviderPort.createAccessToken(authentication);
+        return tokenProviderPort.createAccessToken(
+                String.valueOf(user.getId()),
+                "ROLE_" + user.getRole().name(),
+                user.getCategory()
+        );
     }
 }
