@@ -351,7 +351,7 @@ public class FriendQueryService implements FriendQueryUseCase {
 
             guestBooks = friendRepository.findAllByOwnerIdWithWriter(query.userId());
         } else {
-            //요청자와 도시 위치가 다르면(본인이 해당 됫에 남긴 방명록 조회) ownerId가 cityOwnerId이면서 writerId가 로그인 유저인 것
+            //요청자와 도시 위치가 다르면(본인이 해당 도시에 남긴 방명록 조회) ownerId가 cityOwnerId이면서 writerId가 로그인 유저인 것
             // 남의 도시 -> 내가 그 사람 도시에 남긴 방명록만 조회
             log.info("[GuestBookQueryService] 남의 도시 방명록 조회 - 로그인 유저:{}, 도시 주인:{}", loginUserId, cityOwnerId);
 
