@@ -1,5 +1,6 @@
 package com.wanted.momocity.report.application.service;
 
+import com.wanted.momocity.community.domain.exception.CommunityNotFoundException;
 import com.wanted.momocity.report.application.port.ChapterParentPort;
 import com.wanted.momocity.report.application.port.ChatContentPort;
 import com.wanted.momocity.report.application.port.CommentContentPort;
@@ -9,6 +10,7 @@ import com.wanted.momocity.report.application.usecase.ReportQueryUseCase;
 import com.wanted.momocity.report.domain.exception.ReportNotFoundException;
 import com.wanted.momocity.report.domain.model.Report;
 import com.wanted.momocity.report.domain.repository.ReportRepository;
+import com.wanted.momocity.review.domain.exception.ReviewNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -89,13 +91,8 @@ public class ReportQueryService implements ReportQueryUseCase {
                 .collect(Collectors.toSet());
         Map<Long, String> names = reportUserNamePort.getNamesByUserIds(userIds);
 
-        // 2. targetType 기준으로 내용 조회 — CHAT 추가 (정림님 어댑터 연동)
-        String targetContent = switch (report.getTargetType()) {
-            case REVIEW  -> reviewContentPort.getContentById(report.getTargetId());
-            case COMMENT -> commentContentPort.getContentById(report.getTargetId());
-            case CHAT    -> chatContentPort.getContentById(report.getTargetId());
-            default -> null;
-        };
+        // 2. targetType 기준으로 내용 조회 및 삭제 여부 판단
+        TargetContentResult contentResult = resolveTargetContent(report);
 
         // 3. CHAPTER 타입일 때만 lectureId 조회, 나머지는 null
         Long parentId = switch (report.getTargetType()) {
@@ -108,8 +105,26 @@ public class ReportQueryService implements ReportQueryUseCase {
                 report,
                 names.get(report.getReporterUserId()),
                 names.get(report.getReportedUserId()),
-                targetContent,
+                contentResult.content(),
+                contentResult.isDeleted(),
                 parentId
         );
     }
+    // targetType 별로 내용을 조회하고, 조회 중 예외가 나면(=삭제됨) isDeleted 로 표시
+    private TargetContentResult resolveTargetContent(Report report) {
+        try {
+            String content = switch (report.getTargetType()) {
+                case REVIEW  -> reviewContentPort.getContentById(report.getTargetId());
+                case COMMENT -> commentContentPort.getContentById(report.getTargetId());
+                case CHAT    -> chatContentPort.getContentById(report.getTargetId());
+                default -> null;
+            };
+            return new TargetContentResult(content, false);
+        } catch (ReviewNotFoundException | CommunityNotFoundException e) {
+            return new TargetContentResult(null, true);
+        }
+    }
+
+    // resolveTargetContent 전용 결과 그릇 (이 클래스 밖에서 쓸 일 없어서 private)
+    private record TargetContentResult(String content, boolean isDeleted) {}
 }
