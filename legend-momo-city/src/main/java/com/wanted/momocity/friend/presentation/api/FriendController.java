@@ -400,12 +400,13 @@ public class FriendController {
     }
 
     //방명록 목록
-    @GetMapping("/api/v2/friends/guest")
+    @GetMapping("/api/v3/friends/guests/{cityOwnerId}")
     @Operation(summary = "방명록 목록", description = "로그인 유저의 방명록 목록을 조회하고 읽는다.")
-    public ResponseEntity<ApiResponse<List<GetGuestBooksResponse>>> getGuestBooks(@AuthenticationPrincipal CustomUserDetails userDetails) {
+    public ResponseEntity<ApiResponse<List<GetGuestBooksResponse>>> getGuestBooks(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                                                  @PathVariable Long cityOwnerId) {
         Long userId = userDetails.getUserId();
 
-        GetGuestBooksQuery query = new GetGuestBooksQuery(userId);
+        GetGuestBooksQuery query = new GetGuestBooksQuery(userId, cityOwnerId);
 
         // 1. 서비스 레이어 호출
         List<GuestBooksView> views = friendQueryUseCase.getGuestBooksQueryHandle(query);

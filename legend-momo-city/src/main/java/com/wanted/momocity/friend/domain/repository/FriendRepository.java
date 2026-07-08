@@ -62,4 +62,7 @@ public interface FriendRepository {
 
     // 요청자와 대상자 유저를 단 1방의 IN 절 쿼리로 묶어서 조회
     List<UserWithFMJpaEntity> findUsersByIds(List<Long> userIds);
+
+    //내가 남긴 방명록 목록 조회
+    List<GuestBookJpaEntity> findAllByWriterIdAndOwnerIdWithWriter(Long loginUserId, Long cityOwnerId);
 }

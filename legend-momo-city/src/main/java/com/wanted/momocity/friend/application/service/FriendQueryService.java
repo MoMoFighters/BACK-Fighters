@@ -336,10 +336,27 @@ public class FriendQueryService implements FriendQueryUseCase {
     //방명록 목록 조회
     @Override
     public List<GuestBooksView> getGuestBooksQueryHandle(GetGuestBooksQuery query) {
-        log.info("[GuestBookQueryService] 방명록 목록 조회 시작 - 주인ID: {}", query.userId());
+        log.info("[GuestBookQueryService] 방명록 목록 조회 시작 - 조회 요청자ID: {}, 호출 위치ID: {}", query.userId(), query.cityOwnerId());
 
-        // 2. 일괄 처리 후 최신 데이터 전체 조회 (Fetch Join)
-        List<GuestBookJpaEntity> guestBooks = friendRepository.findAllByOwnerIdWithWriter(query.userId());
+        Long loginUserId = query.userId();
+        Long cityOwnerId = query.cityOwnerId();
+
+        List<GuestBookJpaEntity> guestBooks;
+
+        // 2. 최신 데이터 전체 조회 (Fetch Join)
+        //요청자와 도시 위치가 같다면(본인 도시에서 남이 쓴 방명록 조회) ownerId가 로그인 유저인 것
+        if (loginUserId.equals(cityOwnerId)) {
+            // 내 도시 -> 남이 나에게 남긴 방명록 전체 조회
+            log.info("[GuestBookQueryService] 내 도시 방명록 조회 - 주인ID: {}", loginUserId);
+
+            guestBooks = friendRepository.findAllByOwnerIdWithWriter(query.userId());
+        } else {
+            //요청자와 도시 위치가 다르면(본인이 해당 됫에 남긴 방명록 조회) ownerId가 cityOwnerId이면서 writerId가 로그인 유저인 것
+            // 남의 도시 -> 내가 그 사람 도시에 남긴 방명록만 조회
+            log.info("[GuestBookQueryService] 남의 도시 방명록 조회 - 로그인 유저:{}, 도시 주인:{}", loginUserId, cityOwnerId);
+
+            guestBooks = friendRepository.findAllByWriterIdAndOwnerIdWithWriter(loginUserId, cityOwnerId);
+        }
 
         // 3. 뷰 모델(record)로 매핑하여 반환
         return guestBooks.stream()

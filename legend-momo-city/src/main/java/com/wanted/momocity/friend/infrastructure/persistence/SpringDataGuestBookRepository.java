@@ -27,4 +27,13 @@ public interface SpringDataGuestBookRepository  extends JpaRepository<GuestBookJ
             @Param("ownerId") Long ownerId,
             @Param("today") LocalDate today
     );
+
+    //내가 쓴 방명록 목록 조회
+    //내가 남의 도시에 남긴 방명록 목록 조회
+    @Query("SELECT g FROM GuestBookJpaEntity g " +
+            "JOIN FETCH g.writerId " +
+            "WHERE g.writerId.id = :writerId AND g.ownerId.id = :ownerId " +
+            "ORDER BY g.createdAt DESC")
+    List<GuestBookJpaEntity> findAllByWriterIdAndOwnerIdWithWriter(@Param("writerId") Long writerId,
+                                                                   @Param("ownerId") Long ownerId);
 }

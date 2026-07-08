@@ -374,7 +374,7 @@ public class FriendCommandService implements FriendCommandUseCase {
         // 1. 대상 도시 주인 유저 존재 여부 검증 (404 대응)
         UserWithFMJpaEntity ownerUser = friendRepository.findUserById(command.ownerId())
                 .orElseThrow(() -> {
-                    friendMetrics.recordGuestbookResult(false); // 🎯 정림님 의도대로 실패 시 메트릭 기록
+                    friendMetrics.recordGuestbookResult(false);
                     return new FMResourceNotFoundException("존재하지 않는 사용자의 도시에 방명록을 작성할 수 없습니다.");
                 });
 
@@ -382,7 +382,7 @@ public class FriendCommandService implements FriendCommandUseCase {
         // 2. 로그인 유저(방문자) 정보 조회
         UserWithFMJpaEntity loginUser = friendRepository.findUserById(command.userId())
                 .orElseThrow(() -> {
-                    friendMetrics.recordGuestbookResult(false); // 🎯 정림님 의도대로 실패 시 메트릭 기록
+                    friendMetrics.recordGuestbookResult(false);
                     return new FMResourceNotFoundException("존재하지 않는 사용자입니다.");
                 });
 
