@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
@@ -48,5 +49,8 @@ public class BuildingRepositoryAdapter implements BuildingRepository {
         return toDomain(savedEntity);
     }
 
-
+    @Override
+    public Optional<Building> findByUserIdAndPosition(Long userId, Long position) {
+        return springDataBuildingRepository.findByUserIdAndPosition(userId, position).map(this::toDomain);
+    }
 }
