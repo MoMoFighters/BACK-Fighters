@@ -42,6 +42,19 @@ public class AdminNoticeRepositoryAdapter implements AdminNoticeRepository {
         return springDataRepo.findByIsPinned(isPinned, pageable).map(AdminNoticeJpaEntity::toDomain);
     }
 
+    // 고정 공지 뺀 일반 공지만 최신순 페이지네이션 조회 후 도메인으로 변환
+    @Override
+    public Page<AdminNotice> findUnpinned(Pageable pageable) {
+        return springDataRepo.findByIsPinnedFalseOrderByCreatedAtDesc(pageable)
+                .map(AdminNoticeJpaEntity::toDomain);
+    }
+
+    // isPinned=false 인 공지 개수를 독립적으로 세어 반환
+    @Override
+    public long countUnpinned() {
+        return springDataRepo.countByIsPinnedFalse();
+    }
+
     // id 로 단건 조회 후 도메인으로 변환, 없으면 Optional.empty() 반환
     @Override
     public Optional<AdminNotice> findById(Long id) {
