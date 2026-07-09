@@ -3,7 +3,6 @@ package com.wanted.momocity.lecture.presentation.api.response;
 import com.wanted.momocity.lecture.application.service.LectureS3UrlResolver;
 import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.model.LectureChapter;
-import org.springframework.cglib.core.Local;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -14,9 +13,9 @@ public class LectureResponse {
 
     // 강의 삭제 성공 응답
     public record DeleteLectureResponse(
-            Long userId,
+            Long lectureId,
             String lectureStatus,
-            LocalDateTime updateAt
+            LocalDateTime updatedAt
     ) {
         // 도메인 모델을 삭제 응답으로 변경
         public static DeleteLectureResponse from(LectureAggregate lecture) {

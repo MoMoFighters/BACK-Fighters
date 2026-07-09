@@ -180,7 +180,7 @@ public class LectureCommandService implements
         // 삭제 대상 강의 조회
         LectureAggregate lecture = lectureRepository.findById(command.lectureId())
                 // 강의가 없다면
-                .orElseThrow(() -> new LectureNotFoundException("강의를 찾을 수 없 습니다."));
+                .orElseThrow(() -> new LectureNotFoundException("강의를 찾을 수 없습니다."));
 
         // 삭제하려는 사람이 강사라면
         if ("ROLE_TEACHER".equals(command.role())) {
