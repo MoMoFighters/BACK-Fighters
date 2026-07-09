@@ -13,6 +13,8 @@ public record AdminNoticePageResponse(
         int page,
         int size
 ) {
+    // 다른 곳에서 아래의 DTO 를 쓸 때를 위해서 남겨준 기존의 메서드이다.
+    // size 필드 페이지 객체(page) 자체에서 그대로 꺼내쓰는 원래 방식이다.
     public static AdminNoticePageResponse from(Page<AdminNoticeListResponse> page) {
         return new AdminNoticePageResponse(
                 page.getContent(),
@@ -22,4 +24,17 @@ public record AdminNoticePageResponse(
                 page.getSize()
         );
     }
+
+
+    // MA-02 : 고정 공지 병합 시 page 객체의 size(9)가 아니라, 사용자가 요청한 원래 size(10)를 그대로 응답에 반영하기 위한 오버로드
+    public static AdminNoticePageResponse of(Page<AdminNoticeListResponse> page, int requestedSize) {
+        return new AdminNoticePageResponse(
+                page.getContent(),
+                page.getTotalPages(),
+                page.getTotalElements(),
+                page.getNumber() + 1,
+                requestedSize
+        );
+    }
+
 }

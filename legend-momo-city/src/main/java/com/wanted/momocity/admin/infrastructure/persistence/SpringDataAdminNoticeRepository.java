@@ -21,6 +21,13 @@ public interface SpringDataAdminNoticeRepository extends JpaRepository<AdminNoti
     // isPinned 값으로 필터링된 목록을 페어링 : Spring Data 가 메서드 이름을 보고 SQL 자동 생성
     Page<AdminNoticeJpaEntity> findByIsPinned(boolean isPinned, Pageable pageable);
 
+    // isPinned = false 인 공지만 최신순 페이지네이션 : 고정 공지 분리 후 일반 공지만 뽑을 때 사용
+    Page<AdminNoticeJpaEntity> findByIsPinnedFalseOrderByCreatedAtDesc(Pageable pageable);
+
+
+    // isPinned=false 인 공지 개수를 페이지 위치와 무관하게 항상 독립적으로 세는 COUNT 쿼리
+    long countByIsPinnedFalse();
+
     // id 목록에 해당하는 공지를 한 번에 삭제 : MS-19 선택 삭제용
     @Modifying
     @Query("DELETE FROM AdminNoticeJpaEntity a WHERE a.id IN :ids")
