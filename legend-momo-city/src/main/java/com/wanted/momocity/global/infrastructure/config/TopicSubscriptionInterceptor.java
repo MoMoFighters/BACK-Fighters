@@ -6,6 +6,7 @@ import com.wanted.momocity.auth.domain.model.User;
 
 import com.wanted.momocity.auth.infrastructure.jwt.JwtTokenProvider;
 import com.wanted.momocity.message.application.manager.ChatRoomSessionManager;
+import com.wanted.momocity.message.application.manager.ChatTypingSessionManager;
 import com.wanted.momocity.notification.application.manager.NotificationSessionManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +39,8 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
 
     // 🎯 [핵심 추가]: 세션ID + 구독ID 조합을 key로 삼아 실제 destination 주소를 기억하는 메모리 지도
     private final Map<String, String> subscriptionRegistry = new ConcurrentHashMap<>();
+
+    private final ChatTypingSessionManager typingSessionManager;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -195,6 +198,7 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
                 sessionManager.leaveRoom(userId);
 
                 notificationSessionManager.leaveNotificationChannel(userId, accessor.getSessionId());
+                typingSessionManager.clearUser(userId);   // 🎯 추가
                 // 🎯 해당 세션의 모든 장부 기록 싹 청소
                 if (sessionId != null) {
                     subscriptionRegistry.keySet().removeIf(key -> key.startsWith(sessionId + "_"));
