@@ -86,11 +86,17 @@ public class NotificationHandlerService {
         Notification saved = notificationRepository.save(newNotification);
         log.info("[NotificationHandlerService] 수락 알림 생성 완료 - 생성된 알림ID: {}", saved.getId());
 
-        // 🎯 [최적화 1] 직접 무겁게 쿼리 핸들러들을 호출하던 코드를 전면 제거합니다!
-        // 🎯 [최적화 2] 미리 구축해두신 웹소켓 이벤트 주머니를 발행하여 비동기 스레드로 책임을 격리합니다.
+        // [최적화 1] 직접 무겁게 쿼리 핸들러들을 호출하던 코드를 전면 제거
+        // [최적화 2] 미리 구축해두신 웹소켓 이벤트 주머니를 발행하여 비동기 스레드로 책임을 격리합니다.
         // 친구 알림은 휴대폰 화면 갱신이 필요하므로 "ALL" 타입을 실어 보냅니다.
         eventPublisher.publishEvent(new NotificationCreatedPublishedEvent(fromUserId, "ALL"));
         log.info("[알림 핸들러 -> 최적화] 웹소켓 갱신 이벤트를 비동기 리스너로 발행 완료. 유저ID: {}", fromUserId);
+
+        //친구 수락 시 관련 알림 읽음 처리
+        // 추가: 수락자(acceptorUserId) 본인이 갖고 있던 원래 FRIEND_REQUEST 알림 읽음 처리 + 화면 갱신
+        // refId는 요청 생성 시 저장된 fromUserId와 동일해야 매칭됨
+        readRequestFriendNotification(acceptorUserId, fromUserId, fromUserId);
+        log.info("[NotificationHandlerService] 수락자({}) 원본 FRIEND_REQUEST 알림 읽음 처리 완료", acceptorUserId);
     }
 
     //친구 요청 거절(알림 읽음 처리)
