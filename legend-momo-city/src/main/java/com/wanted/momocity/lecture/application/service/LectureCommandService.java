@@ -2,6 +2,7 @@ package com.wanted.momocity.lecture.application.service;
 
 import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
+import com.wanted.momocity.lecture.application.command.LectureCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.AdminChangeLectureStatusCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.ChangeLectureStatusCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.CreateChapterCommand;
@@ -165,6 +166,57 @@ public class LectureCommandService implements
                 savedLecture.getStatus(),
                 elapsedTime
         );
+        return savedLecture;
+    }
+
+    @Override
+    public LectureAggregate deleteLecture(LectureCommand.DeleteLectureCommand command) {
+        long startTime = System.currentTimeMillis();
+        log.info("강의 삭제 시작 - userId={}, role={}, lectureId={}",
+                command.userId(),
+                command.role(),
+                command.lectureId());
+
+        // 삭제 대상 강의 조회
+        LectureAggregate lecture = lectureRepository.findById(command.lectureId())
+                // 강의가 없다면
+                .orElseThrow(() -> new LectureNotFoundException("강의를 찾을 수 없 습니다."));
+
+        // 삭제하려는 사람이 강사라면
+        if ("ROLE_TEACHER".equals(command.role())) {
+            // userId로 강사 조회
+            Long teacherId = teacherAccountPort.getTeacherId(command.userId());
+
+            // 만약 본인의 강의가 아니라면
+            if (!lecture.isOwnedBy(teacherId)) {
+                throw new AccessDeniedException("본인이 등록한 강의만 삭제할 수 있습니다.");
+            }
+            // 관리자도 아니고 강사도 아닌 Role일 경우
+        } else if (!"ROLE_ADMIN".equals(command.role())) {
+            throw new AccessDeniedException("강사 또는 관리자만 강의를 삭제할 수 있습니다.");
+        }
+
+        // 강의가 이미 삭젝됐을 경우
+        if (lecture.getStatus() == LectureStatus.DELETED) {
+            throw new DomainRuleViolationException("이미 삭제된 강의입니다.");
+        }
+
+        // 강의 상태를 DELETED로 변경한 도메인 객체 생성
+        LectureAggregate deletedLecture = lecture.changeStatus(LectureStatus.DELETED);
+
+        // 변경된 상태를 DB에 저장
+        LectureAggregate savedLecture = lectureRepository.save(deletedLecture);
+
+        long elapsedTime = System.currentTimeMillis() - startTime;
+
+        log.info("강의 삭제 완료 - userId={}, role={}, lectureId={}, lectureStatus={}, elapsedTime={}",
+                command.userId(),
+                command.role(),
+                savedLecture.getId(),
+                savedLecture.getStatus(),
+                elapsedTime
+                );
+
         return savedLecture;
     }
 
