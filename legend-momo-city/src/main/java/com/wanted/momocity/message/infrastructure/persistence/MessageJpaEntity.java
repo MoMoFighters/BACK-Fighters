@@ -26,6 +26,7 @@ public class MessageJpaEntity {
     @JoinColumn(name = "sender_id")
     private UserWithFMJpaEntity senderId;
 
+    @Convert(converter = MessageContentEncryptor.class)   //자동 암호화/복호화
     @Column(name = "content")
     private String content;
 
