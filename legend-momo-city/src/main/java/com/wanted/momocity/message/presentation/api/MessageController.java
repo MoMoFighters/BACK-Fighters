@@ -3,6 +3,7 @@ package com.wanted.momocity.message.presentation.api;
 import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.message.application.command.*;
+import com.wanted.momocity.message.application.query.GetChatMemberListQuery;
 import com.wanted.momocity.message.application.usecase.*;
 import com.wanted.momocity.message.application.query.FindChatRoomQuery;
 import com.wanted.momocity.message.application.query.GetMessageHistoryQuery;
@@ -11,6 +12,7 @@ import com.wanted.momocity.message.application.usecase.MessageQueryUseCase.ChatR
 import com.wanted.momocity.message.application.usecase.MessageCommandUseCase.ReadView;
 import com.wanted.momocity.message.application.usecase.MessageCommandUseCase.SendView;
 import com.wanted.momocity.message.application.usecase.MessageQueryUseCase.MessageHistoryView;
+import com.wanted.momocity.message.application.usecase.MessageQueryUseCase.ChatMemberView;
 import com.wanted.momocity.message.application.usecase.MessageCommandUseCase.LeaveChatRoomView;
 import com.wanted.momocity.message.application.usecase.MessageCommandUseCase.ModifyRoomTitleView;
 import com.wanted.momocity.message.application.usecase.MessageCommandUseCase.InviteRoomMemberView;
@@ -331,6 +333,26 @@ public class MessageController {
                 "SUCCESS",
                 successMessage,
                 responseData
+        ));
+    }
+
+    //v3 - 채팅방 멤버 목록
+    @GetMapping("/api/v3/messages/chatrooms/members/{roomId}")
+    @Operation(summary = "채팅방 멤버 목록", description = "현재 채팅방에 존재하는 멤버들의 정보, (나)는 최상단 고정")
+    public ResponseEntity<ApiResponse<GetChatMemberListResponse>> getChatMemberList(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                                                 @PathVariable Long roomId) {
+        Long userId = userDetails.getUserId();
+
+        GetChatMemberListQuery query = new GetChatMemberListQuery(roomId, userId);
+
+        List<ChatMemberView> views = messageQueryUseCase.getChatMemberListQueryHandle(query);
+
+        GetChatMemberListResponse response = GetChatMemberListResponse.from(views, userId);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                "SUCCESS",
+                "채팅방 멤버 정보 불러오기 성공",
+                response
         ));
     }
 

@@ -1,5 +1,6 @@
 package com.wanted.momocity.message.application.usecase;
 
+import com.wanted.momocity.message.application.query.GetChatMemberListQuery;
 import com.wanted.momocity.message.application.query.GetMessageHistoryQuery;
 import com.wanted.momocity.message.application.query.FindChatRoomQuery;
 
@@ -85,5 +86,17 @@ public interface MessageQueryUseCase {
             String profileImageUrl,
             Long targetUserId, //안내 문구에 해당하는 사람(ex. 초대된 사람, 나간 사람, 이름 바꾼 사람)
             String type //안내 문구의 유형
+    ) {}
+
+    //채팅방 멤버 목록
+    List<ChatMemberView> getChatMemberListQueryHandle(GetChatMemberListQuery query);
+
+    record ChatMemberView(
+            Long userId,
+            String name,
+            String nickname,
+            String role,
+            String status, //친구 상태
+            String profileImageUrl
     ) {}
 }
