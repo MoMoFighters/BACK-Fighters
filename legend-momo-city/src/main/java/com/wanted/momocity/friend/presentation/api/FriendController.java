@@ -401,7 +401,7 @@ public class FriendController {
 
     //방명록 목록
     @GetMapping("/api/v3/friends/guests")
-    @Operation(summary = "방명록 목록", description = "로그인 유저의 방명록 목록을 조회하고 읽는다.")
+    @Operation(summary = "방명록 목록", description = "cityOwnerId가 없으면 로그인 유저의 도시 방명록을, 있으면 해당 도시 기준 방명록을 조회한다.")
     public ResponseEntity<ApiResponse<List<GetGuestBooksResponse>>> getGuestBooks(@AuthenticationPrincipal CustomUserDetails userDetails,
                                                                                   @RequestParam(value = "cityOwnerId", required = false) Long cityOwnerId) {
         Long userId = userDetails.getUserId();
