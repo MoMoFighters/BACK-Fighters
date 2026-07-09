@@ -6,6 +6,7 @@ import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 import com.wanted.momocity.friend.lecture.LectureWithFMJpaEntity;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import com.wanted.momocity.message.application.metric.MessageMetrics;
+import com.wanted.momocity.message.application.query.GetChatMemberListQuery;
 import com.wanted.momocity.message.application.query.GetMessageHistoryQuery;
 import com.wanted.momocity.message.application.policy.MessageEligibilityPolicy;
 import com.wanted.momocity.message.application.query.FindChatRoomQuery;
@@ -640,6 +641,72 @@ public class MessageQueryService implements MessageQueryUseCase {
         // 🎯 끝 한 줄: 리턴 직전에 타이머를 멈추고 메트릭에 기록!
         sample.stop(messageMetrics.getMessageHistoryTimer());
 
+        return result;
+    }
+
+    //채팅방 멤버 목록 조회
+    @Override
+    public List<ChatMemberView> getChatMemberListQueryHandle(GetChatMemberListQuery query) {
+        Long roomId = query.roomId();
+        Long userId = query.userId();
+
+        log.info("[MessageQueryService] 채팅방 멤버 목록 조회 시작 - 방ID: {}, 요청자ID: {}", roomId, userId);
+
+        //로그인 유저가 해당 방의 멤버인지 권한 확인(정책 클래스에 위임)
+        boolean isCurrentMember = messageRepository.existsMemberByRoomIdAndUserId(roomId, userId);
+        messageEligibilityPolicy.validateAccess(roomId, userId, isCurrentMember);
+
+        // 2. 방 멤버 전체 조회 (로그인 유저 포함, fetch join)
+        List<ChatRoomMemberJpaEntity> allMembers = messageRepository.findMembersByRoomId(roomId);
+
+        // 3. 로그인 유저 제외한 상대방 ID만 모아서 친구 상태 벌크 조회 (N+1 방지)
+        Set<Long> targetUserIds = allMembers.stream()
+                .map(m -> m.getUserId().getId())
+                .filter(id -> !id.equals(userId))
+                .collect(Collectors.toSet());
+
+        Map<Long, String> friendStatusMap = new HashMap<>();
+        if (!targetUserIds.isEmpty()) {
+            List<FriendJpaEntity> bulkFriends = messageRepository.findFriendRelationsByTargetUserIdsIn(userId, targetUserIds);
+            for (FriendJpaEntity friend : bulkFriends) {
+                Long targetId = friend.getFromUserId().getId().equals(userId)
+                        ? friend.getToUserId().getId() : friend.getFromUserId().getId();
+                friendStatusMap.put(targetId, friend.getStatus());
+            }
+        }
+
+        // 4. 멤버별 뷰 조립
+        List<ChatMemberView> result = new ArrayList<>();
+        for (ChatRoomMemberJpaEntity member : allMembers) {
+            UserWithFMJpaEntity user = member.getUserId();
+            boolean isMe = user.getId().equals(userId);
+
+            //로그인 유저 본인은 "me", 나머지는 친구 테이블 상태(없으면 "none")
+            String status = isMe ? "me" : friendStatusMap.getOrDefault(user.getId(), "none");
+
+            result.add(new ChatMemberView(
+                    user.getId(),
+                    "TEACHER".equals(user.getRole()) ? user.getName() : null,
+                    user.getNickname(),
+                    user.getRole(),
+                    status,
+                    user.getProfileImageUrl()
+            ));
+        }
+
+        // 5. 정렬: 로그인 유저 최상단 고정, 나머지는 닉네임 가나다순
+        result.sort((m1, m2) -> {
+            boolean isM1Me = m1.userId().equals(userId);
+            boolean isM2Me = m2.userId().equals(userId);
+
+            if (isM1Me && !isM2Me) return -1;
+            if (!isM1Me && isM2Me) return 1;
+            if (isM1Me && isM2Me) return 0;
+
+            return m1.nickname().compareTo(m2.nickname());
+        });
+
+        log.info("[MessageQueryService] 채팅방 멤버 목록 가공 완료 - 총 {}명", result.size());
         return result;
     }
 }
