@@ -1,5 +1,7 @@
 package com.wanted.momocity.auth.domain.model;
 
+import com.wanted.momocity.global.domain.profile.Profile;
+
 import java.time.LocalDateTime;
 
 public class User {
@@ -72,7 +74,7 @@ public class User {
                 password,
                 name,
                 null,           // nickname
-                "https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png", // profileImageUrl
+                Profile.DEFAULT_PROFILE_IMAGE_URL,   // 상수 참조 profileImageUrl
                 Role.STUDENT,
                 Status.ACTIVE,      // 가입 시 기본값
                 null,           // category (학생은 null)
@@ -150,7 +152,7 @@ public class User {
                 null,           // password (소셜 로그인은 없음)
                 name,
                 null,  // nickname
-                "https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png", // profileImageUrl
+                Profile.DEFAULT_PROFILE_IMAGE_URL,   // 상수 참조 profileImageUrl
                 Role.STUDENT,   // 기본값
                 Status.ACTIVE,  // 가입 시 기본값
                 null,           // category
