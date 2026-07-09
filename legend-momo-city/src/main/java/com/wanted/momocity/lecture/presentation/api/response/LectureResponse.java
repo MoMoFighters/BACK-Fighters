@@ -11,6 +11,22 @@ public class LectureResponse {
 
     private LectureResponse() {}
 
+    // 강의 삭제 성공 응답
+    public record DeleteLectureResponse(
+            Long lectureId,
+            String lectureStatus,
+            LocalDateTime updatedAt
+    ) {
+        // 도메인 모델을 삭제 응답으로 변경
+        public static DeleteLectureResponse from(LectureAggregate lecture) {
+            return new DeleteLectureResponse(
+                    lecture.getId(),
+                    lecture.getStatus().name(),
+                    lecture.getUpdatedAt()
+            );
+        }
+    }
+
     // 강의 상태 변경 성공 응답 DTO.
     public record ChangeLectureStatusResponse(
             Long lectureId,

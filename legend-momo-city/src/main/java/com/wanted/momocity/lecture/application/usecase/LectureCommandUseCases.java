@@ -1,5 +1,6 @@
 package com.wanted.momocity.lecture.application.usecase;
 
+import com.wanted.momocity.lecture.application.command.LectureCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.ChangeLectureStatusCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.CreateLectureCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.CreateChapterCommand;
@@ -20,6 +21,11 @@ public final class LectureCommandUseCases {
 
         // 강사가 본인 강의를 WAITING 상태로 변경
         LectureAggregate changeLectureStatus(ChangeLectureStatusCommand command);
+
+        // 강사 또는 관리자가 강의를 DELETED 상태로 변경
+        LectureAggregate deleteLecture(LectureCommand.DeleteLectureCommand command);
+
+
     }
 
     // ChapterCommandUseCase는 챕터 상태를 변경하는 기능

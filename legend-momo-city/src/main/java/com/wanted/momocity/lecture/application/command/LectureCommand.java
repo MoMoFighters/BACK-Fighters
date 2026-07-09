@@ -65,6 +65,31 @@ public final class LectureCommand {
     ) {
     }
 
+    // 강사 또는 관리자가 강의 삭제할 때 사용하는 Command
+    public record DeleteLectureCommand(
+            Long userId,
+            String role,
+            Long lectureId
+    ) {
+        // Command 생성 시 필수 값
+        public DeleteLectureCommand {
+            // 만약 사용자 정보가 없다면
+            if (userId == null) {
+                throw new DomainRuleViolationException("사용자 정보가 없습니다.");
+            }
+
+            // 만약 사용자의 권한이 없다면
+            if (role == null || role.isBlank()) {
+                throw new DomainRuleViolationException("사용자 권한 정보가 없습니다.");
+            }
+
+            // 만약 강의 ID가 없다면
+            if (lectureId == null) {
+                throw new DomainRuleViolationException("강의 Id는 필수입니다.");
+            }
+        }
+    }
+
     // 강사가 강의에 챕터를 추가할 때 사용하는 Command.
     public record CreateChapterCommand(
             Long teacherId,
