@@ -132,6 +132,8 @@ public class SecurityConfig {
                         // 프로메테우스를 사용하기 위한 actuator 사용을 위한 코드 줄 추가
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/lectures").permitAll()
+                        // 비로그인 강의 상세 조회 허용
+                        .requestMatchers(HttpMethod.GET, "/api/v1/lectures/*").permitAll()
                         // 수강평 목록 조회는 비로그인 사용자도 볼 수 있게 허용
                         .requestMatchers(HttpMethod.GET, "/api/v1/lectures/*/reviews").permitAll()
                         // /api/v1/reports : URL 역할 규칙 제거 → 메서드 레벨 @PreAuthorize 로 인가 (GET=ADMIN 조회 / POST=인증 회원 신고)
