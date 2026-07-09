@@ -355,8 +355,10 @@ public class LectureController {
             Authentication authentication,
             @PathVariable Long lectureId
     ) {
-        Long userId = Long.parseLong(authentication.getName());
-        String role = getRole(authentication);
+        // 토큰이 있음녀 ROLE값, 없으면 Anonymous로 처리
+        String role = getRoleOrAnonymous(authentication);
+        // 토큰이 있으면 userId, 없으면 null 값
+        Long userId = getUserIdOrNull(authentication);
 
         if ("ROLE_ADMIN".equals(role)) {
             GetAdminLectureDetailQuery query = new GetAdminLectureDetailQuery(
