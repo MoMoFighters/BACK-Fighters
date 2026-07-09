@@ -176,7 +176,7 @@ public class MessageEligibilityPolicy {
 
     }
 
-    //메시지 내역 조회 검증
+    //메시지 내역 조회, 메시지 읽음, 채팅방 멤버 목록 조회 검증
     public void validateAccess(Long roomId, Long userId, boolean isCurrentMember) {
         if (!isCurrentMember) {
             log.warn("[MessageEligibilityPolicy] 접근 권한 없음 - 요청 유저가 방의 멤버가 아님. 유저ID: {}, 방ID: {}", userId, roomId);

@@ -80,4 +80,8 @@ public class EnrollmentCatalogAdapter implements EnrollmentPort{
                 .toList();
     }
 
+    @Override
+    public void updateProgress(Long aLong, Long aLong1, int totalProgress) {
+
+    }
 }

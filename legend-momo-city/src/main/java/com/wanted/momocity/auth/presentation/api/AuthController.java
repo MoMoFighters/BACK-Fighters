@@ -297,7 +297,7 @@ public class AuthController {
             throw new MissingTokenException("RefreshToken이 없습니다.");
         }
 
-        String oldAccessToken = bearerToken.replace("Bearer ", "");
+        String oldAccessToken = bearerToken.substring(7).trim();
         String newAccessToken = newTokenUsecase.refreshAccessToken(refreshToken, oldAccessToken);
 
 

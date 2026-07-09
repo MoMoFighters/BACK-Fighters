@@ -43,13 +43,13 @@ public class LearningHistory {
     /*
     * comment.
     *  1. playbackSeconds > watchedSeconds → 앞으로 진행
-    *    AND playbackSeconds - watchedSeconds <= 10 -> 정상 시청 범위
+    *    AND playbackSeconds - watchedSeconds <= 30 -> 정상 시청 범위
     *    -> watchedSeconds = playbackSeconds
     *  -
     *  2. playbackSeconds < watchedSeconds -> 뒤로 감기
     *    -> watchedSeconds 업데이트 안 함
     *  -
-    *  3. playbackSeconds - watchedSeconds > 10 -> 앞으로 당기기
+    *  3. playbackSeconds - watchedSeconds > 30 -> 앞으로 당기기
     *    -> watchedSeconds 업데이트 안 함
     *  -
     *  progressRate = watchedSeconds / durationSec * 100
@@ -61,9 +61,9 @@ public class LearningHistory {
     ) {
 
         // 실제 진척이 있을 때만 watchedSeconds, lastWatchedAt 갱신
-        // -> 뒤로 감기 / 앞으로 당기기(10초 초과) 시 갱신 안 함
+        // -> 뒤로 감기 / 앞으로 당기기(30초 초과) 시 갱신 안 함
         boolean hasMeaningfulProgress = playbackSeconds > this.watchedSeconds
-                && playbackSeconds - this.watchedSeconds <= 10;
+                && playbackSeconds - this.watchedSeconds <= 30;
 
         if (hasMeaningfulProgress) {
             this.watchedSeconds = playbackSeconds;

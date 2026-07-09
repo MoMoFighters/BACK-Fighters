@@ -61,7 +61,7 @@ public class AdminNoticeController {
         PageRequest pageable = PageRequest.of(page - 1, size);
         Page<AdminNoticeListResponse> result = queryUseCase.getNoticeList(isPinned, pageable)
                 .map(AdminNoticeListResponse::from);
-        return ResponseEntity.ok(ApiResponse.success(ApiResponseCode.SUCCESS, "공지 목록 조회 성공", AdminNoticePageResponse.from(result)));
+        return ResponseEntity.ok(ApiResponse.success(ApiResponseCode.SUCCESS, "공지 목록 조회 성공", AdminNoticePageResponse.of(result,size)));
     }
 
     // MS-16 공지 상세 조회

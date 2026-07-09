@@ -31,7 +31,7 @@ public class ProgressAdapter
     private final LearningHistoryRepository learningHistoryRepository;
 
     @Override
-    public int getTotalProgress(Long userId, Long lectureId) {
+    public ProgressPort.ProgressInfo getProgress(Long userId, Long lectureId) {
         List<Chapter> chapters = chapterPort.findAllByLectureId(lectureId);
         List<LearningHistory> histories = learningHistoryRepository
                 .findByUserIdAndLectureId(userId, lectureId);
@@ -55,17 +55,26 @@ public class ProgressAdapter
                 .mapToInt(Chapter::getDurationSec)
                 .sum();
 
-        if (totalDurationSum == 0) return 0;
+        if (totalDurationSum == 0) {
+            return new ProgressPort.ProgressInfo(0, 0);
+        }
 
         int result = (int) Math.round(
                 (double)(completedDurationSum + inProgressWatchedSum)
                 / totalDurationSum * 100
         );
+        int completedCount = (int) histories.stream()
+                .filter(LearningHistory::isCompleted)
+                .count();
+
 
         log.debug("[Progress] 진척률 조회 | userId={}, lectureId={}, result={}",
                 userId, lectureId, result);
 
-        return result;
+        return new ProgressPort.ProgressInfo(
+                Math.min(result, 100),
+                completedCount
+        );
 
     }
 }

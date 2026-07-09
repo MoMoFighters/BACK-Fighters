@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static com.wanted.momocity.order.domain.model.Reason.GUESTBOOK;
@@ -50,14 +51,23 @@ public class FriendCommandService implements FriendCommandUseCase {
     public RequestFriendView requestFriendCommandHandle(RequestFriendCommand command) {
         log.info("[RequestFriendCommandService] 친구 요청 명령 수행 시작 - 요청자: {}, 대상자: {}", command.userId(), command.targetUserId());
 
-        //순수 엔티티 조회 및 검증 로직(400, 404)
-        UserWithFMJpaEntity targetUser = friendRepository.findUserById(command.targetUserId())
+        // 🎯 [최적화 1] IN 절을 사용하여 요청자와 대상자 유저 데이터를 1방의 쿼리로 통합 조회
+        List<UserWithFMJpaEntity> users = friendRepository.findUsersByIds(List.of(command.userId(), command.targetUserId()));
+
+        UserWithFMJpaEntity loginUser = users.stream()
+                .filter(u -> u.getId().equals(command.userId()))
+                .findFirst()
+                .orElseThrow(() -> new FMResourceNotFoundException("로그인 유저 정보를 찾을 수 없습니다."));
+        log.info("[RequestFriendCommandService] 요청자 검증 완료 - 닉네임: '{}'", loginUser.getNickname());
+
+        UserWithFMJpaEntity targetUser = users.stream()
+                .filter(u -> u.getId().equals(command.targetUserId()))
+                .findFirst()
                 .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 사용자에게 요청을 보낼 수 없습니다."));
         log.info("[RequestFriendCommandService] 대상자 검증 완료 - 닉네임: '{}', 역할: '{}'",targetUser.getNickname(), targetUser.getRole());
 
-        UserWithFMJpaEntity loginUser = friendRepository.findUserById(command.userId())
-                .orElseThrow(() -> new FMResourceNotFoundException("로그인 유저 정보를 찾을 수 없습니다."));
-        log.info("[RequestFriendCommandService] 요청자 검증 완료 - 닉네임: '{}'", loginUser.getNickname());
+        log.info("[RequestFriendCommandService] 유저 일괄 검증 완료 - 요청자: '{}', 대상자: '{}'", loginUser.getNickname(), targetUser.getNickname());
+        //순수 엔티티 조회 및 검증 로직(400, 404)
 
         //기존 관계 추출
         Optional<FriendJpaEntity> relation = friendRepository.findAnyRelationBetween(command.userId(), command.targetUserId());
@@ -98,9 +108,18 @@ public class FriendCommandService implements FriendCommandUseCase {
     public CancelRequestFriendView cancelRequestFriendCommandHandle(CancelRequestFriendCommand command) {
         log.info("[CancelRequestFriendService] 친구 요청 철회 로직 시작 - 요청자: {}, 대상자: {}", command.userId(), command.targetUserId());
 
-        //철회 대상자 유저가 실제로 존재하는지 확인(404)
-        UserWithFMJpaEntity targetUser = friendRepository.findUserById(command.targetUserId())
+        // 🎯 [최적화 1] 대상자와 요청자 유저를 상단에서 한방에 IN 절로 묶어 가져옴 (조회 쿼리 압축)
+        List<UserWithFMJpaEntity> users = friendRepository.findUsersByIds(List.of(command.userId(), command.targetUserId()));
+
+        UserWithFMJpaEntity targetUser = users.stream()
+                .filter(u -> u.getId().equals(command.targetUserId()))
+                .findFirst()
                 .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 사용자입니다."));
+
+        UserWithFMJpaEntity loginUser = users.stream()
+                .filter(u -> u.getId().equals(command.userId()))
+                .findFirst()
+                .orElseThrow(() -> new FMResourceNotFoundException("로그인 유저 정보를 찾을 수 없습니다."));
 
         //두 사람 사이의 친구 관계 행 조회
         Optional<FriendJpaEntity> relationOpt = friendRepository.findRelationBetween(command.userId(), command.targetUserId());
@@ -116,7 +135,6 @@ public class FriendCommandService implements FriendCommandUseCase {
         log.info("[CancelRequestFriendService] friend 테이블에서 요청 행 삭제 완료");
 
         //notification에 들어간 행 삭제를 위한 이벤트 발행
-        UserWithFMJpaEntity loginUser = friendRepository.findUserById(command.userId()).orElseThrow();
         eventPublisher.publishEvent(new CancelRequestFriendPublishedEvent(
                 loginUser.getId(), //refId가 로그인 유저
                 targetUser.getId() //userId가 상대방(요청 받는 사람)
@@ -136,9 +154,20 @@ public class FriendCommandService implements FriendCommandUseCase {
     public AcceptView acceptRequestFriendCommandHandle(AcceptRequestFriendCommand command) {
         log.info("[AcceptRequestFriendCommandService] 친구 요청 수락 로직 시작 - 수락자(로그인 유저): {}, 요청자(상대방): {}", command.userId(), command.fromUserId());
 
-        //요청자가 존재하는지 검증(404)
-        UserWithFMJpaEntity fromUser = friendRepository.findUserById(command.fromUserId())
+        // 🎯 [최적화 1] IN 절을 사용하여 요청자와 수락자 유저 데이터를 1방의 쿼리로 통합 조회 (SELECT 1)
+        List<UserWithFMJpaEntity> users = friendRepository.findUsersByIds(List.of(command.userId(), command.fromUserId()));
+
+        UserWithFMJpaEntity fromUser = users.stream()
+                .filter(u -> u.getId().equals(command.fromUserId()))
+                .findFirst()
                 .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 사용자입니다."));
+
+        UserWithFMJpaEntity loginUser = users.stream()
+                .filter(u -> u.getId().equals(command.userId()))
+                .findFirst()
+                .orElseThrow(() -> new FMResourceNotFoundException("로그인 유저 정보를 찾을 수 없습니다."));
+
+        log.info("[AcceptRequestFriendCommandService] 유저 일괄 검증 완료 - 수락자: '{}', 요청자: '{}'", loginUser.getNickname(), fromUser.getNickname());
 
         //두 사람 사이의 친구 관계 조회(from/to 방향 확인)
         Optional<FriendJpaEntity> relationOpt = friendRepository.findRelationBetween(command.fromUserId(), command.userId());
@@ -158,10 +187,6 @@ public class FriendCommandService implements FriendCommandUseCase {
         //상태 전이: SENT -> FRIEND 상태 업데이트
         relation.changeStatus("FRIEND");
         log.info("[AcceptRequestFriendCommandService] 행 상태 변경 완료 (SENT -> FRIEND)");
-
-        //로그인 유저 정보 로드(404)
-        UserWithFMJpaEntity loginUser = friendRepository.findUserById(command.userId())
-                .orElseThrow(() -> new FMResourceNotFoundException("로그인 유저 정보를 찾을 수 없습니다."));
 
         //이벤트 발행
         eventPublisher.publishEvent(new AcceptRequestFriendPublishedEvent(
@@ -185,9 +210,19 @@ public class FriendCommandService implements FriendCommandUseCase {
     public RejectView rejectRequestFriendCommandHandle(RejectRequestFriendCommand command) {
         log.info("[RejectRequestFriendCommandService] 친구 요청 거절 로직 시작 - 거절자(로그인 유저): {}, 요청자(상대방): {}", command.userId(), command.fromUserId());
 
-        //요청자(상대방) 검증
-        UserWithFMJpaEntity fromUser = friendRepository.findUserById(command.fromUserId())
+        List<UserWithFMJpaEntity> users = friendRepository.findUsersByIds(List.of(command.userId(), command.fromUserId()));
+
+        UserWithFMJpaEntity fromUser = users.stream()
+                .filter(u -> u.getId().equals(command.fromUserId()))
+                .findFirst()
                 .orElseThrow(() -> new FMResourceNotFoundException("존재하지 않는 사용자입니다."));
+
+        // 로그인 유저의 비정상 접근 차단 목적의 검증 통합
+        users.stream()
+                .filter(u -> u.getId().equals(command.userId()))
+                .findFirst()
+                .orElseThrow(() -> new FMResourceNotFoundException("로그인 유저 정보를 찾을 수 없습니다."));
+        log.info("[RejectRequestFriendCommandService] 유저 일괄 검증 완료 - 거절 대상자: '{}'", fromUser.getNickname());
 
         //두 사람 사이의 관계 조회
         Optional<FriendJpaEntity> relationOpt = friendRepository.findRelationBetween(command.fromUserId(), command.userId());
@@ -201,6 +236,10 @@ public class FriendCommandService implements FriendCommandUseCase {
         Long targetFriendId = relation.getId();
         friendRepository.delete(relation);
         log.info("[RejectRequestFriendCommandService] friend 테이블 행 삭제 완료");
+
+        // RejectRequestFriendCommandService 내부 하단
+        eventPublisher.publishEvent(new RejectRequestFriendPublishedEvent(command.userId(), command.fromUserId(), command.fromUserId()));
+        log.info("[RejectRequestFriendCommandService] 친구 거절 비동기 연동 이벤트 발행 성공");
 
         //none 세팅 후 반환
         return new RejectView(
@@ -294,16 +333,19 @@ public class FriendCommandService implements FriendCommandUseCase {
     public DeleteView deleteFriendCommandHandle(DeleteFriendCommand command) {
         log.info("[DeleteFriendCommandService] 친구 목록 삭제 시도 - 주체: {}, 대상: {}", command.userId(), command.targetUserId());
 
-        //대상 유저 정보 가져오기(없으면 404)
-        UserWithFMJpaEntity targetUser = friendRepository.findUserById(command.targetUserId())
+        // 🎯 [성능 개선 핵심 1] 불필요한 단건 유저 조회(findUserById)를 아예 과감히 삭제합니다.
+        // 이미 양방향 FETCH JOIN 1방 쿼리로 관계 행뿐 아니라, 연결된 두 유저 엔티티까지 전부 한격에 긁어옵니다.
+        FriendJpaEntity relation = friendRepository.findAnyRelationBetween(command.userId(), command.targetUserId())
                 .orElseThrow(() -> new FMResourceNotFoundException("삭제할 친구 내역이 존재하지 않습니다."));
-        //관련행 찾기
-        Optional<FriendJpaEntity> relationOpt = friendRepository.findAnyRelationBetween(command.userId(), command.targetUserId());
+
+        // 🎯 [성능 개선 핵심 2] 이미 FETCH JOIN으로 메모리에 로딩된 객체에서 상대방 유저 정보를 안전하게 추출합니다.
+        // 영속성 컨텍스트 스냅샷을 활용하므로 이 시점에 지연 로딩(N+1 SELECT)이 단 한 방도 터지지 않습니다.
+        UserWithFMJpaEntity targetUser = (relation.getFromUserId().getId().equals(command.userId()))
+                ? relation.getToUserId() : relation.getFromUserId();
 
         //정책 위임(404, 409)
-        friendEligibilityPolicy.ensureDeletable(relationOpt, targetUser.getRole());
+        friendEligibilityPolicy.ensureDeletable(relation, targetUser.getRole());
 
-        FriendJpaEntity relation = relationOpt.get();
         friendRepository.delete(relation);
         log.info("[DeleteFriendCommandService] friend 테이블에서 행 삭제 완료 - 행ID: {}", relation.getId());
 
@@ -332,7 +374,7 @@ public class FriendCommandService implements FriendCommandUseCase {
         // 1. 대상 도시 주인 유저 존재 여부 검증 (404 대응)
         UserWithFMJpaEntity ownerUser = friendRepository.findUserById(command.ownerId())
                 .orElseThrow(() -> {
-                    friendMetrics.recordGuestbookResult(false); // 🎯 정림님 의도대로 실패 시 메트릭 기록
+                    friendMetrics.recordGuestbookResult(false);
                     return new FMResourceNotFoundException("존재하지 않는 사용자의 도시에 방명록을 작성할 수 없습니다.");
                 });
 
@@ -340,7 +382,7 @@ public class FriendCommandService implements FriendCommandUseCase {
         // 2. 로그인 유저(방문자) 정보 조회
         UserWithFMJpaEntity loginUser = friendRepository.findUserById(command.userId())
                 .orElseThrow(() -> {
-                    friendMetrics.recordGuestbookResult(false); // 🎯 정림님 의도대로 실패 시 메트릭 기록
+                    friendMetrics.recordGuestbookResult(false);
                     return new FMResourceNotFoundException("존재하지 않는 사용자입니다.");
                 });
 

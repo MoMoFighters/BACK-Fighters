@@ -22,6 +22,13 @@ public interface AdminNoticeRepository {
     // MS - 12 isPinned 필터 조회
     Page<AdminNotice> findByIsPinned(boolean isPinned, Pageable pageable);
 
+    // MA-02(M5) : 고정 공지 분리 후 일반 공지만 최신순 페이지네이션 조회
+    Page<AdminNotice> findUnpinned(Pageable pageable);
+
+
+    // MA-02(M5) : isPinned=false 인 공지 개수를 페이지 위치와 무관하게 세는 계약
+    long countUnpinned();
+
     // MS-16, 17, 18 : id 로 공지 단건 조회
     // findById 는 해당 id 의 공지가 DB 에 없을 수도 있어서 Optional 사용
     Optional<AdminNotice> findById(Long id);

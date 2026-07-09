@@ -24,13 +24,16 @@ public interface NotificationSideMessageReadRepository extends JpaRepository<Mes
     long countByUserIdAndIsMsgReadFalse(@Param("userId") Long userId);
 
     //알림 읽기 - 메시지 알림 권한 확인
+    // 🎯 [최적화 핵심] 알림 읽기 처리 전 대상 방과 유저를 한방에 패치 조인으로 긁어옴 (N+1 지뢰 제거)
     @Query("SELECT mr FROM MessageReadJpaEntity mr " +
+            "JOIN FETCH mr.roomId r " +  // 👈 연관된 채팅방 한방에 로드
+            "JOIN FETCH mr.userId u " +  // 👈 연관된 유저 정보 한방에 로드
             "WHERE mr.roomId.id IN :messageRoomIds " +
-            "  AND mr.userId.id = :userId")
+            "AND mr.userId.id = :userId")
     List<MessageReadJpaEntity> findByRoomId_IdIn(@Param("messageRoomIds") List<Long> messageRoomIds, @Param("userId") Long userId);
 
     //알림 읽기 - 메시지 알림의 refId(roomId)에 로그인 유저가 속하는지 검증
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("UPDATE MessageReadJpaEntity mr " +
             "SET mr.isNotiRead = true " +
             "WHERE mr.roomId.id IN :roomIds " +

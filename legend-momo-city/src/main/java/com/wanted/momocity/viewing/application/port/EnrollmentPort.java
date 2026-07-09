@@ -21,6 +21,8 @@ public interface EnrollmentPort {
     // 마이페이지 수강 목록 조회할 때 사용
    List<EnrollmentInfo> findAllByUserId (Long userId);
 
+    void updateProgress(Long aLong, Long aLong1, int totalProgress);
+
     // EnrollmentPort 전용 응답 모델
     // 팀원 Enrollment 도메인 모델을 직접 참조하지 않기 위해
     // viewing 컨텍스트 전용으로 필요한 필드만 담음

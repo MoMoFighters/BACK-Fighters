@@ -195,20 +195,18 @@ public class FriendEligibilityPolicy {
     }
 
     //친구 삭제 검증
-    public void ensureDeletable(Optional<FriendJpaEntity> existingRelation, String targetRole) {
+    public void ensureDeletable(FriendJpaEntity relation, String targetRole) {
         //관계 행 자체가 없는지 확인(404)
-        if (existingRelation.isEmpty()) {
-            log.warn("[FriendEligibilityPolicy] 친구 삭제 검증 실패 - 관계 내역이 존재하지 않음");
-            throw new FMResourceNotFoundException("삭제할 친구 내역이 존재하지 않습니다.");
-        }
+//        if (relation.getStatus().isEmpty()) {
+//            log.warn("[FriendEligibilityPolicy] 친구 삭제 검증 실패 - 관계 내역이 존재하지 않음");
+//            throw new FMResourceNotFoundException("삭제할 친구 내역이 존재하지 않습니다.");
+//        }
 
         //강사는 수강이 유지되는 한 임의로 삭제 불가(409)
         if ("TEACHER".equals(targetRole)) {
             log.warn("[FriendEligibilityPolicy] 친구 삭제 검증 실패 - 대상이 강사임");
             throw new FMResourceConflictException("이미 친구 관계가 아니거나 삭제할 수 없는 대상입니다.");
         }
-
-        FriendJpaEntity relation = existingRelation.get();
 
         //FRIEND 상태가 아닐 때 삭제 불가(409)
         if (!"FRIEND".equals(relation.getStatus())

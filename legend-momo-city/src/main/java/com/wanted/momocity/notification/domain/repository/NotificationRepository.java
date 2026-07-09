@@ -1,5 +1,6 @@
 package com.wanted.momocity.notification.domain.repository;
 
+import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import com.wanted.momocity.message.infrastructure.persistence.MessageReadJpaEntity;
 import com.wanted.momocity.notification.domain.model.Notification;
 import com.wanted.momocity.notification.infrastructure.persistence.NotificationJpaEntity;
@@ -55,4 +56,19 @@ public interface NotificationRepository {
 
     //알림 삭제 - 메시지 알림
     void bulkMarkMessageNotificationsAsDeleted(List<Long> messageRoomIds, Long userId);
+
+    // 🎯 [추가] 여러 채팅방의 타이틀 한방에 조회
+    List<Object[]> findRoomTitlesByIdsIn(List<Long> roomIds);
+
+    //개선 - 앱별 알림 통합해서 가져오기
+    List<Object[]> countUnreadGroupByType(Long userId);
+
+    // 유저 테이블 SELECT 없이 프록시 가짜 객체만 가져오는 포트
+    UserWithFMJpaEntity getUserReference(Long userId);
+
+    //친구 거절 알림 읽음 처리
+    void bulkMarkAsReadByRefIdAndUserIdAndType(Long refId, Long userId, String friendRequest);
+
+    //일반 알림 벌크 읽음
+    void bulkMarkGeneralNotificationsAsRead(List<NotificationJpaEntity> generalNotisToUpdate);
 }

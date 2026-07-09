@@ -1,6 +1,7 @@
 package com.wanted.momocity.viewing.application.service;
 
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
+import com.wanted.momocity.viewing.application.port.EnrollmentPort;
 import com.wanted.momocity.viewing.domain.event.ProgressSavedEvent;
 import com.wanted.momocity.viewing.application.command.SaveProgressCommand;
 import com.wanted.momocity.viewing.application.policy.EnrollmentAccessPolicy;
@@ -44,6 +45,7 @@ public class ViewingCommandService implements ViewingCommandUseCase {
     private final ApplicationEventPublisher eventPublisher;
     private final EnrollmentAccessPolicy enrollmentAccessPolicy;
     private final ViewingMetrics viewingMetrics;
+    private final EnrollmentPort enrollmentPort;
 
     @Override
     public SaveProgressResponse handle(SaveProgressCommand command) {
@@ -93,6 +95,7 @@ public class ViewingCommandService implements ViewingCommandUseCase {
         // doSaveProgress() - Timer 로 전체 감싸기
         return viewingMetrics.getSaveProgressTimer().record(() -> {
 
+
             // 수강 여부 확인 (Policy)
             enrollmentAccessPolicy.ensureEnrolled(command.userId(), command.lectureId());
 
@@ -109,6 +112,9 @@ public class ViewingCommandService implements ViewingCommandUseCase {
             // 완료 전 상태 저장
             // -> 이미 완료된 챕터 재시청 시 이벤트 중복 발행 방지
             boolean wasCompleted = history.isCompleted();
+
+            // prevWatchedSeconds 는 history.updateProgress() 호출 전에 선언 필요
+            int prevWatchedSeconds = history.getWatchedSeconds();
 
             // updateProgress() 반환값으로 skip 차단 여부 판단
             boolean hasMeaningfulProgress = history.updateProgress(
@@ -151,13 +157,46 @@ public class ViewingCommandService implements ViewingCommandUseCase {
                         command.userId(), command.lectureId(), command.chapterId());
             }
 
-            // 전체 진척도 계산
+            /*
+             * comment.
+             *  ProgressSavedEvent 발행 (잔디 누적용)
+             *  - 미완료 챕터
+             *  hasMeaningfulProgress = true 일 때
+             *  -> delta = playbackSeconds - prevWatchedSeconds
+             *  -> 실제 앞으로 나아간 만큼만 누적
+             *  - 완료된 챕터 재시청
+             *  wasCompleted = true 일 때
+             *  -> playbackSeconds 만큼 누적
+             *  -> 재시청도 학습으로 인정
+             */
+
+            // ProgressSavedEvent 발행 (잔디 누적용)
+            if (hasMeaningfulProgress && !wasCompleted) {
+                // 미완료 챕터: 실제 증분만큼 누적
+                int delta = command.playbackSeconds() - prevWatchedSeconds;
+                eventPublisher.publishEvent(new ProgressSavedEvent(
+                        command.userId(), command.lectureId(), command.chapterId(),
+                        delta, LocalDate.now()
+                ));
+            } else if (wasCompleted && command.playbackSeconds() > 0) {
+                // 완료된 챕터 재시청: playbackSeconds 만큼 누적
+                eventPublisher.publishEvent(new ProgressSavedEvent(
+                        command.userId(), command.lectureId(), command.chapterId(),
+                        command.playbackSeconds(), LocalDate.now()
+                ));
+            }
+
+
+            // 전체 진척도 재계산 및 enrollment 업데이트
             int totalProgress = calculateTotalProgress(command.userId(), command.lectureId());
             int completedCount = calculateCompletedCount(command.userId(), command.lectureId());
+            enrollmentPort.updateProgress(command.userId(), command.lectureId(), totalProgress);
 
             log.info("[Viewing] 진척도 저장 완료 | userId={}, lectureId={}, chapterId={}, isCompleted={}, totalProgress={}",
                     command.userId(), command.lectureId(), command.chapterId(),
                     savedHistory.isCompleted(), totalProgress);
+
+
 
             return new SaveProgressResponse(
                     savedHistory.getChapterId(),

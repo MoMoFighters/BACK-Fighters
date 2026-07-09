@@ -40,7 +40,7 @@ public class CatalogMessageAdapter implements MessageRepository {
     //사용자 정보 찾기
     @Override
     public Optional<UserWithFMJpaEntity> findUserWithFMById(Long userId) {
-        return messageSideUserRepository.findById(userId);
+        return messageSideUserRepository.findUserWithFMById(userId);
     }
 
     //수강 정보 찾기
@@ -280,10 +280,7 @@ public class CatalogMessageAdapter implements MessageRepository {
     //나와의 채팅방 인식: 첫 번째 방
     @Override
     public Optional<Long> findFirstRoomIdByUserId(Long userId) {
-        List<ChatRoomMemberJpaEntity> myAllRooms = springDataChatRoomMemberRepository.findByUserId_Id(userId);
-        return myAllRooms.stream()
-                .map(member -> member.getRoomId().getId())
-                .min(Long::compare);
+        return springDataChatRoomMemberRepository.findFirstRoomIdByUserId(userId);
     }
 
     //채팅방 나가기: 안내문구 저장
@@ -307,8 +304,7 @@ public class CatalogMessageAdapter implements MessageRepository {
     //채팅방 목록 조회: 마지막 메시지 시간
     @Override
     public Optional<LocalDateTime> findLatestMessageTimeById(Long messageId) {
-        return springDataMessageRepository.findCreatedAtById(messageId)
-                .map(MessageJpaEntity::getCreatedAt);
+        return springDataMessageRepository.findCreatedAtById(messageId);
     }
 
     //웹소켓 메시지 내역 조회?(지연 가능성)
@@ -401,6 +397,63 @@ public class CatalogMessageAdapter implements MessageRepository {
     @Override
     public Optional<ChatRoomMemberJpaEntity> findMemberByRoomIdAndUserId(Long foundRoomId, Long userId) {
         return springDataChatRoomMemberRepository.findMemberByRoomIdAndUserId(foundRoomId, userId);
+    }
+
+    //채팅방 목록 조회 개선 보강
+    @Override
+    public List<ChatRoomMemberJpaEntity> findByRoomId_IdIn(List<Long> allRoomIds) {
+        return springDataChatRoomMemberRepository.findByRoomId_IdIn(allRoomIds);
+    }
+    //채팅방 목록 조회 개선 보강
+    @Override
+    public List<Object[]> findLatestAnnounceTimeByRoomIdsIn(List<Long> allRoomIds) {
+        return springDataMessageAnnounceRepository.findLatestAnnounceTimeByRoomIdsIn(allRoomIds);
+    }
+    //채팅방 목록 조회 개선 보강
+    @Override
+    public List<EnrollmentWithFMJpaEntity> findByUserId_IdIn(List<Long> longs) {
+        return messageSideEnrollmentRepository.findByUserId_IdIn(longs);
+    }
+
+    //채팅방 조회 및 개설 개선 보강
+    @Override
+    public List<ChatRoomMemberJpaEntity> findOnePersonRoomsByUserId(Long targetUserId, Long loginUserId) {
+        return springDataChatRoomMemberRepository.findOnePersonRoomsByUserId(targetUserId, loginUserId);
+    }
+
+    //메시지 읽음 벌크 처리
+    @Override
+    @Transactional
+    public int bulkUpdateReadStatus(Long roomId, Long userId) {
+        return springDataMessageReadRepository.bulkUpdateReadStatus(roomId, userId);
+    }
+
+    //메시지 내역 조회(말풍선 안읽음 수 인메모리)
+    @Override
+    public List<Object[]> countUnreadMembersByMessageIdsIn(List<Long> currentMessageIds) {
+        return springDataMessageReadRepository.countUnreadMembersByMessageIdsIn(currentMessageIds);
+    }
+
+    //멤버 초대 개선 보강
+    @Override
+    public List<UserWithFMJpaEntity> findUsersWithFMByIds(List<Long> chatMemberIds) {
+        return messageSideUserRepository.findUsersWithFMByIds(chatMemberIds);
+    }
+    //멤버 초대 개선 보강
+    @Override
+    public List<FriendJpaEntity> findFriendRelationsByUserIdAndTargetIds(Long userId, List<Long> chatMemberIds) {
+        return messageSideFriendRepository.findFriendRelationsByUserIdAndTargetIds(userId, chatMemberIds);
+    }
+
+    //채팅방 목록 조회 개선 보강
+    @Override
+    public List<FriendJpaEntity> findFriendRelationsByTargetUserIdsIn(Long userId, Set<Long> targetUserIds) {
+        return messageSideFriendRepository.findFriendRelationsByTargetUserIdsIn(userId,targetUserIds);
+    }
+    //채팅방 목록 조회 개선 보강
+    @Override
+    public List<Object[]> countUnreadMessagesByRoomIdsIn(List<Long> allRoomIds, Long userId) {
+        return springDataMessageReadRepository.countUnreadMessagesByRoomIdsIn(allRoomIds, userId);
     }
 
 }

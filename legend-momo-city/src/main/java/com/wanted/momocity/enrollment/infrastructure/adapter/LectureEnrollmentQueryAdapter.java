@@ -51,17 +51,17 @@ public class LectureEnrollmentQueryAdapter implements LectureEnrollmentQueryPort
 
     // EnrollmentJpaEntity를 lecture 쪽에서 필요한 진행 정보로 변환
     private EnrollmentProgress toProgress(EnrollmentJpaEntity entity) {
-        // enrollment.totalProgress는 저장 시점 이후 갱신되지 않을 수 있으므로
-        // 실제 진도율 원천인 viewing.learning_history 기준으로 다시 계산한다.
-        int totalProgress = progressPort.getTotalProgress(
+        // 전체 진도율과 완료 챕터 수는 실제 시청 기록을 가진 viewing 기준으로 계산한다.
+        ProgressPort.ProgressInfo progressInfo = progressPort.getProgress(
                 entity.getUserId(),
                 entity.getLectureId()
         );
+
         return new EnrollmentProgress(
                 entity.getId(),
                 entity.getLectureId(),
-                totalProgress,
-                entity.getCompletedCount()
+                progressInfo.totalProgress(),
+                progressInfo.completedCount()
         );
     }
 }

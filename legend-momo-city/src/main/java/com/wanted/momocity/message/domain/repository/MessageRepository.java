@@ -6,8 +6,10 @@ import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import com.wanted.momocity.message.infrastructure.persistence.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 //포트 역할
 public interface MessageRepository {
@@ -125,4 +127,30 @@ public interface MessageRepository {
     Optional<Long> findOneToOneChatRoomIdBetween(Long userId, Long targetUserId);
     //친구 삭제 후 채팅방 나가기 버그 수정
     Optional<ChatRoomMemberJpaEntity> findMemberByRoomIdAndUserId(Long foundRoomId, Long userId);
+
+    //채팅방 목록 조회 개선 보강
+    List<ChatRoomMemberJpaEntity> findByRoomId_IdIn(List<Long> allRoomIds);
+    //채팅방 목록 조회 개선 보강
+    List<Object[]> findLatestAnnounceTimeByRoomIdsIn(List<Long> allRoomIds);
+    //채팅방 목록 조회 개선 보강
+    List<EnrollmentWithFMJpaEntity> findByUserId_IdIn(List<Long> longs);
+
+    //채팅방 조회 및 개설 개선 보강
+    List<ChatRoomMemberJpaEntity> findOnePersonRoomsByUserId(Long targetUserId, Long loginUserId);
+
+    //메시지 읽음 벌크 처리
+    int bulkUpdateReadStatus(Long roomId, Long userId);
+
+    //메시지 내역 조회(말풍선 안읽음 수 인메모리)
+    List<Object[]> countUnreadMembersByMessageIdsIn(List<Long> currentMessageIds);
+
+    //멤버 초대 개선 보강
+    List<UserWithFMJpaEntity> findUsersWithFMByIds(List<Long> chatMemberIds);
+    //멤버 초대 개선 보강
+    List<FriendJpaEntity> findFriendRelationsByUserIdAndTargetIds(Long userId, List<Long> chatMemberIds);
+
+    //채팅방 목록 조회 개선 보강
+    List<FriendJpaEntity> findFriendRelationsByTargetUserIdsIn(Long userId, Set<Long> targetUserIds);
+    //채팅방 목록 조회 개선 보강
+    List<Object[]> countUnreadMessagesByRoomIdsIn(List<Long> allRoomIds, Long userId);
 }
