@@ -56,6 +56,12 @@ public class AdminNoticeQueryService implements AdminNoticeQueryUseCase {
             merged.add(pinnedNotice.get());
             merged.addAll(unpinnedPage.getContent());
 
+
+            // size=1처럼 극단적인 경우, 고정 공지 때문에 요청한 size를 넘을 수 있어 잘라냄
+            if (merged.size() > pageable.getPageSize()) {
+                merged = merged.subList(0, pageable.getPageSize());
+            }
+
             // 5. totalPages 계산 기준을 "일반 공지 개수 ÷ unpinnedSize"로 정확히 맞추기 위해
             //    Page 자체의 pageable도 unpinnedPageable(size 하나 뺀 것)로 구성함
             /* comment.
