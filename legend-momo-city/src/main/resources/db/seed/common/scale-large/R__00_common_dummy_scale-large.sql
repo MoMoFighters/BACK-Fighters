@@ -1,7 +1,7 @@
 USE `momo`;
 SET FOREIGN_KEY_CHECKS = 0;
 
-- =====================================================================
+-- =====================================================================
 --  1. user — 125명 large 원본
 -- =====================================================================
 INSERT INTO `user` (`id`, `email`, `password`, `name`, `nickname`, `profile_image_url`, `role`, `status`, `category`, `proof`, `point`, `do_not_disturb`, `membership`, `membership_start`, `suspension_count`, `suspended_until`, `created_at`, `updated_at`, `deleted_at`, `is_tempPWD`) VALUES
