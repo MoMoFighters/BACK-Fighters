@@ -1,5 +1,6 @@
 package com.wanted.momocity.user.infrastructure.persistence;
 
+import com.wanted.momocity.user.domain.model.Membership;
 import com.wanted.momocity.global.domain.model.Category;
 import com.wanted.momocity.user.domain.model.Role;
 import com.wanted.momocity.user.domain.model.Status;
@@ -51,6 +52,13 @@ public class UserJpaEntity {
     @Column(nullable = true)
     private Long point;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Membership membership;
+
+    @Column(name = "membership_start")
+    private LocalDateTime membershipStart;
+
     @Column(name = "do_not_disturb")
     private boolean doNotDisturb;
 
@@ -77,7 +85,7 @@ public class UserJpaEntity {
     }
 
     // id 포함 생성자 추가
-    public UserJpaEntity(Long id, String email, String password, String name, String nickname, String profileImageUrl, Role role, Status status, Category category, String proof, Long point, boolean doNotDisturb, Long suspensionCount, LocalDateTime suspendedUntil, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, boolean isTempPwd) {
+    public UserJpaEntity(Long id, String email, String password, String name, String nickname, String profileImageUrl, Role role, Status status, Category category, String proof, Long point, Membership membership,LocalDateTime membershipStart, boolean doNotDisturb, Long suspensionCount, LocalDateTime suspendedUntil, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, boolean isTempPwd) {
         this.id = id;
         this.email = email;
         this.password = password;
@@ -89,6 +97,8 @@ public class UserJpaEntity {
         this.category = category;
         this.proof = proof;
         this.point = point;
+        this.membership = membership;
+        this.membershipStart =membershipStart;
         this.doNotDisturb = doNotDisturb;
         this.suspensionCount = suspensionCount;
         this.suspendedUntil = suspendedUntil;
@@ -113,6 +123,8 @@ public class UserJpaEntity {
                 user.getCategory(),
                 user.getProof(),
                 user.getPoint(),
+                user.getMembership(),
+                user.getMembershipStart(),
                 user.getDoNotDisturb(),
                 user.getSuspensionCount(),
                 user.getSuspendedUntil(),

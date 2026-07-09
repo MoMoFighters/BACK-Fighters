@@ -219,7 +219,10 @@ class UserRepositoryAdapter implements UserRepository {
                 entity.getNickname(),
                 entity.isTempPwd(),
                 entity.getCreatedAt(),
-                entity.getSuspensionCount()
+                entity.getSuspensionCount(),
+                entity.isDoNotDisturb(),
+                entity.getMembership(),
+                entity.getMembershipStart()
         );
     }
 
@@ -248,6 +251,8 @@ class UserRepositoryAdapter implements UserRepository {
                 entity.getName(),
                 entity.getRole(),
                 entity.getEmail(),
+                entity.getMembership(),
+                entity.getMembershipStart(),
                 entity.getCreatedAt(),
                 entity.getDeletedAt(),
                 entity.getStatus(),

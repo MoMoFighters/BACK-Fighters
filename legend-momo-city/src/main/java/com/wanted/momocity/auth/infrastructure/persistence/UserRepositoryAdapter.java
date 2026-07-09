@@ -39,6 +39,8 @@ public class UserRepositoryAdapter implements UserRepository, LoadUserPort, Upda
                 user.getCategory(),
                 user.getProof(),
                 user.getPoint(),                       // point
+                user.getMembership(),
+                LocalDateTime.now(),                // 현재 맴버십 시작일
                 false,                   // doNotDisturb
                 user.getSuspensionCount(),
                 user.getSuspendedUntil(),
@@ -71,6 +73,8 @@ public class UserRepositoryAdapter implements UserRepository, LoadUserPort, Upda
                 entity.getCategory(),
                 entity.getProof(),
                 entity.getPoint(),
+                entity.getMembership(),
+                entity.getMembershipStart(),
                 entity.isDoNotDisturb(),
                 entity.getSuspensionCount(),
                 entity.getSuspendedUntil(),

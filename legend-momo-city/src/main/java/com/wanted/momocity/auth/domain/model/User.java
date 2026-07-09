@@ -15,6 +15,8 @@ public class User {
     private final Category category;  // HEALTH, STUDY, COOK, BEAUTY, ART
     private final String proof;
     private final Long point;
+    private final Membership membership; // BASIC, PLUS, PRO
+    private final LocalDateTime membershipStart;
     private final Boolean doNotDisturb; // 설정 끄기를 했는지 안 했는지
     private final Long suspensionCount; // 신고를 몇번 받았는지
     private final LocalDateTime suspendedUntil; // 임시 정지 회원이 언제까지 정지인지
@@ -23,7 +25,7 @@ public class User {
     private final LocalDateTime deletedAt;
     private final Boolean isTempPwd;  // 이 사용자의 비밀번호가 임시비밀번호인지 아닌지
 
-    private User(Long id, String email, String password, String name, String nickname, String profileImageUrl, Role role, Status status, Category category, String proof, Long point,  Boolean doNotDisturb, Long suspensionCount, LocalDateTime suspendedUntil, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, Boolean isTempPwd) {
+    private User(Long id, String email, String password, String name, String nickname, String profileImageUrl, Role role, Status status, Category category, String proof, Long point, Membership membership, LocalDateTime membershipStart, Boolean doNotDisturb, Long suspensionCount, LocalDateTime suspendedUntil, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, Boolean isTempPwd) {
         this.id = id;
         this.email = email;
         this.password = password;
@@ -35,6 +37,8 @@ public class User {
         this.category = category;
         this.proof = proof;
         this.point = point;
+        this.membership = membership;
+        this.membershipStart = membershipStart;
         this.doNotDisturb = doNotDisturb;
         this.suspensionCount = suspensionCount;
         this.suspendedUntil = suspendedUntil;
@@ -45,12 +49,11 @@ public class User {
     }
 
     // DB에서 꺼내 쓸 메서드
-    public static User restore(Long id, String email, String password, String name, String nickname, String profileImageUrl, Role role, Status status, Category category, String proof, Long point, boolean doNotDisturb, Long suspensionCount, LocalDateTime suspendedUntil, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, boolean isTempPwd) {
+    public static User restore(Long id, String email, String password, String name, String nickname, String profileImageUrl, Role role, Status status, Category category, String proof, Long point, Membership membership,LocalDateTime membershipStart, boolean doNotDisturb, Long suspensionCount, LocalDateTime suspendedUntil, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, boolean isTempPwd) {
         return new User(id, email, password, name, nickname, profileImageUrl,
-                role, status, category, proof, point,
+                role, status, category, proof, point,membership,membershipStart,
                  doNotDisturb, suspensionCount, suspendedUntil, createdAt, updatedAt, deletedAt, isTempPwd);
     }
-
 
     // getter
     public Long getId() { return id; }
@@ -58,8 +61,8 @@ public class User {
     public String getPassword() { return password; }
     public String getName() { return name; }
     public Role getRole() { return role; }
-
-
+    public Membership getMembership() {return membership;}
+    public LocalDateTime getMembershipStart() {return membershipStart;}
 
     // 회원가입
     public static User signup(String email, String password, String name ) {
@@ -75,6 +78,8 @@ public class User {
                 null,           // category (학생은 null)
                 null,           // proof
                 0L,              // point
+                Membership.BASIC,
+                LocalDateTime.now(), // 멤버십 시작 날짜
                 false,          // doNotDisturb
                 0L,              // 신고횟수
                 null,           // 언제가지 신고인지
@@ -151,6 +156,8 @@ public class User {
                 null,           // category
                 null,           // proof
                 0L,             // point
+                Membership.BASIC,  // 처음 가입하면 전부 basic
+                LocalDateTime.now(),
                 false,          // doNotDisturb
                 0L,             // 신고횟수
                 null,           // 정지 기간

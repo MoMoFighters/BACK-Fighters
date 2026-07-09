@@ -53,6 +53,8 @@ public class UserOauthRepositoryAdapter implements UserOauthRepository {
                 entity.getUser().getCategory(),
                 entity.getUser().getProof(),
                 entity.getUser().getPoint(),
+                entity.getUser().getMembership(),
+                entity.getUser().getMembershipStart(),
                 entity.getUser().isDoNotDisturb(),
                 entity.getUser().getSuspensionCount(),
                 entity.getUser().getSuspendedUntil(),
