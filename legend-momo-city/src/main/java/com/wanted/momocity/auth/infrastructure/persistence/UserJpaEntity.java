@@ -1,6 +1,7 @@
 package com.wanted.momocity.auth.infrastructure.persistence;
 
 import com.wanted.momocity.auth.domain.model.Category;
+import com.wanted.momocity.auth.domain.model.Membership;
 import com.wanted.momocity.auth.domain.model.Role;
 import com.wanted.momocity.auth.domain.model.Status;
 import jakarta.persistence.*;
@@ -48,6 +49,13 @@ public class UserJpaEntity {
     @Column(nullable = true)
     private Long point;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Membership membership;
+
+    @Column(name = "membership_start")
+    private LocalDateTime membershipStart;
+
     @Column(name = "do_not_disturb")
     private boolean doNotDisturb;
 
@@ -72,7 +80,7 @@ public class UserJpaEntity {
 
     protected UserJpaEntity() {}
 
-    public UserJpaEntity(String email, String password, String name, String nickname, String profileImageUrl, Role role, Status status, Category category, String proof, Long point, boolean doNotDisturb, Long suspensionCount, LocalDateTime suspendedUntil, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, boolean isTempPwd) {
+    public UserJpaEntity(String email, String password, String name, String nickname, String profileImageUrl, Role role, Status status, Category category, String proof, Long point, Membership membership,LocalDateTime membershipStart, boolean doNotDisturb, Long suspensionCount, LocalDateTime suspendedUntil, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, boolean isTempPwd) {
         this.email = email;
         this.password = password;
         this.name = name;
@@ -83,6 +91,8 @@ public class UserJpaEntity {
         this.category = category;
         this.proof = proof;
         this.point = point;
+        this.membership = membership;
+        this.membershipStart = membershipStart;
         this.doNotDisturb = doNotDisturb;
         this.suspensionCount = suspensionCount;
         this.suspendedUntil = suspendedUntil;
@@ -136,6 +146,10 @@ public class UserJpaEntity {
     public Long getPoint() {
         return point;
     }
+
+    public Membership getMembership() {return membership;}
+
+    public LocalDateTime getMembershipStart() {return membershipStart;}
 
     public boolean isDoNotDisturb() {
         return doNotDisturb;

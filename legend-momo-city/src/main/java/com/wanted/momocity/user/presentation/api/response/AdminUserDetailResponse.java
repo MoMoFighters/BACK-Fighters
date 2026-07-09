@@ -1,6 +1,7 @@
 package com.wanted.momocity.user.presentation.api.response;
 
 import com.wanted.momocity.global.domain.model.Category;
+import com.wanted.momocity.user.domain.model.Membership;
 import com.wanted.momocity.user.domain.model.ReportInfo;
 import com.wanted.momocity.user.domain.model.Role;
 
@@ -13,6 +14,8 @@ public record AdminUserDetailResponse(
         LocalDateTime createdAt,
         Category category,
         String name,
+        Membership membership,
+        LocalDateTime membershipStart,
         Long suspensionCount,
         List<ReportInfo> reports
 ) {

@@ -1,6 +1,7 @@
 package com.wanted.momocity.user.application.usecase;
 
 import com.wanted.momocity.user.domain.model.BuildingInfo;
+import com.wanted.momocity.user.domain.model.Membership;
 import com.wanted.momocity.user.domain.model.TeacherApplication;
 import com.wanted.momocity.user.presentation.api.response.AdminUserDetailResponse;
 
@@ -26,6 +27,9 @@ public interface UserQueryUsecase {
             String email,
             String name,
             Long point,
+            Boolean doNotDisturb,
+            Membership membership,
+            LocalDateTime membershipStart,
             String nickname,
             Boolean isTempPwd,
             LocalDateTime createdAt

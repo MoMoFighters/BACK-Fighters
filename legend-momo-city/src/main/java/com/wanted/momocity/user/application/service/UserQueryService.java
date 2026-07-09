@@ -36,7 +36,7 @@ public class UserQueryService implements UserQueryUsecase {
 
         UserDetailView userDetail = new UserDetailView(
                 user.getProfileImageUrl(), user.getEmail(), user.getName(),
-                user.getPoint(), user.getNickname(), user.getTempPwd(), user.getCreatedAt()
+                user.getPoint(), user.getDoNotDisturb(), user.getMembership(), user.getMembershipStart(),user.getNickname(), user.getTempPwd(), user.getCreatedAt()
         );
 
         List<BuildingInfo> buildings =
@@ -59,7 +59,7 @@ public class UserQueryService implements UserQueryUsecase {
         List<ReportInfo> reports = userReportListPort.getReportsByUserId(userId); // 신고내역 가져오기
 
         return new AdminUserDetailResponse(user.getEmail(),user.getRole(),user.getCreatedAt()
-                ,user.getCategory(),user.getName(),user.getSuspensionCount()
+                ,user.getCategory(),user.getName(),user.getMembership(),user.getMembershipStart(), user.getSuspensionCount()
                 ,reports);
     }
 
@@ -106,7 +106,7 @@ public class UserQueryService implements UserQueryUsecase {
                     } else {
                         return new AdminUserListResponse.Default(
                                 user.getId(), user.getName(), user.getRole(), user.getEmail(),
-                                user.getCreatedAt(), user.getStatus(), user.getSuspensionCount(),user.getSuspendedUntil());
+                                user.getCreatedAt(), user.getStatus(), user.getMembership(),user.getMembershipStart(),user.getSuspensionCount(),user.getSuspendedUntil());
                     }
                 })
                 .toList();

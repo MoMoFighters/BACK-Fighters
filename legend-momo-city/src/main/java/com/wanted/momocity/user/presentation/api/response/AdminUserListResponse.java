@@ -1,5 +1,6 @@
 package com.wanted.momocity.user.presentation.api.response;
 
+import com.wanted.momocity.user.domain.model.Membership;
 import com.wanted.momocity.user.domain.model.Role;
 import com.wanted.momocity.user.domain.model.Status;
 
@@ -15,6 +16,8 @@ public class AdminUserListResponse {
             String email,
             LocalDateTime createdAt,
             Status status,
+            Membership membership,
+            LocalDateTime membershipStart,
             Long suspensionCount,
             LocalDateTime suspendedUntil
     ) {}

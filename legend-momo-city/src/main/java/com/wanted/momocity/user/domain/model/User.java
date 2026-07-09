@@ -19,6 +19,8 @@ public class User {
     private final Category category;  // HEALTH, STUDY, COOK, BEAUTY, ART
     private final String proof;
     private final Long point;
+    private final Membership membership;
+    private final LocalDateTime membershipStart;
     private final Boolean doNotDisturb; // 설정 끄기를 했는지 안 했는지
     private final Long suspensionCount; // 신고를 몇번 받았는지
     private final LocalDateTime suspendedUntil; // 임시 정지 회원이 언제까지 정지인지
@@ -28,7 +30,7 @@ public class User {
     private final Boolean isTempPwd;  // 이 사용자의 비밀번호가 임시비밀번호인지 아닌지
 
     @Builder
-    public User(Long id, String email, String password, String name, String nickname, String profileImageUrl, Role role, Status status, Category category, String proof, Long point, Boolean doNotDisturb, Long suspensionCount, LocalDateTime suspendedUntil, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, Boolean isTempPwd) {
+    public User(Long id, String email, String password, String name, String nickname, String profileImageUrl, Role role, Status status, Category category, String proof, Long point, Membership membership, LocalDateTime membershipStart, Boolean doNotDisturb, Long suspensionCount, LocalDateTime suspendedUntil, LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt, Boolean isTempPwd) {
         this.id = id;
         this.email = email;
         this.password = password;
@@ -40,6 +42,8 @@ public class User {
         this.category = category;
         this.proof = proof;
         this.point = point;
+        this.membership = membership;
+        this.membershipStart = membershipStart;
         this.doNotDisturb = doNotDisturb;
         this.suspensionCount = suspensionCount;
         this.suspendedUntil = suspendedUntil;
@@ -52,7 +56,7 @@ public class User {
     // 마이페이지에서 사용자에게 제시할 사용자 정보가 몇 개 없어서 user칼럼 전체 다 가져오면 널이 너무 만ㅎ음
     // -> 빌더 사용
     public static User restore(String profileImageUrl, String email,
-                               String name, Long point, Role role, Category category, String nickname,  Boolean isTempPwd, LocalDateTime createdAt, Long suspensionCount) {
+                               String name, Long point, Role role, Category category, String nickname,  Boolean isTempPwd, LocalDateTime createdAt, Long suspensionCount, boolean doNotDisturb, Membership membership,LocalDateTime membershipStart) {
         return User.builder()
                 .profileImageUrl(profileImageUrl)
                 .email(email)
@@ -64,11 +68,14 @@ public class User {
                 .isTempPwd(isTempPwd)
                 .createdAt(createdAt)
                 .suspensionCount(suspensionCount)
+                .doNotDisturb(doNotDisturb)
+                .membership(membership)
+                .membershipStart(membershipStart)
                 .build();
     }
 
     // 광리자 대시보드용 사용자 정보 덩어리 가져오기
-    public static User restoreForAdmin(Long id, String name, Role role, String email,
+    public static User restoreForAdmin(Long id, String name, Role role, String email,Membership membership,LocalDateTime membershipStart,
                                        LocalDateTime createdAt, LocalDateTime deletedAt,
                                        Status status, Long suspensionCount, LocalDateTime suspendedUntil, String proof) {
         return User.builder()
@@ -76,6 +83,8 @@ public class User {
                 .name(name)
                 .role(role)
                 .email(email)
+                .membership(membership)
+                .membershipStart(membershipStart)
                 .createdAt(createdAt)
                 .deletedAt(deletedAt)
                 .status(status)
@@ -129,6 +138,10 @@ public class User {
     public Long getPoint() {
         return point;
     }
+
+    public Membership getMembership() {return membership;}
+
+    public LocalDateTime getMembershipStart() {return membershipStart;}
 
     public Boolean getDoNotDisturb() {
         return doNotDisturb;
