@@ -1,6 +1,12 @@
 USE `momo`;
 SET FOREIGN_KEY_CHECKS = 0;
 
+TRUNCATE TABLE `friend`;
+TRUNCATE TABLE `enrollment`;
+TRUNCATE TABLE `chapter`;
+TRUNCATE TABLE `lecture`;
+TRUNCATE TABLE `user`;
+
 -- =====================================================================
 --  1. user — 30명
 -- =====================================================================

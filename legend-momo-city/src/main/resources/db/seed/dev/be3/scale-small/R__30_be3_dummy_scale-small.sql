@@ -1,6 +1,14 @@
 USE `momo`;
 SET FOREIGN_KEY_CHECKS = 0;
 
+TRUNCATE TABLE `notification`;
+TRUNCATE TABLE `guestbook`;
+TRUNCATE TABLE `message_read`;
+TRUNCATE TABLE `message_announce`;
+TRUNCATE TABLE `message`;
+TRUNCATE TABLE `chat_room_member`;
+TRUNCATE TABLE `chat_room`;
+
 -- =====================================================================
 --  1. chat_room
 -- =====================================================================

@@ -1,6 +1,11 @@
 USE `momo`;
 SET FOREIGN_KEY_CHECKS = 0;
 
+TRUNCATE TABLE `admin_notice`;
+TRUNCATE TABLE `report`;
+TRUNCATE TABLE `error_log`;
+TRUNCATE TABLE `access_log`;
+
 -- =====================================================================
 --  1. access_log — 50건
 -- =====================================================================

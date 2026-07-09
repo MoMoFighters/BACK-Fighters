@@ -1,6 +1,14 @@
 USE `momo`;
 SET FOREIGN_KEY_CHECKS = 0;
 
+TRUNCATE TABLE `calendar`;
+TRUNCATE TABLE `streak`;
+TRUNCATE TABLE `learning_history`;
+TRUNCATE TABLE `comment`;
+TRUNCATE TABLE `post_like`;
+TRUNCATE TABLE `post_content`;
+TRUNCATE TABLE `post`;
+
 -- =====================================================================
 --  1. post — 10개 large 원본
 -- =====================================================================

@@ -1,6 +1,10 @@
 USE `momo`;
 SET FOREIGN_KEY_CHECKS = 0;
 
+TRUNCATE TABLE `order_history`;
+TRUNCATE TABLE `store`;
+TRUNCATE TABLE `user_oauth`;
+
 -- =====================================================================
 --  1. user_oauth
 -- =====================================================================
