@@ -21,8 +21,8 @@ public class BanOverScheduler {
     @Transactional
     public void liftExpiredBans() {
         LocalDateTime now = LocalDateTime.now();
-        springDataUserRepository.banOver(now);
-        log.info("[scheduler] 정지 만료 유저 ACTIVE 복귀 처리 완료 | time={}", now);
+        int banOverCount = springDataUserRepository.banOver(now);
+        log.info("[scheduler] 정지 만료 유저 ACTIVE 복귀 처리 완료 | time={} | count={}", now, banOverCount);
     }
 
 }
