@@ -30,4 +30,7 @@ public interface ChapterRepository {
 
     // 특정 강의에 등록된 챕터 목록을 orderNo 오름차순으로 조회
     List<LectureChapter> findAllByLectureIdOrderByOrderNoAsc(Long lectureId);
+
+    // 챕터 삭제
+    void deleteById(Long chapterId);
 }

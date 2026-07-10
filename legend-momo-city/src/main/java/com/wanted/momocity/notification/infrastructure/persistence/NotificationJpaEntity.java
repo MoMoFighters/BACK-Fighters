@@ -23,7 +23,7 @@ public class NotificationJpaEntity {
     @JoinColumn(name = "user_id")
     private UserWithFMJpaEntity userId;
 
-    @Column(name = "type")
+    @Column(name = "type", columnDefinition = "ENUM('APPROVAL','FRIEND_REQUEST','MESSAGE','GUESTBOOK','POST','CALENDAR')")
     private String type;
 
     @Column(name = "ref_id")

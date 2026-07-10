@@ -302,5 +302,21 @@ public class UserController {
         ));
     }
 
+    @GetMapping("/onboarding")
+    @Operation(summary = "온보딩 페이지용 사용자 수 카운트")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "서버 내부 오류")
+    })
+    public ResponseEntity<ApiResponse<Integer>> getOnboardingUserCount(){
+        int roundedCount = userQueryUsecase.getOnboardingUserCount();
+
+        return ResponseEntity.ok(ApiResponse.success(
+                UserResponseCode.SUCCESS,
+                UserResponseMessage.VIEW_SUCCESS,
+                roundedCount
+        ));
+    }
+
 
 }

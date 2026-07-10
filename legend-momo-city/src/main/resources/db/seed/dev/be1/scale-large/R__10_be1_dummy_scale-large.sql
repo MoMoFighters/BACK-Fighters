@@ -1,65 +1,60 @@
 USE `momo`;
 SET FOREIGN_KEY_CHECKS = 0;
 
-TRUNCATE TABLE `admin_notice`;
-TRUNCATE TABLE `report`;
-TRUNCATE TABLE `error_log`;
-TRUNCATE TABLE `access_log`;
-
 -- =====================================================================
 --  1. access_log — 50건
 -- =====================================================================
 INSERT INTO `access_log` (`id`, `action`, `created_at`, `ip`, `user_id`) VALUES
   (1, 'LOGIN', NOW() - INTERVAL 0 HOUR, '192.168.1.1', 12),
-  (2, 'VIEW', NOW() - INTERVAL 1 HOUR, '192.168.2.2', 13),
+  (2, 'FORBIDDEN', NOW() - INTERVAL 1 HOUR, '192.168.2.2', 13),
   (3, 'LOGOUT', NOW() - INTERVAL 2 HOUR, '192.168.3.3', 14),
   (4, 'LOGIN', NOW() - INTERVAL 3 HOUR, '192.168.4.4', 15),
-  (5, 'VIEW', NOW() - INTERVAL 4 HOUR, '192.168.5.5', 16),
+  (5, 'FORBIDDEN', NOW() - INTERVAL 4 HOUR, '192.168.5.5', 16),
   (6, 'LOGOUT', NOW() - INTERVAL 5 HOUR, '192.168.1.6', 17),
   (7, 'LOGIN', NOW() - INTERVAL 6 HOUR, '192.168.2.7', 18),
-  (8, 'VIEW', NOW() - INTERVAL 7 HOUR, '192.168.3.8', 19),
+  (8, 'FORBIDDEN', NOW() - INTERVAL 7 HOUR, '192.168.3.8', 19),
   (9, 'LOGOUT', NOW() - INTERVAL 8 HOUR, '192.168.4.9', 20),
   (10, 'LOGIN', NOW() - INTERVAL 9 HOUR, '192.168.5.10', 21),
-  (11, 'VIEW', NOW() - INTERVAL 10 HOUR, '192.168.1.11', 22),
+  (11, 'FORBIDDEN', NOW() - INTERVAL 10 HOUR, '192.168.1.11', 22),
   (12, 'LOGOUT', NOW() - INTERVAL 11 HOUR, '192.168.2.12', 23),
   (13, 'LOGIN', NOW() - INTERVAL 12 HOUR, '192.168.3.13', 24),
-  (14, 'VIEW', NOW() - INTERVAL 13 HOUR, '192.168.4.14', 25),
+  (14, 'FORBIDDEN', NOW() - INTERVAL 13 HOUR, '192.168.4.14', 25),
   (15, 'LOGOUT', NOW() - INTERVAL 14 HOUR, '192.168.5.15', 26),
   (16, 'LOGIN', NOW() - INTERVAL 15 HOUR, '192.168.1.16', 27),
-  (17, 'VIEW', NOW() - INTERVAL 16 HOUR, '192.168.2.17', 28),
+  (17, 'FORBIDDEN', NOW() - INTERVAL 16 HOUR, '192.168.2.17', 28),
   (18, 'LOGOUT', NOW() - INTERVAL 17 HOUR, '192.168.3.18', 29),
   (19, 'LOGIN', NOW() - INTERVAL 18 HOUR, '192.168.4.19', 30),
-  (20, 'VIEW', NOW() - INTERVAL 19 HOUR, '192.168.5.20', 31),
+  (20, 'FORBIDDEN', NOW() - INTERVAL 19 HOUR, '192.168.5.20', 31),
   (21, 'LOGOUT', NOW() - INTERVAL 20 HOUR, '192.168.1.21', 32),
   (22, 'LOGIN', NOW() - INTERVAL 21 HOUR, '192.168.2.22', 33),
-  (23, 'VIEW', NOW() - INTERVAL 22 HOUR, '192.168.3.23', 34),
+  (23, 'FORBIDDEN', NOW() - INTERVAL 22 HOUR, '192.168.3.23', 34),
   (24, 'LOGOUT', NOW() - INTERVAL 23 HOUR, '192.168.4.24', 35),
   (25, 'LOGIN', NOW() - INTERVAL 24 HOUR, '192.168.5.25', 36),
-  (26, 'VIEW', NOW() - INTERVAL 25 HOUR, '192.168.1.26', 37),
+  (26, 'FORBIDDEN', NOW() - INTERVAL 25 HOUR, '192.168.1.26', 37),
   (27, 'LOGOUT', NOW() - INTERVAL 26 HOUR, '192.168.2.27', 38),
   (28, 'LOGIN', NOW() - INTERVAL 27 HOUR, '192.168.3.28', 39),
-  (29, 'VIEW', NOW() - INTERVAL 28 HOUR, '192.168.4.29', 40),
+  (29, 'FORBIDDEN', NOW() - INTERVAL 28 HOUR, '192.168.4.29', 40),
   (30, 'LOGOUT', NOW() - INTERVAL 29 HOUR, '192.168.5.30', 41),
   (31, 'LOGIN', NOW() - INTERVAL 30 HOUR, '192.168.1.31', 42),
-  (32, 'VIEW', NOW() - INTERVAL 31 HOUR, '192.168.2.32', 43),
+  (32, 'FORBIDDEN', NOW() - INTERVAL 31 HOUR, '192.168.2.32', 43),
   (33, 'LOGOUT', NOW() - INTERVAL 32 HOUR, '192.168.3.33', 44),
   (34, 'LOGIN', NOW() - INTERVAL 33 HOUR, '192.168.4.34', 45),
-  (35, 'VIEW', NOW() - INTERVAL 34 HOUR, '192.168.5.35', 46),
+  (35, 'FORBIDDEN', NOW() - INTERVAL 34 HOUR, '192.168.5.35', 46),
   (36, 'LOGOUT', NOW() - INTERVAL 35 HOUR, '192.168.1.36', 47),
   (37, 'LOGIN', NOW() - INTERVAL 36 HOUR, '192.168.2.37', 48),
-  (38, 'VIEW', NOW() - INTERVAL 37 HOUR, '192.168.3.38', 49),
+  (38, 'FORBIDDEN', NOW() - INTERVAL 37 HOUR, '192.168.3.38', 49),
   (39, 'LOGOUT', NOW() - INTERVAL 38 HOUR, '192.168.4.39', 50),
   (40, 'LOGIN', NOW() - INTERVAL 39 HOUR, '192.168.5.40', 51),
-  (41, 'VIEW', NOW() - INTERVAL 40 HOUR, '192.168.1.41', 52),
+  (41, 'FORBIDDEN', NOW() - INTERVAL 40 HOUR, '192.168.1.41', 52),
   (42, 'LOGOUT', NOW() - INTERVAL 41 HOUR, '192.168.2.42', 53),
   (43, 'LOGIN', NOW() - INTERVAL 42 HOUR, '192.168.3.43', 54),
-  (44, 'VIEW', NOW() - INTERVAL 43 HOUR, '192.168.4.44', 55),
+  (44, 'FORBIDDEN', NOW() - INTERVAL 43 HOUR, '192.168.4.44', 55),
   (45, 'LOGOUT', NOW() - INTERVAL 44 HOUR, '192.168.5.45', 56),
   (46, 'LOGIN', NOW() - INTERVAL 45 HOUR, '192.168.1.46', 57),
-  (47, 'VIEW', NOW() - INTERVAL 46 HOUR, '192.168.2.47', 58),
+  (47, 'FORBIDDEN', NOW() - INTERVAL 46 HOUR, '192.168.2.47', 58),
   (48, 'LOGOUT', NOW() - INTERVAL 47 HOUR, '192.168.3.48', 59),
   (49, 'LOGIN', NOW() - INTERVAL 48 HOUR, '192.168.4.49', 60),
-  (50, 'VIEW', NOW() - INTERVAL 49 HOUR, '192.168.5.50', 61);
+  (50, 'FORBIDDEN', NOW() - INTERVAL 49 HOUR, '192.168.5.50', 61);
 -- =====================================================================
 --  2. error_log — 20건
 -- =====================================================================
@@ -125,12 +120,12 @@ INSERT INTO `admin_notice` (`id`, `content`, `created_at`, `is_pinned`, `title`,
   (1, '공지 내용 1', NOW() - INTERVAL 0 DAY, 1, '[공지] 공지사항 1', NOW() - INTERVAL 0 DAY),
   (2, '공지 내용 2', NOW() - INTERVAL 10 DAY, 0, '[공지] 공지사항 2', NOW() - INTERVAL 10 DAY),
   (3, '공지 내용 3', NOW() - INTERVAL 20 DAY, 0, '[공지] 공지사항 3', NOW() - INTERVAL 20 DAY),
-  (4, '공지 내용 4', NOW() - INTERVAL 30 DAY, 0, '[공지] 공지사항 4', NOW() - INTERVAL 30 DAY),
+  (4, '공지 내용 4', NOW() - INTERVAL 30 DAY, 1, '[공지] 공지사항 4', NOW() - INTERVAL 30 DAY),
   (5, '공지 내용 5', NOW() - INTERVAL 40 DAY, 0, '[공지] 공지사항 5', NOW() - INTERVAL 40 DAY),
   (6, '공지 내용 6', NOW() - INTERVAL 50 DAY, 0, '[공지] 공지사항 6', NOW() - INTERVAL 50 DAY),
-  (7, '공지 내용 7', NOW() - INTERVAL 60 DAY, 0, '[공지] 공지사항 7', NOW() - INTERVAL 60 DAY),
+  (7, '공지 내용 7', NOW() - INTERVAL 60 DAY, 1, '[공지] 공지사항 7', NOW() - INTERVAL 60 DAY),
   (8, '공지 내용 8', NOW() - INTERVAL 70 DAY, 0, '[공지] 공지사항 8', NOW() - INTERVAL 70 DAY),
   (9, '공지 내용 9', NOW() - INTERVAL 80 DAY, 0, '[공지] 공지사항 9', NOW() - INTERVAL 80 DAY),
-  (10, '공지 내용 10', NOW() - INTERVAL 90 DAY, 0, '[공지] 공지사항 10', NOW() - INTERVAL 90 DAY);
+  (10, '공지 내용 10', NOW() - INTERVAL 90 DAY, 1, '[공지] 공지사항 10', NOW() - INTERVAL 90 DAY);
 
 SET FOREIGN_KEY_CHECKS = 1;

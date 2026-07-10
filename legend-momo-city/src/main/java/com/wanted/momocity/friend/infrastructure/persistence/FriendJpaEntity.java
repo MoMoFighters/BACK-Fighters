@@ -26,7 +26,7 @@ public class FriendJpaEntity {
     @JoinColumn(name = "to_user_id")
     private UserWithFMJpaEntity toUserId;
 
-    @Column(name = "status")
+    @Column(name = "status", columnDefinition = "ENUM('SENT','FRIEND','BLOCK')")
     private String status;
 
     @Column(name = "created_at")

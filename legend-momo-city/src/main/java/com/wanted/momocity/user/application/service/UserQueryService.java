@@ -45,6 +45,14 @@ public class UserQueryService implements UserQueryUsecase {
         return new UserDetailResult(userDetail, buildings);
     }
 
+    // 온보딩 페이지용 사용자 수 세기
+    @Override
+    public int getOnboardingUserCount() {
+
+        int count = userRepository.getOnboardingUserCount();
+        return (count / 10) * 10;
+    }
+
     @Override
     public void checkNickname(String nickname) {
         userPolicy.nicknamePolicy(nickname);

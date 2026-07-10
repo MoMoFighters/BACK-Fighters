@@ -23,6 +23,7 @@ services:
       GOOGLE_DRIVE_REFRESH_TOKEN: ${GOOGLE_DRIVE_REFRESH_TOKEN}
       AWS_ACCESS_KEY: ${AWS_ACCESS_KEY}
       AWS_SECRET_KEY: ${AWS_SECRET_KEY}
+      MESSAGE_ENCRYPTION_KEY: ${MESSAGE_ENCRYPTION_KEY} #<-얘가 추가됐습니다.
     depends_on:
       mysql:
         condition: service_healthy
@@ -92,6 +93,8 @@ volumes:
   mysql_data:
   grafana_data:
   prometheus_data:
+
+
 
 
 

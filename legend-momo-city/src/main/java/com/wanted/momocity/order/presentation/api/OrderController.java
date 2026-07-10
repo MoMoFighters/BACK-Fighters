@@ -6,7 +6,7 @@ import com.wanted.momocity.order.application.command.MakeOrderCommand;
 import com.wanted.momocity.order.application.usecase.OrderCommandUsecase;
 import com.wanted.momocity.order.application.usecase.OrderQueryUsecase;
 import com.wanted.momocity.order.domain.model.OrderHistoryList;
-import com.wanted.momocity.order.domain.model.ProfileItemResult;
+import com.wanted.momocity.order.domain.model.ProfileItemPageResult;
 import com.wanted.momocity.order.presentation.api.common.OrderResponseCode;
 import com.wanted.momocity.order.presentation.api.common.OrderResponseMessage;
 import com.wanted.momocity.order.presentation.api.request.MakeOrderRequest;
@@ -22,8 +22,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -92,9 +90,14 @@ public class OrderController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)")
     })
     public ResponseEntity<ApiResponse<ProfileItemListResponse>> getAvailableProfile(
-            @AuthenticationPrincipal CustomUserDetails userDetails) {
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Parameter(description = "페이지 번호 (1-base)", example = "1")
+            @RequestParam(defaultValue = "1") int page,
+            @Parameter(description = "페이지 크기", example = "20")
+            @RequestParam(defaultValue = "8") int size
+    ) {
 
-        List<ProfileItemResult> results = orderQueryUsecase.getAvailableProfile(userDetails.getUserId());
+        ProfileItemPageResult results = orderQueryUsecase.getAvailableProfile(userDetails.getUserId(), page, size);
         ProfileItemListResponse response = ProfileItemListResponse.toResponse(results);
 
         return ResponseEntity.status(HttpStatus.OK)

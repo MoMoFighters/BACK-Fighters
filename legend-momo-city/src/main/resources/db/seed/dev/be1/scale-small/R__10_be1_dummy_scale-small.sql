@@ -1,29 +1,24 @@
 USE `momo`;
 SET FOREIGN_KEY_CHECKS = 0;
 
-TRUNCATE TABLE `admin_notice`;
-TRUNCATE TABLE `report`;
-TRUNCATE TABLE `error_log`;
-TRUNCATE TABLE `access_log`;
-
 -- =====================================================================
 --  1. access_log
 -- =====================================================================
 INSERT INTO `access_log` (`id`, `action`, `created_at`, `ip`, `user_id`) VALUES
   (1, 'LOGIN', NOW() - INTERVAL 0 HOUR, '192.168.1.1', 12),
-  (2, 'VIEW', NOW() - INTERVAL 1 HOUR, '192.168.1.2', 13),
+  (2, 'FORBIDDEN', NOW() - INTERVAL 1 HOUR, '192.168.1.2', 13),
   (3, 'LOGOUT', NOW() - INTERVAL 2 HOUR, '192.168.1.3', 14),
   (4, 'LOGIN', NOW() - INTERVAL 3 HOUR, '192.168.1.4', 15),
-  (5, 'VIEW', NOW() - INTERVAL 4 HOUR, '192.168.1.5', 16),
+  (5, 'FORBIDDEN', NOW() - INTERVAL 4 HOUR, '192.168.1.5', 16),
   (6, 'LOGOUT', NOW() - INTERVAL 5 HOUR, '192.168.1.6', 17),
   (7, 'LOGIN', NOW() - INTERVAL 6 HOUR, '192.168.1.7', 18),
-  (8, 'VIEW', NOW() - INTERVAL 7 HOUR, '192.168.1.8', 19),
+  (8, 'FORBIDDEN', NOW() - INTERVAL 7 HOUR, '192.168.1.8', 19),
   (9, 'LOGOUT', NOW() - INTERVAL 8 HOUR, '192.168.1.9', 20),
   (10, 'LOGIN', NOW() - INTERVAL 9 HOUR, '192.168.1.10', 21),
-  (11, 'VIEW', NOW() - INTERVAL 10 HOUR, '192.168.1.11', 22),
+  (11, 'FORBIDDEN', NOW() - INTERVAL 10 HOUR, '192.168.1.11', 22),
   (12, 'LOGOUT', NOW() - INTERVAL 11 HOUR, '192.168.1.12', 23),
   (13, 'LOGIN', NOW() - INTERVAL 12 HOUR, '192.168.1.13', 24),
-  (14, 'VIEW', NOW() - INTERVAL 13 HOUR, '192.168.1.14', 25),
+  (14, 'FORBIDDEN', NOW() - INTERVAL 13 HOUR, '192.168.1.14', 25),
   (15, 'LOGOUT', NOW() - INTERVAL 14 HOUR, '192.168.1.15', 26);
 -- =====================================================================
 --  2. error_log
@@ -46,6 +41,6 @@ INSERT INTO `report` (`id`, `created_at`, `detail`, `is_resolved`, `reason`, `re
 INSERT INTO `admin_notice` (`id`, `content`, `created_at`, `is_pinned`, `title`, `updated_at`) VALUES
   (1, '서버 점검 공지', NOW() - INTERVAL 30 DAY, 1, '[공지] 서버 정기 점검 안내', NOW() - INTERVAL 30 DAY),
   (2, '새로운 기능이 추가되었습니다', NOW() - INTERVAL 20 DAY, 0, '[업데이트] 캘린더 기능 개선', NOW() - INTERVAL 20 DAY),
-  (3, '이벤트 안내', NOW() - INTERVAL 10 DAY, 0, '[이벤트] 출석 체크 이벤트', NOW() - INTERVAL 10 DAY);
+  (3, '이벤트 안내', NOW() - INTERVAL 10 DAY, 1, '[이벤트] 출석 체크 이벤트', NOW() - INTERVAL 10 DAY);
 
 SET FOREIGN_KEY_CHECKS = 1;

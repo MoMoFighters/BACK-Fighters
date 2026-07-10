@@ -41,7 +41,7 @@ public class StoreController {
             @Parameter(description = "페이지 번호 (1-base)", example = "1")
             @RequestParam(defaultValue = "1") int page,
             @Parameter(description = "페이지 크기", example = "20")
-            @RequestParam(defaultValue = "5") int size
+            @RequestParam(defaultValue = "12") int size
     ){
 
         StoreListResult result = storeQueryUsecase.getProductList(userDetails.getUserId(),page, size);

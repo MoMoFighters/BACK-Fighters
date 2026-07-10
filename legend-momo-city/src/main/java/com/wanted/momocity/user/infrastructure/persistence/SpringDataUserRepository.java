@@ -229,4 +229,8 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
                               @Param("status") Status status,
                               @Param("profileImageUrl") String profileImageUrl,
                               @Param("updatedAt") LocalDateTime updatedAt);
+
+    // 온보딩 페이지용 사용자 수 세기
+    @Query("SELECT COUNT(u) FROM UserUser u WHERE u.status <> 'DELETED'")
+    long countOnboardingUsers();
 }

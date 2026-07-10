@@ -1,6 +1,7 @@
 package com.wanted.momocity.order.application.usecase;
 
 import com.wanted.momocity.order.domain.model.OrderHistoryList;
+import com.wanted.momocity.order.domain.model.ProfileItemPageResult;
 import com.wanted.momocity.order.domain.model.ProfileItemResult;
 
 import java.util.List;
@@ -11,5 +12,5 @@ public interface OrderQueryUsecase {
     OrderHistoryList getOrderHistory(Long userId, int page, int size);
 
     // 사용 가능한 프사 목록 출력
-    List<ProfileItemResult> getAvailableProfile(Long userId);
+    ProfileItemPageResult getAvailableProfile(Long userId, int page, int size);
 }

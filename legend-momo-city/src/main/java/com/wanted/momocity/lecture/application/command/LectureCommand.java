@@ -121,6 +121,27 @@ public final class LectureCommand {
         }
     }
 
+    // 강사가 본인 강의의 챕터를 삭제할 때 사용하는 Command
+    public record DeleteChapterCommand(
+            Long teacherId,
+            Long lectureId,
+            Long chapterId
+    ) {
+        public DeleteChapterCommand {
+            if (teacherId == null) {
+                throw new DomainRuleViolationException("강사 ID는 필수입니다.");
+            }
+
+            if (lectureId == null) {
+                throw new DomainRuleViolationException("강의 ID는 필수입니다.");
+            }
+
+            if (chapterId == null) {
+                throw new DomainRuleViolationException("챕터 ID는 필수입니다.");
+            }
+        }
+    }
+
     /* comment
      * 강사가 강의를 등록할 때 사용하는 Command.
      * thumbnailUrl은 컨트롤러에서 S3 업로드 후 만들어진 URL을 넘긴다.
