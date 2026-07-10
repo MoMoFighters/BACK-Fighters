@@ -5,6 +5,7 @@ import com.wanted.momocity.order.domain.model.StoreItemResult;
 import com.wanted.momocity.store.domain.model.Type;
 import com.wanted.momocity.store.infrastructure.persistence.SpringDataStoreRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -16,6 +17,7 @@ public class GetAllProductAdapter implements GetAllProductPort {
     private final SpringDataStoreRepository springDataStoreRepository;
 
     @Override
+    @Cacheable(value = "profileItems", key = "'ALL'")
     public List<StoreItemResult> getAllProfileItems() {
         return springDataStoreRepository.findAllByType(Type.PROFILE)
                 .stream()
