@@ -26,6 +26,6 @@ public interface SpringDataOrderRepository extends JpaRepository<OrderJpaEntity,
     List<Long> findOwnedItemIdsByUserIdAndReason(@Param("userId") Long userId, @Param("reason") Reason reason);
 
     // 사용자가 전체 상품 목록 중 보유중인 상품의 id
-    @Query("SELECT o.itemId FROM OrderJpaEntity o WHERE o.userId = :userId AND o.itemId IS NOT NULL")
+    @Query("SELECT o.itemId FROM OrderJpaEntity o WHERE o.userId = :userId ")
     List<Long> getUserOwnedItemId(@Param("userId") Long userId);
 }

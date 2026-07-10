@@ -178,10 +178,10 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
     // 정지 풀어주기
     // banned -> active
     // 정지기간 -> null
-    @Modifying
-    @Transactional
+    // 여러 유저 벌크 업데이트 적용
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE UserUser u SET u.status = 'ACTIVE', u.suspendedUntil = null WHERE u.status = 'BANNED' AND u.suspendedUntil <= :now")
-    void banOver(@Param("now") LocalDateTime now);
+    int banOver(@Param("now") LocalDateTime now);
 
     // 사용자 신고 횟수 -
     // status -> active
