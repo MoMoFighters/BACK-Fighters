@@ -51,7 +51,7 @@ public class StreakCommandService implements StreakCommandUseCase {
             ),
             // 연간 캐시 무효화
             @CacheEvict(
-                    value = "streak",
+                    value = "streakYeatly",
                     key = "#userId + ':yearly:' + #date.year",
                     cacheManager = "redisCacheManager"
             )

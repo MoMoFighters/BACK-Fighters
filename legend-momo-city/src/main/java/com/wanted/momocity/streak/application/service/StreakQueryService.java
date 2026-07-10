@@ -71,6 +71,11 @@ public class StreakQueryService implements StreakQueryUseCase {
     }
 
     @Override
+    @Cacheable(
+            value = "streakYearly",
+            key = "#userId + ':yearly:' + #year",
+            cacheManager = "redisCacheManager"
+    )
     public StreakYearlyResponse getYearlyStreak(Long userId, int year) {
 
         List<Streak> streaks = streakRepository.findByUserIdAndYear(userId, year);
