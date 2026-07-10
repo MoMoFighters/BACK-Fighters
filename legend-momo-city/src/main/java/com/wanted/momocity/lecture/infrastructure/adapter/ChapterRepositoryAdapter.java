@@ -60,5 +60,11 @@ public class ChapterRepositoryAdapter implements ChapterRepository {
                 .map(ChapterJpaEntity::toDomain)
                 .toList();
     }
-    
+
+    // 챕터 삭제
+    @Override
+    public void deleteById(Long chapterId) {
+        repository.deleteById(chapterId);
+    }
+
 }
