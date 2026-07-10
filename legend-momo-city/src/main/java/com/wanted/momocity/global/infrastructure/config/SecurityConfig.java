@@ -136,6 +136,14 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/lectures/*").permitAll()
                         // 수강평 목록 조회는 비로그인 사용자도 볼 수 있게 허용
                         .requestMatchers(HttpMethod.GET, "/api/v1/lectures/*/reviews").permitAll()
+                        // 게시글 목록 조회
+                        .requestMatchers(HttpMethod.GET, "/api/v2/posts").permitAll()
+                        // 게시글 목록 검색
+                        .requestMatchers(HttpMethod.GET, "/api/v2/posts/search").permitAll()
+                        // 게시글 상세 조회
+                        .requestMatchers(HttpMethod.GET, "/api/v2/posts/{postId}").permitAll()
+                        // 게시글 댓글 조회
+                        .requestMatchers(HttpMethod.GET, "/api/v2/posts/{postId}/comments/**").permitAll()
                         // /api/v1/reports : URL 역할 규칙 제거 → 메서드 레벨 @PreAuthorize 로 인가 (GET=ADMIN 조회 / POST=인증 회원 신고)
                         .requestMatchers("/api/v1/error-logs").hasAnyAuthority("ROLE_ADMIN")
                         .requestMatchers("/api/v1/teacher/**").hasAnyAuthority("ROLE_TEACHER")
