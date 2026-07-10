@@ -17,6 +17,7 @@ public class UserOauthJpaEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private UserJpaEntity user;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Provider provider;
 
