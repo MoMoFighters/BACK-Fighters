@@ -47,8 +47,6 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
 
     private final ObjectProvider<ChatTypingBroadcaster> typingBroadcasterProvider;
 
-//    private final ChatTypingBroadcaster typingBroadcaster;
-
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
@@ -182,7 +180,12 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
                         Long roomId = Long.parseLong(roomIdStr);
                         sessionManager.leaveRoom(userId, roomId);
                         typingSessionManager.stopTyping(roomId, userId);
-                        typingBroadcasterProvider.getObject().broadcast(roomId);
+
+                        try {
+                            typingBroadcasterProvider.getObject().broadcast(roomId);
+                        } catch (Exception e) {
+                            log.warn("[웹소켓 인터셉터] UNSUBSCRIBE 타이핑 브로드캐스트 실패 - roomId: {}", roomId, e);
+                        }
                         log.info("[웹소켓 인터셉터] 유저 {}번 채팅방 세션 제거 완료 (주소 역추적: {})", userId, destination);
                     } catch (NumberFormatException e) {
                         log.error("[웹소켓 인터셉터] UNSUBSCRIBE 방 ID 파싱 실패: {}", destination);
@@ -214,7 +217,11 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
 
                 // 정리 후, 영향받은 각 방에 갱신된 타이핑 상태 브로드캐스트
                 for (Long roomId : typingRoomIds) {
-                    typingBroadcasterProvider.getObject().broadcast(roomId);
+                    try {
+                        typingBroadcasterProvider.getObject().broadcast(roomId);
+                    } catch (Exception e) {
+                        log.warn("[웹소켓 인터셉터] DISCONNECT 타이핑 브로드캐스트 실패 - roomId: {}", roomId, e);
+                    }
                 }
 
                 // 해당 세션의 모든 장부 기록 싹 청소
