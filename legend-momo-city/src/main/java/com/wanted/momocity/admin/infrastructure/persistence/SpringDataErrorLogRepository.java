@@ -1,5 +1,6 @@
 package com.wanted.momocity.admin.infrastructure.persistence;
 
+import com.wanted.momocity.admin.domain.audit.ErrorLevel;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -23,6 +24,6 @@ public interface SpringDataErrorLogRepository extends JpaRepository<ErrorLogJpaE
     List<ErrorLogJpaEntity> findAllByOrderByOccurredAtDesc(Pageable pageable);
 
     // 특정 레벨의 최근 N개 (occurredAt DESC)
-    List<ErrorLogJpaEntity> findAllByLevelOrderByOccurredAtDesc(String level, Pageable pageable);
+    List<ErrorLogJpaEntity> findAllByLevelOrderByOccurredAtDesc(ErrorLevel level, Pageable pageable);
 
 }

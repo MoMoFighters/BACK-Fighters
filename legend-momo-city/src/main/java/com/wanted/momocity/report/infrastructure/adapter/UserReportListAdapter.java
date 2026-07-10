@@ -33,7 +33,7 @@ public class UserReportListAdapter implements UserReportListPort {
     public List<ReportInfo> getReportsByUserId(Long userId) {
         return reportRepository.findAllByReportedUserId(userId).stream()
                 .map(e -> {
-                    ReportTargetType targetType = ReportTargetType.valueOf(e.getTargetType());
+                    ReportTargetType targetType = e.getTargetType();
 
                     // reason 대신 targetType 기준으로 실제 신고 대상 콘텐츠 원문 조회
                     String targetContent = switch (targetType) {

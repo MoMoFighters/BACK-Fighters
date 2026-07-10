@@ -36,7 +36,7 @@ public class AccessLogRepositoryAdapter implements AccessLogRepository {
     @Override
     public Page<AccessLog> findByAction(AccessLogAction action, Pageable pageable) {
         return springDataAccessLogRepository
-                .findByAction(action.name(), pageable)
+                .findByAction(action, pageable)
                 .map(AccessLogJpaEntity::toDomain);
     }
 
