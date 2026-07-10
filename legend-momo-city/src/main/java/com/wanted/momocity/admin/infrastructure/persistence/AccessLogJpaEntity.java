@@ -27,8 +27,9 @@ public class AccessLogJpaEntity {
     @Column(name = "ip", length = 45)
     private String ip;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "action", length = 20)
-    private String action;
+    private AccessLogAction action;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -37,7 +38,7 @@ public class AccessLogJpaEntity {
 
 
     // 도메인 객체를 엔티티로 변환할 때 사용하는 생성자 (id 는 저장 전이라 없다.)
-    private AccessLogJpaEntity(Long userId, String ip, String action, LocalDateTime createdAt) {
+    private AccessLogJpaEntity(Long userId, String ip, AccessLogAction action, LocalDateTime createdAt) {
         this.userId = userId;
         this.ip = ip;
         this.action = action;
@@ -50,7 +51,7 @@ public class AccessLogJpaEntity {
                 id,
                 userId,
                 ip,
-                AccessLogAction.valueOf(action),
+                action,
                 createdAt
         );
     }
@@ -60,7 +61,7 @@ public class AccessLogJpaEntity {
         return new AccessLogJpaEntity(
                 accessLog.getUserId(),
                 accessLog.getIp(),
-                accessLog.getAction().name(),
+                accessLog.getAction(),
                 accessLog.getCreatedAt()
         );
     }
@@ -70,6 +71,6 @@ public class AccessLogJpaEntity {
     public Long getId() { return id; }
     public Long getUserId() { return userId; }
     public String getIp() { return ip; }
-    public String getAction() { return action; }
+    public AccessLogAction getAction() { return action; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 }
