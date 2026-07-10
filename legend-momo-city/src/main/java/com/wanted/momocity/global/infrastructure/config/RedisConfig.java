@@ -44,6 +44,7 @@ public class RedisConfig {
                                           @Qualifier("postsCacheConfiguration") RedisCacheConfiguration postsCacheConfiguration,
                                           @Qualifier("calendarCacheConfiguration") RedisCacheConfiguration calendarCacheConfiguration,
                                           @Qualifier("streakCacheConfiguration") RedisCacheConfiguration streakCacheConfiguration,
+                                          @Qualifier("streakYearlyCacheConfiguration") RedisCacheConfiguration streakYearlyCacheConfiguration,
                                           @Qualifier("adminUserListCacheConfiguration") RedisCacheConfiguration adminUserListCacheConfiguration
     ) {
 
@@ -95,6 +96,9 @@ public class RedisConfig {
 
         // Streak 오늘 레벨 캐시
         cacheConfigs.put("streak", streakCacheConfiguration);
+
+        // 연간 잔디 캐시 추가
+        cacheConfigs.put("streakYearly", streakYearlyCacheConfiguration);
 
         cacheConfigs.put("adminUserList", adminUserListCacheConfiguration);
 
