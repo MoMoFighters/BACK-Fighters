@@ -39,6 +39,7 @@ public class ChatTypingBroadcaster {
 
             List<Long> othersTyping = typingUserIdsList.stream()
                     .filter(id -> !id.equals(receiverId))
+                    .sorted()
                     .toList();
 
             if (othersTyping.isEmpty()) {

@@ -21,6 +21,7 @@ import org.springframework.stereotype.Component;
 
 import java.security.Principal;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
@@ -202,12 +203,21 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
         if (StompCommand.DISCONNECT.equals(command)) {
             Long userId = getUserIdFromAccessor(accessor);
             if (userId != null) {
+                // 연결 종료 전, 이 유저가 타이핑 중이던 방 목록을 먼저 확보
+                Set<Long> typingRoomIds = typingSessionManager.getTypingRooms(userId);
+
                 // 연결이 완전히 끊기는 것은 방을 나가는 것이 맞으므로 무조건 제거
                 sessionManager.leaveRoom(userId);
 
                 notificationSessionManager.leaveNotificationChannel(userId, accessor.getSessionId());
-                typingSessionManager.clearUser(userId);   // 🎯 추가
-                // 🎯 해당 세션의 모든 장부 기록 싹 청소
+                typingSessionManager.clearUser(userId);
+
+                // 정리 후, 영향받은 각 방에 갱신된 타이핑 상태 브로드캐스트
+                for (Long roomId : typingRoomIds) {
+                    typingBroadcasterProvider.getObject().broadcast(roomId);
+                }
+
+                // 해당 세션의 모든 장부 기록 싹 청소
                 if (sessionId != null) {
                     subscriptionRegistry.keySet().removeIf(key -> key.startsWith(sessionId + "_"));
                 }

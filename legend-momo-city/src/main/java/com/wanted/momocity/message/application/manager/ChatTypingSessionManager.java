@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Component
 @Slf4j
@@ -37,5 +38,13 @@ public class ChatTypingSessionManager {
     //현재 그 방에서 타이핑 중인 유저ID 목록 조회
     public Set<Long> getTypingUsers(Long roomId) {
         return typingUsersMap.getOrDefault(roomId, Set.of());
+    }
+
+    // 추가: 이 유저가 지금 타이핑 중인 모든 방ID 조회
+    public Set<Long> getTypingRooms(Long userId) {
+        return typingUsersMap.entrySet().stream()
+                .filter(entry -> entry.getValue().contains(userId))
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toSet());
     }
 }
