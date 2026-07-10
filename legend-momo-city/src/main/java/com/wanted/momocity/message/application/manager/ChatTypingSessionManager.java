@@ -20,18 +20,18 @@ public class ChatTypingSessionManager {
 
     //타이핑 종료
     public void stopTyping(Long roomId, Long userId) {
-        Set<Long> users = typingUsersMap.get(roomId);
-        if (users != null) {
+        typingUsersMap.computeIfPresent(roomId, (k, users) -> {
             users.remove(userId);
-            if (users.isEmpty()) {
-                typingUsersMap.remove(roomId);
-            }
-        }
+            return users.isEmpty() ? null : users;
+        });
     }
 
     //연결 종료(DISCONNECT) 시 모든 방에서 이 유저 제거
     public void clearUser(Long userId) {
-        typingUsersMap.values().forEach(set -> set.remove(userId));
+        typingUsersMap.entrySet().removeIf(entry -> {
+            entry.getValue().remove(userId);
+            return entry.getValue().isEmpty();
+        });
     }
 
     //현재 그 방에서 타이핑 중인 유저ID 목록 조회

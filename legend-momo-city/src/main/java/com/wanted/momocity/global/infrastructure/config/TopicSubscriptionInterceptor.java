@@ -6,10 +6,12 @@ import com.wanted.momocity.auth.domain.model.User;
 
 import com.wanted.momocity.auth.infrastructure.jwt.JwtTokenProvider;
 import com.wanted.momocity.message.application.manager.ChatRoomSessionManager;
+import com.wanted.momocity.message.application.manager.ChatTypingBroadcaster;
 import com.wanted.momocity.message.application.manager.ChatTypingSessionManager;
 import com.wanted.momocity.notification.application.manager.NotificationSessionManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -41,6 +43,10 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
     private final Map<String, String> subscriptionRegistry = new ConcurrentHashMap<>();
 
     private final ChatTypingSessionManager typingSessionManager;
+
+    private final ObjectProvider<ChatTypingBroadcaster> typingBroadcasterProvider;
+
+//    private final ChatTypingBroadcaster typingBroadcaster;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -174,6 +180,8 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
                         String roomIdStr = destination.substring(destination.lastIndexOf("/") + 1);
                         Long roomId = Long.parseLong(roomIdStr);
                         sessionManager.leaveRoom(userId, roomId);
+                        typingSessionManager.stopTyping(roomId, userId);
+                        typingBroadcasterProvider.getObject().broadcast(roomId);
                         log.info("[웹소켓 인터셉터] 유저 {}번 채팅방 세션 제거 완료 (주소 역추적: {})", userId, destination);
                     } catch (NumberFormatException e) {
                         log.error("[웹소켓 인터셉터] UNSUBSCRIBE 방 ID 파싱 실패: {}", destination);
