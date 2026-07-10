@@ -1,4 +1,6 @@
 package com.wanted.momocity.chatbot.infrastructure.persistence;
 
-public class ChatbotQuestionLogJpaRepository {
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface ChatbotQuestionLogJpaRepository extends JpaRepository<ChatbotQuestionLogJpaEntity, Long> {
 }

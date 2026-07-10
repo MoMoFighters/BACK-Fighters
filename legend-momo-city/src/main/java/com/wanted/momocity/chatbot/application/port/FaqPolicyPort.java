@@ -1,4 +1,4 @@
 package com.wanted.momocity.chatbot.application.port;
 
-public class FaqPolicyPort {
+public interface FaqPolicyPort {
 }
