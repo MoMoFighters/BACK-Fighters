@@ -44,7 +44,7 @@ DROP TABLE IF EXISTS `user`;
 -- =====================================================================
 CREATE TABLE `user` (
     `id`                BIGINT       NOT NULL AUTO_INCREMENT,
-    `email`             VARCHAR(255) NULL,
+    `email`             VARCHAR(100) NULL,
     `password`          VARCHAR(255) NULL,
     `name`              VARCHAR(50)  NOT NULL,
     `nickname`          VARCHAR(30)  NOT NULL,
@@ -53,7 +53,7 @@ CREATE TABLE `user` (
     `status`            ENUM('ACTIVE','PENDING','REJECTED','BANNED','BLACK','DELETED') NOT NULL DEFAULT 'ACTIVE',
     `category`          ENUM('FITNESS','STUDY','COOK','BEAUTY','ART')                  NULL,
     `proof`             VARCHAR(500) NULL,
-    `point`             BIGINT       NOT NULL DEFAULT 0,
+    `point`             INT          NULL,
     `do_not_disturb`    BOOLEAN      NOT NULL DEFAULT FALSE,
     `membership`        ENUM('BASIC','PLUS','PRO')                                     NOT NULL DEFAULT 'BASIC',
     `membership_start`  DATETIME     NULL,
@@ -77,7 +77,7 @@ CREATE TABLE `user` (
 -- =====================================================================
 CREATE TABLE `lecture` (
     `id`                   BIGINT                                        NOT NULL AUTO_INCREMENT,
-    `title`                VARCHAR(255)                                  DEFAULT NULL,
+    `title`                VARCHAR(200)                                  NOT NULL,
     `created_at`           DATETIME(6)                                   NOT NULL,
     `updated_at`           DATETIME(6)                                   NOT NULL,
     `deleted_at`           DATETIME(6)                                   DEFAULT NULL,
@@ -103,10 +103,11 @@ CREATE TABLE `chapter` (
     `id`                BIGINT       NOT NULL AUTO_INCREMENT,
     `created_at`        DATETIME(6)  NOT NULL,
     `updated_at`        DATETIME(6)  NOT NULL,
+    `deleted_at`        DATETIME(6)  DEFAULT NULL,
     `thumbnail_url`     VARCHAR(500) DEFAULT NULL,
     `duration_sec`      INT          DEFAULT NULL,
     `lecture_id`        BIGINT       NOT NULL,
-    `order_no`          INT          NOT NULL,
+    `order_no`          INT          NOT NULL DEFAULT 0,
     `original_filename` VARCHAR(255) DEFAULT NULL,
     `title`             VARCHAR(200) NOT NULL,
     `video_size_bytes`  BIGINT       DEFAULT NULL,
@@ -124,11 +125,11 @@ CREATE TABLE `post` (
     `updated_at`    DATETIME(6)                                          NOT NULL,
     `category`      ENUM('ART','BEAUTY','COOK','FITNESS','FREE','STUDY') NOT NULL,
     `deleted_at`    DATETIME(6)                                          DEFAULT NULL,
-    `post_like`     INT                                                  NOT NULL,
-    `thumbnail_url` VARCHAR(255)                                         DEFAULT NULL,
-    `title`         VARCHAR(255)                                         NOT NULL,
+    `post_like`     INT                                                  NOT NULL DEFAULT 0,
+    `thumbnail_url` VARCHAR(500)                                         DEFAULT NULL,
+    `title`         VARCHAR(200)                                         NOT NULL,
     `user_id`       BIGINT                                               NOT NULL,
-    `view_count`    INT                                                  NOT NULL,
+    `view_count`    INT                                                  NOT NULL DEFAULT 0,
 
     PRIMARY KEY (`id`),
     KEY `idx_post_user`       (`user_id`),
@@ -142,10 +143,10 @@ CREATE TABLE `post` (
 -- =====================================================================
 CREATE TABLE `post_content` (
     `id`         BIGINT               NOT NULL AUTO_INCREMENT,
-    `content`    VARCHAR(255)         DEFAULT NULL,
+    `content`    TEXT                 DEFAULT NULL,
     `created_at` DATETIME(6)          NOT NULL,
-    `image_url`  VARCHAR(255)         DEFAULT NULL,
-    `order_no`   INT                  NOT NULL,
+    `image_url`  VARCHAR(500)         DEFAULT NULL,
+    `order_no`   TINYINT              NOT NULL,
     `post_id`    BIGINT               NOT NULL,
     `type`       ENUM('IMAGE','TEXT') NOT NULL,
 
@@ -174,7 +175,7 @@ CREATE TABLE `comment` (
     `id`         BIGINT       NOT NULL AUTO_INCREMENT,
     `created_at` DATETIME(6)  NOT NULL,
     `updated_at` DATETIME(6)  NOT NULL,
-    `content`    VARCHAR(255) NOT NULL,
+    `content`    VARCHAR(500) NOT NULL,
     `deleted_at` DATETIME(6)  DEFAULT NULL,
     `parent_id`  BIGINT       DEFAULT NULL,
     `post_id`    BIGINT       NOT NULL,
@@ -191,11 +192,12 @@ CREATE TABLE `comment` (
 -- =====================================================================
 CREATE TABLE `enrollment` (
     `id`              BIGINT      NOT NULL AUTO_INCREMENT,
-    `completed_count` INT         NOT NULL,
+    `completed_count` INT         NOT NULL DEFAULT 0,
     `enrolled_at`     DATETIME(6) NOT NULL,
     `lecture_id`      BIGINT      NOT NULL,
-    `total_progress`  INT         NOT NULL,
+    `total_progress`  INT         NOT NULL DEFAULT 0,
     `user_id`         BIGINT      NOT NULL,
+    `is_completed`    BOOLEAN  NOT NULL DEFAULT FALSE,
 
     PRIMARY KEY (`id`),
     KEY `idx_enrollment_lecture` (`lecture_id`),
@@ -211,14 +213,14 @@ CREATE TABLE `learning_history` (
     `created_at`        DATETIME(6) NOT NULL,
     `updated_at`        DATETIME(6) NOT NULL,
     `chapter_id`        BIGINT      NOT NULL,
-    `is_completed`      BIT(1)      NOT NULL,
-    `last_position_sec` INT         NOT NULL,
+    `is_completed`      BOOLEAN     NOT NULL DEFAULT FALSE,
+    `last_position_sec` INT         NOT NULL DEFAULT 0,
     `last_watched_at`   DATETIME(6) DEFAULT NULL,
     `lecture_id`        BIGINT      NOT NULL,
     `progress_rate`     INT         NOT NULL,
     `user_id`           BIGINT      NOT NULL,
-    `version`           BIGINT      NOT NULL,
-    `watched_seconds`   INT         NOT NULL,
+    `version`           BIGINT      NOT NULL DEFAULT 0,
+    `watched_seconds`   INT         NOT NULL DEFAULT 0,
 
     PRIMARY KEY (`id`),
     KEY `idx_lh_user`    (`user_id`),
@@ -235,8 +237,8 @@ CREATE TABLE `review` (
     `created_at` DATETIME(6)              NOT NULL,
     `deleted_at` DATETIME(6)              DEFAULT NULL,
     `lecture_id` BIGINT                   NOT NULL,
-    `rating`     INT                      NOT NULL,
-    `status`     ENUM('ACTIVE','DELETED') NOT NULL,
+    `rating`     TINYINT                  NOT NULL,
+    `status`     ENUM('ACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
     `user_id`    BIGINT                   NOT NULL,
 
     PRIMARY KEY (`id`),
@@ -250,8 +252,8 @@ CREATE TABLE `review` (
 CREATE TABLE `streak` (
     `id`                    BIGINT                                             NOT NULL AUTO_INCREMENT,
     `created_at`            DATETIME(6)                                        NOT NULL,
-    `daily_watched_seconds` INT                                                NOT NULL,
-    `level`                 ENUM('LEVEL0','LEVEL1','LEVEL2','LEVEL3','LEVEL4') NOT NULL,
+    `daily_watched_seconds` INT                                                NOT NULL DEFAULT 0,
+    `level`                 ENUM('LEVEL0','LEVEL1','LEVEL2','LEVEL3','LEVEL4') NOT NULL DEFAULT 'LEVEL0',
     `streak_date`           DATE                                               NOT NULL,
     `user_id`               BIGINT                                             NOT NULL,
 
@@ -268,7 +270,7 @@ CREATE TABLE `building` (
     `created_at` DATETIME(6)                                   NOT NULL,
     `updated_at` DATETIME(6)                                   NOT NULL,
     `category`   ENUM('ART','BEAUTY','COOK','FITNESS','STUDY') NOT NULL,
-    `level`      INT                                           NOT NULL,
+    `level`      INT                                           NOT NULL DEFAULT 1,
     `position`   BIGINT                                        NOT NULL,
     `user_id`    BIGINT                                        NOT NULL,
 
@@ -282,9 +284,9 @@ CREATE TABLE `building` (
 -- =====================================================================
 CREATE TABLE `calendar` (
     `id`           BIGINT              NOT NULL AUTO_INCREMENT,
-    `category`     ENUM('MEMO','TODO') NOT NULL,
+    `category`     ENUM('MEMO','TODO') NOT NULL DEFAULT 'MEMO',
     `end`          DATE                DEFAULT NULL,
-    `is_completed` BIT(1)              NOT NULL,
+    `is_completed` BOOLEAN             NOT NULL DEFAULT FALSE,
     `start`        DATE                NOT NULL,
     `title`        VARCHAR(255)        NOT NULL,
     `user_id`      BIGINT              NOT NULL,
@@ -301,7 +303,7 @@ CREATE TABLE `calendar` (
 CREATE TABLE `chat_room` (
     `id`         BIGINT       NOT NULL AUTO_INCREMENT,
     `created_at` DATETIME(6)  DEFAULT NULL,
-    `title`      VARCHAR(255) DEFAULT NULL,
+    `title`      VARCHAR(100) DEFAULT NULL,
     `updated_at` DATETIME(6)  DEFAULT NULL,
 
     PRIMARY KEY (`id`)
@@ -312,9 +314,9 @@ CREATE TABLE `chat_room` (
 -- =====================================================================
 CREATE TABLE `chat_room_member` (
     `id`        BIGINT      NOT NULL AUTO_INCREMENT,
-    `joined_at` DATETIME(6) DEFAULT NULL,
-    `room_id`   BIGINT      DEFAULT NULL,
-    `user_id`   BIGINT      DEFAULT NULL,
+    `joined_at` DATETIME(6) NOT NULL,
+    `room_id`   BIGINT      NOT NULL,
+    `user_id`   BIGINT      NOT NULL,
 
     PRIMARY KEY (`id`),
     KEY `idx_chat_room_member_room_id` (`room_id`),
@@ -326,10 +328,10 @@ CREATE TABLE `chat_room_member` (
 -- =====================================================================
 CREATE TABLE `message` (
     `id`         BIGINT       NOT NULL AUTO_INCREMENT,
-    `content`    VARCHAR(255) DEFAULT NULL,
-    `created_at` DATETIME(6)  DEFAULT NULL,
+    `content`    TEXT         DEFAULT NULL,
+    `created_at` DATETIME(6)  NOT NULL,
     `updated_at` DATETIME(6)  DEFAULT NULL,
-    `room_id`    BIGINT       DEFAULT NULL,
+    `room_id`    BIGINT       NOT NULL,
     `sender_id`  BIGINT       DEFAULT NULL,
 
     PRIMARY KEY (`id`),
@@ -344,9 +346,9 @@ CREATE TABLE `message` (
 -- =====================================================================
 CREATE TABLE `message_announce` (
     `id`         BIGINT       NOT NULL AUTO_INCREMENT,
-    `content`    VARCHAR(255) DEFAULT NULL,
+    `content`    TEXT         NOT NULL,
     `created_at` DATETIME(6)  DEFAULT NULL,
-    `type`       VARCHAR(255) DEFAULT NULL,
+    `type`       ENUM('LEAVE','INVITE','RENAME') DEFAULT NULL,
     `room_id`    BIGINT       DEFAULT NULL,
     `target_id`  BIGINT       DEFAULT NULL,
 
@@ -362,9 +364,9 @@ CREATE TABLE `message_announce` (
 -- =====================================================================
 CREATE TABLE `message_read` (
     `id`           BIGINT NOT NULL AUTO_INCREMENT,
-    `is_deleted`   BIT(1) DEFAULT NULL,
-    `is_msg_read`  BIT(1) DEFAULT NULL,
-    `is_noti_read` BIT(1) DEFAULT NULL,
+    `is_deleted`   BOOLEAN NOT NULL DEFAULT FALSE,
+    `is_msg_read`  BOOLEAN NOT NULL DEFAULT FALSE,
+    `is_noti_read` BOOLEAN NOT NULL DEFAULT FALSE,
     `message_id`   BIGINT DEFAULT NULL,
     `room_id`      BIGINT DEFAULT NULL,
     `user_id`      BIGINT DEFAULT NULL,
@@ -384,16 +386,15 @@ CREATE TABLE `message_read` (
 CREATE TABLE `friend` (
     `id`           BIGINT       NOT NULL AUTO_INCREMENT,
     `created_at`   DATETIME(6)  DEFAULT NULL,
-    `status`       VARCHAR(255) DEFAULT NULL,
+    `status`       ENUM('SENT', 'FRIEND', 'BLOCK') NOT NULL DEFAULT 'SENT',
     `updated_at`   DATETIME(6)  DEFAULT NULL,
-    `from_user_id` BIGINT       DEFAULT NULL,
-    `to_user_id`   BIGINT       DEFAULT NULL,
+    `from_user_id` BIGINT       NOT NULL,
+    `to_user_id`   BIGINT       NOT NULL,
 
     PRIMARY KEY (`id`),
+    UNIQUE KEY `uq_friend_pair` (`from_user_id`, `to_user_id`),
     KEY `idx_friend_to_user` (`to_user_id`),
-    KEY `idx_friend_status`  (`status`),
-    KEY `idx_friend_from_user_id` (`from_user_id`),
-    KEY `idx_friend_to_user_id`   (`to_user_id`)
+    KEY `idx_friend_status`  (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- =====================================================================
@@ -401,16 +402,15 @@ CREATE TABLE `friend` (
 -- =====================================================================
 CREATE TABLE `guestbook` (
     `id`         BIGINT       NOT NULL AUTO_INCREMENT,
-    `content`    VARCHAR(255) DEFAULT NULL,
+    `is_read`    BOOLEAN      NOT NULL DEFAULT FALSE,
+    `content`    VARCHAR(1000) NOT NULL,
     `created_at` DATETIME(6)  DEFAULT NULL,
     `owner_id`   BIGINT       DEFAULT NULL,
     `writer_id`  BIGINT       DEFAULT NULL,
 
     PRIMARY KEY (`id`),
     KEY `idx_guestbook_owner`  (`owner_id`),
-    KEY `idx_guestbook_writer` (`writer_id`),
-    KEY `idx_guestbook_owner_id`  (`owner_id`),
-    KEY `idx_guestbook_writer_id` (`writer_id`)
+    KEY `idx_guestbook_writer` (`writer_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- =====================================================================
@@ -418,16 +418,16 @@ CREATE TABLE `guestbook` (
 -- =====================================================================
 CREATE TABLE `notification` (
     `id`         BIGINT       NOT NULL AUTO_INCREMENT,
-    `created_at` DATETIME(6)  DEFAULT NULL,
-    `is_read`    BIT(1)       DEFAULT NULL,
-    `message`    VARCHAR(255) DEFAULT NULL,
+    `created_at` DATETIME(6)  NOT NULL,
+    `is_read`    BOOLEAN      NOT NULL DEFAULT FALSE,
+    `message`    VARCHAR(500) DEFAULT NULL,
     `ref_id`     BIGINT       DEFAULT NULL,
-    `type`       VARCHAR(255) DEFAULT NULL,
+    `type`       ENUM('NOTICE', 'REPORT', 'FRIEND_REQUEST', 'MESSAGE', 'GUESTBOOK', 'POST', 'CALENDAR', 'PAYMENT') NOT NULL,
     `user_id`    BIGINT       DEFAULT NULL,
 
     PRIMARY KEY (`id`),
     KEY `idx_notification_user` (`user_id`),
-    KEY `idx_notification_user_id` (`user_id`)
+    KEY `idx_notification_type` (`type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- =====================================================================
@@ -436,13 +436,12 @@ CREATE TABLE `notification` (
 CREATE TABLE `user_oauth` (
     `id`          BIGINT       NOT NULL AUTO_INCREMENT,
     `created_at`  DATETIME(6)  NOT NULL,
-    `provider`    TINYINT      NOT NULL,
-    `provider_id` VARCHAR(255) NOT NULL,
+    `provider`    ENUM('KAKAO', 'GOOGLE', 'NAVER')      NOT NULL,
+    `provider_id` VARCHAR(100) DEFAULT NULL,
     `user_id`     BIGINT       NOT NULL,
 
     PRIMARY KEY (`id`),
-    KEY `idx_user_oauth_user_id` (`user_id`),
-    CONSTRAINT `chk_user_oauth_1` CHECK (`provider` BETWEEN 0 AND 2)
+    KEY `idx_user_oauth_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- =====================================================================
@@ -450,7 +449,7 @@ CREATE TABLE `user_oauth` (
 -- =====================================================================
 CREATE TABLE `access_log` (
     `id`         BIGINT      NOT NULL AUTO_INCREMENT,
-    `action`     VARCHAR(20) DEFAULT NULL,
+    `action`     ENUM('LOGIN', 'LOGOUT', 'FORBIDDEN') DEFAULT NULL,
     `created_at` DATETIME(6) DEFAULT NULL,
     `ip`         VARCHAR(45) DEFAULT NULL,
     `user_id`    BIGINT      DEFAULT NULL,
@@ -467,7 +466,7 @@ CREATE TABLE `error_log` (
     `id`          BIGINT        NOT NULL AUTO_INCREMENT,
     `created_at`  DATETIME(6)   NOT NULL,
     `updated_at`  DATETIME(6)   NOT NULL,
-    `level`       VARCHAR(20)   NOT NULL,
+    `level`       ENUM('CRITICAL', 'ERROR', 'WARNING') DEFAULT NULL,
     `message`     VARCHAR(1000) NOT NULL,
     `occurred_at` DATETIME(6)   NOT NULL,
     `source`      VARCHAR(50)   NOT NULL,
@@ -483,13 +482,13 @@ CREATE TABLE `report` (
     `created_at`       DATETIME(6)   NOT NULL,
     `detail`           VARCHAR(1000) DEFAULT NULL,
     `is_resolved`      BIT(1)        NOT NULL,
-    `reason`           VARCHAR(30)   NOT NULL,
+    `reason`           ENUM('SPAM', 'ABUSE', 'INAPPROPRIATE', 'COPYRIGHT', 'OTHER')   NOT NULL,
     `reported_user_id` BIGINT        DEFAULT NULL,
     `reporter_user_id` BIGINT        DEFAULT NULL,
     `resolved_at`      DATETIME(6)   DEFAULT NULL,
     `target_id`        BIGINT        DEFAULT NULL,
     `target_path`      VARCHAR(500)  DEFAULT NULL,
-    `target_type`      VARCHAR(20)   NOT NULL,
+    `target_type`      ENUM('POST', 'COMMENT', 'LECTURE', 'CHAPTER', 'REVIEW', 'CHAT', 'PAGE')   NOT NULL,
 
     PRIMARY KEY (`id`),
     KEY `idx_report_reporter`   (`reporter_user_id`),
@@ -501,10 +500,10 @@ CREATE TABLE `report` (
 -- =====================================================================
 CREATE TABLE `admin_notice` (
     `id`         BIGINT       NOT NULL AUTO_INCREMENT,
-    `content`    TEXT,
+    `content`    TEXT         NOT NULL,
     `created_at` DATETIME(6)  DEFAULT NULL,
-    `is_pinned`  BIT(1)       NOT NULL,
-    `title`      VARCHAR(255) DEFAULT NULL,
+    `is_pinned`  BOOLEAN      NOT NULL DEFAULT FALSE,
+    `title`      VARCHAR(200) DEFAULT NULL,
     `updated_at` DATETIME(6)  DEFAULT NULL,
 
     PRIMARY KEY (`id`)
@@ -516,10 +515,10 @@ CREATE TABLE `admin_notice` (
 CREATE TABLE `store` (
     `id`         BIGINT          NOT NULL AUTO_INCREMENT,
     `created_at` DATETIME(6)     NOT NULL,
-    `name`       VARCHAR(255)    NOT NULL,
+    `name`       VARCHAR(500)    NOT NULL,
     `price`      BIGINT          NOT NULL,
     `type`       ENUM('PROFILE') DEFAULT NULL,
-    `url`        VARCHAR(255)    DEFAULT NULL,
+    `url`        VARCHAR(500)    DEFAULT NULL,
 
     PRIMARY KEY (`id`),
     UNIQUE KEY `uq_store_name` (`name`)
