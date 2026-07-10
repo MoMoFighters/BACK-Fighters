@@ -144,6 +144,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v2/posts/{postId}").permitAll()
                         // 게시글 댓글 조회
                         .requestMatchers(HttpMethod.GET, "/api/v2/posts/{postId}/comments/**").permitAll()
+                        // 상대방 게시글 목록 조회
+                        .requestMatchers(HttpMethod.GET, "/api/v2/posts/users/{targetUserId}").permitAll()
+                        // 상대방 대시보드 조회
+                        .requestMatchers(HttpMethod.GET, "/api/v2/posts/users/{targetUserId}/dashboard").permitAll()
                         // /api/v1/reports : URL 역할 규칙 제거 → 메서드 레벨 @PreAuthorize 로 인가 (GET=ADMIN 조회 / POST=인증 회원 신고)
                         .requestMatchers("/api/v1/error-logs").hasAnyAuthority("ROLE_ADMIN")
                         .requestMatchers("/api/v1/teacher/**").hasAnyAuthority("ROLE_TEACHER")

@@ -143,11 +143,13 @@ public class PostQueryService implements PostQueryUseCase {
                 ))
                 .toList();
 
+        // 비로그인 시 userId = null → isLiked, isMine false 처리
         // EXISTS 쿼리로 boolean 만 반환 -> 불필요한 데이터 로드 방지
-        boolean isLiked = postLikeRepository.existsByPostIdAndUserId(postId, userId);
+        boolean isLiked = userId != null && postLikeRepository.existsByPostIdAndUserId(postId, userId);
 
+        // 비로그인 시 userId = null → isLiked, isMine false 처리
         // 현재 로그인 유저가 게시글 작성자인지 확인
-        boolean isMine = post.getUserId().equals(userId);
+        boolean isMine = userId != null && post.getUserId().equals(userId);
 
         log.info("[Community] 게시글 단건 조회 완료 | postId={}, userId={}", postId, userId);
 
