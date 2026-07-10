@@ -39,9 +39,9 @@ public class EnrollmentCatalogAdapter implements EnrollmentPort{
 
     /*
      * 특정 사용자의 특정 강의 수강 여부 조회
-     * → EnrollmentAccessPolicy 에서 수강 여부 확인할 때 사용
-     * → 수강 신청 안 했으면 Optional.empty() 반환
-     * → ViewingAccessDeniedException 발생 → 403
+     * -> EnrollmentAccessPolicy 에서 수강 여부 확인할 때 사용
+     * -> 수강 신청 안 했으면 Optional.empty() 반환
+     * -> ViewingAccessDeniedException 발생 -> 403
      */
 
     @Override
@@ -60,10 +60,9 @@ public class EnrollmentCatalogAdapter implements EnrollmentPort{
 
     /*
      * 특정 사용자의 전체 수강 강의 목록 조회
-     * → getMyLectures() 에서 수강 목록 가져올 때 사용
-     * → 수강 강의 없으면 빈 리스트 반환
-     * → ViewingQueryService.getMyLectures() 에서
-     *   lectureId 기준으로 강의 정보 추가 조회
+     * -> getMyLectures() 에서 수강 목록 가져올 때 사용
+     * -> 수강 강의 없으면 빈 리스트 반환
+     * -> ViewingQueryService.getMyLectures() 에서 lectureId 기준으로 강의 정보 추가 조회
      */
 
     @Override
@@ -80,8 +79,19 @@ public class EnrollmentCatalogAdapter implements EnrollmentPort{
                 .toList();
     }
 
-    @Override
-    public void updateProgress(Long aLong, Long aLong1, int totalProgress) {
+    /*
+    * 수강 진척도 업데이트
+    * ViewingCommandService.doSaveProgres() 에서 진척도 재계산 후 호출
+    * learning_history 집계 기반으로 계산된 totalProgress 를 enrollment 에 반영
+    * */
 
+    @Override
+    public void updateProgress(Long userId, Long lectureId, int totalProgress) {
+        enrollmentJpaRepository
+                .findByUserIdAndLectureId(userId, lectureId)
+                .ifPresent(entity -> {
+                    entity.updateTotalProgress(totalProgress);
+                    enrollmentJpaRepository.save(entity);
+                });
     }
 }
