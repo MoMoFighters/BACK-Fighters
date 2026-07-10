@@ -53,7 +53,7 @@ CREATE TABLE `user` (
     `status`            ENUM('ACTIVE','PENDING','REJECTED','BANNED','BLACK','DELETED') NOT NULL DEFAULT 'ACTIVE',
     `category`          ENUM('FITNESS','STUDY','COOK','BEAUTY','ART')                  NULL,
     `proof`             VARCHAR(500) NULL,
-    `point`             INT          NULL,
+    `point`             BIGINT       NULL,
     `do_not_disturb`    BOOLEAN      NOT NULL DEFAULT FALSE,
     `membership`        ENUM('BASIC','PLUS','PRO')                                     NOT NULL DEFAULT 'BASIC',
     `membership_start`  DATETIME     NULL,
@@ -146,7 +146,7 @@ CREATE TABLE `post_content` (
     `content`    TEXT                 DEFAULT NULL,
     `created_at` DATETIME(6)          NOT NULL,
     `image_url`  VARCHAR(500)         DEFAULT NULL,
-    `order_no`   TINYINT              NOT NULL,
+    `order_no`   INT              NOT NULL,
     `post_id`    BIGINT               NOT NULL,
     `type`       ENUM('IMAGE','TEXT') NOT NULL,
 
@@ -237,7 +237,7 @@ CREATE TABLE `review` (
     `created_at` DATETIME(6)              NOT NULL,
     `deleted_at` DATETIME(6)              DEFAULT NULL,
     `lecture_id` BIGINT                   NOT NULL,
-    `rating`     TINYINT                  NOT NULL,
+    `rating`     INT                      NOT NULL,
     `status`     ENUM('ACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
     `user_id`    BIGINT                   NOT NULL,
 
