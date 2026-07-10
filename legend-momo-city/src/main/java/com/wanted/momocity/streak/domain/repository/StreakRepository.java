@@ -6,7 +6,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-public interface StreakRepository {
+public interface
+StreakRepository {
 
     // 저장 (신규 생성 + 수정)
     Streak save (Streak streak);
@@ -18,5 +19,8 @@ public interface StreakRepository {
     List<Streak> findUserIdAndStreakDateBetween(
             Long userId, LocalDate startDate, LocalDate endDate
     );
+
+    // 연간 잔디 조회 -> 마이페이지 해당 년도 전체 잔디 조회
+    List<Streak> findByUserIdAndYear(Long userId, int year);
 
 }

@@ -8,6 +8,7 @@ import com.wanted.momocity.streak.infrastructure.metrics.StreakMetrics;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,11 +42,20 @@ public class StreakCommandService implements StreakCommandUseCase {
     * */
 
     @Override
-    @CacheEvict(
-            value = "streak",
-            key = "#userId + ':' + #date.year + ':' + #date.monthValue",
-            cacheManager = "redisCacheManager"
-    )
+    @Caching(evict = {
+            // 월간 캐시 무효화
+            @CacheEvict(
+                    value = "streak",
+                    key = "#userId + ':' + #date.year + ':' + #date.monthValue",
+                    cacheManager = "redisCacheManager"
+            ),
+            // 연간 캐시 무효화
+            @CacheEvict(
+                    value = "streak",
+                    key = "#userId + ':yearly:' + #date.year",
+                    cacheManager = "redisCacheManager"
+            )
+    })
     public void accumulate(Long userId, LocalDate date, int watchedSeconds) {
 
         // 오늘 잔디 조회 -> 있으면 누적, 없으면 신규 생성

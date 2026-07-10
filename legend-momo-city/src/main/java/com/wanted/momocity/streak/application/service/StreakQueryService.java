@@ -5,6 +5,7 @@ import com.wanted.momocity.streak.domain.model.Streak;
 import com.wanted.momocity.streak.domain.repository.StreakRepository;
 import com.wanted.momocity.streak.presentation.api.response.StreakMonthlyResponse;
 import com.wanted.momocity.streak.presentation.api.response.StreakResponse;
+import com.wanted.momocity.streak.presentation.api.response.StreakYearlyResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
@@ -66,7 +67,26 @@ public class StreakQueryService implements StreakQueryUseCase {
         log.info("[Streak] 월간 잔디 조회 완료 | userId={}, startDate={}, endDate={}, count={}",
                 userId, startDate, endDate, streakResponses.size());
 
-        return new StreakMonthlyResponse(startDate.getYear(), startDate.getMonthValue(), streakResponses);
+        return new StreakMonthlyResponse(streakResponses);
+    }
+
+    @Override
+    public StreakYearlyResponse getYearlyStreak(Long userId, int year) {
+
+        List<Streak> streaks = streakRepository.findByUserIdAndYear(userId, year);
+
+        List<StreakResponse> streakResponses = streaks.stream()
+                .map(streak -> new StreakResponse(
+                        streak.getStreakDate(),
+                        streak.getLevel()
+                ))
+                .toList();
+
+        log.info("[Streak] 연간 잔디 조회 완료 | userId={}, year={}, count={}",
+                userId, year, streakResponses.size());
+
+        return new StreakYearlyResponse(streakResponses);
+
     }
 
     // 친구 잔디 월간 조회

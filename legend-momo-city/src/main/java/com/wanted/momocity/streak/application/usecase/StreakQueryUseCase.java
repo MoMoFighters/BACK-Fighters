@@ -1,6 +1,7 @@
 package com.wanted.momocity.streak.application.usecase;
 
 import com.wanted.momocity.streak.presentation.api.response.StreakMonthlyResponse;
+import com.wanted.momocity.streak.presentation.api.response.StreakYearlyResponse;
 
 import java.time.LocalDate;
 
@@ -14,4 +15,6 @@ public interface StreakQueryUseCase {
     StreakMonthlyResponse getMonthlyStreak(Long userId, LocalDate startDate, LocalDate endDate);
 
     StreakMonthlyResponse getFriendMonthlyStreak(Long targetUserId, LocalDate startDate, LocalDate endDate);
+
+    StreakYearlyResponse getYearlyStreak(Long userId, int year);
 }
