@@ -17,8 +17,7 @@ import java.util.Optional;
 @Repository("userRepositoryAdapter")
 @Transactional
 @RequiredArgsConstructor
-public
-class UserRepositoryAdapter implements UserRepository {
+public class UserRepositoryAdapter implements UserRepository {
 
     private final SpringDataUserRepository springDataUserRepository;
 
@@ -204,6 +203,12 @@ class UserRepositoryAdapter implements UserRepository {
     @Override
     public void bulkUpdateAfterApply(List<Long> userIds, Role role, Status status, String url, LocalDateTime updatedAt) {
         springDataUserRepository.bulkUpdateAfterApply(userIds, role, status, url, updatedAt);
+    }
+
+    // 온보딩 페이지용 사용자 수 세기
+    @Override
+    public int getOnboardingUserCount() {
+        return (int) springDataUserRepository.countOnboardingUsers();
     }
 
 

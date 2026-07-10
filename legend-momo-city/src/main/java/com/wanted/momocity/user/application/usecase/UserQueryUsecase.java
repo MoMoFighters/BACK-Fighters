@@ -13,6 +13,9 @@ public interface UserQueryUsecase {
 
     UserDetailResult userDetail(Long userId);
 
+    // 온보딩용 사용자 수 세기
+    int getOnboardingUserCount();
+
     record UserDetailResult(
             UserDetailView userDetail,
             List<BuildingInfo> buildings
