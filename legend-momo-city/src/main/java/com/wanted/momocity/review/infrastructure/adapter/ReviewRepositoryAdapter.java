@@ -9,6 +9,8 @@ import com.wanted.momocity.review.infrastructure.persistence.ReviewJpaRepository
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository // 이 클래스가 DB 저장소 역할을 하는 Spring Bean이라고 알려주는 어노테이션
 @RequiredArgsConstructor
 public class ReviewRepositoryAdapter implements ReviewRepository {
@@ -55,5 +57,11 @@ public class ReviewRepositoryAdapter implements ReviewRepository {
                 .orElseThrow(() -> new ReviewNotFoundException("수강평을 찾을 수 없습니다."));
 
         review.softDelete();
+    }
+
+    // lectureId 기준으로 해당 강의의 ACTIVE 수강평 원문 목록을 조회합니다.
+    @Override
+    public List<String> findContentsByLectureId(Long lectureId) {
+        return reviewJpaRepository.findContentsByLectureId(lectureId);
     }
 }
