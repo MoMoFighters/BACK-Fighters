@@ -3,6 +3,7 @@ package com.wanted.momocity.lecture.presentation.api;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
+import com.wanted.momocity.lecture.application.command.LectureCommand.DeleteChapterVideoCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.DeleteChapterCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.DeleteLectureCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.ChangeLectureStatusCommand;
@@ -264,6 +265,41 @@ public class LectureController {
                 ApiResponseCode.SUCCESS,
                 "챕터 동영상이 등록되었습니다.",
                 RegisterChapterVideoResponse.from(chapter, lectureS3UrlResolver)
+        ));
+    }
+
+    @Operation(
+            summary = "챕터 동영상 삭제",
+            description = "강사가 본인 강의의 챕터에 등록된 동영상을 삭제합니다. 영상은 챕터의 필수 요소이므로 해당 챕터도 함께 삭제됩니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "챕터 동영상 삭제 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청 또는 삭제할 동영상 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "강사 권한 없음 또는 본인 강의가 아님"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "강의 또는 챕터를 찾을 수 없음")
+    })
+    @DeleteMapping("/{lectureId}/chapters/{chapterId}/video")
+    @PreAuthorize("hasAnyAuthority('ROLE_TEACHER')")
+    public ResponseEntity<ApiResponse<Void>> deleteChapterVideo(
+            Authentication authentication,
+            @PathVariable Long lectureId,
+            @PathVariable Long chapterId
+    ) {
+        Long teacherId = Long.parseLong(authentication.getName());
+
+        DeleteChapterVideoCommand command = new DeleteChapterVideoCommand(
+                teacherId,
+                lectureId,
+                chapterId
+        );
+
+        chapterCommandUseCase.deleteChapterVideo(command);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                ApiResponseCode.SUCCESS,
+                "챕터 동영상이 삭제되었습니다",
+                null
         ));
     }
 

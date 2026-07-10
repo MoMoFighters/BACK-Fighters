@@ -2,6 +2,7 @@ package com.wanted.momocity.lecture.application.service;
 
 import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
+import com.wanted.momocity.lecture.application.command.LectureCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.DeleteChapterCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.DeleteLectureCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.AdminChangeLectureStatusCommand;
@@ -425,6 +426,50 @@ public class LectureCommandService implements
                 command.chapterId(),
                 elapsedTime
         );
+    }
+
+    @Override
+    public void deleteChapterVideo(LectureCommand.DeleteChapterVideoCommand command) {
+         long startTime = System.currentTimeMillis();
+
+         log.info("동영상 삭제 시작 - teacherId={}, lectureId={}, chapterId={}",
+                 command.teacherId(),
+                 command.lectureId(),
+                 command.chapterId());
+
+         Long teacherId = teacherAccountPort.getTeacherId(command.lectureId());
+
+         LectureAggregate lecture = lectureRepository.findById(command.lectureId())
+                 .orElseThrow(() -> new LectureNotFoundException("강의를 찾을 수 없습니다."));
+
+         if (!lecture.isOwnedBy(teacherId)) {
+             throw new AccessDeniedException("본인이 등록한 강의의 동영상만 삭제할 수 있습니다.");
+         }
+
+         if (lecture.getStatus() == LectureStatus.DELETED) {
+             throw new DomainRuleViolationException("삭제된 강의의 동영상은 삭제할 수 없습니다.");
+         }
+
+         LectureChapter chapter = chapterRepository.findById(command.chapterId())
+                 .orElseThrow(() -> new ChapterNotFoundException("챕터를 찾을 수 없습니다."));
+
+         if (!chapter.belongsTo(command.lectureId())) {
+            throw new ChapterNotFoundException("유효하지 않은 챕터 식별자입니다.");
+         }
+
+         if (!chapter.hasVideo()) {
+             throw new DomainRuleViolationException("삭제할 동영상이 없습니다.");
+         }
+
+         chapterRepository.deleteById(chapter.getId());
+
+         long elapsedTime = System.currentTimeMillis() - startTime;
+
+         log.info("동영상 삭제 완료 - teacherId={}, lectureId={}, chapterId={}, elapsedTime={}",
+                 teacherId,
+                 command.lectureId(),
+                 command.chapterId(),
+                 elapsedTime);
     }
 
     /**
