@@ -69,7 +69,8 @@ public final class LectureQuery {
             Long lectureId
     ) {
         public GetStudentLectureDetailQuery {
-            if (userId == null || userId <= 0) {
+            // 비로그인 사용자는 userId가 null일 수 있으므로, 값이 있을 때만 검증
+            if (userId != null && userId <= 0) {
                 throw new DomainRuleViolationException("유효하지 않은 사용자입니다.");
             }
             if (lectureId == null || lectureId <= 0) {

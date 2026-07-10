@@ -3,6 +3,7 @@ package com.wanted.momocity.lecture.presentation.api;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
+import com.wanted.momocity.lecture.application.command.LectureCommand.DeleteChapterCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.DeleteLectureCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.ChangeLectureStatusCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.RegisterChapterVideoCommand;
@@ -174,6 +175,44 @@ public class LectureController {
                         "챕터가 등록되었습니다.",
                             CreateChapterResponse.from(chapter, lectureS3UrlResolver)
                 ));
+    }
+
+    // 챕터 삭제
+    @Operation(
+            summary = "챕터 삭제",
+            description = "강사가 본인 강의의 챕터를 삭제합니다. 챕터는 실제 row를 삭제합니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "챕터 삭제 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "강사 권한 없음 또는 본인 강의가 아님"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "강의 또는 챕터를 찾을 수 없음")
+    })
+    @DeleteMapping("/{lectureId}/chapters/{chapterId}")
+    @PreAuthorize("hasAnyAuthority('ROLE_TEACHER')")
+    public ResponseEntity<ApiResponse<Void>> deleteChapter(
+            Authentication authentication,
+            @PathVariable Long lectureId,
+            @PathVariable Long chapterId
+    ) {
+        // 토큰에셔 아이디를 확인
+        Long teacherId = Long.parseLong(authentication.getName());
+
+        DeleteChapterCommand command = new DeleteChapterCommand(
+                teacherId,
+                lectureId,
+                chapterId
+        );
+
+        // 챕터 삭제 비즈니스 로직 삭제
+        chapterCommandUseCase.deleteChapter(command);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                ApiResponseCode.SUCCESS,
+                "챕터가 성공적으로 삭제되었습니다.",
+                null
+        ));
     }
 
     /* comment
@@ -355,8 +394,10 @@ public class LectureController {
             Authentication authentication,
             @PathVariable Long lectureId
     ) {
-        Long userId = Long.parseLong(authentication.getName());
-        String role = getRole(authentication);
+        // 토큰이 있음녀 ROLE값, 없으면 Anonymous로 처리
+        String role = getRoleOrAnonymous(authentication);
+        // 토큰이 있으면 userId, 없으면 null 값
+        Long userId = getUserIdOrNull(authentication);
 
         if ("ROLE_ADMIN".equals(role)) {
             GetAdminLectureDetailQuery query = new GetAdminLectureDetailQuery(

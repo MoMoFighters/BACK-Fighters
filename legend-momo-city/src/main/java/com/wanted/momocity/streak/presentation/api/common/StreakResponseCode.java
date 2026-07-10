@@ -12,4 +12,6 @@ public class StreakResponseCode {
 
     public static final String STREAK_MONTHLY_FOUND = "STREAK-MONTHLY-FOUND";
 
+    public static final String STREAK_YEARLY_FOUND = "STREAK_YEARLY_FOUND";
+
 }

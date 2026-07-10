@@ -2,7 +2,8 @@ package com.wanted.momocity.lecture.application.service;
 
 import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
-import com.wanted.momocity.lecture.application.command.LectureCommand;
+import com.wanted.momocity.lecture.application.command.LectureCommand.DeleteChapterCommand;
+import com.wanted.momocity.lecture.application.command.LectureCommand.DeleteLectureCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.AdminChangeLectureStatusCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.ChangeLectureStatusCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.CreateChapterCommand;
@@ -25,6 +26,7 @@ import com.wanted.momocity.lecture.domain.model.LectureStatus;
 import com.wanted.momocity.lecture.domain.repository.ChapterRepository;
 import com.wanted.momocity.lecture.domain.repository.LectureRepository;
 import com.wanted.momocity.lecture.presentation.api.response.AdminLectureResponse.AdminChangeLectureStatusResponse;
+import com.wanted.momocity.viewing.domain.model.Lecture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -170,7 +172,7 @@ public class LectureCommandService implements
     }
 
     @Override
-    public LectureAggregate deleteLecture(LectureCommand.DeleteLectureCommand command) {
+    public LectureAggregate deleteLecture(DeleteLectureCommand command) {
         long startTime = System.currentTimeMillis();
         log.info("강의 삭제 시작 - userId={}, role={}, lectureId={}",
                 command.userId(),
@@ -373,6 +375,56 @@ public class LectureCommandService implements
         );
 
         return savedChapter;
+    }
+
+    // 챕터 삭제
+    @Override
+    public void deleteChapter(DeleteChapterCommand command) {
+        long startTime = System.currentTimeMillis();
+
+        log.info("챕터 삭제 시작 - teacherId={}, lectureId={}, chapterId={}",
+                command.lectureId(),
+                command.lectureId(),
+                command.chapterId()
+        );
+
+        // userId로 teacherId로 조회
+        Long teacherId = teacherAccountPort.getTeacherId(command.teacherId());
+
+        // 삭제할 챕터의 강의가 있는지 조회
+        LectureAggregate lecture = lectureRepository.findById(command.lectureId())
+                // 없으면 예외
+                .orElseThrow(() -> new LectureNotFoundException("강의를 찾을 수 없습니다."));
+
+        // 해당 강의의 강사가 아닌 경우
+        if (!lecture.isOwnedBy(teacherId)) {
+            throw new AccessDeniedException("본인이 등록한 강의의 챕터만 삭제 가능합니다.");
+        }
+
+        // 이미 삭제된 강의인 경우
+        if (lecture.getStatus() == LectureStatus.DELETED) {
+            throw new DomainRuleViolationException("삭제된 강의는 찾을 수 없습니다.");
+        }
+
+        LectureChapter chapter = chapterRepository.findById(command.chapterId())
+                .orElseThrow(() -> new ChapterNotFoundException("챕터를 찾을 수 없습니다."));
+
+        // 챕터가 강의 안에 있는지 확인
+        if (!chapter.belongsTo(command.lectureId())) {
+            throw new ChapterNotFoundException("유효하지 않은 챕터 식별자입니다.");
+        }
+
+        // 검증이 다 끝난 경우 DB에서 실제 삭제 진행
+        chapterRepository.deleteById(chapter.getId());
+
+        long elapsedTime = System.currentTimeMillis() - startTime;
+
+        log.info("챕터 삭제 완료 - teacherId={}, lectureId={}, chapterId={}, elapsedTime={}",
+                command.teacherId(),
+                command.lectureId(),
+                command.chapterId(),
+                elapsedTime
+        );
     }
 
     /**

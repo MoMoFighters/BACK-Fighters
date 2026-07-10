@@ -11,7 +11,11 @@ import lombok.Getter;
 import java.time.LocalDateTime;
 
 @Entity(name = "UserUser")
-@Table(name="`user`")
+@Table(name="`user`", indexes = {
+        @Index(name = "findBanOver", columnList = "status, suspended_until"),
+        @Index(name = "findHardDeleteUser", columnList = "status, deleted_at"), // 5만명 더미 rows: 100000 → 49783
+        @Index(name = "findPendingTeacher", columnList = "role, status") // 237ms -> 68ms
+})
 @Getter
 public class UserJpaEntity {
 

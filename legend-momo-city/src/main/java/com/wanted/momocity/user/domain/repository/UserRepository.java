@@ -89,4 +89,7 @@ public interface UserRepository {
 
     // 강사 일괄처리
     void bulkUpdateAfterApply(List<Long> ids, Role role, Status status, String categoryProfileImage, LocalDateTime now);
+
+    // 온보딩 페이지용 사용자 수 세기
+    int getOnboardingUserCount();
 }

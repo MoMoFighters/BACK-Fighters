@@ -84,4 +84,9 @@ public class EnrollmentJpaEntity {
                 enrolledAt
         );
     }
+
+    // 잔디 진척도 계 업데이트 로직
+    public void updateTotalProgress(int totalProgress) {
+        this.totalProgress = totalProgress;
+    }
 }

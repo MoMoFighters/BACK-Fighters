@@ -34,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * 강의 조회 기능을 처리하는 Application Service.
@@ -170,7 +171,13 @@ public class LectureQueryService implements
                 query.userId(),
                 query.lectureId()
         );
-        Long studentId = studentAccountPort.getStudentId(query.userId());
+        // 비로그인 학생은 ID가 없으면 기본값 null
+        Long studentId = null;
+
+        // 로그인한 사용자이면 userId로 해당 학생 조회
+        if (query.userId() !=null) {
+            studentId=studentAccountPort.getStudentId(query.userId());
+        }
 
         LectureAggregate lecture = lectureRepository.findById(query.lectureId())
                 .orElseThrow(() -> new LectureNotFoundException("강의를 찾을 수 없습니다."));
@@ -183,9 +190,13 @@ public class LectureQueryService implements
                 chapterRepository.findAllByLectureIdOrderByOrderNoAsc(query.lectureId());
 
         // 수강 신청 정보 조회
-        var enrollmentProgress = lectureEnrollmentQueryPort
-                // 학생 Id와 강의ID로 수강 신청 정보 조회
-                .findByUserIdAndLectureId(studentId, query.lectureId());
+        Optional<LectureEnrollmentQueryPort.EnrollmentProgress> enrollmentProgress =
+                // 비로그인 사용자는 수강 신청 정보가 없으므로 studentId가 없는지 확인
+                studentId == null
+                        // 비로그인 사용자는 수강 신청 조회를 하지 않고 빈 Optional로 처리
+                        ? Optional.empty()
+                        // 로그인 학생이면 기존처럼 수강 신청 정보를 조회
+                        : lectureEnrollmentQueryPort.findByUserIdAndLectureId(studentId, query.lectureId());
 
         // 수강 신청 정보가 있으면 true, 없으면 null
         boolean isEnrolled = enrollmentProgress.isPresent();

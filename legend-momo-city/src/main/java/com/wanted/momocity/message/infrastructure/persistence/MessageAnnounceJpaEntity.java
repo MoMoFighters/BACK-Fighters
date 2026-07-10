@@ -29,7 +29,7 @@ public class MessageAnnounceJpaEntity {
     @Column(name = "content")
     private String content;
 
-    @Column(name = "type")
+    @Column(name = "type", columnDefinition = "ENUM('LEAVE','INVITE','RENAME')")
     private String type;
 
     @Column(name = "created_at")

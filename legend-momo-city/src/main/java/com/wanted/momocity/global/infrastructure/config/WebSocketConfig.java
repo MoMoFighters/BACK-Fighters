@@ -17,7 +17,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     private static final String[] ALLOWED_ORIGIN_PATTERNS = {
             "http://localhost:3000",
             "http://localhost:4444",
-            "https://momocity-six.vercel.app",
+            "https://momocity-six.vercel.app"
 //            "https://*.vercel.app",
 //            "https://*.ngrok-free.dev"
     };

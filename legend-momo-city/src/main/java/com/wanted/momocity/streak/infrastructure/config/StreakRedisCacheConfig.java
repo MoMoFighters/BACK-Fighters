@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.wanted.momocity.streak.presentation.api.response.StreakMonthlyResponse;
+import com.wanted.momocity.streak.presentation.api.response.StreakYearlyResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
@@ -55,6 +56,47 @@ public class StreakRedisCacheConfig {
         // TTL = 오늘 자정까지 남은 시간
         // -> 예: 현재 오후 9시 -> TTL = 3시간
         // -> 예: 현재 오전 1시 -> TTL = 23시간
+        LocalDateTime midnight = LocalDate.now().plusDays(1).atStartOfDay();
+        Duration ttl = Duration.between(LocalDateTime.now(), midnight);
+
+        return RedisCacheConfiguration
+                .defaultCacheConfig()
+                // 자정까지 남은 시간으로 TTL 설정
+                .entryTtl(ttl)
+                // 캐시 키는 문자열로 저장
+                // -> "streak::2:2026:6" 형태로 Redis 에서 확인 가능
+                .serializeKeysWith(
+                        RedisSerializationContext.SerializationPair
+                                .fromSerializer(new StringRedisSerializer())
+                )
+                // 캐시 값은 JSON 으로 저장
+                // -> StreakMonthlyResponse 타입 명시로 역직렬화 안전
+                .serializeValuesWith(
+                        RedisSerializationContext.SerializationPair
+                                .fromSerializer(serializer)
+                )
+                // null 캐싱 방지
+                // -> 잔디 없는 날짜 조회해도 null 저장 안 됨
+                .disableCachingNullValues();
+    }
+
+    @Bean(name = "streakYearlyCacheConfiguration")
+    public RedisCacheConfiguration streakYearlyCacheConfiguration() {
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        objectMapper.configure(
+                com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
+                false
+        );
+
+        // StreakYearlyResponse 타입 명시
+        // -> List<StreakResponse> 포함한 중첩 구조도 정확히 역직렬화
+        Jackson2JsonRedisSerializer<StreakYearlyResponse> serializer =
+                new Jackson2JsonRedisSerializer<>(objectMapper, StreakYearlyResponse.class);
+
+        // TTL = 오늘 자정까지 남은 시간 (월간과 동일)
         LocalDateTime midnight = LocalDate.now().plusDays(1).atStartOfDay();
         Duration ttl = Duration.between(LocalDateTime.now(), midnight);
 
