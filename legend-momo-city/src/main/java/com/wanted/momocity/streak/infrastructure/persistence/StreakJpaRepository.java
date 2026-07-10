@@ -1,6 +1,8 @@
 package com.wanted.momocity.streak.infrastructure.persistence;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -21,4 +23,16 @@ public interface StreakJpaRepository extends JpaRepository<StreakJpaEntity, Long
     List<StreakJpaEntity> findByUserIdAndStreakDateBetween(
             Long userId, LocalDate startDate, LocalDate endDate
     );
+
+    @Query("""
+    SELECT s FROM StreakJpaEntity s
+    WHERE s.userId = :userId
+    AND FUNCTION('YEAR', s.streakDate) = :year
+    ORDER BY s.streakDate ASC
+""")
+    List<StreakJpaEntity> findByUserIdAndYear(
+            @Param("userId") Long userId,
+            @Param("year") int year
+    );
+
 }

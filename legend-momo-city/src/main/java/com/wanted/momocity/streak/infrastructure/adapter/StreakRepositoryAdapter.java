@@ -57,4 +57,15 @@ public class StreakRepositoryAdapter implements StreakRepository {
                 .map(StreakJpaEntity::toDomain)
                 .toList();
     }
+
+    @Override
+    // 연간 잔디 조회 -> 마이페이지 해당 년도 전체 잔디 조회
+    public List<Streak> findByUserIdAndYear(Long userId, int year) {
+        return jpaRepository
+                .findByUserIdAndYear(userId, year)
+                .stream()
+                .map(StreakJpaEntity::toDomain)
+                .toList();
+    }
+
 }
