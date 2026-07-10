@@ -1,4 +1,6 @@
 package com.wanted.momocity.chatbot.infrastructure.persistence;
 
-public class ChatbotDailyUsageJpaRepository {
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface ChatbotDailyUsageJpaRepository extends JpaRepository<ChatbotDailyUsageJpaEntity, Long> {
 }

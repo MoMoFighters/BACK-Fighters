@@ -1,4 +1,4 @@
 package com.wanted.momocity.chatbot.domain.repository;
 
-public class ChatbotQuestionLogRepository {
+public interface ChatbotQuestionLogRepository {
 }
