@@ -3,6 +3,8 @@ package com.wanted.momocity.review.domain.repository;
 import com.wanted.momocity.review.domain.model.Review;
 import com.wanted.momocity.review.domain.model.ReviewStatus;
 
+import java.util.List;
+
 // 수강평 저장소
 public interface ReviewRepository {
 
@@ -21,4 +23,7 @@ public interface ReviewRepository {
 
     // 리뷰 Id 기준 삭제
     void softDeleteById(Long reviewId);
+
+    // lectureId 기준으로 해당 강의의 Active 수강평 원문 목록 조회
+    List<String> findContentsByLectureId(Long lectureId);
 }

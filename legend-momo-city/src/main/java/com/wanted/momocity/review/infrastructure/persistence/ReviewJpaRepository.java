@@ -46,4 +46,14 @@ public interface ReviewJpaRepository extends JpaRepository<ReviewJpaEntity, Long
             group by r.lectureId
         """) // 여러 강의 ID에 대해 강의별 평균 평점과 리뷰 개수를 한 번에 조회
     List<ReviewStatsProjection> findReviewStatsByLectureIds(@Param("lectureIds") List<Long> lectureIds); // 강의 ID 목록 기준 리뷰 통계 조회
+
+    // 특정 강의의 ACTIVE 상태 수강평 원문만 최신순으로 조회합니다.
+    @Query("""
+        select r.content
+        from ReviewJpaEntity r
+        where r.lectureId = :lectureId
+          and r.status = 'ACTIVE'
+        order by r.createdAt desc
+        """)
+    List<String> findContentsByLectureId(@Param("lectureId") Long lectureId); // 수강평이 없으면 빈 리스트를 반환합니다.
 }
