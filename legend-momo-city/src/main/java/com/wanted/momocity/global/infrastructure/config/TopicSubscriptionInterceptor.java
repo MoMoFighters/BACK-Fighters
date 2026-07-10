@@ -6,9 +6,12 @@ import com.wanted.momocity.auth.domain.model.User;
 
 import com.wanted.momocity.auth.infrastructure.jwt.JwtTokenProvider;
 import com.wanted.momocity.message.application.manager.ChatRoomSessionManager;
+import com.wanted.momocity.message.application.manager.ChatTypingBroadcaster;
+import com.wanted.momocity.message.application.manager.ChatTypingSessionManager;
 import com.wanted.momocity.notification.application.manager.NotificationSessionManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -18,6 +21,7 @@ import org.springframework.stereotype.Component;
 
 import java.security.Principal;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
@@ -38,6 +42,10 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
 
     // 🎯 [핵심 추가]: 세션ID + 구독ID 조합을 key로 삼아 실제 destination 주소를 기억하는 메모리 지도
     private final Map<String, String> subscriptionRegistry = new ConcurrentHashMap<>();
+
+    private final ChatTypingSessionManager typingSessionManager;
+
+    private final ObjectProvider<ChatTypingBroadcaster> typingBroadcasterProvider;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -171,6 +179,13 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
                         String roomIdStr = destination.substring(destination.lastIndexOf("/") + 1);
                         Long roomId = Long.parseLong(roomIdStr);
                         sessionManager.leaveRoom(userId, roomId);
+                        typingSessionManager.stopTyping(roomId, userId);
+
+                        try {
+                            typingBroadcasterProvider.getObject().broadcast(roomId);
+                        } catch (Exception e) {
+                            log.warn("[웹소켓 인터셉터] UNSUBSCRIBE 타이핑 브로드캐스트 실패 - roomId: {}", roomId, e);
+                        }
                         log.info("[웹소켓 인터셉터] 유저 {}번 채팅방 세션 제거 완료 (주소 역추적: {})", userId, destination);
                     } catch (NumberFormatException e) {
                         log.error("[웹소켓 인터셉터] UNSUBSCRIBE 방 ID 파싱 실패: {}", destination);
@@ -191,11 +206,25 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
         if (StompCommand.DISCONNECT.equals(command)) {
             Long userId = getUserIdFromAccessor(accessor);
             if (userId != null) {
+                // 연결 종료 전, 이 유저가 타이핑 중이던 방 목록을 먼저 확보
+                Set<Long> typingRoomIds = typingSessionManager.getTypingRooms(userId);
+
                 // 연결이 완전히 끊기는 것은 방을 나가는 것이 맞으므로 무조건 제거
                 sessionManager.leaveRoom(userId);
 
                 notificationSessionManager.leaveNotificationChannel(userId, accessor.getSessionId());
-                // 🎯 해당 세션의 모든 장부 기록 싹 청소
+                typingSessionManager.clearUser(userId);
+
+                // 정리 후, 영향받은 각 방에 갱신된 타이핑 상태 브로드캐스트
+                for (Long roomId : typingRoomIds) {
+                    try {
+                        typingBroadcasterProvider.getObject().broadcast(roomId);
+                    } catch (Exception e) {
+                        log.warn("[웹소켓 인터셉터] DISCONNECT 타이핑 브로드캐스트 실패 - roomId: {}", roomId, e);
+                    }
+                }
+
+                // 해당 세션의 모든 장부 기록 싹 청소
                 if (sessionId != null) {
                     subscriptionRegistry.keySet().removeIf(key -> key.startsWith(sessionId + "_"));
                 }
