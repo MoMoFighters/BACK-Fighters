@@ -62,7 +62,10 @@ CREATE TABLE `group_room_member` (
     PRIMARY KEY (`id`),
     UNIQUE KEY `uq_group_room_member` (`group_room_id`, `user_id`),
     KEY `idx_group_room_member_user`   (`user_id`),
-    KEY `idx_group_room_member_status` (`status`)
+    KEY `idx_group_room_member_status` (`status`),
+    CONSTRAINT `fk_group_room_member_room`
+        FOREIGN KEY (`group_room_id`) REFERENCES `group_room` (`id`)
+            ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- =====================================================================
