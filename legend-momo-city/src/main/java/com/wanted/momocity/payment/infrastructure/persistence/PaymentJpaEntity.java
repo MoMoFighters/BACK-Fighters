@@ -3,11 +3,13 @@ package com.wanted.momocity.payment.infrastructure.persistence;
 import com.wanted.momocity.payment.domain.model.Plan;
 import com.wanted.momocity.payment.domain.model.Status;
 import jakarta.persistence.*;
+import lombok.Getter;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name="payment")
+@Getter
 public class PaymentJpaEntity {
 
     @Id
@@ -42,11 +44,16 @@ public class PaymentJpaEntity {
         this.paymentId = paymentId;
         this.plan = plan;
         this.price = price;
-        this.status = status;
+        this.status = Status.PENDING;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
 
     public PaymentJpaEntity() {}
 
+    // 업데이트 될 때 현재 시각으로 자동 세팅
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }
