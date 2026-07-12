@@ -40,4 +40,30 @@ public class Payment {
     public Status getStatus() { return status; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
+
+     // 포트원 실결제금액과 DB 금액이 일치할
+    public Payment markSuccess() {
+        return new Payment(this.id, this.userId, this.paymentId, this.plan, this.price,
+                Status.SUCCESS, this.createdAt, LocalDateTime.now());
+    }
+
+
+    // 금액 불일치 또는 결제 실패 시 호출 (pgTxId는 남겨서 어떤 포트원 거래건이었는지 추적 가능하게)
+    public Payment markFailed() {
+        return new Payment(this.id, this.userId, this.paymentId, this.plan, this.price,
+                Status.FAILED, this.createdAt, LocalDateTime.now());
+    }
+
+    // 금액 불일치로 취소를 시도했으나 포트원 취소 API 자체가 실패한 경우
+    // 실제 돈은 포트원 쪽에 잡혀 있을 수 있어 수동 확인이 필요한 상태
+    public Payment markCancelFailed() {
+        return new Payment(this.id, this.userId, this.paymentId, this.plan, this.price,
+                Status.CANCEL_FAILED, this.createdAt, LocalDateTime.now());
+    }
+
+    public boolean isFinalized() {
+        return this.status == Status.SUCCESS
+                || this.status == Status.FAILED
+                || this.status == Status.CANCEL_FAILED;
+    }
 }

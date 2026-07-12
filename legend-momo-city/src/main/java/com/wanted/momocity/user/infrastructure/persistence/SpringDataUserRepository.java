@@ -3,6 +3,7 @@ package com.wanted.momocity.user.infrastructure.persistence;
 
 import com.wanted.momocity.admin.application.port.MonthlyCount;
 import com.wanted.momocity.global.domain.model.Category;
+import com.wanted.momocity.user.domain.model.Membership;
 import com.wanted.momocity.user.domain.model.Role;
 import com.wanted.momocity.user.domain.model.Status;
 import org.springframework.data.domain.Pageable;
@@ -233,4 +234,12 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
     // 온보딩 페이지용 사용자 수 세기
     @Query("SELECT COUNT(u) FROM UserUser u WHERE u.status <> 'DELETED'")
     long countOnboardingUsers();
+
+    // 구독 플랜 변경
+    @Modifying
+    @Transactional
+    @Query("UPDATE UserUser u SET u.membership = :membership, u.membershipStart = :membershipStart WHERE u.id = :id")
+    void updateMembership(@Param("id") Long id,
+                          @Param("membership") Membership membership,
+                          @Param("membershipStart") LocalDateTime membershipStart);
 }

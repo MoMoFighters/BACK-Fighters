@@ -8,5 +8,7 @@ import java.util.Optional;
 
 public interface SpringDataPaymentRepository extends JpaRepository<PaymentJpaEntity, Long> {
 
-    Optional<PaymentJpaEntity> findFirstByUserIdAndPlanAndStatus(Long userId, Plan plan, Status status);
+    Optional<PaymentJpaEntity> findFirstByUserIdAndStatus(Long userId,  Status status);
+
+    Optional<PaymentJpaEntity> findByPaymentId(String paymentId);
 }

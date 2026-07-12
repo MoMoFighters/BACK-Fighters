@@ -12,4 +12,7 @@ public interface PaymentRepository {
 
     // 중복 결제 방지용 이미 있으면 예외
     Optional<Payment> findPendingByUserIdAndPlan(Long userId, Plan targetPlan);
+
+    // 실제 결제 정보 조회
+    Optional<Payment> findByPaymentId(String paymentId);
 }
