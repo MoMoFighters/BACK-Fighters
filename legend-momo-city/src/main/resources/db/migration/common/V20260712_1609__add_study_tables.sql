@@ -51,7 +51,7 @@ CREATE TABLE `group_room_member` (
     `id`               BIGINT       NOT NULL AUTO_INCREMENT,
     `group_room_id`    BIGINT       NOT NULL,
     `user_id`          BIGINT       NOT NULL,
-    `status`           ENUM('INVITED', 'JOINED', 'LEFT', 'REJECTED', 'CANCELED') NOT NULL DEFAULT 'INVITED',
+    `status`           ENUM('INVITED', 'JOINED', 'LEFT', 'KICKED', 'REJECTED', 'CANCELED') NOT NULL DEFAULT 'INVITED',
     `timer_status`     ENUM('STUDYING', 'RESTING') DEFAULT NULL,
     `invited_at`       DATETIME(6)  DEFAULT NULL,
     `joined_at`        DATETIME(6)  DEFAULT NULL,
