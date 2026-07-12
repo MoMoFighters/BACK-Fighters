@@ -6,9 +6,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 // ChatbotQuestionLogRepositoryAdapter는 있는데 이 어댑터는 빠져있어서 새로 추가
-@Repository
-@RequiredArgsConstructor
+//@Repository
+//@RequiredArgsConstructor
 public class ChatbotDailyUsageRepositoryAdapter implements ChatbotDailyUsageRepository {
 
-    private final ChatbotDailyUsageJpaRepository chatbotDailyUsageJpaRepository;
+    // private final ChatbotDailyUsageJpaRepository chatbotDailyUsageJpaRepository;
 }

@@ -10,10 +10,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ReviewInfoAdapter {
 
-    private final ReviewRepository reviewRepository;
+    //private final ReviewRepository reviewRepository;
 
-    @Override
-    public List<String> findReviewContentsByLectureId(Long lectureId) {
-        return reviewRepository.findContentsByLectureId(lectureId);
+    //@Override
+    //public List<String> findReviewContentsByLectureId(Long lectureId) {
+        //return reviewRepository.findContentsByLectureId(lectureId);
     }
-}
+// }

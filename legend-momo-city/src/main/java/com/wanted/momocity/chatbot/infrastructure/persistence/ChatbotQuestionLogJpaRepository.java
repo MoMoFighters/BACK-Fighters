@@ -1,6 +1,4 @@
 package com.wanted.momocity.chatbot.infrastructure.persistence;
-
-import org.springframework.data.jpa.repository.JpaRepository;
-
-public interface ChatbotQuestionLogJpaRepository extends JpaRepository<ChatbotQuestionLogJpaEntity, Long> {
+// TODO : DBA 스키마 확정 후 상속 다시 부착
+public interface ChatbotQuestionLogJpaRepository {
 }
