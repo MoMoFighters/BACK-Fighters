@@ -6,7 +6,7 @@ public class Payment {
 
     private final Long id;
     private final Long userId;
-    private final Long paymentId;
+    private final String paymentId;
     private final Plan plan;
     private final Long price;
     private final Status status;
@@ -14,7 +14,7 @@ public class Payment {
     private final LocalDateTime updatedAt;
 
 
-    public Payment(Long id, Long userId, Long paymentId, Plan plan, Long price, Status status, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public Payment(Long id, Long userId, String paymentId, Plan plan, Long price, Status status, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.userId = userId;
         this.paymentId = paymentId;
