@@ -5,9 +5,10 @@ import com.wanted.momocity.chatbot.infrastructure.persistence.ChatbotQuestionLog
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
-@Repository
-@RequiredArgsConstructor
-public class ChatbotQuestionLogRepositoryAdapter implements ChatbotQuestionLogRepository {
+//@Repository
+//@RequiredArgsConstructor
+// implements ChatbotQuestionLogRepository
+public class ChatbotQuestionLogRepositoryAdapter {
 
-    private final ChatbotQuestionLogJpaRepository chatbotQuestionLogJpaRepository;
+    //private final ChatbotQuestionLogJpaRepository chatbotQuestionLogJpaRepository;
 }
