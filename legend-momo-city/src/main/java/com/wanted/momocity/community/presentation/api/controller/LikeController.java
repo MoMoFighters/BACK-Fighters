@@ -1,4 +1,4 @@
-package com.wanted.momocity.community.presentation.api;
+package com.wanted.momocity.community.presentation.api.controller;
 
 import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.community.application.like.usecase.LikeCommandUseCase;
