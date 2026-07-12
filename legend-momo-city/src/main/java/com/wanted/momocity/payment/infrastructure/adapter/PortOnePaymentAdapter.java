@@ -48,8 +48,8 @@ public class PortOnePaymentAdapter implements PortOnePaymentPort {
         String pgTxId = (String) response.get("pgTxId");
 
         @SuppressWarnings("unchecked")
-        Map<String, Object> amountMap = (Map<String, Object>) response.get("amount");
         /*comment
+        *  포트원 응답의 amount 필드를 Map으로 강제 캐스팅 - 타입 안전성 경고를 무시하는 어노테이션
         *  amount는 이런 맵현식
         *  "amount": {
         *    "total": 9900,
@@ -57,6 +57,7 @@ public class PortOnePaymentAdapter implements PortOnePaymentPort {
         *    "vat": 900
         *  }
         * */
+        Map<String, Object> amountMap = (Map<String, Object>) response.get("amount");
         Long total = null;
         if (amountMap != null && amountMap.get("total") != null) {
             total = Long.valueOf(String.valueOf(amountMap.get("total")));
