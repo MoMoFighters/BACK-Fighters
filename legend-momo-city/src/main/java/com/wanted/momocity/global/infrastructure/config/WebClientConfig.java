@@ -2,6 +2,7 @@ package com.wanted.momocity.global.infrastructure.config;
 
 import com.wanted.momocity.payment.infrastructure.portone.PortOneProperties;
 import io.netty.channel.ChannelOption;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
@@ -12,6 +13,7 @@ import reactor.netty.http.client.HttpClient;
 import java.time.Duration;
 
 @Configuration
+@EnableConfigurationProperties(PortOneProperties.class)
 public class WebClientConfig {
 
     @Bean
