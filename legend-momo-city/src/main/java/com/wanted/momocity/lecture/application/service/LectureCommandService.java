@@ -204,6 +204,10 @@ public class LectureCommandService implements
             throw new DomainRuleViolationException("이미 삭제된 강의입니다.");
         }
 
+        // 강의 삭제 시 해당 강의에 속한 모든 챕터를 실제 삭제
+        // 챕터 row에 있는 영상 URL, 파일 크기, 재생시간, 원본파일명이 포함되어 있어, 챕터 삭제 시 DB 기준 영상 정보도 함께 삭제
+        chapterRepository.deleteAllByLectureId(lecture.getId());
+
         // 강의 상태를 DELETED로 변경한 도메인 객체 생성
         LectureAggregate deletedLecture = lecture.changeStatus(LectureStatus.DELETED);
 
