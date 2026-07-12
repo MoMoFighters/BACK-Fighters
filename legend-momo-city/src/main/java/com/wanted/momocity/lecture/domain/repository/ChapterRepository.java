@@ -33,4 +33,7 @@ public interface ChapterRepository {
 
     // 챕터 삭제
     void deleteById(Long chapterId);
+
+    // lectureId 기준 해당 강의에 속한 모든 챕터 삭제
+    void deleteAllByLectureId(Long lectureId);
 }
