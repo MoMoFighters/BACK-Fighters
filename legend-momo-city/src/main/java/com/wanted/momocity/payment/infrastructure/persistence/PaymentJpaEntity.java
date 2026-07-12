@@ -1,5 +1,6 @@
 package com.wanted.momocity.payment.infrastructure.persistence;
 
+import com.wanted.momocity.payment.domain.model.Payment;
 import com.wanted.momocity.payment.domain.model.Plan;
 import com.wanted.momocity.payment.domain.model.Status;
 import jakarta.persistence.*;
@@ -20,7 +21,7 @@ public class PaymentJpaEntity {
     private Long userId;
 
     @Column(name = "payment_id", nullable = false, unique = true)
-    private String paymentId; // 포트원에서 발급하는 결제 고유 ID
+    private String paymentId; // 우리 서버가 생성해서 포트원 결제 요청/조회에 사용하는 고유 ID
 
     @Enumerated(EnumType.STRING)
     @Column(name = "plan", nullable = false)
@@ -39,21 +40,41 @@ public class PaymentJpaEntity {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    private PaymentJpaEntity(Long userId, String paymentId, Plan plan, Long price) {
+    // id 포함 생성자
+    public PaymentJpaEntity(Long id, Long userId, String paymentId, Plan plan, Long price,
+                            Status status, LocalDateTime createdAt, LocalDateTime updatedAt) {
+        this.id = id;
         this.userId = userId;
         this.paymentId = paymentId;
         this.plan = plan;
         this.price = price;
-        this.status = Status.PENDING;
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+        this.status = status;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
     }
 
-    public PaymentJpaEntity() {}
+    protected PaymentJpaEntity() {}
 
     // 업데이트 될 때 현재 시각으로 자동 세팅
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public static PaymentJpaEntity fromDomain(Payment payment) {
+        return new PaymentJpaEntity(
+                payment.getId(),
+                payment.getUserId(),
+                payment.getPaymentId(),
+                payment.getPlan(),
+                payment.getPrice(),
+                payment.getStatus(),
+                payment.getCreatedAt(),
+                payment.getUpdatedAt()
+        );
+    }
+
+    public Payment toDomain() {
+        return new Payment(id, userId, paymentId, plan, price, status, createdAt, updatedAt);
     }
 }

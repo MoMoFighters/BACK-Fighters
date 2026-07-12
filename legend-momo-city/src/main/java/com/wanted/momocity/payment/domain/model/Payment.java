@@ -24,4 +24,20 @@ public class Payment {
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
+
+    // prepare 단계
+    public static Payment createPending(Long userId, String paymentId, Plan plan, Long price) {
+        LocalDateTime now = LocalDateTime.now();
+        return new Payment(null, userId, paymentId, plan, price, Status.PENDING, now, now);
+    }
+
+    // getter
+    public Long getId() { return id; }
+    public Long getUserId() { return userId; }
+    public String getPaymentId() { return paymentId; }
+    public Plan getPlan() { return plan; }
+    public Long getPrice() { return price; }
+    public Status getStatus() { return status; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
 }
