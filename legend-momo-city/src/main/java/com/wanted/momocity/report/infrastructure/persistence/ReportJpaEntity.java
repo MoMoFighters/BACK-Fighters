@@ -1,11 +1,8 @@
 package com.wanted.momocity.report.infrastructure.persistence;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import com.wanted.momocity.report.domain.model.ReportReason;
+import com.wanted.momocity.report.domain.model.ReportTargetType;
+import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 
@@ -22,8 +19,9 @@ public class ReportJpaEntity {
     @Column(name = "reporter_user_id", nullable = false)
     private Long reporterUserId;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "target_type", nullable = false, length = 20)
-    private String targetType;
+    private ReportTargetType targetType;
 
     // nullable 속성없음
     // 이유는 PAGE 타입일 경우 null 허용이기 때문에 의도적으로 제거
@@ -38,8 +36,9 @@ public class ReportJpaEntity {
     @Column(name = "target_path", length = 500)
     private String targetPath;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "reason", nullable = false, length = 30)
-    private String reason;
+    private ReportReason reason;
 
     @Column(name = "detail", length = 1000)
     private String detail;
@@ -58,9 +57,9 @@ public class ReportJpaEntity {
     }
 
     // Report 객체를 이걸로 변환할 때 호출한다.
-    public ReportJpaEntity(Long id, Long reporterUserId, String targetType, Long targetId,
+    public ReportJpaEntity(Long id, Long reporterUserId, ReportTargetType targetType, Long targetId,
                            Long reportedUserId, String targetPath,
-                           String reason, String detail, boolean isResolved,
+                           ReportReason reason, String detail, boolean isResolved,
                            LocalDateTime createdAt, LocalDateTime resolvedAt) {
         this.id = id;
         this.reporterUserId = reporterUserId;
@@ -85,11 +84,11 @@ public class ReportJpaEntity {
     // Adapter 의 toDomain() 은 아래의 값을 호출해서 엔티티 값을 도메인 객체로 변환한다.
     public Long getId() { return id; }
     public Long getReporterUserId() { return reporterUserId; }
-    public String getTargetType() { return targetType; }
+    public ReportTargetType getTargetType() { return targetType; }
     public Long getTargetId() { return targetId; }
     public Long getReportedUserId() { return reportedUserId; }
     public String getTargetPath() { return targetPath; }
-    public String getReason() { return reason; }
+    public ReportReason getReason() { return reason; }
     public String getDetail() { return detail; }
     public boolean isResolved() { return isResolved; }
     public LocalDateTime getCreatedAt() { return createdAt; }

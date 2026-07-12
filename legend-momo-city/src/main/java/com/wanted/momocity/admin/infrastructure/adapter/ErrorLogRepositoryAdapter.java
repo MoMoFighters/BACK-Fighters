@@ -57,7 +57,7 @@ public class ErrorLogRepositoryAdapter implements ErrorLogRepository {
     @Override
     @Transactional(readOnly = true)
     public List<ErrorLog> findByLevel(ErrorLevel level, int limit) {
-        return repository.findAllByLevelOrderByOccurredAtDesc(level.name(), PageRequest.of(0, limit))
+        return repository.findAllByLevelOrderByOccurredAtDesc(level, PageRequest.of(0, limit))
                 .stream()
                 .map(this::toDomain)
                 .toList();
@@ -69,7 +69,7 @@ public class ErrorLogRepositoryAdapter implements ErrorLogRepository {
     private ErrorLogJpaEntity toEntity(ErrorLog errorLog) {
         return new ErrorLogJpaEntity(
                 errorLog.getId(),
-                errorLog.getLevel().name(),
+                errorLog.getLevel(),
                 errorLog.getSource(),
                 errorLog.getMessage(),
                 errorLog.getOccurredAt()
@@ -80,7 +80,7 @@ public class ErrorLogRepositoryAdapter implements ErrorLogRepository {
     private ErrorLog toDomain(ErrorLogJpaEntity entity) {
         return ErrorLog.restore(
                 entity.getId(),
-                ErrorLevel.valueOf(entity.getLevel()),
+                entity.getLevel(),
                 entity.getSource(),
                 entity.getMessage(),
                 entity.getOccurredAt()

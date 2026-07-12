@@ -53,7 +53,7 @@ CREATE TABLE `user` (
     `status`            ENUM('ACTIVE','PENDING','REJECTED','BANNED','BLACK','DELETED') NOT NULL DEFAULT 'ACTIVE',
     `category`          ENUM('FITNESS','STUDY','COOK','BEAUTY','ART')                  NULL,
     `proof`             VARCHAR(500) NULL,
-    `point`             INT          NULL,
+    `point`             BIGINT       NULL,
     `do_not_disturb`    BOOLEAN      NOT NULL DEFAULT FALSE,
     `membership`        ENUM('BASIC','PLUS','PRO')                                     NOT NULL DEFAULT 'BASIC',
     `membership_start`  DATETIME     NULL,
@@ -146,7 +146,7 @@ CREATE TABLE `post_content` (
     `content`    TEXT                 DEFAULT NULL,
     `created_at` DATETIME(6)          NOT NULL,
     `image_url`  VARCHAR(500)         DEFAULT NULL,
-    `order_no`   TINYINT              NOT NULL,
+    `order_no`   INT              NOT NULL,
     `post_id`    BIGINT               NOT NULL,
     `type`       ENUM('IMAGE','TEXT') NOT NULL,
 
@@ -237,7 +237,7 @@ CREATE TABLE `review` (
     `created_at` DATETIME(6)              NOT NULL,
     `deleted_at` DATETIME(6)              DEFAULT NULL,
     `lecture_id` BIGINT                   NOT NULL,
-    `rating`     TINYINT                  NOT NULL,
+    `rating`     INT                      NOT NULL,
     `status`     ENUM('ACTIVE','DELETED') NOT NULL DEFAULT 'ACTIVE',
     `user_id`    BIGINT                   NOT NULL,
 
@@ -734,33 +734,3 @@ SET FOREIGN_KEY_CHECKS = 1;
 --  END OF SCHEMA  (tables: 28)
 -- =====================================================================
 
--- =====================================================================
---  29. chatbot_daily_usage — 유저 하루 5회 호출 제한 체크용
--- =====================================================================
-CREATE TABLE `chatbot_daily_usage` (
-    `id`         BIGINT   NOT NULL AUTO_INCREMENT,
-    `user_id`    BIGINT   NOT NULL,
-    `usage_date` DATE     NOT NULL,
-    `call_count` INT      NOT NULL DEFAULT 0,
-    `token_used` INT      DEFAULT NULL,
-    `created_at` DATETIME DEFAULT NULL,
-    `updated_at` DATETIME DEFAULT NULL,
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `uq_chatbot_daily_usage_user_date` (`user_id`, `usage_date`),
-    KEY `idx_chatbot_daily_usage_user` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
--- =====================================================================
---  30. chatbot_question_log — 동일/유사 질문 3회 반복 판별용
--- =====================================================================
-CREATE TABLE `chatbot_question_log` (
-    `id`             BIGINT       NOT NULL AUTO_INCREMENT,
-    `user_id`        BIGINT       NOT NULL,
-    `lecture_id`     BIGINT       DEFAULT NULL,
-    `question`       VARCHAR(100) DEFAULT NULL,
-    `is_faq_matched` BIT(1)       DEFAULT NULL,
-    `created_at`     DATETIME     DEFAULT NULL,
-    PRIMARY KEY (`id`),
-    KEY `idx_chatbot_question_log_user`    (`user_id`),
-    KEY `idx_chatbot_question_log_lecture` (`lecture_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

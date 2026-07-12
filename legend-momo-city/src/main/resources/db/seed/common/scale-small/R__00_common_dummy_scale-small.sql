@@ -163,7 +163,7 @@ INSERT INTO `enrollment` (`id`, `completed_count`, `enrolled_at`, `lecture_id`, 
   (54, 0, NOW() - INTERVAL 101 DAY, 3, 0, 29, FALSE),
   (55, 0, NOW() - INTERVAL 100 DAY, 1, 0, 30, FALSE),
   (56, 0, NOW() - INTERVAL 100 DAY, 2, 0, 30, FALSE),
-  (57, 0, NOW() - INTERVAL 100 DAY, 3, 0, 30);
+  (57, 0, NOW() - INTERVAL 100 DAY, 3, 0, 30, FALSE);
 -- =====================================================================
 --  5. friend — small
 -- =====================================================================
