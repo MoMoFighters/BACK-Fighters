@@ -437,7 +437,7 @@ public class LectureCommandService implements
                  command.lectureId(),
                  command.chapterId());
 
-         Long teacherId = teacherAccountPort.getTeacherId(command.lectureId());
+         Long teacherId = teacherAccountPort.getTeacherId(command.teacherId());
 
          LectureAggregate lecture = lectureRepository.findById(command.lectureId())
                  .orElseThrow(() -> new LectureNotFoundException("강의를 찾을 수 없습니다."));
