@@ -25,7 +25,7 @@ public class PaymentLockAdapter implements PaymentLockPort {
 
     @Override
     public void unlock(Long userId, Plan plan) {
-        String key = "payment:lock:" + userId + ":" + plan.name();
+        String key = "payment:lock:" + userId ;
         redisTemplate.delete(key);
     }
 }
