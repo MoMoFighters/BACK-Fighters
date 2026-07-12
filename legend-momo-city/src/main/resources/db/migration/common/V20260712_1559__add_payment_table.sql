@@ -23,3 +23,4 @@ ALTER TABLE `payment`
     ADD CONSTRAINT `fk_payment_user`
         FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
             ON DELETE CASCADE;
+           
