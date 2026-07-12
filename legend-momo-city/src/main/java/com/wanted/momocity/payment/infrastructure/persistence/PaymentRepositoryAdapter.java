@@ -1,10 +1,14 @@
 package com.wanted.momocity.payment.infrastructure.persistence;
 
 import com.wanted.momocity.payment.domain.model.Payment;
+import com.wanted.momocity.payment.domain.model.Plan;
+import com.wanted.momocity.payment.domain.model.Status;
 import com.wanted.momocity.payment.domain.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 @Repository("paymentAdapter")
 @Transactional
@@ -18,5 +22,12 @@ public class PaymentRepositoryAdapter implements PaymentRepository {
     public Payment save(Payment payment) {
         PaymentJpaEntity saved = springDataPaymentRepository.save(PaymentJpaEntity.fromDomain(payment));
         return saved.toDomain();
+    }
+
+    @Override
+    public Optional<Payment> findPendingByUserIdAndPlan(Long userId, Plan targetPlan) {
+        return springDataPaymentRepository
+                .findFirstByUserIdAndPlanAndStatus(userId, targetPlan, Status.PENDING)
+                .map(PaymentJpaEntity::toDomain);
     }
 }

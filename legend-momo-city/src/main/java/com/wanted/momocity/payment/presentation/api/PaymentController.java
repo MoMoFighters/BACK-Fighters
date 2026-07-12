@@ -46,7 +46,7 @@ public class PaymentController {
             @RequestBody @Valid PaymentPrepareRequest request
     ){
 
-        PaymentPrepareResult result = paymentCommandUseCase.paymentPrepare(new PaymentPrepareCommand(userDetails.getUserId(),request.plan(),request.price()));
+        PaymentPrepareResult result = paymentCommandUseCase.paymentPrepare(new PaymentPrepareCommand(userDetails.getUserId(),request.plan()));
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(
