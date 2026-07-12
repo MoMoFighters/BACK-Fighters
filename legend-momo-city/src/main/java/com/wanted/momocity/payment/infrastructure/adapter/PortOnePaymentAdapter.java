@@ -19,6 +19,12 @@ public class PortOnePaymentAdapter implements PortOnePaymentPort {
     @Override
     public PortOnePaymentDetail verifyPayment(String paymentId) {
         Map response;
+        /*comment
+        *  포트원 api의 응답 구조
+        *  "status" : "결제 상태",
+        *  "pgTxId" : "포트원이 발급해주는 고유 번호",
+        *  "amount" : "결제된 금액"
+        *  이런 식 */
 
         try {
             response = portOneWebClient.get()
@@ -43,22 +49,45 @@ public class PortOnePaymentAdapter implements PortOnePaymentPort {
 
         @SuppressWarnings("unchecked")
         Map<String, Object> amountMap = (Map<String, Object>) response.get("amount");
-        Long total = amountMap != null
-                ? Long.valueOf(String.valueOf(amountMap.get("total")))
-                : null;
+        /*comment
+        *  amount는 이런 맵현식
+        *  "amount": {
+        *    "total": 9900,
+        *    "taxFree": 0,
+        *    "vat": 900
+        *  }
+        * */
+        Long total = null;
+        if (amountMap != null && amountMap.get("total") != null) {
+            total = Long.valueOf(String.valueOf(amountMap.get("total")));
+        }else {
+            throw new PortOneApiException("포트원 응답에 금액 정보가 없습니다. status :"+status);
+        }
 
         return new PortOnePaymentDetail(paymentId, status, total, pgTxId);
     }
 
     @Override
     public void cancelPayment(String paymentId, String reason) {
-        portOneWebClient.post()
-                // 포트원이 만들어둔 엔드포인트 - 우리가 요청하면 알아서 취소해줌
-                .uri("/payments/{paymentId}/cancel", paymentId)
-                .bodyValue(Map.of("reason", reason))
-                .retrieve()
-                .toBodilessEntity()
-                .block();
+        try {
+            portOneWebClient.post()
+                    // 포트원이 만들어둔 엔드포인트 - 우리가 요청하면 알아서 취소해줌
+                    .uri("/payments/{paymentId}/cancel", paymentId)
+                    .bodyValue(Map.of("reason", reason))
+                    .retrieve()
+                    .toBodilessEntity()
+                    .block();
+        } catch (WebClientResponseException e) {
+            throw new PortOneApiException("포트원 취소 실패: " + e.getStatusCode() + " " + e.getResponseBodyAsString());
+            /*comment
+            *  포트원이 에러 응답을 줄 때 바디에 담아서 보냄
+            *  {
+            *    "code": "INVALID_PAYMENT",
+            *    "message": "이미 취소된 결제입니다."
+            *  }
+            *  like this
+            *  그래서 이거를 꺼냄 -> 디버깅용*/
+        }
     }
     /*comment
     *  1. 우리 서버가 cancelPayment() 메서드를 호출

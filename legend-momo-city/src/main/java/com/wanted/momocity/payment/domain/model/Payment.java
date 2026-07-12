@@ -48,7 +48,7 @@ public class Payment {
     }
 
 
-    // 금액 불일치 또는 결제 실패 시 호출 (pgTxId는 남겨서 어떤 포트원 거래건이었는지 추적 가능하게)
+    // 금액 불일치 또는 결제 실패 시 호출
     public Payment markFailed() {
         return new Payment(this.id, this.userId, this.paymentId, this.plan, this.price,
                 Status.FAILED, this.createdAt, LocalDateTime.now());

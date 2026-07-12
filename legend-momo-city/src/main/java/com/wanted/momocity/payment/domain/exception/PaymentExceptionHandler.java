@@ -120,4 +120,15 @@ public class PaymentExceptionHandler {
                         e.getMessage()
                 ));
     }
+
+    // 결제 소유자가 아닌 경우
+    @ExceptionHandler(PaymentAccessDeniedException.class)
+    public ResponseEntity<ApiErrorResponse> handleAccessDenied(PaymentAccessDeniedException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiErrorResponse.of(
+                        HttpStatus.FORBIDDEN.value(),
+                        "PAYMENT_ACCESS_DENIED",
+                        e.getMessage()
+                ));
+    }
 }
