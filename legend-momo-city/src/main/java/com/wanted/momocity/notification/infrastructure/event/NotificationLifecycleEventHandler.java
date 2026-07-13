@@ -185,4 +185,18 @@ public class NotificationLifecycleEventHandler {
                 LocalDateTime.from(event.occurredAt()) //승인/거절 날짜
         );
     }
+
+//    //열품타 초대 알림
+//    @Async("domainEventExecutor")
+//    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+//    public void handleStudyInvite( event) {
+//        log.info("[NotificationLifecycleEventHandler] 그룹 스터티 초대 알림 행 추가 이벤트 수신 -> 알림 서비스로 이동");
+//
+//        notificationHandlerService.studyInviteNotification(
+//                event.lectureId(), //초대자 닉네임
+//                event.teacherId(), //초대 대상자 아이디
+//                event.adminId(), //그룹방 아이디
+//                event.lectureTitle() //초대 날짜
+//        );
+//    }
 }
