@@ -186,6 +186,8 @@ public class UserController {
             @RequestParam(required = false) String role,
             @Parameter(description = "탈퇴회원 조회 시 DELETED 입력", example = "DELETED")
             @RequestParam(required = false) String status,
+            @Parameter(description = "검색어", example = "홍길동")
+            @RequestParam(required = false) String keyword,
             @Parameter(description = "페이지 번호 (1-base)", example = "1")
             @RequestParam(defaultValue = "1") int page,
             @Parameter(description = "페이지 크기", example = "20")
@@ -194,7 +196,7 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success(
                 UserResponseCode.SUCCESS,
                 UserResponseMessage.VIEW_SUCCESS,
-                userQueryUsecase.getAdminUserList(role, status, page, size)
+                userQueryUsecase.getAdminUserList(role, status, keyword,page, size)
         ));
     }
 
