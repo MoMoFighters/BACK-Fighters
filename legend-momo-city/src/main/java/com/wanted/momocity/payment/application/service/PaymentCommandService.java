@@ -111,7 +111,7 @@ public class PaymentCommandService implements PaymentCommandUseCase {
             LocalDateTime membershipUntil = newMembershipStart.plusDays(30);
 
             paymentRepository.save(result);
-            paymentLockPort.unlock(command.userId(), payment.getPlan());
+            paymentLockPort.unlock(command.userId(), payment.getPlan()); // 여기서 캐시 제거
             return new PaymentVerifyResult(result.getPaymentId(), result.getStatus(), membershipUntil);
         }
 
