@@ -5,7 +5,6 @@ import com.wanted.momocity.study.application.member.port.FriendCatalogPort;
 import com.wanted.momocity.study.application.member.result.InvitationResult;
 import com.wanted.momocity.study.application.member.result.KickResult;
 import com.wanted.momocity.study.application.member.result.LeaveResult;
-import com.wanted.momocity.study.application.member.result.TimerActionResult;
 import com.wanted.momocity.study.application.member.usecase.MemberCommandUseCase;
 import com.wanted.momocity.study.domain.event.*;
 import com.wanted.momocity.study.domain.exception.StudyAccessDeniedException;
@@ -14,6 +13,7 @@ import com.wanted.momocity.study.domain.model.GroupRoom;
 import com.wanted.momocity.study.domain.model.GroupRoomMember;
 import com.wanted.momocity.study.domain.repository.GroupRoomMemberRepository;
 import com.wanted.momocity.study.domain.repository.GroupRoomRepository;
+import com.wanted.momocity.study.infrastructure.redis.GroupRoomMemberCountAdapter;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,14 +27,17 @@ import java.time.LocalDateTime;
 /*
  * comment.
  *  그룹방 멤버 쓰기 작업 UseCase 구현체
- *  - 초대 발송/취소/수락/거절, 타이머 시작/일시정지/종료, 방 나가기, 강퇴
+ *  - 초대 발송/취소/수락/거절, 방 나가기, 강퇴
  *  -
- *  검증(친구 여부, 방 상태, 인원 제한, 상태 전이 가능 여부 등)은 전부 이 Service가 담당
+ *  타이머 시작/일시정지/종료는 TimerCommandService(application.member.timer)로 이관
+ *   "멤버 자격의 생명주기"와 "반복되는 타이머 상태 변화"는 다른 축의 개념이라 판단
+ *  -
+ *  검증(친구 여부, 방 상태, 인원 제한, 상태 전이 가능 여부 등)은 전부 이 Service가 담당한
  *  domain.model(GroupRoomMember/GroupRoom)은 상태값만 바꾸는 순수 메서드만 제공
  *  -
- *  인원 제한(4명) 이중 체크 중 "발송 시점 선제 차단"은 여기서 JOINED+INVITED 합산으로 확인하고,
- *  "수락 시점 최종 방어선(Redis 원자적 카운트)"은 GroupRoomMemberCountAdapter가 별도로 담당
- *  (이 파일에서는 아직 Redis 어댑터를 주입하지 않았으므로, 수락 로직에 TODO로 표시해둠)
+ *  인원 제한(4명) 이중 체크
+ *  1) 발송 시점(선제 차단) : DB에서 JOINED+INVITED 합산 개수로 대략 확인 (invite() 참고)
+ *  2) 수락 시점(최종 방어선) : Redis 원자적 카운트(GroupRoomMemberCountAdapter.tryIncrement)로 확정
  * */
 
 @Slf4j
@@ -46,7 +49,22 @@ public class MemberCommandService implements MemberCommandUseCase {
     private final GroupRoomMemberRepository groupRoomMemberRepository;
     private final GroupRoomRepository groupRoomRepository;
     private final FriendCatalogPort friendCatalogPort;
+    // Redis 원자적 인원 카운트 어댑터 - 수락 시점 최종 방어선(2번 작업으로 신규 연결)
+    private final GroupRoomMemberCountAdapter groupRoomMemberCountAdapter;
     private final ApplicationEventPublisher eventPublisher;
+
+    /*
+     * comment.
+     *  친구 초대 발송
+     *  -
+     *  검증 순서 (앞 단계에서 걸리면 뒤 단계는 실행되지 않음) :
+     *  1. 방이 살아있는지(ACTIVE) 확인
+     *  2. 친구 관계 재검증 - 프론트가 이미 필터링했더라도 서버가 반드시 다시 확인
+     *  3. 이 유저와의 기존 관계 이력 확인 - KICKED면 재초대 자체를 막고, 이미 INVITED/JOINED면 중복 초대를 막음
+     *     LEFT/REJECTED/CANCELED는 재초대 허용
+     *  4. 인원 선제 차단 - 최종 확정은 아니지만 방이 명백히 꽉 찬 경우 미리 걸러서 불필요한 초대가 쌓이는 것을 방지
+     *     (실제 최종 확정은 수락 시점 Redis에서)
+     * */
 
     // 친구 초대 발송
     @Override
@@ -84,7 +102,7 @@ public class MemberCommandService implements MemberCommandUseCase {
         GroupRoomMember invited = GroupRoomMember.invite(roomId, inviteeId, LocalDateTime.now());
         GroupRoomMember saved = groupRoomMemberRepository.save(invited);
 
-        // 알림 발송은 별도 이벤트(예: InvitationCreatedEvent)로 확장 가능 - 여기서는 notification 테이블 연동은 생략
+        // 알림 발송은 별도 이벤트(예: InvitationCreatedEvent)로 확장 가능 - 여기서는 notification 테이블 연동은 생략 -> 추후 구현
         log.info("[Study] 그룹방 초대 발송 완료 | roomId={}, inviterId={}, inviteeId={}", roomId, userId, inviteeId);
         return InvitationResult.ofInvited(saved);
     }
@@ -96,9 +114,7 @@ public class MemberCommandService implements MemberCommandUseCase {
         GroupRoomMember member = getMemberById(invitationId);
         validateSameRoom(member, roomId);
 
-        // 본인이 발송한 초대인지는 "방장 or 발송자 정책"에 따라 달라질 수 있으나,
-        // 현재 정책상 초대 발송 자체를 누구나 할 수 있다고 가정하지 않았으므로
-        // 방장만 취소 가능하도록 방어 - 추후 "누구나 초대 가능" 정책이면 발송자 필드 추가 필요
+        // 현재 정책상 초대 발송 자체 방장만 가능 -> 방장만 취소 가능하도록 방어
         GroupRoom room = getActiveRoom(roomId);
         if (!room.isHost(userId)) {
             throw new StudyAccessDeniedException("본인이 발송한 초대만 취소할 수 있습니다.");
@@ -121,9 +137,16 @@ public class MemberCommandService implements MemberCommandUseCase {
         GroupRoom room = getActiveRoom(roomId);
         GroupRoomMember member = getMyInvitation(userId, roomId);
 
-        // TODO: Redis 원자적 카운트(INCR) 최종 검증 - GroupRoomMemberCountAdapter 연동 후 대체
-        long currentCount = groupRoomMemberRepository.findAllByGroupRoomIdAndJoined(roomId).size();
-        if (currentCount >= room.getMaxMember()) {
+        /*
+         * 기존에는 DB에서 findAllByGroupRoomIdAndJoined().size()로 카운트를 세서 비교하는 방식
+         * 해당 방식은 동시에 여러 명이 수락할 때 "조회 -> 판단 -> 저장" 사이에 레이스 컨디션이 생길 수 있는 문제 존재
+         * -> Redis INCR 기반 원자적 카운트(GroupRoomMemberCountAdapter.tryIncrement)로 교체
+         * tryIncrement가 false를 반환하면 이미 정원이 가득 찬 것이므로 즉시 예외를 던지고,
+         * 이 시점에는 아직 DB에 JOINED로 반영되지 않았으므로 Redis 카운트도 자동으로 롤백된 상태
+         * */
+
+        boolean acquired = groupRoomMemberCountAdapter.tryIncrement(roomId, room.getMaxMember());
+        if (!acquired) {
             throw new DomainRuleViolationException("그룹방 인원이 가득 찼습니다.");
         }
 
@@ -148,71 +171,24 @@ public class MemberCommandService implements MemberCommandUseCase {
         return InvitationResult.ofRejected(saved);
     }
 
-    // 타이머 시작 (신규 시작 + 재개 통합)
-    @Override
-    public TimerActionResult startTimer(Long userId, Long roomId) {
 
-        GroupRoomMember member = getJoinedMember(userId, roomId);
-        boolean wasResumed = member.getTimerStatus() == GroupRoomMember.TimerStatus.RESTING;
+    // ===== 타이머(start/pause/end)는 TimerCommandService(member.timer)로 이관됨 =====
 
-        if (member.getTimerStatus() == GroupRoomMember.TimerStatus.STUDYING) {
-            throw new DomainRuleViolationException("이미 다른 곳에서 진행 중인 타이머가 있습니다.");
-        }
-        validateNoOtherActiveTimer(userId);
 
-        member.startTimer(LocalDateTime.now());
-        GroupRoomMember saved = groupRoomMemberRepository.save(member);
-
-        eventPublisher.publishEvent(new TimerStatusChangedEvent(roomId, userId, saved.getTimerStatus()));
-
-        log.info("[Study] 그룹 타이머 시작 | roomId={}, userId={}, resumed={}", roomId, userId, wasResumed);
-        return TimerActionResult.ofStarted(saved, wasResumed);
-    }
-
-    // 타이머 일시정지
-    @Override
-    public TimerActionResult pauseTimer(Long userId, Long roomId) {
-
-        GroupRoomMember member = getJoinedMember(userId, roomId);
-        if (member.getTimerStatus() != GroupRoomMember.TimerStatus.STUDYING) {
-            throw new DomainRuleViolationException("진행 중인 타이머가 없습니다.");
-        }
-
-        accumulateElapsed(member);
-        member.pauseTimer();
-        GroupRoomMember saved = groupRoomMemberRepository.save(member);
-
-        eventPublisher.publishEvent(new TimerStatusChangedEvent(roomId, userId, saved.getTimerStatus()));
-
-        log.info("[Study] 그룹 타이머 일시정지 | roomId={}, userId={}", roomId, userId);
-        return TimerActionResult.ofPaused(saved);
-    }
-
-    // 타이머 완전 종료 (방은 유지)
-    @Override
-    public TimerActionResult endTimer(Long userId, Long roomId) {
-
-        GroupRoomMember member = getJoinedMember(userId, roomId);
-        if (member.getTimerStatus() == null) {
-            throw new DomainRuleViolationException("진행 중인 타이머가 없습니다.");
-        }
-
-        if (member.getTimerStatus() == GroupRoomMember.TimerStatus.STUDYING) {
-            accumulateElapsed(member);
-        }
-        member.endTimer();
-        GroupRoomMember saved = groupRoomMemberRepository.save(member);
-
-        // 자정 분할 로직은 StudySessionEndedEvent를 발행하는 공통 유틸(예: StudyEventPublishHelper)에서
-        // 처리하도록 분리하는 게 이상적이나, 우선 단순화하여 하루치로 발행한다.
-        eventPublisher.publishEvent(
-                new StudySessionEndedEvent(userId, LocalDateTime.now().toLocalDate(), saved.getTotalSeconds())
-        );
-        eventPublisher.publishEvent(new TimerStatusChangedEvent(roomId, userId, null));
-
-        log.info("[Study] 그룹 타이머 종료 | roomId={}, userId={}", roomId, userId);
-        return TimerActionResult.ofEnded(saved);
-    }
+    /*
+     * comment.
+     *  방 나가기 (자진 퇴장)
+     *  -
+     *  1. 타이머가 진행 중 -> 먼저 시간을 확정하고 StudySessionEndedEvent 발행
+     *     (나가는 순간 공부 기록이 유실되지 않도록 leave보다 먼저 처리)
+     *  2. member.leave() 저장 후 남은 인원(remaining)을 다시 조회
+     *  3. remaining이 비어있으면 방 자체를 종료 (가장 우선순위 높은 케이스)
+     *  4. 비어있지 않은데 나간 사람이 방장이었으면 최초 입장자(joinedAt 가장 이른 사람)에게 위임
+     *  5. 둘 다 아니면 그냥 일반 퇴장
+     *  -
+     *  Redis 카운트(decrement)는 remaining 조회보다 먼저 호출
+     *  - DB save와 Redis 반영 사이의 간격을 최소화하기 위함이며, 순서 자체가 결과에 영향을 주지는 않음
+     * */
 
     // 방 나가기 (자진 퇴장)
     @Override
@@ -232,12 +208,17 @@ public class MemberCommandService implements MemberCommandUseCase {
         member.leave(LocalDateTime.now());
         groupRoomMemberRepository.save(member);
 
+        // 인원 감소 -> Redis 카운트도 -1 (수락 시 tryIncrement로 +1 했던 것과 짝을 맞춤)
+        groupRoomMemberCountAdapter.decrement(roomId);
+
         var remaining = groupRoomMemberRepository.findAllByGroupRoomIdAndJoined(roomId);
 
         // 마지막 사람이 나간 경우 -> 방 종료
         if (remaining.isEmpty()) {
             room.end(LocalDateTime.now());
             groupRoomRepository.save(room);
+            // [추가] 방이 완전히 종료됐으므로 Redis 카운트 키 자체를 삭제 (decrement로 0 남기지 않고 clear)
+            groupRoomMemberCountAdapter.clear(roomId);
             eventPublisher.publishEvent(new RoomEndedEvent(roomId));
             log.info("[Study] 마지막 인원 퇴장으로 방 종료 | roomId={}", roomId);
             return LeaveResult.of(roomId, false, null, true);
@@ -260,6 +241,14 @@ public class MemberCommandService implements MemberCommandUseCase {
         log.info("[Study] 일반 멤버 퇴장 | roomId={}, userId={}", roomId, userId);
         return LeaveResult.of(roomId, false, null, false);
     }
+
+    /*
+     * comment.
+     *  강퇴 (방장만 가능)
+     *  -
+     *  - target.kick()은 상태를 LEFT가 아닌 KICKED (재초대 불가 이력으로 남김)
+     *  - 대상이 강퇴당하는 시점에 타이머가 STUDYING이었다면 leave()와 동일하게 먼저 시간을 확정한다.
+     * */
 
     // 강퇴 (방장만 가능)
     @Override
@@ -286,6 +275,9 @@ public class MemberCommandService implements MemberCommandUseCase {
 
         target.kick(LocalDateTime.now());
         groupRoomMemberRepository.save(target);
+
+        // [추가] 강퇴로 인원이 줄었으므로 Redis 카운트도 -1
+        groupRoomMemberCountAdapter.decrement(roomId);
 
         eventPublisher.publishEvent(new MemberKickedEvent(roomId, targetUserId, hostUserId));
         log.info("[Study] 멤버 강퇴 완료 | roomId={}, targetUserId={}, hostUserId={}", roomId, targetUserId, hostUserId);
@@ -330,25 +322,10 @@ public class MemberCommandService implements MemberCommandUseCase {
 
     // 대기 중인 초대(INVITED) 개수 - 인원 선제 차단 계산용
     private long countPendingInvitations(Long roomId) {
-        return groupRoomMemberRepository.findAllByGroupRoomIdAndJoined(roomId).stream()
-                .filter(m -> m.getStatus() == GroupRoomMember.MemberStatus.INVITED)
-                .count();
-        // 주의: findAllByGroupRoomIdAndJoined는 이름상 JOINED만 조회하므로,
-        // 실제로는 domain.repository에 findAllByGroupRoomIdAndStatus(INVITED) 같은 메서드를
-        // 별도로 추가해서 교체해야 한다. 우선 로직 자리만 표시해둔다.
+        return groupRoomMemberRepository.findAllByGroupRoomIdAndInvited(roomId).size();
     }
 
-    // 유저가 다른 방/솔로에서 이미 타이머를 진행 중인지 검증 (동시 활성화 금지 정책)
-    private void validateNoOtherActiveTimer(Long userId) {
-        var studyingElsewhere = groupRoomMemberRepository.findAllByUserIdAndStudying(userId);
-        if (!studyingElsewhere.isEmpty()) {
-            throw new DomainRuleViolationException("이미 다른 곳에서 진행 중인 타이머가 있습니다.");
-        }
-        // TODO: SoloSessionRepository.findActiveByUserId(userId)도 함께 확인해야
-        // "그룹 타이머 켤 때 솔로 세션이 돌고 있는지"까지 완전히 검증된다. (SoloSessionRepository 주입 필요)
-    }
-
-    // lastResumedAt ~ now 구간 경과 시간을 계산해서 누적
+    // lastResumedAt ~ now 구간 경과 시간을 계산해서 누적 (leave/kick에서 타이머 종료 처리 시 사용)
     private void accumulateElapsed(GroupRoomMember member) {
         if (member.getLastResumedAt() == null) {
             return;

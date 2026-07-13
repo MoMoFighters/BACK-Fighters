@@ -6,7 +6,6 @@ import com.wanted.momocity.study.application.member.command.InviteMemberCommand;
 import com.wanted.momocity.study.application.member.result.InvitationResult;
 import com.wanted.momocity.study.application.member.result.KickResult;
 import com.wanted.momocity.study.application.member.result.LeaveResult;
-import com.wanted.momocity.study.application.member.result.TimerActionResult;
 import com.wanted.momocity.study.application.member.usecase.MemberCommandUseCase;
 import com.wanted.momocity.study.application.member.usecase.MemberQueryUseCase;
 import com.wanted.momocity.study.presentation.api.common.StudyResponseCode;
@@ -21,13 +20,14 @@ import org.springframework.web.bind.annotation.*;
 
 /*
  * comment.
- *  그룹방 멤버(초대-참가-퇴장-타이머) HTTP 요청 처리
+ *  그룹방 멤버(초대-참가-퇴장-강퇴) HTTP 요청 처리
+ *  - 타이머 관련 API(start/pause/end)는 TimerController로 이관
  *  - 비즈니스 로직 없음, UseCase 호출 + Result -> Response 변환만 담당
  *  -
- *  Result -> Response 매핑을 이 Controller가 담당하는 이유 :
- *  Result는 application 계층 산출물이라 4개 API(발송/취소/수락/거절)가 InvitationResult 하나를
- *  공용으로 쓰지만, 실제 프론트에 내려가는 Response는 API별로 필요한 필드만 담은 별도 DTO로
- *  분리(불필요한 null 필드 노출 방지) 그 변환 지점이 Controller
+ *  Result -> Response 매핑을 이 Controller가 담당:
+ *  Result는 application 계층 산출물이라 4개 API(발송/취소/수락/거절)가 InvitationResult 하나를 공용 사용
+ *  실제 프론트에 내려가는 Response는 API별로 필요한 필드만 담은 별도 DTO로 분리
+ *  (불필요한 null 필드 노출 방지). 그 변환 지점이 Controller
  * */
 
 @Tag(name = "Member", description = "Study(열품타) 도메인 - 그룹방 멤버 API")
@@ -123,63 +123,6 @@ public class MemberController {
                 StudyResponseCode.INVITATION_LIST_FETCHED,
                 "받은 초대 목록을 조회했습니다.",
                 memberQueryUseCase.getMyInvitations(userDetails.getUserId())
-        ));
-    }
-
-    // 타이머 시작 (신규 시작 + 재개 통합)
-    @Operation(summary = "그룹방 타이머 시작", description = "본인 타이머를 시작하거나(신규) 재개합니다.")
-    @PostMapping("/rooms/{roomId}/members/timer/start")
-    public ResponseEntity<ApiResponse<TimerStartResponse>> startTimer(
-            @PathVariable Long roomId,
-            @AuthenticationPrincipal CustomUserDetails userDetails
-    ) {
-        TimerActionResult result = memberCommandUseCase.startTimer(userDetails.getUserId(), roomId);
-
-        return ResponseEntity.ok(ApiResponse.success(
-                StudyResponseCode.TIMER_STARTED,
-                result.action() == TimerActionResult.Action.RESUMED ? "타이머를 재개했습니다." : "타이머를 시작했습니다.",
-                new TimerStartResponse(
-                        result.roomId(), result.memberId(), result.action().name(),
-                        result.timerStatus().name(), result.startedAt(), result.accumulatedSeconds()
-                )
-        ));
-    }
-
-    // 타이머 일시정지
-    @Operation(summary = "그룹방 타이머 일시정지", description = "본인 타이머를 일시정지합니다.")
-    @PostMapping("/rooms/{roomId}/members/timer/pause")
-    public ResponseEntity<ApiResponse<TimerPauseResponse>> pauseTimer(
-            @PathVariable Long roomId,
-            @AuthenticationPrincipal CustomUserDetails userDetails
-    ) {
-        TimerActionResult result = memberCommandUseCase.pauseTimer(userDetails.getUserId(), roomId);
-
-        return ResponseEntity.ok(ApiResponse.success(
-                StudyResponseCode.TIMER_PAUSED,
-                "타이머를 일시정지했습니다.",
-                new TimerPauseResponse(
-                        result.roomId(), result.memberId(),
-                        result.timerStatus().name(), result.accumulatedSeconds()
-                )
-        ));
-    }
-
-    // 타이머 완전 종료 (방은 유지)
-    @Operation(summary = "그룹방 타이머 종료", description = "본인 타이머를 완전히 종료합니다. 방은 유지됩니다.")
-    @PostMapping("/rooms/{roomId}/members/timer/end")
-    public ResponseEntity<ApiResponse<TimerEndResponse>> endTimer(
-            @PathVariable Long roomId,
-            @AuthenticationPrincipal CustomUserDetails userDetails
-    ) {
-        TimerActionResult result = memberCommandUseCase.endTimer(userDetails.getUserId(), roomId);
-
-        return ResponseEntity.ok(ApiResponse.success(
-                StudyResponseCode.TIMER_ENDED,
-                "타이머를 종료했습니다.",
-                // timerStatus는 ENDED 시 null이므로 name() 호출 시 NPE 방지
-                new TimerEndResponse(
-                        result.roomId(), result.memberId(), result.accumulatedSeconds()
-                )
         ));
     }
 

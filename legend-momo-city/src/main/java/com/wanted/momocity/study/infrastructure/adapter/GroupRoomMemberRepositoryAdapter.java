@@ -54,6 +54,16 @@ public class GroupRoomMemberRepositoryAdapter implements GroupRoomMemberReposito
                 .toList();
     }
 
+    // 방의 대기 중인 초대 목록 조회 (status=INVITED만) - 기존 JpaRepository 메서드 재사용
+    @Override
+    public List<GroupRoomMember> findAllByGroupRoomIdAndInvited(Long groupRoomId) {
+        return groupRoomMemberJpaRepository
+                .findAllByGroupRoomIdAndStatus(groupRoomId, GroupRoomMember.MemberStatus.INVITED)
+                .stream()
+                .map(GroupRoomMemberJpaEntity::toDomain)
+                .toList();
+    }
+
     // 유저가 현재 JOINED 상태로 속한 방 목록 조회
     @Override
     public List<GroupRoomMember> findAllByUserIdAndJoined(Long userId) {
