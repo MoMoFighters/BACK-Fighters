@@ -35,6 +35,7 @@ public interface NotificationQueryUseCase {
     record PhoneAppCountsView(
             Long totalMsgFriendCount,
             Long calendarCount,
-            Long communityCount
+            Long communityCount,
+            Long studyCount
     ) {}
 }

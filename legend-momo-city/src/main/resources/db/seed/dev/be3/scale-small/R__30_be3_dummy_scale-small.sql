@@ -41,19 +41,18 @@ INSERT INTO `message_read` (`id`, `is_deleted`, `is_msg_read`, `is_noti_read`, `
 -- =====================================================================
 --  5. guestbook
 -- =====================================================================
-INSERT INTO `guestbook` (`id`, `is_read`, `content`, `created_at`, `owner_id`, `writer_id`) VALUES
-  (1, FALSE, '잘 부탁드려요!', NOW() - INTERVAL 30 DAY, 12, 13),
-  (2, TRUE, '응원합니다!', NOW() - INTERVAL 25 DAY, 13, 12),
-  (3, FALSE, '같이 열심히 해봐요 :)', NOW() - INTERVAL 20 DAY, 14, 12),
-  (4, TRUE, '오늘도 화이팅!', NOW() - INTERVAL 10 DAY, 12, 15),
-  (5, FALSE, '잘 지내시죠?', NOW() - INTERVAL 5 DAY, 15, 14);
+INSERT INTO `guestbook` (`id`, `content`, `created_at`, `owner_id`, `writer_id`) VALUES
+  (1,  '잘 부탁드려요!', NOW() - INTERVAL 30 DAY, 12, 13),
+  (2, '응원합니다!', NOW() - INTERVAL 25 DAY, 13, 12),
+  (3,  '같이 열심히 해봐요 :)', NOW() - INTERVAL 20 DAY, 14, 12),
+  (4,  '오늘도 화이팅!', NOW() - INTERVAL 10 DAY, 12, 15),
+  (5,  '잘 지내시죠?', NOW() - INTERVAL 5 DAY, 15, 14);
 -- =====================================================================
 --  6. notification
 -- =====================================================================
 INSERT INTO `notification` (`id`, `created_at`, `is_read`, `message`, `ref_id`, `type`, `user_id`) VALUES
   (1, NOW() - INTERVAL 2 DAY, 0, '김민수님이 댓글을 달았습니다', 1, 'POST', 13),
   (2, NOW() - INTERVAL 1 DAY, 0, '이지영님이 좋아요를 눌렀습니다', 1, 'POST', 12),
-  (3, NOW() - INTERVAL 12 HOUR, 1, '새 강의가 등록되었습니다', 1, 'NOTICE', 14),
-  (4, NOW() - INTERVAL 6 HOUR, 0, '친구 요청이 왔습니다', 15, 'FRIEND_REQUEST', 12);
+  (3, NOW() - INTERVAL 6 HOUR, 0, '친구 요청이 왔습니다', 15, 'FRIEND_REQUEST', 12);
 
 SET FOREIGN_KEY_CHECKS = 1;

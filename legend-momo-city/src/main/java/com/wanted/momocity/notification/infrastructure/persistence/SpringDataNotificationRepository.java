@@ -45,7 +45,7 @@ public interface SpringDataNotificationRepository extends JpaRepository<Notifica
 
     @Query("SELECT n.type, COUNT(n) FROM NotificationJpaEntity n " +
             "WHERE n.userId.id = :userId " +
-            "AND n.type IN ('CALENDAR', 'POST', 'FRIEND_REQUEST') " +
+            "AND n.type IN ('CALENDAR', 'POST', 'FRIEND_REQUEST', 'STUDY_INVITE') " +
             "AND n.isRead = false " +
             "GROUP BY n.type")
     List<Object[]> countUnreadGroupByType(@Param("userId") Long userId);

@@ -353,4 +353,18 @@ public class NotificationHandlerService {
         log.info("[알림 핸들러 -> 쿼리 연동] 온라인 유저 {}번(강의주인)에게 실시간 강의 승인/거절 알림 웹소켓 전송 성공", teacherId);
     }
 
+    //열품타 초대 알림
+    public void studyInviteNotification(String inviterNickname, Long invitedUserId, Long groupRoomId, LocalDateTime invitedTime) {
+        log.info("[NotificationHandlerService] 그룹 공부방 초대 알림 처리 시작 - 그룹방ID(refId): {}, 초대대상자ID:{}", groupRoomId, invitedUserId);
+
+        String message = String.format("%s님이 그룹 스터디에 초대했습니다.", inviterNickname);
+
+        Notification newNotification = Notification.studyInvite(invitedUserId, message, groupRoomId, invitedTime);
+
+        Notification saved = notificationRepository.save(newNotification);
+        log.info("[NotificationHandlerService] 그룹 공부방 초대 알림 생성 완료 - 생성된 알림ID: {}", saved.getId());
+
+        eventPublisher.publishEvent(new NotificationCreatedPublishedEvent(invitedUserId, "ALL"));
+        log.info("[알림 핸들러 -> 쿼리 연동] 온라인 유저 {}번에게 실시간 그룹 공부방 초대 알림 웹소켓 전송 성공", invitedUserId);
+    }
 }
