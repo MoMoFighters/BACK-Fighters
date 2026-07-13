@@ -38,6 +38,13 @@ public class LectureRepositoryAdapter implements LectureRepository {
             LectureJpaEntity entity = repository.findById(lecture.getId())
                     .orElseThrow(() -> new IllegalArgumentException("강의를 찾을 수 없습니다."));
 
+            // 도메인 객체에 담긴 제목, 설명, 카테고리를 기존 Entity에 반영
+            entity.updateBasicInfo(
+                    lecture.getTitle(),
+                    lecture.getDescription(),
+                    lecture.getCategory()
+            );
+
             entity.changeStatus(lecture.getStatus());
 
             return toDomain(entity);

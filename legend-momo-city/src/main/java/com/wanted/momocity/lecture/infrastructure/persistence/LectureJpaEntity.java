@@ -109,4 +109,15 @@ public class LectureJpaEntity extends BaseTimeEntity {
         this.thumbnailUrl = thumbnailUrl;
 
     }
+
+    // 강의의 텍스트 기본 정보를 수정하는 메서드
+    public void updateBasicInfo(
+            String title,
+            String description,
+            LectureCategory category
+    ) {
+        this.title = title;
+        this.description = description;
+        this.category = category;
+    }
 }
