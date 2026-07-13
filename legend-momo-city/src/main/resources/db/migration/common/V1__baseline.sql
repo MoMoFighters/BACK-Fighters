@@ -2,14 +2,15 @@
 --  MoMo City - Database Schema (DDL) [V1 baseline]
 --  Engine : InnoDB / Charset : utf8mb4
 -- =====================================================================
-USE momo;
-
 SET FOREIGN_KEY_CHECKS = 0;
 SET NAMES utf8mb4;
 
 -- =====================================================================
 --  DROP (역순 안전 삭제)
 -- =====================================================================
+DROP TABLE IF EXISTS `chatbot_daily_usage`;
+DROP TABLE IF EXISTS `chatbot_question_log`;
+DROP TABLE IF EXISTS `payment`;
 DROP TABLE IF EXISTS `order_history`;
 DROP TABLE IF EXISTS `store`;
 DROP TABLE IF EXISTS `admin_notice`;
