@@ -91,7 +91,7 @@ public class NotificationController {
 
     //휴대폰 앱별 총 알림 개수(친구+메시지, 캘린더, 커뮤니티)
     @GetMapping("/api/v3/notice/app-counts")
-    @Operation(summary = "휴대폰 속 앱별 알림 개수", description = "휴대폰 속 친구+메시지/캘린더/커뮤니티 앱에 띄워질 알림 개수")
+    @Operation(summary = "휴대폰 속 앱별 알림 개수", description = "휴대폰 속 친구+메시지/캘린더/커뮤니티/열품타 앱에 띄워질 알림 개수")
     public ResponseEntity<ApiResponse<GetPhoneAppCountsResponse>> getPhoneAppCounts(@AuthenticationPrincipal CustomUserDetails userDetails) {
 
         Long userId = userDetails.getUserId();
