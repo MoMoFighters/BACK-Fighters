@@ -24,10 +24,10 @@ public class PaymentRepositoryAdapter implements PaymentRepository {
         return saved.toDomain();
     }
 
+
     @Override
-    public Optional<Payment> findPendingByUserIdAndPlan(Long userId, Plan targetPlan) {
-        return springDataPaymentRepository
-                .findFirstByUserIdAndPlanAndStatus(userId, targetPlan, Status.PENDING)
+    public Optional<Payment> findByPaymentId(String paymentId) {
+        return springDataPaymentRepository.findByPaymentId(paymentId)
                 .map(PaymentJpaEntity::toDomain);
     }
 }

@@ -1,19 +1,23 @@
 package com.wanted.momocity.payment.application.service;
 
 import com.wanted.momocity.payment.application.command.PaymentPrepareCommand;
+import com.wanted.momocity.payment.application.command.PaymentVerifyCommand;
 import com.wanted.momocity.payment.application.policy.PaymentPolicy;
 import com.wanted.momocity.payment.application.port.GetUserMembershipPort;
+import com.wanted.momocity.payment.application.port.PaymentLockPort;
+import com.wanted.momocity.payment.application.port.PortOnePaymentPort;
+import com.wanted.momocity.payment.application.port.SetUserMembershipPort;
+import com.wanted.momocity.payment.application.supporter.PaymentStatusUpdater;
 import com.wanted.momocity.payment.application.usecase.PaymentCommandUseCase;
-import com.wanted.momocity.payment.domain.exception.PaymentAlreadyInProgressException;
-import com.wanted.momocity.payment.domain.model.Payment;
-import com.wanted.momocity.payment.domain.model.PaymentPrepareResult;
-import com.wanted.momocity.payment.domain.model.Plan;
+import com.wanted.momocity.payment.domain.exception.*;
+import com.wanted.momocity.payment.domain.model.*;
 import com.wanted.momocity.payment.domain.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
@@ -24,31 +28,103 @@ public class PaymentCommandService implements PaymentCommandUseCase {
 
     private final PaymentRepository paymentRepository;
     private final GetUserMembershipPort getUserMembershipPort;
+    private final SetUserMembershipPort setUserMembershipPort;
     private final PaymentPolicy paymentPolicy;
+    private final PortOnePaymentPort portOnePaymentPort;
+    private final PaymentLockPort paymentLockPort;
+    private final PaymentStatusUpdater paymentStatusUpdater;
+
 
     // 결제 준비 - 결제 금액 저장용
     @Override
     public PaymentPrepareResult paymentPrepare(PaymentPrepareCommand command) {
 
         Plan currentPlan = getUserMembershipPort.getCurrentPlan(command.userId());
-        Plan targetPlan = command.plan();
 
         // 플랜 변경 유효성 검증 + 결제 금액 계산
-        Long price = paymentPolicy.calculatePrice(currentPlan, targetPlan);
+        Long price = paymentPolicy.calculatePrice(currentPlan, command.plan());
 
         // 중복 결제 방지
-        paymentRepository.findPendingByUserIdAndPlan(command.userId(), targetPlan)
-                .ifPresent(p -> {
-                    throw new PaymentAlreadyInProgressException("이미 진행 중인 결제가 있습니다.");
-                });
+        if (!paymentLockPort.tryLock(command.userId(), command.plan())) {
+            throw new PaymentAlreadyInProgressException("이미 진행 중인 결제가 있습니다.");
+        }
 
-        String paymentId = UUID.randomUUID().toString();
-        Payment payment = Payment.createPending(
-                command.userId(), paymentId, command.plan(), price
-        );
+        try {
+            String paymentId = UUID.randomUUID().toString();
+            Payment payment = Payment.createPending(command.userId(), paymentId, command.plan(), price);
+            Payment prepare = paymentRepository.save(payment);
+            return new PaymentPrepareResult(prepare.getPrice(), prepare.getCreatedAt(), prepare.getPaymentId());
 
-        Payment prepare = paymentRepository.save(payment);
+        } catch (Exception e) {
+            paymentLockPort.unlock(command.userId(), command.plan());
+            throw e;
+        }
+    }
 
-        return new PaymentPrepareResult(prepare.getPrice(), prepare.getCreatedAt(), prepare.getPaymentId());
+    // 결제 검증
+    @Override
+    public PaymentVerifyResult paymentVerify(PaymentVerifyCommand command) {
+        // 결제 건 조회
+        Payment payment = paymentRepository.findByPaymentId(command.paymentId())
+                .orElseThrow(() -> new PaymentNotFoundException("결제 정보를 찾을 수 없습니다."));
+
+        // 정말 본인이 맞는지 확인
+        if (!payment.getUserId().equals(command.userId())) {
+            throw new PaymentAccessDeniedException("결제 소유자가 아닙니다.");
+        }
+
+        // 이미 검증 처리가 완료된 결제건
+        if (payment.isFinalized()) {
+            throw new PaymentAlreadyVerifiedException(
+                    "이미 처리된 결제 건입니다. status=" + payment.getStatus()
+            );
+        }
+
+        // 포트원에서 실제 결제 내역 조회
+        PortOnePaymentDetail detail = portOnePaymentPort.verifyPayment(command.paymentId());
+
+        // 검증
+        /*comment
+         *  1.포트원 응답 상태가 실제로 "결제완료(PAID)"인지
+         *  2. 우리가 /prepare 때 저장해둔 가격과 포트원이 실제로 받은 금액이 정확히 일치하는지 */
+        boolean amountMatches = detail.isPaid() && payment.getPrice().equals(detail.amount());
+
+        // 검증 성송
+        if (amountMatches) {
+            Payment result = payment.markSuccess();
+
+            LocalDateTime membershipStart = LocalDateTime.now();
+            setUserMembershipPort.updateMembership(command.userId(), payment.getPlan(), membershipStart);
+            LocalDateTime membershipUntil = membershipStart.plusDays(30);
+
+            paymentRepository.save(result);
+            paymentLockPort.unlock(command.userId(), payment.getPlan()); // 여기
+            return new PaymentVerifyResult(result.getPaymentId(), result.getStatus(), membershipUntil);
+        }
+
+        // 금액 불일치 - 여기서부터는 전부 실패
+        if (detail.isPaid()) {
+            try {
+                portOnePaymentPort.cancelPayment(command.paymentId(), "결제 금액 불일치로 인한 자동 취소");
+                Payment failed = payment.markFailed();
+                paymentStatusUpdater.saveFailed(failed);
+                throw new PaymentAmountMismatchException(
+                        "결제 금액이 일치하지 않아 취소 처리되었습니다. 예상 결제 금액 =" + payment.getPrice() + ", 실제 결제 금액=" + detail.amount()
+                );
+            } catch (PortOneApiException e) {
+                Payment cancelFailed = payment.markCancelFailed();
+                paymentStatusUpdater.saveCancelFailed(cancelFailed);
+                throw new PaymentCancelFailedException(
+                        "취소 처리 실패  paymentId=" + command.paymentId()
+                );
+            }finally {
+                paymentLockPort.unlock(command.userId(), payment.getPlan());
+            }
+        } else {
+            Payment failed = payment.markFailed();
+            paymentStatusUpdater.saveFailed(failed);
+            paymentLockPort.unlock(command.userId(), payment.getPlan());
+            throw new PaymentAmountMismatchException("결제가 완료되지 않았습니다.");
+        }
     }
 }

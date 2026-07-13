@@ -4,5 +4,6 @@ public final class PaymentResponseCode {
     private PaymentResponseCode(){}
 
     public static final String PAYMENT_READY = "PAYMENT_READY";
+    public static final String PAYMENT_VERIFIED = "PAYMENT_VERIFIED";
 
 }
