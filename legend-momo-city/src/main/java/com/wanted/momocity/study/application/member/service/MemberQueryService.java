@@ -1,7 +1,7 @@
 package com.wanted.momocity.study.application.member.service;
 
 import com.wanted.momocity.auth.domain.model.User;
-import com.wanted.momocity.study.application.member.port.StudyUserInfoPort;
+import com.wanted.momocity.study.application.common.port.StudyUserInfoPort;
 import com.wanted.momocity.study.application.member.usecase.MemberQueryUseCase;
 import com.wanted.momocity.study.domain.exception.StudyNotFoundException;
 import com.wanted.momocity.study.domain.model.GroupRoom;
