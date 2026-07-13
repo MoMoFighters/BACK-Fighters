@@ -90,7 +90,7 @@ public class NotificationController {
     }
 
     //휴대폰 앱별 총 알림 개수(친구+메시지, 캘린더, 커뮤니티)
-    @GetMapping("/api/v2/notice/app-counts")
+    @GetMapping("/api/v3/notice/app-counts")
     @Operation(summary = "휴대폰 속 앱별 알림 개수", description = "휴대폰 속 친구+메시지/캘린더/커뮤니티 앱에 띄워질 알림 개수")
     public ResponseEntity<ApiResponse<GetPhoneAppCountsResponse>> getPhoneAppCounts(@AuthenticationPrincipal CustomUserDetails userDetails) {
 
@@ -104,7 +104,8 @@ public class NotificationController {
         GetPhoneAppCountsResponse responseData = new GetPhoneAppCountsResponse(
                 view.totalMsgFriendCount(),
                 view.calendarCount(),
-                view.communityCount());
+                view.communityCount(),
+                view.studyCount());
 
         // 3. 성공 공통 응답 반환
         return ResponseEntity.ok(ApiResponse.success(
