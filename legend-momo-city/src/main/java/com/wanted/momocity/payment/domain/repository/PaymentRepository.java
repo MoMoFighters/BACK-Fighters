@@ -15,4 +15,7 @@ public interface PaymentRepository {
 
     // 이미 환불 했는지 확인
     boolean existsByPaymentIdAndStatus(String paymentId, Status status);
+
+    // 총 매출
+    long getTotalSales();
 }

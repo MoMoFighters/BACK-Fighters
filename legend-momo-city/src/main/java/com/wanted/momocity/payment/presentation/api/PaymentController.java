@@ -16,6 +16,7 @@ import com.wanted.momocity.payment.presentation.api.request.PaymentPrepareReques
 import com.wanted.momocity.payment.presentation.api.request.PaymentVerifyRequest;
 import com.wanted.momocity.payment.presentation.api.response.PaymentPrepareResponse;
 import com.wanted.momocity.payment.presentation.api.response.PaymentVerifyResponse;
+import com.wanted.momocity.payment.presentation.api.response.TotalSalesResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,6 +24,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -91,6 +93,14 @@ public class PaymentController {
     @PatchMapping("/cancel")
     @Operation(summary = "환불기능",
             description = "결제 후 3일 이내이면 환불 + basis 전환 / 3일 후면 플랜 기간 유지 + 기간 종료 시 basic으로")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "환불 완료 (SUBSCRIBE_CANCEL)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "본인 결제 건이 아님 (PAYMENT_ACCESS_DENIED)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "결제 건을 찾을 수 없음 (PAYMENT_NOT_FOUND)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "환불 가능 기간 초과 또는 이미 환불된 건 (PAYMENT_REFUND_NOT_ALLOWED)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "포트원 취소 처리 실패, 수동 확인 필요 (PAYMENT_CANCEL_FAILED)")
+    })
     public ResponseEntity<ApiResponse<Void>> cancel (
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody @Valid CancelRequest request
@@ -106,6 +116,20 @@ public class PaymentController {
                 ));
     }
 
+
+    @GetMapping("/sales/total")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "천체 총매출 계산")
+    public ResponseEntity<ApiResponse<TotalSalesResponse>> getTotalSales(){
+        long totalSales = paymentQueryUseCase.getTotalSales();
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        PaymentResponseCode.FETCH_SUCCESS,
+                        PaymentResponseMessage.FETCH_SUCCESS,
+                        new TotalSalesResponse(totalSales)
+                ));
+    }
 
 }
 

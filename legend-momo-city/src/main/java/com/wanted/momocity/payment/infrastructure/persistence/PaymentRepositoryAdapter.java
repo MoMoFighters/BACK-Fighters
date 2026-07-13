@@ -36,4 +36,10 @@ public class PaymentRepositoryAdapter implements PaymentRepository {
     public boolean existsByPaymentIdAndStatus(String paymentId, Status status) {
         return springDataPaymentRepository.existsByOriginalPaymentIdAndStatus(paymentId, status);
     }
+
+    // 총매출
+    @Override
+    public long getTotalSales() {
+        return springDataPaymentRepository.getTotalSales();
+    }
 }
