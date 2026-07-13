@@ -1,5 +1,6 @@
 package com.wanted.momocity.lecture.application.usecase;
 
+import com.wanted.momocity.lecture.application.command.LectureCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.DeleteChapterVideoCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.DeleteLectureCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.DeleteChapterCommand;
@@ -27,7 +28,7 @@ public final class LectureCommandUseCases {
         // 강사 또는 관리자가 강의를 DELETED 상태로 변경
         LectureAggregate deleteLecture(DeleteLectureCommand command);
 
-
+        void updateLecture(LectureCommand.UpdateLectureCommand command);
     }
 
     // ChapterCommandUseCase는 챕터 상태를 변경하는 기능

@@ -167,6 +167,42 @@ public final class LectureRequest {
         }
     }
 
+    // 강의 텍스트 수정 요청 DTO
+    public record UpdateLectureRequest(
+
+            // 강의 제목, 내용, 카테고리는 필수이기 때문에 비어 있으면 @NotBlank로 막기
+            @NotBlank(message = "강의 제목은 필수입니다.")
+            String title,
+
+            @NotBlank( message = "강의 설명은 필수입니다.")
+            String description,
+
+            @NotBlank(message = "강의 카테고리는 필수입니다.")
+            String category
+    ) {
+        public LectureCommand.UpdateLectureCommand toCommand(Long teacherId, Long lectureId) {
+
+            // 카테고리 문자열을 ENUM 값으로 변경
+            LectureCategory lectureCategory = parseaCategory(category);
+
+            return new LectureCommand.UpdateLectureCommand(
+                    teacherId,
+                    lectureId,
+                    title,
+                    description,
+                    lectureCategory
+            );
+        }
+
+        private LectureCategory parseaCategory(@NotBlank(message = "강의 카테고리는 필수입니다.") String category) {
+            try {
+                return LectureCategory.valueOf(category);
+            } catch (IllegalArgumentException exception) {
+                throw new DomainRuleViolationException("허용되지 않은 강의 카테고리입니다.");
+            }
+        }
+    }
+
     // 챕터 동영상 등록 요청 DTO
     public record RegisterChapterVideoRequest(
 
