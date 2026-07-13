@@ -42,8 +42,13 @@ public class ChatbotDailyUsage {
         this.updatedAt = updatedAt;
     }
 
-    // 하루 호출 한도(5회) 를 넘겼는지 판단
+    // 하루 호출 한도(5회)를 넘겼는지 판단
     public boolean isLimitExceeded() {
+        return callCount >= DAILY_LIMIT;
+    }
+
+    // 호출 1회 사용 처리, 한도 넘으면 예외
+    public void increaseCallCount() {
         if (isLimitExceeded()) {
             throw new ChatbotDailyLimitExceededException();
         }
