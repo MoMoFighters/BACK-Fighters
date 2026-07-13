@@ -2,6 +2,7 @@ package com.wanted.momocity.payment.presentation.api;
 
 import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
+import com.wanted.momocity.payment.application.command.CancelCommand;
 import com.wanted.momocity.payment.application.command.PaymentPrepareCommand;
 import com.wanted.momocity.payment.application.command.PaymentVerifyCommand;
 import com.wanted.momocity.payment.application.usecase.PaymentCommandUseCase;
@@ -10,6 +11,7 @@ import com.wanted.momocity.payment.domain.model.PaymentPrepareResult;
 import com.wanted.momocity.payment.domain.model.PaymentVerifyResult;
 import com.wanted.momocity.payment.presentation.api.common.PaymentResponseCode;
 import com.wanted.momocity.payment.presentation.api.common.PaymentResponseMessage;
+import com.wanted.momocity.payment.presentation.api.request.CancelRequest;
 import com.wanted.momocity.payment.presentation.api.request.PaymentPrepareRequest;
 import com.wanted.momocity.payment.presentation.api.request.PaymentVerifyRequest;
 import com.wanted.momocity.payment.presentation.api.response.PaymentPrepareResponse;
@@ -86,14 +88,28 @@ public class PaymentController {
                 ));
     }
 
+    @PatchMapping("/cancel")
+    @Operation(summary = "환불기능",
+            description = "결제 후 3일 이내이면 환불 + basis 전환 / 3일 후면 플랜 기간 유지 + 기간 종료 시 basic으로")
+    public ResponseEntity<ApiResponse<Void>> cancel (
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody @Valid CancelRequest request
+    ){
+
+        paymentCommandUseCase.cancel(new CancelCommand(userDetails.getUserId(),request.paymentId()));
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        PaymentResponseCode.SUBSCRIBE_CANCEL,
+                        PaymentResponseMessage.SUBSCRIBE_CANCEL,
+                        null
+                ));
+    }
+
+
 }
 
 
 
-//    @PatchMapping("/cancle")
-//    @Operation(summary = "환불기능",
-//            description = "결제 후 3일 이내이면 환불 + basis 전환 / 3일 후면 플랜 기간 유지 + 기간 종료 시 basic으로")
-//
-//
 
 

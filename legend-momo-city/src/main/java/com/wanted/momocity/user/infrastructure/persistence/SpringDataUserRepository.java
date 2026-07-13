@@ -242,4 +242,12 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
     void updateMembership(@Param("id") Long id,
                           @Param("membership") Membership membership,
                           @Param("membershipStart") LocalDateTime membershipStart);
-}
+
+
+    // 멤버십 기간 만료된 유저 BASIC으로 전환
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Transactional
+    @Query("UPDATE UserUser u SET u.membership = 'BASIC', u.membershipStart = :now " +
+            "WHERE u.membership <> 'BASIC' AND u.membershipStart <= :threshold")
+    int revertExpiredMemberships(@Param("threshold") LocalDateTime threshold,
+                                 @Param("now") LocalDateTime now);}

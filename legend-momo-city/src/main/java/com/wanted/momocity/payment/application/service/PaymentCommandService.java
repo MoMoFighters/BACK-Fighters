@@ -1,7 +1,9 @@
 package com.wanted.momocity.payment.application.service;
 
+import com.wanted.momocity.payment.application.command.CancelCommand;
 import com.wanted.momocity.payment.application.command.PaymentPrepareCommand;
 import com.wanted.momocity.payment.application.command.PaymentVerifyCommand;
+import com.wanted.momocity.payment.application.policy.CancelPolicy;
 import com.wanted.momocity.payment.application.policy.PaymentPolicy;
 import com.wanted.momocity.payment.application.port.GetUserMembershipPort;
 import com.wanted.momocity.payment.application.port.PaymentLockPort;
@@ -33,6 +35,7 @@ public class PaymentCommandService implements PaymentCommandUseCase {
     private final PortOnePaymentPort portOnePaymentPort;
     private final PaymentLockPort paymentLockPort;
     private final PaymentStatusUpdater paymentStatusUpdater;
+    private final CancelPolicy cancelPolicy;
 
 
     // 결제 준비 - 결제 금액 저장용
@@ -51,7 +54,7 @@ public class PaymentCommandService implements PaymentCommandUseCase {
 
         try {
             String paymentId = UUID.randomUUID().toString();
-            Payment payment = Payment.createPending(command.userId(), paymentId, command.plan(), price);
+            Payment payment = Payment.createPending(command.userId(), paymentId, null,command.plan(), price);
             Payment prepare = paymentRepository.save(payment);
             return new PaymentPrepareResult(prepare.getPrice(), prepare.getCreatedAt(), prepare.getPaymentId());
 
@@ -98,7 +101,7 @@ public class PaymentCommandService implements PaymentCommandUseCase {
             LocalDateTime membershipUntil = membershipStart.plusDays(30);
 
             paymentRepository.save(result);
-            paymentLockPort.unlock(command.userId(), payment.getPlan()); // 여기
+            paymentLockPort.unlock(command.userId(), payment.getPlan()); // 여기서 검증하고 나면 레디스 제거
             return new PaymentVerifyResult(result.getPaymentId(), result.getStatus(), membershipUntil);
         }
 
@@ -125,6 +128,32 @@ public class PaymentCommandService implements PaymentCommandUseCase {
             paymentStatusUpdater.saveFailed(failed);
             paymentLockPort.unlock(command.userId(), payment.getPlan());
             throw new PaymentAmountMismatchException("결제가 완료되지 않았습니다.");
+        }
+    }
+
+    @Override
+    public void cancel(CancelCommand command) {
+        Payment payment = paymentRepository.findByPaymentId(command.paymentId())
+                .orElseThrow(() -> new PaymentNotFoundException("결제 정보를 찾을 수 없습니다."));
+
+        // 본인이 결제한 게 아니거나 결제 후 3일이 넘게 지나면 예외
+        cancelPolicy.validateOwnership(payment, command.userId());
+        cancelPolicy.checkRefundable(payment);
+
+        try {
+            portOnePaymentPort.cancelPayment(command.paymentId(), "사용자 요청에 의한 환불");
+
+            String refundPaymentId = UUID.randomUUID().toString();
+            Payment refund = Payment.createRefund(payment, refundPaymentId);
+            paymentRepository.save(refund);
+
+            setUserMembershipPort.updateMembership(command.userId(), Plan.BASIC, LocalDateTime.now());
+
+        } catch (PortOneApiException e) {
+            String failedPaymentId = UUID.randomUUID().toString();
+            Payment cancelFailed = Payment.createCancelFailed(payment, failedPaymentId);
+            paymentStatusUpdater.saveCancelFailed(cancelFailed);
+            throw new PaymentCancelFailedException("환불 취소 처리 실패 paymentId=" + command.paymentId());
         }
     }
 }

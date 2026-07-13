@@ -1,6 +1,7 @@
 package com.wanted.momocity.payment.domain.repository;
 
 import com.wanted.momocity.payment.domain.model.Payment;
+import com.wanted.momocity.payment.domain.model.Status;
 
 import java.util.Optional;
 
@@ -11,4 +12,7 @@ public interface PaymentRepository {
 
     // 실제 결제 정보 조회
     Optional<Payment> findByPaymentId(String paymentId);
+
+    // 이미 환불 했는지 확인
+    boolean existsByPaymentIdAndStatus(String paymentId, Status status);
 }

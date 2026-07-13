@@ -23,6 +23,9 @@ public class PaymentJpaEntity {
     @Column(name = "payment_id", nullable = false, unique = true)
     private String paymentId; // 우리 서버가 생성해서 포트원 결제 요청/조회에 사용하는 고유 ID
 
+    @Column(name = "original_payment_id", nullable = true, unique = true)
+    private String originalPaymentId;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "plan", nullable = false)
     private Plan plan;
@@ -41,11 +44,12 @@ public class PaymentJpaEntity {
     private LocalDateTime updatedAt;
 
     // id 포함 생성자
-    public PaymentJpaEntity(Long id, Long userId, String paymentId, Plan plan, Long price,
+    public PaymentJpaEntity(Long id, Long userId, String paymentId,String originalPaymentId, Plan plan, Long price,
                             Status status, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.userId = userId;
         this.paymentId = paymentId;
+        this.originalPaymentId=originalPaymentId;
         this.plan = plan;
         this.price = price;
         this.status = status;
@@ -66,6 +70,7 @@ public class PaymentJpaEntity {
                 payment.getId(),
                 payment.getUserId(),
                 payment.getPaymentId(),
+                payment.getOriginalPaymentId(),
                 payment.getPlan(),
                 payment.getPrice(),
                 payment.getStatus(),
@@ -75,6 +80,6 @@ public class PaymentJpaEntity {
     }
 
     public Payment toDomain() {
-        return new Payment(id, userId, paymentId, plan, price, status, createdAt, updatedAt);
+        return new Payment(id, userId, paymentId, originalPaymentId, plan, price, status, createdAt, updatedAt);
     }
 }

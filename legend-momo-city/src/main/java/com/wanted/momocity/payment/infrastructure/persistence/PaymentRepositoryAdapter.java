@@ -30,4 +30,10 @@ public class PaymentRepositoryAdapter implements PaymentRepository {
         return springDataPaymentRepository.findByPaymentId(paymentId)
                 .map(PaymentJpaEntity::toDomain);
     }
+
+    // 이미 환불 한 건지 확인
+    @Override
+    public boolean existsByPaymentIdAndStatus(String paymentId, Status status) {
+        return springDataPaymentRepository.existsByOriginalPaymentIdAndStatus(paymentId, status);
+    }
 }
