@@ -42,10 +42,9 @@ public class PaymentCommandService implements PaymentCommandUseCase {
     @Override
     public PaymentPrepareResult paymentPrepare(PaymentPrepareCommand command) {
 
-        Plan currentPlan = getUserMembershipPort.getCurrentPlan(command.userId());
-
         // 플랜 변경 유효성 검증 + 결제 금액 계산
-        Long price = paymentPolicy.calculatePrice(currentPlan, command.plan());
+        GetUserMembershipPort.UserMembership membership = getUserMembershipPort.getUserMembership(command.userId());
+        Long price = paymentPolicy.calculatePrice(membership.plan(), command.plan());
 
         // 중복 결제 방지
         if (!paymentLockPort.tryLock(command.userId(), command.plan())) {
@@ -96,12 +95,23 @@ public class PaymentCommandService implements PaymentCommandUseCase {
         if (amountMatches) {
             Payment result = payment.markSuccess();
 
-            LocalDateTime membershipStart = LocalDateTime.now();
-            setUserMembershipPort.updateMembership(command.userId(), payment.getPlan(), membershipStart);
-            LocalDateTime membershipUntil = membershipStart.plusDays(30);
+            // 현재 멤버십 시작일 조회 - 갱신 결제 시 기존 종료일 기준으로 연장
+            GetUserMembershipPort.UserMembership membership = getUserMembershipPort.getUserMembership(command.userId());
+
+            // 현재 멤버십 종료일 계산 (membershipStart + 30일)
+            LocalDateTime currentUntil = membership.membershipStart().plusDays(30);
+
+            // 기간이 아직 남아있으면 기존 종료일부터 30일 연장
+            // 만료됐거나 BASIC이면 오늘부터 시작
+            LocalDateTime newMembershipStart = currentUntil.isAfter(LocalDateTime.now())
+                    ? currentUntil
+                    : LocalDateTime.now();
+
+            setUserMembershipPort.updateMembership(command.userId(), payment.getPlan(), newMembershipStart);
+            LocalDateTime membershipUntil = newMembershipStart.plusDays(30);
 
             paymentRepository.save(result);
-            paymentLockPort.unlock(command.userId(), payment.getPlan()); // 여기서 검증하고 나면 레디스 제거
+            paymentLockPort.unlock(command.userId(), payment.getPlan());
             return new PaymentVerifyResult(result.getPaymentId(), result.getStatus(), membershipUntil);
         }
 
