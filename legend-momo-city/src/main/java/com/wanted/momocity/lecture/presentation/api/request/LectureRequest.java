@@ -183,7 +183,7 @@ public final class LectureRequest {
         public LectureCommand.UpdateLectureCommand toCommand(Long teacherId, Long lectureId) {
 
             // 카테고리 문자열을 ENUM 값으로 변경
-            LectureCategory lectureCategory = parseaCategory(category);
+            LectureCategory lectureCategory = parseCategory(category);
 
             return new LectureCommand.UpdateLectureCommand(
                     teacherId,
@@ -194,7 +194,7 @@ public final class LectureRequest {
             );
         }
 
-        private LectureCategory parseaCategory(@NotBlank(message = "강의 카테고리는 필수입니다.") String category) {
+        private LectureCategory parseCategory(@NotBlank(message = "강의 카테고리는 필수입니다.") String category) {
             try {
                 return LectureCategory.valueOf(category);
             } catch (IllegalArgumentException exception) {
