@@ -1,5 +1,5 @@
 -- =====================================================================
---  열품타 (Study Timer) - 타이머 재개 시각 컬럼 추가
+--  열품타 (Study Timer) - 타이머 재개 시각 컬럼 및 누락 컬럼 추가
 --  -
 --  추가 이유:
 --  solo_session, group_room_member 모두 "마지막으로 RUNNING/STUDYING이 된 시각"을
@@ -16,3 +16,8 @@ ALTER TABLE `group_room_member`
     ADD COLUMN `last_resumed_at` DATETIME(6) DEFAULT NULL
         COMMENT '마지막으로 STUDYING이 된 시각, RESTING/NULL이면 NULL'
         AFTER `timer_status`;
+
+ALTER TABLE `group_room_member`
+    ADD COLUMN `total_seconds` INT NOT NULL DEFAULT 0
+    COMMENT '이 유저가 이 방에서 누적한 공부 시간(초)'
+        AFTER `last_resumed_at`;
