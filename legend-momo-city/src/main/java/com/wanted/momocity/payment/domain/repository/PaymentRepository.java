@@ -1,8 +1,10 @@
 package com.wanted.momocity.payment.domain.repository;
 
+import com.wanted.momocity.payment.domain.model.MonthlySalesResult;
 import com.wanted.momocity.payment.domain.model.Payment;
 import com.wanted.momocity.payment.domain.model.Status;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface PaymentRepository {
@@ -18,4 +20,7 @@ public interface PaymentRepository {
 
     // 총 매출
     long getTotalSales();
+
+    // 월별 매출
+    List<MonthlySalesResult> getMonthlySales(int year);
 }

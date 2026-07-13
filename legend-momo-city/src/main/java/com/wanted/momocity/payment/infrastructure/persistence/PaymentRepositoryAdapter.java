@@ -1,13 +1,16 @@
 package com.wanted.momocity.payment.infrastructure.persistence;
 
+import com.wanted.momocity.payment.domain.model.MonthlySalesResult;
 import com.wanted.momocity.payment.domain.model.Payment;
-import com.wanted.momocity.payment.domain.model.Plan;
 import com.wanted.momocity.payment.domain.model.Status;
 import com.wanted.momocity.payment.domain.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Repository("paymentAdapter")
@@ -41,5 +44,19 @@ public class PaymentRepositoryAdapter implements PaymentRepository {
     @Override
     public long getTotalSales() {
         return springDataPaymentRepository.getTotalSales();
+    }
+
+    // 월별 총매출
+    @Override
+    public List<MonthlySalesResult> getMonthlySales(int year) {
+        Map<Integer, Long> monthMap = new LinkedHashMap<>();
+        for (int i = 1; i <= 12; i++) monthMap.put(i, 0L);
+
+        springDataPaymentRepository.getMonthlySales(year)
+                .forEach(mc -> monthMap.put(mc.month(), mc.sales()));
+
+        return monthMap.entrySet().stream()
+                .map(e -> new MonthlySalesResult(e.getKey(), e.getValue()))
+                .toList();
     }
 }

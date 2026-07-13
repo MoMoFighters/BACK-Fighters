@@ -7,6 +7,7 @@ import com.wanted.momocity.payment.application.command.PaymentPrepareCommand;
 import com.wanted.momocity.payment.application.command.PaymentVerifyCommand;
 import com.wanted.momocity.payment.application.usecase.PaymentCommandUseCase;
 import com.wanted.momocity.payment.application.usecase.PaymentQueryUseCase;
+import com.wanted.momocity.payment.domain.model.MonthlySalesResult;
 import com.wanted.momocity.payment.domain.model.PaymentPrepareResult;
 import com.wanted.momocity.payment.domain.model.PaymentVerifyResult;
 import com.wanted.momocity.payment.presentation.api.common.PaymentResponseCode;
@@ -14,6 +15,7 @@ import com.wanted.momocity.payment.presentation.api.common.PaymentResponseMessag
 import com.wanted.momocity.payment.presentation.api.request.CancelRequest;
 import com.wanted.momocity.payment.presentation.api.request.PaymentPrepareRequest;
 import com.wanted.momocity.payment.presentation.api.request.PaymentVerifyRequest;
+import com.wanted.momocity.payment.presentation.api.response.MonthlySalesResponse;
 import com.wanted.momocity.payment.presentation.api.response.PaymentPrepareResponse;
 import com.wanted.momocity.payment.presentation.api.response.PaymentVerifyResponse;
 import com.wanted.momocity.payment.presentation.api.response.TotalSalesResponse;
@@ -27,6 +29,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 
 @RestController
@@ -120,6 +124,11 @@ public class PaymentController {
     @GetMapping("/sales/total")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "천체 총매출 계산")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "전체 총매출 조회 성공 "),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한 없음")
+    })
     public ResponseEntity<ApiResponse<TotalSalesResponse>> getTotalSales(){
         long totalSales = paymentQueryUseCase.getTotalSales();
 
@@ -131,6 +140,30 @@ public class PaymentController {
                 ));
     }
 
+
+    @GetMapping("/sales/monthly")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "월별 총매출 계산")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "월별 총매출 조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한 없음")
+    })
+    public ResponseEntity<ApiResponse<List<MonthlySalesResponse>>> getMonthlySales(
+            @RequestParam int year
+    ){
+        List<MonthlySalesResult> result = paymentQueryUseCase.getMonthlySales(year);
+        List<MonthlySalesResponse> response = result.stream()
+                .map(MonthlySalesResponse::from)
+                .toList();
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        PaymentResponseCode.FETCH_SUCCESS,
+                        PaymentResponseMessage.FETCH_SUCCESS,
+                        response
+                ));
+    }
 }
 
 
