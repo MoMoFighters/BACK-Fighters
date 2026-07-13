@@ -36,7 +36,7 @@ public class UserQueryService implements UserQueryUsecase {
 
         UserDetailView userDetail = new UserDetailView(
                 user.getProfileImageUrl(), user.getEmail(), user.getName(),
-                user.getPoint(), user.getDoNotDisturb(), user.getMembership(), user.getMembershipStart(),user.getNickname(), user.getTempPwd(), user.getCreatedAt()
+                user.getPoint(), user.getDoNotDisturb(), user.getMembership(), user.getMembershipStart(),user.getMembershipStart().plusDays(30),user.getNickname(), user.getTempPwd(), user.getCreatedAt()
         );
 
         List<BuildingInfo> buildings =
@@ -98,14 +98,15 @@ public class UserQueryService implements UserQueryUsecase {
     @Cacheable(
             value = "adminUserList",
             key = "'page:' + #page + ':size:' + #size", // 키 예시 : page:1:size:10
-            condition = "#role == null && #status == null")
+            condition = "#role == null && #status == null && #keyword == null")
     // role과 status 파라미터가 둘 다 null일 때만 캐싱 로직이 동작
     // = 전체 회원조회 때만 캐시 적용
-    public AdminUserListResult getAdminUserList(String role, String status, int page, int size) {
+    public AdminUserListResult getAdminUserList(String role, String status,String keyword ,int page, int size) {
         Role roleEnum = role != null ? Role.valueOf(role) : null;
         Status statusEnum = status != null ? Status.valueOf(status) : null;
+        String userKeyword = (keyword == null || keyword.isBlank()) ? null : keyword.trim();
 
-        List<?> list = userRepository.findAllForAdmin(roleEnum, statusEnum, page, size)
+        List<?> list = userRepository.findAllForAdmin(roleEnum, statusEnum,userKeyword, page, size)
                 .stream()
                 .map(user -> {
                     if (statusEnum == Status.DELETED) {
@@ -119,7 +120,7 @@ public class UserQueryService implements UserQueryUsecase {
                 })
                 .toList();
 
-        long totalElements = userRepository.countForAdmin(roleEnum, statusEnum);
+        long totalElements = userRepository.countForAdmin(roleEnum, statusEnum, userKeyword);
         int totalPages = (int) Math.ceil((double) totalElements / size);
 
         return new AdminUserListResult(list, page, size, totalElements, totalPages);

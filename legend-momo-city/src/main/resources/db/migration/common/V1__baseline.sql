@@ -56,7 +56,7 @@ CREATE TABLE `user` (
     `point`             BIGINT       NULL,
     `do_not_disturb`    BOOLEAN      NOT NULL DEFAULT FALSE,
     `membership`        ENUM('BASIC','PLUS','PRO')                                     NOT NULL DEFAULT 'BASIC',
-    `membership_start`  DATETIME     NULL,
+    `membership_start`  DATETIME     NOT NULL,
     `suspension_count`  BIGINT       NOT NULL DEFAULT 0,
     `suspended_until`   DATETIME     NULL,
     `created_at`        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
