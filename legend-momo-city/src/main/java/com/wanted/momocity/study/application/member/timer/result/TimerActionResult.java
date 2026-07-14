@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
  *  -> start API 하나가 "신규 시작"과 "재개"를 함께 처리
  *  -
  *  accumulatedSeconds : STARTED/RESUMED 시엔 재개 시점까지의 기존 누적값(0 또는 이전 값),
- *                        PAUSED/ENDED 시엔 이번에 갱신된 최종 누적값
+ *                       PAUSED/ENDED 시엔 이번에 갱신된 최종 누적값
  * */
 
 public record TimerActionResult(
