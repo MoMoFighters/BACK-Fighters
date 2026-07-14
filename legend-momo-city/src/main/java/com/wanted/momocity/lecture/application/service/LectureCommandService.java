@@ -476,6 +476,68 @@ public class LectureCommandService implements
                  elapsedTime);
     }
 
+    // 챕터 수정
+    @Override
+    public void updateChapter(LectureCommand.UpdateChapterCommand command) {
+        long startTime = System.currentTimeMillis();
+        log.info("챕터 수정 시작 - userId={}, lectureId={}, chapterId={}, orderNo={}",
+                command.teacherId(),
+                command.lectureId(),
+                command.chapterId(),
+                command.orderNo()
+        );
+
+        Long teacherId = teacherAccountPort.getTeacherId(command.teacherId());
+
+        LectureAggregate  lecture = lectureRepository.findById(command.lectureId())
+                .orElseThrow(() -> new LectureNotFoundException("강의를 찾을 수 없습니다."));
+
+        if (!lecture.isOwnedBy(teacherId)) {
+            throw new AccessDeniedException("본인이 등록한 강의의 챕터만 수정할 수 있습니다.");
+        }
+
+        if (lecture.getStatus() == LectureStatus.DELETED) {
+            throw new DomainRuleViolationException("삭제된 강의의 챕터는 수정할 수 없습니다.");
+        }
+
+        LectureChapter chapter = chapterRepository.findById(command.chapterId())
+                .orElseThrow(() -> new ChapterNotFoundException("챕터를 찾을 수 없습니다."));
+
+        // 조회한 챕터가 URL의 강의에 실제로 속하는지 확인합니다.
+        if (!chapter.belongsTo(command.lectureId())) {
+            throw new ChapterNotFoundException("유효하지 않은 챕터 식별자입니다.");
+        }
+
+        // 현재 탭터 제외하고 같은 순서가 사용 중인지 확인
+        boolean duplicatedOrderNo =
+                chapterRepository.existsByLectureIdAndOrderNoAndIdNot(
+                        command.lectureId(),
+                        command.orderNo(),
+                        command.chapterId()
+                );
+
+        // 다른 챕터에서 동일한 순서를 사용하는지 확인
+        if (duplicatedOrderNo) {
+            throw new  DuplicateChapterOrderException("이미 사용 중인 챕터 순서입니다.");
+        }
+
+        // 기존 영상과 썸네일은 유지하고 제목과 순서만 변경
+        LectureChapter updatedChapter = chapter.update(
+                command.title(),
+                command.orderNo()
+        );
+
+        chapterRepository.save(updatedChapter);
+
+        long elapsedTime = System.currentTimeMillis() - startTime;
+        log.info("챕터 수정 완료 - lectureId={}, chapterId={}, orderNo={}, elapsedTime={}",
+                command.lectureId(),
+                command.chapterId(),
+                command.orderNo(),
+                elapsedTime
+                );
+    }
+
     /**
      * 관리자가 강의를 승인 또는 거절 상태로 변경.
      */

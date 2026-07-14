@@ -1,5 +1,6 @@
 package com.wanted.momocity.lecture.application.usecase;
 
+import com.wanted.momocity.lecture.application.command.LectureCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.DeleteChapterVideoCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.DeleteLectureCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.DeleteChapterCommand;
@@ -42,8 +43,11 @@ public final class LectureCommandUseCases {
         void deleteChapter(DeleteChapterCommand command);
 
         // 강사가 본인 강의의 챕터 동영상을 삭제합니다.
-// 영상은 챕터의 필수 요소이므로, 실제 구현에서는 영상이 속한 챕터까지 함께 삭제합니다.
+        // 영상은 챕터의 필수 요소이므로, 실제 구현에서는 영상이 속한 챕터까지 함께 삭제합니다.
         void deleteChapterVideo(DeleteChapterVideoCommand command);
+
+        // 본인 강의의 챕터 수정
+        void updateChapter(LectureCommand.UpdateChapterCommand command);
     }
 
     // 관리자 강의 명령 기능을 정의하는 UseCase
