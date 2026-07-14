@@ -244,6 +244,38 @@ public final class LectureCommand {
 
     }
 
+    // 강사 본인 강의의 기본 정보를 수정할 때 사용하는 command
+    public record UpdateLectureCommand(
+            Long teacherId,
+            Long lectureId,
+            String title,
+            String description,
+            LectureCategory category
+    ) {
+        public UpdateLectureCommand{
+            if (teacherId == null) {
+                throw new DomainRuleViolationException("강사 정보는 필수입니다.");
+            }
+
+            if (lectureId == null) {
+                throw new DomainRuleViolationException("강의 ID는 필수입니다.");
+            }
+
+            if (title == null || title.isBlank()) {
+                throw new DomainRuleViolationException("강의 제목은 필수입니다.");
+            }
+
+
+            if (description == null || description.isBlank()) {
+                throw new DomainRuleViolationException("강의 설명은 필수입니다.");
+            }
+
+            if (category == null) {
+                throw new DomainRuleViolationException("강의 카테고리는 필수입니다.");
+            }
+        }
+    }
+
     // 강사가 챕터에 동영상 파일을 등록할 때 사용하는 Command.
     public record RegisterChapterVideoCommand(
             Long teacherId,

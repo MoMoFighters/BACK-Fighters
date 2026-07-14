@@ -228,6 +228,51 @@ public class LectureCommandService implements
         return savedLecture;
     }
 
+    // 강사가 강의 수정
+    @Override
+    public void updateLecture(LectureCommand.UpdateLectureCommand command) {
+        long startTime = System.currentTimeMillis();
+        log.info("강의 수정 시작 - teacherId={}, lectureId={}",
+                command.teacherId(),
+                command.lectureId()
+        );
+
+        Long teacherId = teacherAccountPort.getTeacherId(command.teacherId());
+
+        // 수정 대상의 강의 조회
+        LectureAggregate lecture = lectureRepository.findById(command.lectureId())
+                // 없으면 예외
+                .orElseThrow(() -> new LectureNotFoundException("강의를 찾을 수 없습니다."));
+
+        // 본인 강의인지 확인
+        if (!lecture.isOwnedBy(teacherId)) {
+            // 아니라면 예외
+            throw new AccessDeniedException("본인이 등록한 강의만 수정할 수 있습니다.");
+        }
+
+        // 이미 삭제된 강의는 수정할 수 없게 막기
+        if (lecture.getStatus() == LectureStatus.DELETED) {
+            throw new DomainRuleViolationException("삭제된 강의는 수정할 수 없습니다.");
+        }
+
+        LectureAggregate updateLecture = lecture.update(
+                command.title(),
+                command.description(),
+                lecture.getThumbnailUrl(), // 글만 수정하기 때문에 썸네일 URL은 유지
+                command.category()
+        );
+
+        // 수정한 강의 저장
+        lectureRepository.save(updateLecture);
+
+        long elapsedTime = System.currentTimeMillis() - startTime;
+        log.info("강의 수정 완료 - teacherId={}, lectureId={}, elapsedTime={}",
+                command.teacherId(),
+                command.lectureId(),
+                elapsedTime
+        );
+    }
+
     /**
      * 챕터 생성.
      */

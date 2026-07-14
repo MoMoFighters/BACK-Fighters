@@ -3,7 +3,7 @@ package com.wanted.momocity.lecture.presentation.api;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
-import com.wanted.momocity.lecture.application.command.LectureCommand.UpdateChapterCommand;
+import com.wanted.momocity.lecture.application.command.LectureCommand.UpdateLectureCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.DeleteChapterVideoCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.DeleteChapterCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.DeleteLectureCommand;
@@ -25,7 +25,7 @@ import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.model.LectureCategory;
 import com.wanted.momocity.lecture.domain.model.LectureChapter;
 import com.wanted.momocity.lecture.domain.model.LectureStatus;
-import com.wanted.momocity.lecture.presentation.api.request.LectureRequest.UpdateChapterRequest;
+import com.wanted.momocity.lecture.presentation.api.request.LectureRequest.UpdateLectureRequest;
 import com.wanted.momocity.lecture.presentation.api.request.LectureRequest.AdminChangeLectureStatusRequest;
 import com.wanted.momocity.lecture.presentation.api.request.LectureRequest.ChangeLectureStatusRequest;
 import com.wanted.momocity.lecture.presentation.api.request.LectureRequest.CreateLectureRequest;
@@ -48,6 +48,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.checkerframework.checker.units.qual.A;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -123,6 +124,42 @@ public class LectureController {
                         "강의가 등록되었습니다.",
                         CreateLectureResponse.from(lecture, lectureS3UrlResolver)
                 ));
+    }
+
+    // 강의 수정
+    @Operation(
+            summary = "강의 수정",
+            description = "강사가 본인 강의의 제목, 설명, 카테고리를 수정합니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "강의 수정 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "입력값 검증 실패"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "강사 권한 없음 또는 본인 강의가 아님"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "강의를 찾을 수 없음")
+    })
+    @PatchMapping("/{lectureId}")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
+    public ResponseEntity<ApiResponse<Void>> updateLecture(
+            Authentication authentication,
+            @PathVariable Long lectureId,
+            // Json으로 강의 수정 요청값 받음
+            @Valid @RequestBody UpdateLectureRequest request
+    ) {
+        Long teacherId = Long.parseLong(authentication.getName());
+
+        UpdateLectureCommand command = request.toCommand(
+                teacherId,
+                lectureId
+        );
+
+        lectureCommandUseCase.updateLecture(command);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                ApiResponseCode.SUCCESS,
+                "강의가 수정되었습니다.",
+                null
+        ));
     }
 
     /* comment
@@ -238,7 +275,7 @@ public class LectureController {
             @Valid @RequestBody UpdateChapterRequest request
     ) {
         Long teacherId = Long.parseLong(authentication.getName());
-        UpdateChapterCommand command = request.toCommand(
+        LectureCommand.UpdateChapterCommand command = request.toCommand(
                 teacherId,
                 lectureId,
                 chapterId
