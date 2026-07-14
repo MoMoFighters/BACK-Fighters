@@ -1,10 +1,7 @@
 package com.wanted.momocity.payment.application.service;
 
 import com.wanted.momocity.payment.application.usecase.PaymentQueryUseCase;
-import com.wanted.momocity.payment.domain.model.MonthlySalesResult;
-import com.wanted.momocity.payment.domain.model.PersonalPaymentItem;
-import com.wanted.momocity.payment.domain.model.PersonalPaymentListResult;
-import com.wanted.momocity.payment.domain.model.Status;
+import com.wanted.momocity.payment.domain.model.*;
 import com.wanted.momocity.payment.domain.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,5 +37,15 @@ public class PaymentQueryService implements PaymentQueryUseCase {
         int totalPages = (int) Math.ceil((double) totalElements / size);
 
         return new PersonalPaymentListResult(payments, page, size, totalElements, totalPages);
+    }
+
+    // 관리자의 서비스 결제 내역 조회
+    @Override
+    public AdminPaymentListResult getAdminPaymentList(Status status, int page, int size) {
+        List<AdminPaymentItem> payments = paymentRepository.findAdminPaymentList(status, page, size);
+        long totalElements = paymentRepository.countAdminPaymentList(status);
+        int totalPages = (int) Math.ceil((double) totalElements / size);
+
+        return new AdminPaymentListResult(payments, page, size, totalElements, totalPages);
     }
 }

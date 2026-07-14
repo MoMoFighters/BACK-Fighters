@@ -3,7 +3,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- =====================================================================
 --  1. user — 125명 large 원본
 -- =====================================================================
-- =====================================================================
+-- =====================================================================
 --  1. user — 125명 large 원본
 -- =====================================================================
 INSERT INTO `user` (`id`, `email`, `password`, `name`, `nickname`, `profile_image_url`, `role`, `status`, `category`, `proof`, `point`, `do_not_disturb`, `membership`, `membership_start`, `suspension_count`, `suspended_until`, `created_at`, `updated_at`, `deleted_at`, `is_tempPWD`) VALUES
@@ -443,7 +443,7 @@ INSERT INTO `chapter` (`id`, `created_at`, `updated_at`, `deleted_at`, `thumbnai
   (251, NOW() - INTERVAL 19 DAY, NOW() - INTERVAL 19 DAY, NULL, 'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/lectures/10/chapters/4/chapter47Thumbnail.jpg', 217, 50, 4, NULL, '식당 회화', NULL, 'lectures/10/chapters/4/chapter04.mp4'),
   (252, NOW() - INTERVAL 19 DAY, NOW() - INTERVAL 19 DAY, NULL, 'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/lectures/10/chapters/5/chapter48Thumbnail.jpg', 199, 50, 5, NULL, '길 찾기 회화', NULL, 'lectures/10/chapters/5/chapter05.mp4'),
   (253, NOW() - INTERVAL 19 DAY, NOW() - INTERVAL 19 DAY, NULL, 'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/lectures/10/chapters/6/chapter49Thumbnail.png', 278, 50, 6, NULL, '병원 회화', NULL, 'lectures/10/chapters/6/chapter06.mp4'),
-  (254, NOW() - INTERVAL 19 DAY, NOW() - INTERVAL 19 DAY, 'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/lectures/10/chapters/7/chapter50Thumbnail.jpg', 596, 50, 7, NULL, '비즈니스 이메일 영어', NULL, 'lectures/10/chapters/7/chapter07.mp4');
+  (254, NOW() - INTERVAL 19 DAY, NOW() - INTERVAL 19 DAY, NULL, 'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/lectures/10/chapters/7/chapter50Thumbnail.jpg', 596, 50, 7, NULL, '비즈니스 이메일 영어', NULL, 'lectures/10/chapters/7/chapter07.mp4');
 -- =====================================================================
 --  4. enrollment — 330건 large 원본
 -- =====================================================================
@@ -777,7 +777,7 @@ INSERT INTO `enrollment` (`id`, `completed_count`, `enrolled_at`, `lecture_id`, 
   (327, 3, NOW() - INTERVAL 91 DAY, 18, 37, 124, FALSE),
   (328, 0, NOW() - INTERVAL 79 DAY, 24, 68, 124, FALSE),
   (329, 2, NOW() - INTERVAL 14 DAY, 48, 29, 125, FALSE),
-  (330, 5, NOW() - INTERVAL 10 DAY, 10, 77, 125);
+  (330, 5, NOW() - INTERVAL 10 DAY, 10, 77, 125, FALSE);
 -- =====================================================================
 --  5. friend — 350건 large 원본
 -- =====================================================================

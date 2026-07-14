@@ -183,7 +183,31 @@ public class PaymentController {
                 ));
     }
 
+    @GetMapping("/admin/list")
+    @Operation(summary = "관리자가 보는 시스템 결제 내역")
+    @PreAuthorize("hasRole('ADMIN')")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "결제 내역 조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한 없음")
+    })
+    public ResponseEntity<ApiResponse<AdminPaymentListResponse>> getAdminPaymentList(
+            @RequestParam(required = false) Status status,
+            @Parameter(description = "페이지 번호 (1-base)", example = "1")
+            @RequestParam(defaultValue = "1") int page,
+            @Parameter(description = "페이지 크기", example = "20")
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        AdminPaymentListResult result = paymentQueryUseCase.getAdminPaymentList(status, page, size);
 
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        PaymentResponseCode.FETCH_SUCCESS,
+                        PaymentResponseMessage.FETCH_SUCCESS,
+                        AdminPaymentListResponse.from(result)
+                ));
+
+    }
 }
 
 

@@ -5,7 +5,6 @@ import com.wanted.momocity.payment.domain.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -78,5 +77,16 @@ public class PaymentRepositoryAdapter implements PaymentRepository {
         return springDataPaymentRepository.countPersonalPaymentList(userId, status);
     }
 
+    // 관리자의 서비스 결제 내역 조회
+    @Override
+    public List<AdminPaymentItem> findAdminPaymentList(Status status, int page, int size) {
+        Pageable pageable = PageRequest.of(page - 1, size);
+        return springDataPaymentRepository.findAdminPaymentList(status, pageable);
+    }
+
+    @Override
+    public long countAdminPaymentList(Status status) {
+        return springDataPaymentRepository.countAdminPaymentList(status);
+    }
 
 }
