@@ -7,6 +7,7 @@ import com.wanted.momocity.payment.application.command.PaymentPrepareCommand;
 import com.wanted.momocity.payment.application.command.PaymentVerifyCommand;
 import com.wanted.momocity.payment.application.usecase.PaymentCommandUseCase;
 import com.wanted.momocity.payment.application.usecase.PaymentQueryUseCase;
+import com.wanted.momocity.payment.domain.model.MonthlySalesResult;
 import com.wanted.momocity.payment.domain.model.PaymentPrepareResult;
 import com.wanted.momocity.payment.domain.model.PaymentVerifyResult;
 import com.wanted.momocity.payment.presentation.api.common.PaymentResponseCode;
@@ -14,8 +15,10 @@ import com.wanted.momocity.payment.presentation.api.common.PaymentResponseMessag
 import com.wanted.momocity.payment.presentation.api.request.CancelRequest;
 import com.wanted.momocity.payment.presentation.api.request.PaymentPrepareRequest;
 import com.wanted.momocity.payment.presentation.api.request.PaymentVerifyRequest;
+import com.wanted.momocity.payment.presentation.api.response.MonthlySalesResponse;
 import com.wanted.momocity.payment.presentation.api.response.PaymentPrepareResponse;
 import com.wanted.momocity.payment.presentation.api.response.PaymentVerifyResponse;
+import com.wanted.momocity.payment.presentation.api.response.TotalSalesResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,6 +26,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -45,10 +49,10 @@ public class PaymentController {
                     "이때 저장해둔 값과 실제 결제값이 일치하는지 확인"
     )
     @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "결제 준비 완료 (PAYMENT_READY)"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청값 검증 실패 - plan 누락/잘못된 값 (COMMON-VALIDATION-ERROR) 또는 다운그레이드 시도 (PAYMENT_DOWNGRADE_NOT_ALLOWED)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "결제 준비 완료 "),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청값 검증 실패 - plan 누락/잘못된 값  또는 다운그레이드 시도 "),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "이미 이용 중인 플랜 (PAYMENT_SAME_PLAN) 또는 이미 진행 중인 결제 존재 (PAYMENT_ALREADY_IN_PROGRESS)")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "이미 이용 중인 플랜  또는 이미 진행 중인 결제 존재 ")
     })
     public ResponseEntity<ApiResponse<PaymentPrepareResponse>> paymentPrepare(
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -94,12 +98,12 @@ public class PaymentController {
     @Operation(summary = "환불기능",
             description = "결제 후 3일 이내이면 환불 + basis 전환 / 3일 후면 플랜 기간 유지 + 기간 종료 시 basic으로")
     @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "환불 완료 (SUBSCRIBE_CANCEL)"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "본인 결제 건이 아님 (PAYMENT_ACCESS_DENIED)"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "결제 건을 찾을 수 없음 (PAYMENT_NOT_FOUND)"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "환불 가능 기간 초과 또는 이미 환불된 건 (PAYMENT_REFUND_NOT_ALLOWED)"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "포트원 취소 처리 실패, 수동 확인 필요 (PAYMENT_CANCEL_FAILED)")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "환불 완료 "),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 "),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "본인 결제 건이 아님 "),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "결제 건을 찾을 수 없음 "),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "환불 가능 기간 초과 또는 이미 환불된 건 "),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "포트원 취소 처리 실패, 수동 확인 필요 ")
     })
     public ResponseEntity<ApiResponse<Void>> cancel (
             @AuthenticationPrincipal CustomUserDetails userDetails,
@@ -113,6 +117,49 @@ public class PaymentController {
                         PaymentResponseCode.SUBSCRIBE_CANCEL,
                         PaymentResponseMessage.SUBSCRIBE_CANCEL,
                         null
+                ));
+    }
+
+    @GetMapping("/sales/total")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "전체 총매출 계산")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "월별 총매출 조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한 없음")
+    })
+    public ResponseEntity<ApiResponse<TotalSalesResponse>> getTotalSales(){
+        long totalSales = paymentQueryUseCase.getTotalSales();
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        PaymentResponseCode.FETCH_SUCCESS,
+                        PaymentResponseMessage.FETCH_SUCCESS,
+                        new TotalSalesResponse(totalSales)
+                ));
+    }
+
+    @GetMapping("/sales/monthly")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "월별 총매출 계산")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "월별 총매출 조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한 없음")
+    })
+    public ResponseEntity<ApiResponse<List<MonthlySalesResponse>>> getMonthlySales(
+            @RequestParam int year
+    ) {
+        List<MonthlySalesResult> result = paymentQueryUseCase.getMonthlySales(year);
+        List<MonthlySalesResponse> response = result.stream()
+                .map(MonthlySalesResponse::from)
+                .toList();
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        PaymentResponseCode.FETCH_SUCCESS,
+                        PaymentResponseMessage.FETCH_SUCCESS,
+                        response
                 ));
     }
 
