@@ -40,4 +40,23 @@ public class PaymentRepositoryAdapter implements PaymentRepository {
         return springDataPaymentRepository.existsByOriginalPaymentIdAndStatus(paymentId, status);
     }
 
+    @Override
+    public long getTotalSales() {
+        return springDataPaymentRepository.getTotalSales();
+    }
+
+    // 월별 총매출
+    @Override
+    public List<MonthlySalesResult> getMonthlySales(int year) {
+        Map<Integer, Long> monthMap = new LinkedHashMap<>();
+        for (int i = 1; i <= 12; i++) monthMap.put(i, 0L);
+
+        springDataPaymentRepository.getMonthlySales(year)
+                .forEach(mc -> monthMap.put(mc.month(), mc.sales()));
+
+        return monthMap.entrySet().stream()
+                .map(e -> new MonthlySalesResult(e.getKey(), e.getValue()))
+                .toList();
+    }
+
 }

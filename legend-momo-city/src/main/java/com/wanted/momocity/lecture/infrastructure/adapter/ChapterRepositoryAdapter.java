@@ -24,8 +24,22 @@ public class ChapterRepositoryAdapter implements ChapterRepository {
 
     @Override
     public LectureChapter save(LectureChapter chapter) {
+        if (chapter.getId() != null) {
+            // 전달받은 chapterId로 기존 JPA Entity를 조회합니다.
+            ChapterJpaEntity entity = repository.findById(chapter.getId())
+                    // 없으면 예외
+                    .orElseThrow(() -> new IllegalArgumentException("챕터를 찾을 수 없습니다."));
+
+            // 도메인 객체에서 변경된 챕터 정보를 기존 Entity에 반영
+            entity.updateFromDomain(chapter);
+
+            return entity.toDomain();
+        }
+
+        // 새 챕터를 등록하는 경우에는 도메인 객체를 JPA Entity로 변환
         ChapterJpaEntity entity = ChapterJpaEntity.from(chapter);
 
+        // 새 챕터 Entity를 DB에 저장합니다.
         ChapterJpaEntity saved = repository.save(entity);
 
         return saved.toDomain();
@@ -39,6 +53,15 @@ public class ChapterRepositoryAdapter implements ChapterRepository {
     @Override
     public boolean existsByLectureIdAndOrderNo(Long lectureId, int orderNo) {
         return repository.existsByLectureIdAndOrderNo(lectureId, orderNo);
+    }
+
+    @Override
+    public boolean existsByLectureIdAndOrderNoAndIdNot(Long lectureId, int orderNo, Long chapterId) {
+        return repository.existsByLectureIdAndOrderNoAndIdNot(
+                lectureId,
+                orderNo,
+                chapterId
+        );
     }
 
     @Override
