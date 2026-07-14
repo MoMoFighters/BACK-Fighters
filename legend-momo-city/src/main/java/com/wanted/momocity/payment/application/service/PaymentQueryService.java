@@ -9,6 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class PaymentQueryService implements PaymentQueryUseCase {
 }

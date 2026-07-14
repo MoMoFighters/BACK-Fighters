@@ -5,7 +5,6 @@ import com.wanted.momocity.payment.domain.model.Plan;
 import com.wanted.momocity.user.domain.exception.UserNotFoundException;
 import com.wanted.momocity.user.domain.model.User;
 import com.wanted.momocity.user.domain.repository.UserRepository;
-import com.wanted.momocity.user.infrastructure.persistence.SpringDataUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -16,14 +15,16 @@ public class GetUserMembershipAdapter implements GetUserMembershipPort {
     private final UserRepository userRepository;
 
     @Override
-    public Plan getCurrentPlan(Long userId) {
+    public UserMembership getUserMembership(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
 
-        return switch (user.getMembership()) {
+        Plan plan = switch (user.getMembership()) {
             case BASIC -> Plan.BASIC;
             case PLUS -> Plan.PLUS;
             case PRO -> Plan.PRO;
         };
+
+        return new UserMembership(plan, user.getMembershipStart());
     }
 }
