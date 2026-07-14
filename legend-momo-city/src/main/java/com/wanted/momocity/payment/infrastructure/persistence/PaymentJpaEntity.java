@@ -23,7 +23,7 @@ public class PaymentJpaEntity {
     @Column(name = "payment_id", nullable = false, unique = true)
     private String paymentId; // 우리 서버가 생성해서 포트원 결제 요청/조회에 사용하는 고유 ID
 
-    @Column(name = "original_payment_id", nullable = true, unique = true)
+    @Column(name = "original_payment_id")
     private String originalPaymentId;
 
     @Enumerated(EnumType.STRING)

@@ -28,11 +28,16 @@ public class CancelPolicy {
         boolean withinPeriod = payment.getStatus() == Status.SUCCESS
                 && payment.getCreatedAt().plusDays(REFUNDABLE_DAYS).isAfter(LocalDateTime.now());
 
-        // 이미 환불 한건지 아닌지 확인
-        boolean alreadyRefunded = paymentRepository
-                .existsByPaymentIdAndStatus(payment.getPaymentId(), Status.REFUND);
+        // 이미 환불 했거나 취소 시도 이력이 있으면 환불 안 됨
+        // 취소 실패의 경우에 포트원은 취소를 해줬는데 그게 api 응답상 실패 처리될 가능성 때문 - 네트워크 타입 아웃
+        boolean alreadyAttempted = paymentRepository
+                .existsByPaymentIdAndStatus(payment.getPaymentId(), Status.REFUND)
+                || paymentRepository
+                .existsByPaymentIdAndStatus(payment.getPaymentId(), Status.CANCEL_FAILED);
 
-        if (!withinPeriod || alreadyRefunded) {
+
+
+        if (!withinPeriod || alreadyAttempted) {
             throw new PaymentRefundNotAllowedException(
                     "환불 가능 기간이 지났거나 이미 환불된 결제 건입니다.");
         }

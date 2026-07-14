@@ -7,7 +7,7 @@ CREATE TABLE `payment` (
     `id`           BIGINT       NOT NULL AUTO_INCREMENT,
     `user_id`      BIGINT       NOT NULL,
     `payment_id`   VARCHAR(255) NOT NULL UNIQUE,
-    `original_payment_id` VARCHAR(255) NULL UNIQUE,
+    `original_payment_id` VARCHAR(255) NULL ,
     `plan`         ENUM('BASIC','PLUS','PRO')      NOT NULL,
     `price`        BIGINT       NOT NULL,
     `status`       ENUM('PENDING','SUCCESS','FAILED','REFUND','CANCEL_FAILED') NOT NULL DEFAULT 'PENDING',

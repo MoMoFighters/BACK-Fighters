@@ -101,18 +101,18 @@ public class PaymentCommandService implements PaymentCommandUseCase {
             // 현재 멤버십 종료일 계산 (membershipStart + 30일)
             LocalDateTime currentUntil = membership.membershipStart().plusDays(30);
 
-            // 기간이 아직 남아있으면 기존 종료일부터 30일 연장
-            // 만료됐거나 BASIC이면 오늘부터 시작
-            LocalDateTime newMembershipStart = currentUntil.isAfter(LocalDateTime.now())
+            // BASIC이면 오늘부터 시작
+            // 유료 플랜이고 기간 남아있으면 기존 종료일부터 연장
+            LocalDateTime newMembershipStart = (membership.plan() != Plan.BASIC && currentUntil.isAfter(LocalDateTime.now()))
                     ? currentUntil
                     : LocalDateTime.now();
 
             setUserMembershipPort.updateMembership(command.userId(), payment.getPlan(), newMembershipStart);
-            LocalDateTime membershipUntil = newMembershipStart.plusDays(30);
+            LocalDateTime newMembershipUntil  = newMembershipStart.plusDays(30);
 
             paymentRepository.save(result);
             paymentLockPort.unlock(command.userId(), payment.getPlan()); // 여기서 캐시 제거
-            return new PaymentVerifyResult(result.getPaymentId(), result.getStatus(), membershipUntil);
+            return new PaymentVerifyResult(result.getPaymentId(), result.getStatus(), newMembershipUntil );
         }
 
         // 금액 불일치 - 여기서부터는 전부 실패
@@ -146,11 +146,16 @@ public class PaymentCommandService implements PaymentCommandUseCase {
         Payment payment = paymentRepository.findByPaymentId(command.paymentId())
                 .orElseThrow(() -> new PaymentNotFoundException("결제 정보를 찾을 수 없습니다."));
 
-        // 본인이 결제한 게 아니거나 결제 후 3일이 넘게 지나면 예외
-        cancelPolicy.validateOwnership(payment, command.userId());
-        cancelPolicy.checkRefundable(payment);
+        // 동시 취소 요청 방지
+        if (!paymentLockPort.tryLock(command.userId(), payment.getPlan())) {
+            throw new PaymentAlreadyInProgressException("이미 처리 중인 요청이 있습니다.");
+        }
 
         try {
+            // 본인이 결제한 게 아니거나 결제 후 3일이 넘게 지나면 환불 불가능
+            cancelPolicy.validateOwnership(payment, command.userId());
+            cancelPolicy.checkRefundable(payment);
+
             portOnePaymentPort.cancelPayment(command.paymentId(), "사용자 요청에 의한 환불");
 
             String refundPaymentId = UUID.randomUUID().toString();
@@ -160,10 +165,14 @@ public class PaymentCommandService implements PaymentCommandUseCase {
             setUserMembershipPort.updateMembership(command.userId(), Plan.BASIC, LocalDateTime.now());
 
         } catch (PortOneApiException e) {
+            log.error("[cancel] 포트원 취소 API 실패 paymentId={}, userId={}, error={}",
+                    command.paymentId(), command.userId(), e.getMessage());
             String failedPaymentId = UUID.randomUUID().toString();
             Payment cancelFailed = Payment.createCancelFailed(payment, failedPaymentId);
             paymentStatusUpdater.saveCancelFailed(cancelFailed);
             throw new PaymentCancelFailedException("환불 취소 처리 실패 paymentId=" + command.paymentId());
+        } finally {
+            paymentLockPort.unlock(command.userId(), payment.getPlan());
         }
     }
 }
