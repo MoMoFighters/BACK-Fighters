@@ -131,4 +131,15 @@ public class PaymentExceptionHandler {
                         e.getMessage()
                 ));
     }
+
+    // 환불 가능 기간이 지났거나 이미 환불된 경우
+    @ExceptionHandler(PaymentRefundNotAllowedException.class)
+    public ResponseEntity<ApiErrorResponse> handleRefundNotAllowed(PaymentRefundNotAllowedException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiErrorResponse.of(
+                        HttpStatus.CONFLICT.value(),
+                        "PAYMENT_REFUND_NOT_ALLOWED",
+                        e.getMessage()
+                ));
+    }
 }

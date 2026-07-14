@@ -4,10 +4,11 @@
 CREATE TABLE `payment` (
     `id`           BIGINT       NOT NULL AUTO_INCREMENT,
     `user_id`      BIGINT       NOT NULL,
-    `payment_id`   VARCHAR(255) NOT NULL,          -- 포트원 발급 고유 ID
+    `payment_id`   VARCHAR(255) NOT NULL UNIQUE,
+    `original_payment_id` VARCHAR(255) NULL ,
     `plan`         ENUM('BASIC','PLUS','PRO')      NOT NULL,
     `price`        BIGINT       NOT NULL,
-    `status`       ENUM('PENDING','SUCCESS','FAILED','REFUND') NOT NULL DEFAULT 'PENDING',
+    `status`       ENUM('PENDING','SUCCESS','FAILED','REFUND','CANCEL_FAILED') NOT NULL DEFAULT 'PENDING',
     `created_at`   DATETIME(6)  NOT NULL,
     `updated_at`   DATETIME(6)  NOT NULL,
 
