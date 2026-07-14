@@ -1,6 +1,7 @@
 package com.wanted.momocity.study.application.member.timer.result;
 
 import com.wanted.momocity.study.domain.model.GroupRoomMember;
+import com.wanted.momocity.study.presentation.api.response.common.LapItem;
 
 import java.time.LocalDateTime;
 
@@ -21,28 +22,29 @@ public record TimerActionResult(
         Action action,
         GroupRoomMember.TimerStatus timerStatus,  // 종료(ENDED) 시에는 null
         LocalDateTime startedAt,                  // start(재개 포함) 시에만 값 존재, pause/end는 null
-        int accumulatedSeconds
+        int accumulatedSeconds,
+        LapItem lap
 ) {
 
-    public static TimerActionResult ofStarted(GroupRoomMember member, boolean wasResumed) {
+    public static TimerActionResult ofStarted(GroupRoomMember member, boolean wasResumed, LapItem lap) {
         return new TimerActionResult(
                 member.getGroupRoomId(), member.getId(),
                 wasResumed ? Action.RESUMED : Action.STARTED,
-                member.getTimerStatus(), member.getLastResumedAt(), member.getTotalSeconds()
+                member.getTimerStatus(), member.getLastResumedAt(), member.getTotalSeconds(), lap
         );
     }
 
-    public static TimerActionResult ofPaused(GroupRoomMember member) {
+    public static TimerActionResult ofPaused(GroupRoomMember member, LapItem lap) {
         return new TimerActionResult(
                 member.getGroupRoomId(), member.getId(),
-                Action.PAUSED, member.getTimerStatus(), null, member.getTotalSeconds()
+                Action.PAUSED, member.getTimerStatus(), null, member.getTotalSeconds(), lap
         );
     }
 
-    public static TimerActionResult ofEnded(GroupRoomMember member) {
+    public static TimerActionResult ofEnded(GroupRoomMember member, LapItem lap) {
         return new TimerActionResult(
                 member.getGroupRoomId(), member.getId(),
-                Action.ENDED, null, null, member.getTotalSeconds()
+                Action.ENDED, null, null, member.getTotalSeconds(), lap
         );
     }
 

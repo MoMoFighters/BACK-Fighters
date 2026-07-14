@@ -1,13 +1,16 @@
 package com.wanted.momocity.study.application.solo.service;
 
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
+import com.wanted.momocity.study.application.common.service.StudyLapService;
 import com.wanted.momocity.study.application.solo.result.SoloActionResult;
 import com.wanted.momocity.study.application.solo.usecase.SoloCommandUseCase;
 import com.wanted.momocity.study.domain.event.StudySessionEndedEvent;
 import com.wanted.momocity.study.domain.exception.StudyNotFoundException;
 import com.wanted.momocity.study.domain.model.SoloSession;
+import com.wanted.momocity.study.domain.model.StudyLap;
 import com.wanted.momocity.study.domain.repository.GroupRoomMemberRepository;
 import com.wanted.momocity.study.domain.repository.SoloSessionRepository;
+import com.wanted.momocity.study.presentation.api.response.common.LapItem;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -36,6 +39,7 @@ public class SoloCommandService implements SoloCommandUseCase {
 
     private final SoloSessionRepository soloSessionRepository;
     private final GroupRoomMemberRepository groupRoomMemberRepository;
+    private final StudyLapService studyLapService;
     private final ApplicationEventPublisher eventPublisher;
 
     /*
@@ -73,16 +77,21 @@ public class SoloCommandService implements SoloCommandUseCase {
             session.resume(now);
             SoloSession saved = soloSessionRepository.save(session);
 
+            StudyLap newLap = studyLapService.startLap(userId, null, saved.getId(), now);
+            int lapNumber = (int) studyLapService.countLaps(null, saved.getId());
+
             log.info("[Study] 솔로 세션 재개 | userId={}, sessionId={}", userId, saved.getId());
-            return SoloActionResult.ofStarted(saved, true);
+            return SoloActionResult.ofStarted(saved, true, toLapItem(newLap, lapNumber));
         }
 
         // 신규 시작 케이스
         SoloSession newSession = SoloSession.create(userId, now);
         SoloSession saved = soloSessionRepository.save(newSession);
 
+        StudyLap newLap = studyLapService.startLap(userId, null, saved.getId(), now);
+
         log.info("[Study] 솔로 세션 시작 | userId={}, sessionId={}", userId, saved.getId());
-        return SoloActionResult.ofStarted(saved, false);
+        return SoloActionResult.ofStarted(saved, false, toLapItem(newLap, 1));
     }
 
     // 솔로 세션 일시정지 - 누적 시간 확정 후 상태 전환
@@ -98,8 +107,12 @@ public class SoloCommandService implements SoloCommandUseCase {
         session.pause();
         SoloSession saved = soloSessionRepository.save(session);
 
+        LocalDateTime now = LocalDateTime.now();
+        StudyLap closedLap = studyLapService.closeLap(null, saved.getId(), now);
+        int lapNumber = (int) studyLapService.countLaps(null, saved.getId());
+
         log.info("[Study] 솔로 세션 일시정지 | userId={}, sessionId={}", userId, saved.getId());
-        return SoloActionResult.ofPaused(saved);
+        return SoloActionResult.ofPaused(saved, toLapItem(closedLap, lapNumber));
     }
 
     /*
@@ -120,13 +133,19 @@ public class SoloCommandService implements SoloCommandUseCase {
         session.end(LocalDateTime.now());
         SoloSession saved = soloSessionRepository.save(session);
 
+        LocalDateTime now = LocalDateTime.now();
+        // 세션이 RUNNING이 아니라 PAUSED 상태에서 end()가 호출된 경우, 마감할 진행 중인 랩이
+        // 없을 수 있다 (이미 pause 시점에 마감됨) - closeLap()은 이 경우 null을 반환하므로 안전하다
+        StudyLap closedLap = studyLapService.closeLap(null, saved.getId(), now);
+        int lapNumber = (int) studyLapService.countLaps(null, saved.getId());
+
         eventPublisher.publishEvent(
                 new StudySessionEndedEvent(userId, LocalDateTime.now().toLocalDate(), saved.getTotalSeconds())
         );
 
         log.info("[Study] 솔로 세션 종료 | userId={}, sessionId={}, totalSeconds={}",
                 userId, saved.getId(), saved.getTotalSeconds());
-        return SoloActionResult.ofEnded(saved);
+        return SoloActionResult.ofEnded(saved, closedLap == null ? null : toLapItem(closedLap, lapNumber));
     }
 
     // ===== 내부 헬퍼 =====
@@ -155,6 +174,11 @@ public class SoloCommandService implements SoloCommandUseCase {
         }
         long elapsed = Duration.between(session.getLastResumedAt(), LocalDateTime.now()).getSeconds();
         session.accumulateSeconds((int) Math.max(elapsed, 0));
+    }
+
+    // StudyLap(도메인) -> LapItem(Response) 변환 + 순번 매기기
+    private LapItem toLapItem(StudyLap lap, int lapNumber) {
+        return new LapItem(lapNumber, lap.getStartedAt(), lap.getEndedAt(), lap.getSeconds());
     }
 
 }

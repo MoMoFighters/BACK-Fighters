@@ -1,7 +1,7 @@
 package com.wanted.momocity.study.application.solo.usecase;
 
-import com.wanted.momocity.study.presentation.api.response.SoloCurrentResponse;
-import com.wanted.momocity.study.presentation.api.response.SoloHistoryResponse;
+import com.wanted.momocity.study.presentation.api.response.common.SoloLapListResponse;
+import com.wanted.momocity.study.presentation.api.response.solo.SoloCurrentResponse;
 
 import java.util.Optional;
 
@@ -21,8 +21,12 @@ public interface SoloQueryUseCase {
      * */
     Optional<SoloCurrentResponse> getCurrent(Long userId);
 
-    // 솔로 세션 이력 조회 (ENDED만, 최신순, 커서 기반 페이지네이션)
-    SoloHistoryResponse getHistory(Long userId, Long cursor, int size);
-
+    /*
+     * comment.
+     *  현재(또는 가장 최근) 솔로 세션의 랩 목록 조회
+     *  - 화면 로드/재접속 시 /current로 세션 존재를 먼저 확인
+     *    -> 존재시  이 API로 랩 리스트를 한 번에 채우는 용도
+     * */
+    SoloLapListResponse getLaps(Long userId);
 
 }

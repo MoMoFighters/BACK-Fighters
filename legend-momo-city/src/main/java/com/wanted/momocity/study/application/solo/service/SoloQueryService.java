@@ -1,10 +1,13 @@
 package com.wanted.momocity.study.application.solo.service;
 
+import com.wanted.momocity.study.application.common.service.StudyLapService;
 import com.wanted.momocity.study.application.solo.usecase.SoloQueryUseCase;
+import com.wanted.momocity.study.domain.exception.StudyNotFoundException;
 import com.wanted.momocity.study.domain.model.SoloSession;
 import com.wanted.momocity.study.domain.repository.SoloSessionRepository;
-import com.wanted.momocity.study.presentation.api.response.SoloCurrentResponse;
-import com.wanted.momocity.study.presentation.api.response.SoloHistoryResponse;
+import com.wanted.momocity.study.presentation.api.response.common.LapItem;
+import com.wanted.momocity.study.presentation.api.response.common.SoloLapListResponse;
+import com.wanted.momocity.study.presentation.api.response.solo.SoloCurrentResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,6 +30,7 @@ import java.util.Optional;
 public class SoloQueryService implements SoloQueryUseCase {
 
     private final SoloSessionRepository soloSessionRepository;
+    private final StudyLapService studyLapService;
 
     /*
      * comment.
@@ -52,20 +56,31 @@ public class SoloQueryService implements SoloQueryUseCase {
                 });
     }
 
-    // 솔로 세션 이력 조회 (ENDED 포함 전체 - 최신순, 커서 기반)
+    /*
+     * comment.
+     *  현재(또는 가장 최근) 솔로 세션의 랩 목록 조회
+     *  - findActiveByUserId()로 진행 중인 세션을 우선 찾고, 없으면 404
+     *  - 랩 번호(lapNumber)는 startedAt 순서를 그대로 index+1로 매긴다
+     * */
+
     @Override
-    public SoloHistoryResponse getHistory(Long userId, Long cursor, int size) {
+    public SoloLapListResponse getLaps(Long userId) {
 
-        var sessions = soloSessionRepository.findByUserIdOrderByStartTimeDesc(userId, cursor, size);
+        SoloSession session = soloSessionRepository.findActiveByUserId(userId)
+                .orElseThrow(() -> new StudyNotFoundException("조회할 세션이 없습니다."));
 
-        var items = sessions.stream()
-                .map(session -> new SoloHistoryResponse.SessionItem(
-                        session.getId(), session.getStartTime(), session.getEndTime(), session.getTotalSeconds()
-                ))
+        var laps = studyLapService.getLaps(null, session.getId());
+
+        var items = java.util.stream.IntStream.range(0, laps.size())
+                .mapToObj(i -> {
+                    var lap = laps.get(i);
+                    return new LapItem(i + 1, lap.getStartedAt(), lap.getEndedAt(), lap.getSeconds());
+                })
                 .toList();
 
-        log.info("[Study] 솔로 세션 이력 조회 완료 | userId={}, count={}", userId, items.size());
-        return new SoloHistoryResponse(items);
+        log.info("[Study] 솔로 세션 랩 목록 조회 완료 | userId={}, sessionId={}, count={}",
+                userId, session.getId(), items.size());
+        return new SoloLapListResponse(session.getId(), items);
     }
 
     // RUNNING이면 실시간 경과시간을 더하고, PAUSED면 저장된 값을 그대로 반환

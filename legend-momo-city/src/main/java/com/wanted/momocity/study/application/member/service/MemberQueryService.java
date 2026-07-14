@@ -7,7 +7,7 @@ import com.wanted.momocity.study.domain.exception.StudyNotFoundException;
 import com.wanted.momocity.study.domain.model.GroupRoom;
 import com.wanted.momocity.study.domain.repository.GroupRoomMemberRepository;
 import com.wanted.momocity.study.domain.repository.GroupRoomRepository;
-import com.wanted.momocity.study.presentation.api.response.InvitationListResponse;
+import com.wanted.momocity.study.presentation.api.response.member.InvitationListResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

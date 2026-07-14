@@ -6,7 +6,8 @@ import com.wanted.momocity.study.application.solo.result.SoloActionResult;
 import com.wanted.momocity.study.application.solo.usecase.SoloCommandUseCase;
 import com.wanted.momocity.study.application.solo.usecase.SoloQueryUseCase;
 import com.wanted.momocity.study.presentation.api.common.StudyResponseCode;
-import com.wanted.momocity.study.presentation.api.response.*;
+import com.wanted.momocity.study.presentation.api.response.common.SoloLapListResponse;
+import com.wanted.momocity.study.presentation.api.response.solo.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -44,7 +45,7 @@ public class SoloController {
                 result.action() == SoloActionResult.Action.RESUMED ? "솔로 타이머를 재개했습니다." : "솔로 타이머를 시작했습니다.",
                 new SoloSessionStartResponse(
                         result.sessionId(), result.status().name(), result.action().name(),
-                        result.startTime(), result.accumulatedSeconds()
+                        result.startTime(), result.accumulatedSeconds(), result.lap()
                 )
         ));
     }
@@ -60,7 +61,8 @@ public class SoloController {
         return ResponseEntity.ok(ApiResponse.success(
                 StudyResponseCode.SOLO_PAUSED,
                 "솔로 타이머를 일시정지했습니다.",
-                new SoloSessionPauseResponse(result.sessionId(), result.status().name(), result.accumulatedSeconds())
+                new SoloSessionPauseResponse(result.sessionId(),
+                        result.status().name(), result.accumulatedSeconds(), result.lap())
         ));
     }
 
@@ -75,7 +77,8 @@ public class SoloController {
         return ResponseEntity.ok(ApiResponse.success(
                 StudyResponseCode.SOLO_ENDED,
                 "솔로 타이머를 종료했습니다.",
-                new SoloSessionEndResponse(result.sessionId(), result.status().name(), result.totalSeconds(), result.endTime())
+                new SoloSessionEndResponse(result.sessionId(), result.status().name(),
+                        result.totalSeconds(), result.endTime(), result.lap())
         ));
     }
 
@@ -105,18 +108,16 @@ public class SoloController {
         ));
     }
 
-    // 솔로 세션 이력 조회
-    @Operation(summary = "솔로 세션 이력 조회", description = "종료된 솔로 세션 목록을 최신순으로 조회합니다.")
-    @GetMapping("/history")
-    public ResponseEntity<ApiResponse<SoloHistoryResponse>> history(
-            @RequestParam(required = false) Long cursor,
-            @RequestParam(defaultValue = "20") int size,
+    // 솔로 세션 랩 목록 조회
+    @Operation(summary = "솔로 세션 랩 목록 조회", description = "현재(또는 가장 최근) 세션의 랩 목록을 조회합니다.")
+    @GetMapping("/laps")
+    public ResponseEntity<ApiResponse<SoloLapListResponse>> laps(
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
         return ResponseEntity.ok(ApiResponse.success(
-                StudyResponseCode.SOLO_HISTORY_FETCHED,
-                "솔로 세션 이력을 조회했습니다.",
-                soloQueryUseCase.getHistory(userDetails.getUserId(), cursor, size)
+                StudyResponseCode.SOLO_LAPS_FETCHED,
+                "랩 목록을 조회했습니다.",
+                soloQueryUseCase.getLaps(userDetails.getUserId())
         ));
     }
 

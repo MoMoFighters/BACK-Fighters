@@ -1,6 +1,7 @@
 package com.wanted.momocity.study.application.solo.result;
 
 import com.wanted.momocity.study.domain.model.SoloSession;
+import com.wanted.momocity.study.presentation.api.response.common.LapItem;
 
 import java.time.LocalDateTime;
 
@@ -27,27 +28,28 @@ public record SoloActionResult(
         LocalDateTime startTime,
         int accumulatedSeconds,
         int totalSeconds,
-        LocalDateTime endTime
+        LocalDateTime endTime,
+        LapItem lap
 ) {
-    public static SoloActionResult ofStarted(SoloSession session, boolean wasResumed) {
+    public static SoloActionResult ofStarted(SoloSession session, boolean wasResumed, LapItem lap ) {
         return new SoloActionResult(
                 session.getId(), session.getStatus(),
                 wasResumed ? Action.RESUMED : Action.STARTED,
-                session.getStartTime(), session.getTotalSeconds(), 0, null
+                session.getStartTime(), session.getTotalSeconds(), 0, null, lap
         );
     }
 
-    public static SoloActionResult ofPaused(SoloSession session) {
+    public static SoloActionResult ofPaused(SoloSession session, LapItem lap) {
         return new SoloActionResult(
                 session.getId(), session.getStatus(), Action.PAUSED,
-                null, session.getTotalSeconds(), 0, null
+                null, session.getTotalSeconds(), 0, null, lap
         );
     }
 
-    public static SoloActionResult ofEnded(SoloSession session) {
+    public static SoloActionResult ofEnded(SoloSession session, LapItem lap) {
         return new SoloActionResult(
                 session.getId(), session.getStatus(), Action.ENDED,
-                null, 0, session.getTotalSeconds(), session.getEndTime()
+                null, 0, session.getTotalSeconds(), session.getEndTime(), lap
         );
     }
 
