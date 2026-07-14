@@ -89,7 +89,7 @@ public class MemberCommandService implements MemberCommandUseCase {
                     || member.getStatus() == GroupRoomMember.MemberStatus.JOINED) {
                 throw new DomainRuleViolationException("이미 초대되었거나 참가 중인 사용자입니다.");
             }
-            // LEFT/REJECTED/CANCELED 이력이 있으면 새로 초대 가능 -> 아래에서 새 row 생성
+            // LEFT/REJECTED/CANCELED 이력이 있으면 기존 row 를 재사용해서 재초대
         }
 
         // 인원 제한 선제 차단 (현재 JOINED + 대기 중 INVITED 합산 기준)
@@ -99,8 +99,13 @@ public class MemberCommandService implements MemberCommandUseCase {
             throw new DomainRuleViolationException("그룹방 인원이 가득 찼습니다.");
         }
 
-        GroupRoomMember invited = GroupRoomMember.invite(roomId, inviteeId, LocalDateTime.now());
-        GroupRoomMember saved = groupRoomMemberRepository.save(invited);
+        GroupRoomMember target = existing
+                .map(member -> {
+                    member.reinvite(LocalDateTime.now());
+                    return member;
+                })
+                .orElseGet(() -> GroupRoomMember.invite(roomId, inviteeId, LocalDateTime.now()));
+        GroupRoomMember saved = groupRoomMemberRepository.save(target);
 
         // 알림 발송은 별도 이벤트(예: InvitationCreatedEvent)로 확장 가능 - 여기서는 notification 테이블 연동은 생략 -> 추후 구현
         log.info("[Study] 그룹방 초대 발송 완료 | roomId={}, inviterId={}, inviteeId={}", roomId, userId, inviteeId);
@@ -138,7 +143,7 @@ public class MemberCommandService implements MemberCommandUseCase {
         GroupRoomMember member = getMyInvitation(userId, roomId);
 
         /*
-         * 기존에는 DB에서 findAllByGroupRoomIdAndJoined().size()로 카운트를 세서 비교하는 방식
+         * 기존 : DB에서 findAllByGroupRoomIdAndJoined().size()로 카운트를 세서 비교하는 방식
          * 해당 방식은 동시에 여러 명이 수락할 때 "조회 -> 판단 -> 저장" 사이에 레이스 컨디션이 생길 수 있는 문제 존재
          * -> Redis INCR 기반 원자적 카운트(GroupRoomMemberCountAdapter.tryIncrement)로 교체
          * tryIncrement가 false를 반환하면 이미 정원이 가득 찬 것이므로 즉시 예외를 던지고,

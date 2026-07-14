@@ -104,6 +104,13 @@ public class GroupRoomMember {
         this.leftAt = now;
     }
 
+    // 재초대 (LEFT, REJECTED, CANCELED -> INVITED)
+    // invite()로 새 인스턴스를 만들지 말고, 기존 row를 찾아 이 메서드로 상태만 되돌림
+    public void reinvite(LocalDateTime now) {
+        this.status = MemberStatus.INVITED;
+        this.invitedAt = now;
+    }
+
     // 강퇴 (JOINED -> KICKED, 방장에 의한 처리)
     // 이후 재초대 가능 여부(KICKED는 불가) 검증은 초대 시점에 Service가 담당
     public void kick(LocalDateTime now) {

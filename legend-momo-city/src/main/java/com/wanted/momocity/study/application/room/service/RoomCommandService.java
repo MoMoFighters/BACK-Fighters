@@ -1,6 +1,7 @@
 package com.wanted.momocity.study.application.room.service;
 
 import com.wanted.momocity.auth.domain.model.User;
+import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.study.application.common.port.StudyUserInfoPort;
 import com.wanted.momocity.study.application.room.result.RoomCreateResult;
 import com.wanted.momocity.study.application.room.usecase.RoomCommandUseCase;
@@ -88,7 +89,7 @@ public class RoomCommandService implements RoomCommandUseCase {
                 return candidate;
             }
         }
-        throw new IllegalStateException("초대코드 생성에 반복적으로 실패했습니다. 잠시 후 다시 시도해주세요.");
+        throw new DomainRuleViolationException("초대코드 생성에 반복적으로 실패했습니다. 잠시 후 다시 시도해주세요.");
     }
 
     private String generateRandomCode() {
