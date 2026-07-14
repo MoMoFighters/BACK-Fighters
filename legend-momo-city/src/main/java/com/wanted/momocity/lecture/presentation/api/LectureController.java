@@ -3,7 +3,7 @@ package com.wanted.momocity.lecture.presentation.api;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
-import com.wanted.momocity.lecture.application.command.LectureCommand;
+import com.wanted.momocity.lecture.application.command.LectureCommand.UpdateChapterCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.DeleteChapterVideoCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.DeleteChapterCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.DeleteLectureCommand;
@@ -238,7 +238,7 @@ public class LectureController {
             @Valid @RequestBody UpdateChapterRequest request
     ) {
         Long teacherId = Long.parseLong(authentication.getName());
-        LectureCommand.UpdateChapterCommand command = request.toCommand(
+        UpdateChapterCommand command = request.toCommand(
                 teacherId,
                 lectureId,
                 chapterId

@@ -14,6 +14,7 @@ import com.wanted.momocity.lecture.application.port.TeacherAccountPort;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCases.AdminLectureCommandUseCase;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCases.ChapterCommandUseCase;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCases.LectureCommandUseCase;
+import com.wanted.momocity.lecture.domain.event.ChapterUpdatedEvent;
 import com.wanted.momocity.lecture.domain.event.LectureCreatedEvent;
 import com.wanted.momocity.lecture.domain.event.LectureStatusChangedEvent;
 import com.wanted.momocity.lecture.domain.exception.ChapterLimitExceededException;
@@ -527,7 +528,17 @@ public class LectureCommandService implements
                 command.orderNo()
         );
 
-        chapterRepository.save(updatedChapter);
+        // 제목과 순서가 변경된 챕터를 DB에 저장합니다.
+        LectureChapter savedChapter = chapterRepository.save(updatedChapter);
+
+        // 챕터 수정 사실을 후속 처리 계층에 전달합니다.
+        eventPublisher.publishEvent(
+                new ChapterUpdatedEvent(
+                        savedChapter.getId(),
+                        savedChapter.getLectureId(),
+                        Instant.now()
+                )
+        );
 
         long elapsedTime = System.currentTimeMillis() - startTime;
         log.info("챕터 수정 완료 - lectureId={}, chapterId={}, orderNo={}, elapsedTime={}",
