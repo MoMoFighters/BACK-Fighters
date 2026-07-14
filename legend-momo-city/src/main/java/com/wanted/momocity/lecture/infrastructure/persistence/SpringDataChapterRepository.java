@@ -19,4 +19,7 @@ public interface SpringDataChapterRepository extends JpaRepository<ChapterJpaEnt
 
     // 특정 강의에 속한 챕터 목록을 orderNo 오름차순으로 조회
     List<ChapterJpaEntity> findAllByLectureIdOrderByOrderNoAsc(Long lectureId);
+
+    // lectureId 기준으로 해당 강의에 속한 모든 챕터 row를 실제 삭제
+    void deleteAllByLectureId(Long lectureId);
 }

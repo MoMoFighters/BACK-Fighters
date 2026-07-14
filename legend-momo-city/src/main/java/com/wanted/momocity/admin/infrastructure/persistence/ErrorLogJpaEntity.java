@@ -1,12 +1,8 @@
 package com.wanted.momocity.admin.infrastructure.persistence;
 
+import com.wanted.momocity.admin.domain.audit.ErrorLevel;
 import com.wanted.momocity.global.infrastructure.persistence.BaseTimeEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 
@@ -36,8 +32,9 @@ public class ErrorLogJpaEntity extends BaseTimeEntity {
     @Column(name = "id")
     private Long id;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "level", nullable = false, length = 20)
-    private String level;
+    private ErrorLevel level;
 
     @Column(name = "source", nullable = false, length = 50)
     private String source;
@@ -51,7 +48,7 @@ public class ErrorLogJpaEntity extends BaseTimeEntity {
     protected ErrorLogJpaEntity() {
     }
 
-    public ErrorLogJpaEntity(Long id, String level, String source, String message, LocalDateTime occurredAt) {
+    public ErrorLogJpaEntity(Long id, ErrorLevel level, String source, String message, LocalDateTime occurredAt) {
         this.id = id;
         this.level = level;
         this.source = source;
@@ -60,7 +57,7 @@ public class ErrorLogJpaEntity extends BaseTimeEntity {
     }
 
     public Long getId() { return id; }
-    public String getLevel() { return level; }
+    public ErrorLevel getLevel() { return level; }
     public String getSource() { return source; }
     public String getMessage() { return message; }
     public LocalDateTime getOccurredAt() { return occurredAt; }

@@ -1,5 +1,7 @@
 package com.wanted.momocity.lecture.application.usecase;
 
+import com.wanted.momocity.lecture.application.command.LectureCommand;
+import com.wanted.momocity.lecture.application.command.LectureCommand.DeleteChapterVideoCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.DeleteLectureCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.DeleteChapterCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.ChangeLectureStatusCommand;
@@ -26,7 +28,7 @@ public final class LectureCommandUseCases {
         // 강사 또는 관리자가 강의를 DELETED 상태로 변경
         LectureAggregate deleteLecture(DeleteLectureCommand command);
 
-
+        void updateLecture(LectureCommand.UpdateLectureCommand command);
     }
 
     // ChapterCommandUseCase는 챕터 상태를 변경하는 기능
@@ -39,6 +41,10 @@ public final class LectureCommandUseCases {
         LectureChapter registerChapterVideo(RegisterChapterVideoCommand command);
 
         void deleteChapter(DeleteChapterCommand command);
+
+        // 강사가 본인 강의의 챕터 동영상을 삭제합니다.
+// 영상은 챕터의 필수 요소이므로, 실제 구현에서는 영상이 속한 챕터까지 함께 삭제합니다.
+        void deleteChapterVideo(DeleteChapterVideoCommand command);
     }
 
     // 관리자 강의 명령 기능을 정의하는 UseCase
@@ -47,5 +53,7 @@ public final class LectureCommandUseCases {
         // 관리자가 강의 상태를 변경
         AdminChangeLectureStatusResponse changeLectureStatus(AdminChangeLectureStatusCommand command);
     }
+
+
 
 }

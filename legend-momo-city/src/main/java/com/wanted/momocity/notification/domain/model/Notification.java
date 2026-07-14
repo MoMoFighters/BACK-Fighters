@@ -174,4 +174,17 @@ public class Notification {
                 occurredAt
         );
     }
+
+    //열품타 초대 알림
+    public static Notification studyInvite(Long invitedUserId, String message, Long groupRoomId, LocalDateTime invitedTime) {
+        return new Notification(
+                null,
+                invitedUserId,
+                "STUDY_INVITE",
+                groupRoomId,
+                message,
+                false,
+                invitedTime
+        );
+    }
 }

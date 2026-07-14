@@ -212,6 +212,7 @@ public class NotificationQueryService implements NotificationQueryUseCase {
         long calendarCount = countMap.getOrDefault("CALENDAR", 0L);
         long communityCount = countMap.getOrDefault("POST", 0L);
         long friendRequestCount = countMap.getOrDefault("FRIEND_REQUEST", 0L);
+        long studyCount = countMap.getOrDefault("STUDY_INVITE", 0L);
 
         // 4. 🔥 안 읽은 메시지 전체 개수 (message_read 테이블에서 isMsgRead = false 인 건수)
         // 💡 룸 개수가 아니라 '쌓인 메시지 총 개수'를 가져오는 포트/어댑터 메서드로 매핑합니다.
@@ -224,7 +225,7 @@ public class NotificationQueryService implements NotificationQueryUseCase {
                 totalUnreadMessageCount, friendRequestCount, totalMsgFriendCount, calendarCount, communityCount);
 
         // 🎯 [반환 객체 생성 및 변수 통일]
-        PhoneAppCountsView response = new PhoneAppCountsView(totalMsgFriendCount, calendarCount, communityCount);
+        PhoneAppCountsView response = new PhoneAppCountsView(totalMsgFriendCount, calendarCount, communityCount, studyCount);
 
         // 🎯 [핵심 웹소켓 실시간 발송]: 정형화된 채널 주소(/sub/notice/app-counts)로 가공 데이터를 브로드캐스팅합니다.
         messagingTemplate.convertAndSendToUser(userId.toString(), "/sub/notice/app-counts", response);

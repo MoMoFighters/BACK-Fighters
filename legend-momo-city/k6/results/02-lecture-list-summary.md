@@ -4,20 +4,20 @@
 
 | Metric | Value |
 | --- | ---: |
-| http_reqs | 6538 |
-| iterations | 6538 |
-| checks success rate | 98.75% |
-| http_req_failed | 2.51% |
-| data_received bytes | 4176187 |
-| data_sent bytes | 1522275 |
+| http_reqs | 6473 |
+| iterations | 6473 |
+| checks success rate | 85.12% |
+| http_req_failed | 29.77% |
+| data_received bytes | 4197815 |
+| data_sent bytes | 1530482 |
 
 ## Duration Metrics
 
 | Metric | avg(ms) | min(ms) | med(ms) | p90(ms) | p95(ms) | p99(ms) | max(ms) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| http_req_duration | 4.13 | 0 | 3.78 | 6.57 | 7.56 | 9.42 | 27.77 |
-| http_req_waiting | 4.06 | 0 | 3.70 | 6.49 | 7.47 | 9.26 | 27.67 |
-| http_req_blocked | 0.01 | 0 | 0.00 | 0.00 | 0.01 | 0.24 | 1.74 |
+| http_req_duration | 12.85 | 3.19 | 11.31 | 20.57 | 25.07 | 39.36 | 405.11 |
+| http_req_waiting | 12.46 | 3.19 | 10.93 | 19.92 | 24.34 | 38.79 | 403.94 |
+| http_req_blocked | 0.07 | 0 | 0 | 0 | 0 | 1.89 | 60.35 |
 
 ## Metric Meaning
 

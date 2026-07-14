@@ -44,9 +44,9 @@ public interface UserRepository {
     void updateAfterApply(Long userId, Role role, Status status, String url);
 
     // 관리자 회원관리에서 사용자 조회
-    List<User> findAllForAdmin(Role role, Status status, int page, int size);
+    List<User> findAllForAdmin(Role role, Status status, String keyword, int page, int size);
 
-    long countForAdmin(Role role, Status status);
+    long countForAdmin(Role role, Status status, String keyword);
 
     // 밤티 알림 설정
     boolean setAlarm(Long userId);

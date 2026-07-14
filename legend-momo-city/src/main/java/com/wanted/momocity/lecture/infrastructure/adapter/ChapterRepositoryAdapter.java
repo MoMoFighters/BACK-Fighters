@@ -67,4 +67,10 @@ public class ChapterRepositoryAdapter implements ChapterRepository {
         repository.deleteById(chapterId);
     }
 
+    // 강의 삭제 시 해당 강의의 챕터도 모두 삭제
+    @Override
+    public void deleteAllByLectureId(Long lectureId) {
+        repository.deleteAllByLectureId(lectureId);
+    }
+
 }
