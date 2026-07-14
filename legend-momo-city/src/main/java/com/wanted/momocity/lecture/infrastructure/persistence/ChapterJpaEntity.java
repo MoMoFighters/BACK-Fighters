@@ -136,4 +136,15 @@ public class ChapterJpaEntity extends BaseTimeEntity {
     }
 
     public String getChapterThumbnailUrl() {return chapterThumbnailUrl;}
+
+    // 도메인 객체에서 변경된 챕터 정보를 기존 Entity에 반영합니다.
+    public void updateFromDomain(LectureChapter chapter) {
+        this.title = chapter.getTitle(); // 수정된 챕터 제목을 반영합니다.
+        this.orderNo = chapter.getOrderNo(); // 수정된 챕터 순서를 반영합니다.
+        this.videoUrl = chapter.getVideoUrl(); // 영상 S3 URL을 반영합니다.
+        this.videoSizeBytes = chapter.getVideoSizeBytes(); // 영상 파일 크기를 반영합니다.
+        this.durationSec = chapter.getDurationSec(); // 영상 재생 시간을 반영합니다.
+        this.originalFilename = chapter.getOriginalFilename(); // 영상 원본 파일명을 반영합니다.
+        this.chapterThumbnailUrl = chapter.getChapterThumbnailUrl(); // 썸네일 URL을 반영합니다.
+    }
 }

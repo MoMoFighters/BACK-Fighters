@@ -7,6 +7,7 @@ import com.wanted.momocity.lecture.domain.model.LectureStatus;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import org.checkerframework.checker.units.qual.K;
 import org.springframework.web.multipart.MultipartFile;
 
 public final class LectureRequest {
@@ -112,6 +113,26 @@ public final class LectureRequest {
             if (thumbnail != null && thumbnail.getSize() > MAX_CHAPTER_THUMBNAIL_SIZE_BYTES) { // 파일이 있고 5MB를 초과하는지 확인
                 throw new DomainRuleViolationException("챕터 썸네일 파일 크기는 5MB 이하만 가능합니다."); // 5MB 초과 시 도메인 예외 발생
             }
+        }
+    }
+
+    // 챕터 텍스트 수정
+    public record UpdateChapterRequest(
+            @NotBlank(message = "챕터 제목은 필수입니다.")
+            String title,
+
+            // 챕터는 1개 이상
+            @Min(value = 1, message = "챕터 순서는 1 이상이어야 합니다.")
+            int orderNo
+    ) {
+        public LectureCommand.UpdateChapterCommand toCommand(Long teacherId, Long lectureId, Long chapterId){
+            return new LectureCommand.UpdateChapterCommand(
+                    teacherId,
+                    lectureId,
+                    chapterId,
+                    title,
+                    orderNo
+            );
         }
     }
 
