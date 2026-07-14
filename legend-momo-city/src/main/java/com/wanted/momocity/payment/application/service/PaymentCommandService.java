@@ -146,14 +146,14 @@ public class PaymentCommandService implements PaymentCommandUseCase {
         Payment payment = paymentRepository.findByPaymentId(command.paymentId())
                 .orElseThrow(() -> new PaymentNotFoundException("결제 정보를 찾을 수 없습니다."));
 
+        // 본인이 결제한 게 아니거나 결제 후 3일이 넘게 지나면 환불 불가능
+        cancelPolicy.validateOwnership(payment, command.userId());
+        cancelPolicy.checkRefundable(payment);
+
         // 동시 취소 요청 방지
         if (!paymentLockPort.tryLock(command.userId(), payment.getPlan())) {
             throw new PaymentAlreadyInProgressException("이미 처리 중인 요청이 있습니다.");
         }
-
-        // 본인이 결제한 게 아니거나 결제 후 3일이 넘게 지나면 환불 불가능
-        cancelPolicy.validateOwnership(payment, command.userId());
-        cancelPolicy.checkRefundable(payment);
 
         try {
             portOnePaymentPort.cancelPayment(command.paymentId(), "사용자 요청에 의한 환불");
