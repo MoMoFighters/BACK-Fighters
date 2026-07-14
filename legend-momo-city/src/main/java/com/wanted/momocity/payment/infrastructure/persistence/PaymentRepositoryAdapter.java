@@ -1,10 +1,11 @@
 package com.wanted.momocity.payment.infrastructure.persistence;
 
-import com.wanted.momocity.payment.domain.model.MonthlySalesResult;
-import com.wanted.momocity.payment.domain.model.Payment;
-import com.wanted.momocity.payment.domain.model.Status;
+import com.wanted.momocity.payment.domain.model.*;
 import com.wanted.momocity.payment.domain.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,5 +59,24 @@ public class PaymentRepositoryAdapter implements PaymentRepository {
                 .map(e -> new MonthlySalesResult(e.getKey(), e.getValue()))
                 .toList();
     }
+
+    @Override
+    public List<PersonalPaymentItem> findPersonalPaymentList(Long userId, Status status, int page, int size) {
+        Pageable pageable = PageRequest.of(page - 1, size);
+        return springDataPaymentRepository.findPersonalPaymentList(userId, status, pageable).stream()
+                .map(entity -> new PersonalPaymentItem(
+                        entity.getPrice(),
+                        entity.getPlan(),
+                        entity.getStatus(),
+                        entity.getCreatedAt()
+                ))
+                .toList();
+    }
+
+    @Override
+    public long countPersonalPaymentList(Long userId, Status status) {
+        return springDataPaymentRepository.countPersonalPaymentList(userId, status);
+    }
+
 
 }

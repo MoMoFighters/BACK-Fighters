@@ -1,8 +1,6 @@
 package com.wanted.momocity.payment.domain.repository;
 
-import com.wanted.momocity.payment.domain.model.MonthlySalesResult;
-import com.wanted.momocity.payment.domain.model.Payment;
-import com.wanted.momocity.payment.domain.model.Status;
+import com.wanted.momocity.payment.domain.model.*;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,4 +21,9 @@ public interface PaymentRepository {
 
     // 월별 매출 조회
     List<MonthlySalesResult> getMonthlySales(int year);
+
+    // 개인 결제 내역 조회
+    List<PersonalPaymentItem> findPersonalPaymentList(Long userId, Status status, int page, int size);
+    // 페이지네이션용
+    long countPersonalPaymentList(Long userId, Status status);
 }

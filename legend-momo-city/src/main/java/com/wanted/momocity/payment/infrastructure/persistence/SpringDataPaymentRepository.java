@@ -2,12 +2,12 @@ package com.wanted.momocity.payment.infrastructure.persistence;
 
 import com.wanted.momocity.payment.domain.model.MonthlySalesResult;
 import com.wanted.momocity.payment.domain.model.Status;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 public interface SpringDataPaymentRepository extends JpaRepository<PaymentJpaEntity, Long> {
@@ -36,5 +36,24 @@ public interface SpringDataPaymentRepository extends JpaRepository<PaymentJpaEnt
             "ORDER BY MONTH(p.createdAt)")
     List<MonthlySalesResult> getMonthlySales(@Param("year") int year);
 
+    // 개인 결제 내역 조회
+    @Query("SELECT p FROM PaymentJpaEntity p WHERE p.userId = :userId " +
+            "AND p.status <> 'PENDING' " +
+            "AND (:status IS NULL OR p.status = :status) " +
+            "ORDER BY p.createdAt DESC")
+    List<PaymentJpaEntity> findPersonalPaymentList(
+            @Param("userId") Long userId,
+            @Param("status") Status status,
+            Pageable pageable
+    );
+
+    // 페이지네이션용
+    @Query("SELECT COUNT(p) FROM PaymentJpaEntity p WHERE p.userId = :userId " +
+            "AND p.status <> 'PENDING' " +
+            "AND (:status IS NULL OR p.status = :status)")
+    long countPersonalPaymentList(
+            @Param("userId") Long userId,
+            @Param("status") Status status
+    );
 }
 

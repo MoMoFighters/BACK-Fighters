@@ -7,19 +7,15 @@ import com.wanted.momocity.payment.application.command.PaymentPrepareCommand;
 import com.wanted.momocity.payment.application.command.PaymentVerifyCommand;
 import com.wanted.momocity.payment.application.usecase.PaymentCommandUseCase;
 import com.wanted.momocity.payment.application.usecase.PaymentQueryUseCase;
-import com.wanted.momocity.payment.domain.model.MonthlySalesResult;
-import com.wanted.momocity.payment.domain.model.PaymentPrepareResult;
-import com.wanted.momocity.payment.domain.model.PaymentVerifyResult;
+import com.wanted.momocity.payment.domain.model.*;
 import com.wanted.momocity.payment.presentation.api.common.PaymentResponseCode;
 import com.wanted.momocity.payment.presentation.api.common.PaymentResponseMessage;
 import com.wanted.momocity.payment.presentation.api.request.CancelRequest;
 import com.wanted.momocity.payment.presentation.api.request.PaymentPrepareRequest;
 import com.wanted.momocity.payment.presentation.api.request.PaymentVerifyRequest;
-import com.wanted.momocity.payment.presentation.api.response.MonthlySalesResponse;
-import com.wanted.momocity.payment.presentation.api.response.PaymentPrepareResponse;
-import com.wanted.momocity.payment.presentation.api.response.PaymentVerifyResponse;
-import com.wanted.momocity.payment.presentation.api.response.TotalSalesResponse;
+import com.wanted.momocity.payment.presentation.api.response.*;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -160,6 +156,30 @@ public class PaymentController {
                         PaymentResponseCode.FETCH_SUCCESS,
                         PaymentResponseMessage.FETCH_SUCCESS,
                         response
+                ));
+    }
+
+    @GetMapping("/user/list")
+    @Operation(summary = "회원 개인의 메인페이지에서 보는 결제 내역")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "개인 결제 기록 조회 완료"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료"),
+    })
+    public ResponseEntity<ApiResponse<PersonalPaymentListResponse>> getPersonalPaymentList(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam(required = false) Status status,
+            @Parameter(description = "페이지 번호 (1-base)", example = "1")
+            @RequestParam(defaultValue = "1") int page,
+            @Parameter(description = "페이지 크기", example = "20")
+            @RequestParam(defaultValue = "10") int size
+    ){
+        PersonalPaymentListResult result = paymentQueryUseCase.getPersonalPaymentList(userDetails.getUserId(), status, page, size);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        PaymentResponseCode.FETCH_SUCCESS,
+                        PaymentResponseMessage.FETCH_SUCCESS,
+                        PersonalPaymentListResponse.from(result)
                 ));
     }
 

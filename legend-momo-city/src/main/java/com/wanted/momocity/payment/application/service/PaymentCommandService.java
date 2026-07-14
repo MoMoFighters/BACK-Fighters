@@ -83,7 +83,18 @@ public class PaymentCommandService implements PaymentCommandUseCase {
         }
 
         // 포트원에서 실제 결제 내역 조회
-        PortOnePaymentDetail detail = portOnePaymentPort.verifyPayment(command.paymentId());
+        PortOnePaymentDetail detail;
+        try {
+            detail = portOnePaymentPort.verifyPayment(command.paymentId());
+        } catch (PortOneApiException e) {
+            log.error("[verify] 포트원 API 호출 실패 paymentId={}, userId={}",
+                    command.paymentId(), command.userId(), e);
+
+            Payment failed = payment.markFailed();
+            paymentStatusUpdater.saveFailed(failed);
+            paymentLockPort.unlock(command.userId(), payment.getPlan());
+            throw e;
+        }
 
         // 검증
         /*comment
