@@ -206,7 +206,30 @@ public class PaymentController {
                         PaymentResponseMessage.FETCH_SUCCESS,
                         AdminPaymentListResponse.from(result)
                 ));
+    }
 
+    @GetMapping("/plandistribution")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "월별 플랜별 분포 조회")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "월별 플랜별 분포 조회 성공 (FETCH_SUCCESS)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패 (토큰 없음 또는 만료)"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한 없음")
+    })
+    public ResponseEntity<ApiResponse<List<MonthlyPlanDistributionResponse>>> getMonthlyPlanDistribution(
+            @RequestParam int year
+    ) {
+        List<MonthlyPlanDistributionResponse> response = paymentQueryUseCase.getMonthlyPlanDistribution(year)
+                .stream()
+                .map(MonthlyPlanDistributionResponse::from)
+                .toList();
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponse.success(
+                        PaymentResponseCode.FETCH_SUCCESS,
+                        PaymentResponseMessage.FETCH_SUCCESS,
+                        response
+                ));
     }
 }
 

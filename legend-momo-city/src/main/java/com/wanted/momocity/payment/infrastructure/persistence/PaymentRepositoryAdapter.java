@@ -8,10 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Repository("paymentAdapter")
 @Transactional
@@ -87,6 +84,30 @@ public class PaymentRepositoryAdapter implements PaymentRepository {
     @Override
     public long countAdminPaymentList(Status status) {
         return springDataPaymentRepository.countAdminPaymentList(status);
+    }
+
+    // 월별 + 플랜별 분포
+    @Override
+    public List<MonthlyPlanDistributionResult> getMonthlyPlanDistribution(int year) {
+        List<MonthlyPlanCount> monthlyPlan = springDataPaymentRepository.getMonthlyPlanDistribution(year);
+
+        // 월별로 그룹핑
+        Map<Integer, Map<String, Long>> grouped = new LinkedHashMap<>();
+        for (int i = 1; i <= 12; i++) grouped.put(i, new HashMap<>());
+
+        monthlyPlan.forEach(mc -> grouped.get(mc.month()).put(mc.plan().name(), mc.count()));
+        /*comment
+        *  Map<Integer, Map<String, Long>>
+        *  이렇게 맵 안에 맵이 있는 모양*/
+
+        return grouped.entrySet().stream()
+                .map(e -> new MonthlyPlanDistributionResult(
+                        e.getKey(),
+                        e.getValue().getOrDefault("BASIC", 0L),
+                        e.getValue().getOrDefault("PLUS", 0L),
+                        e.getValue().getOrDefault("PRO", 0L)
+                ))
+                .toList();
     }
 
 }

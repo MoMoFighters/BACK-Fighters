@@ -1,13 +1,12 @@
 package com.wanted.momocity.payment.infrastructure.persistence;
 
-import com.wanted.momocity.payment.domain.model.AdminPaymentItem;
-import com.wanted.momocity.payment.domain.model.MonthlySalesResult;
-import com.wanted.momocity.payment.domain.model.Status;
+import com.wanted.momocity.payment.domain.model.*;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -73,5 +72,16 @@ public interface SpringDataPaymentRepository extends JpaRepository<PaymentJpaEnt
     @Query("SELECT COUNT(p) FROM PaymentJpaEntity p WHERE p.status IN ('SUCCESS', 'REFUND') " +
             "AND (:status IS NULL OR p.status = :status)")
     long countAdminPaymentList(@Param("status") Status status);
+
+
+    // 월별 플랜별 분포 조회
+    @Query("SELECT new com.wanted.momocity.payment.domain.model.MonthlyPlanCount(MONTH(p.createdAt), p.plan, COUNT(p)) " +
+            "FROM PaymentJpaEntity p " +
+            "WHERE p.status = 'SUCCESS' " +
+            "AND YEAR(p.createdAt) = :year " +
+            "AND NOT EXISTS (SELECT 1 FROM PaymentJpaEntity r WHERE r.originalPaymentId = p.paymentId AND r.status = 'REFUND') " +
+            "GROUP BY MONTH(p.createdAt), p.plan " +
+            "ORDER BY MONTH(p.createdAt)")
+    List<MonthlyPlanCount> getMonthlyPlanDistribution(@Param("year") int year);
 }
 

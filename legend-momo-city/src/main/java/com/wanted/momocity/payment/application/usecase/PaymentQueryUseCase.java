@@ -1,10 +1,8 @@
 package com.wanted.momocity.payment.application.usecase;
 
-import com.wanted.momocity.payment.domain.model.AdminPaymentListResult;
-import com.wanted.momocity.payment.domain.model.MonthlySalesResult;
-import com.wanted.momocity.payment.domain.model.PersonalPaymentListResult;
-import com.wanted.momocity.payment.domain.model.Status;
+import com.wanted.momocity.payment.domain.model.*;
 
+import java.util.Arrays;
 import java.util.List;
 
 public interface PaymentQueryUseCase {
@@ -20,4 +18,7 @@ public interface PaymentQueryUseCase {
 
     // 관리자의 서비스 결제 내역 조회
     AdminPaymentListResult getAdminPaymentList(Status status, int page, int size);
+
+    // 월별 + 플랜별 분포
+    List<MonthlyPlanDistributionResult> getMonthlyPlanDistribution(int year);
 }
