@@ -366,12 +366,21 @@ VALUES
 -- =====================================================================
 --  5. guestbook
 -- =====================================================================
-INSERT INTO `guestbook` (`id`, `content`, `created_at`, `owner_id`, `writer_id`) VALUES
-  (1,  '잘 부탁드려요!', NOW() - INTERVAL 30 DAY, 12, 13),
-  (2, '응원합니다!', NOW() - INTERVAL 25 DAY, 13, 12),
-  (3,  '같이 열심히 해봐요 :)', NOW() - INTERVAL 20 DAY, 14, 12),
-  (4,  '오늘도 화이팅!', NOW() - INTERVAL 10 DAY, 12, 15),
-  (5,  '잘 지내시죠?', NOW() - INTERVAL 5 DAY, 15, 14);
+INSERT INTO `guestbook` (`id`, `content`, `created_at`, `owner_id`, `writer_id`)
+VALUES
+    (1, '좋은 하루 보내', NOW() - INTERVAL 28 DAY, 12, 14),
+    (2, '오랜만이야 잘 지내지?', NOW() - INTERVAL 22 DAY, 12, 18),
+    (3, '우리 다음에 또 놀자', NOW() - INTERVAL 20 DAY, 18, 12),
+    (4, '오랜만이야 잘 지내지?', NOW() - INTERVAL 19 DAY, 12, 13),
+    (5, '민수야 오늘도 화이팅!', NOW() - INTERVAL 18 DAY, 14, 12),
+    (6, '고마워 항상 :)', NOW() - INTERVAL 17 DAY, 13, 12),
+    (7, '오랜만이야 잘 지내지?', NOW() - INTERVAL 15 DAY, 12, 13),
+    (8, '오랜만이야 잘 지내지?', NOW() - INTERVAL 12 DAY, 13, 12),
+    (9, '좋은 하루 보내', NOW() - INTERVAL 9 DAY, 12, 18),
+    (10, '생일 축하해!!', NOW() - INTERVAL 7 DAY, 12, 14),
+    (11, '오랜만이야 잘 지내지?', NOW() - INTERVAL 3 DAY, 14, 12),
+    (12, '너도 화이팅해!', NOW() - INTERVAL 1 DAY, 18, 12);
+
 -- =====================================================================
 --  6. notification
 -- =====================================================================
@@ -479,6 +488,19 @@ VALUES
     (80, NOW() - INTERVAL 120 HOUR, NULL, '[민수의 아지트] 현우님이 메시지를 보냈습니다.', 37, 'MESSAGE', 14),
     (81, NOW() - INTERVAL 72 HOUR, NULL, '[민수의 아지트] 민수님이 메시지를 보냈습니다.', 37, 'MESSAGE', 12),
     (82, NOW() - INTERVAL 24 HOUR, NULL, '[민수의 아지트] 채원님이 메시지를 보냈습니다.', 37, 'MESSAGE', 18),
-    (83, NOW() - INTERVAL 12 HOUR, NULL, '[민수의 아지트] 지영님이 메시지를 보냈습니다.', 37, 'MESSAGE', 13);
+    (83, NOW() - INTERVAL 12 HOUR, NULL, '[민수의 아지트] 지영님이 메시지를 보냈습니다.', 37, 'MESSAGE', 13),
+    (84, NOW() - INTERVAL 28 DAY, 1, '현우님이 회원님의 도시에 방명록을 남겼습니다.', 1, 'GUESTBOOK', 12),
+    (85, NOW() - INTERVAL 22 DAY, 0, '채원님이 회원님의 도시에 방명록을 남겼습니다.', 2, 'GUESTBOOK', 12),
+    (86, NOW() - INTERVAL 20 DAY, 1, '민수님이 회원님의 도시에 방명록을 남겼습니다.', 3, 'GUESTBOOK', 18),
+    (87, NOW() - INTERVAL 19 DAY, 0, '지영님이 회원님의 도시에 방명록을 남겼습니다.', 4, 'GUESTBOOK', 12),
+    (88, NOW() - INTERVAL 18 DAY, 1, '민수님이 회원님의 도시에 방명록을 남겼습니다.', 5, 'GUESTBOOK', 14),
+    (89, NOW() - INTERVAL 17 DAY, 0, '민수님이 회원님의 도시에 방명록을 남겼습니다.', 6, 'GUESTBOOK', 13),
+    (90, NOW() - INTERVAL 15 DAY, 1, '지영님이 회원님의 도시에 방명록을 남겼습니다.', 7, 'GUESTBOOK', 12),
+    (91, NOW() - INTERVAL 12 DAY, 0, '민수님이 회원님의 도시에 방명록을 남겼습니다.', 8, 'GUESTBOOK', 13),
+    (92, NOW() - INTERVAL 9 DAY, 1, '채원님이 회원님의 도시에 방명록을 남겼습니다.', 9, 'GUESTBOOK', 12),
+    (93, NOW() - INTERVAL 7 DAY, 0, '현우님이 회원님의 도시에 방명록을 남겼습니다.', 10, 'GUESTBOOK', 12),
+    (94, NOW() - INTERVAL 3 DAY, 1, '민수님이 회원님의 도시에 방명록을 남겼습니다.', 11, 'GUESTBOOK', 14),
+    (95, NOW() - INTERVAL 1 DAY, 0, '민수님이 회원님의 도시에 방명록을 남겼습니다.', 12, 'GUESTBOOK', 18);
+
 
 SET FOREIGN_KEY_CHECKS = 1;
