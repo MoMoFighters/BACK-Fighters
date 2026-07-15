@@ -3,9 +3,6 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- =====================================================================
 --  1. user — 125명 large 원본
 -- =====================================================================
--- =====================================================================
---  1. user — 125명 large 원본
--- =====================================================================
 INSERT INTO `user` (`id`, `email`, `password`, `name`, `nickname`, `profile_image_url`, `role`, `status`, `category`, `proof`, `point`, `do_not_disturb`, `membership`, `membership_start`, `suspension_count`, `suspended_until`, `created_at`, `updated_at`, `deleted_at`, `is_tempPWD`) VALUES
   (1, 'admin@momo.city', '$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm', '관리자', '모모관리자', 'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png', 'ADMIN', 'ACTIVE', NULL, NULL, 0, 0, 'BASIC', NOW() - INTERVAL 28 DAY, 0, NULL, NOW() - INTERVAL 147 DAY, NOW() - INTERVAL 147 DAY, NULL, 0),
   (2, 'teacher_fit1@momo.city', '$2a$10$UbdCvu2c/oz0u9pwp8qD.e1BqOoQdTL1WHicM5odz5OfUChV6lfSm', '김강사', '호랑이쌤', 'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/FITNESSProfile.png', 'TEACHER', 'ACTIVE', 'FITNESS', 'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/proof/teacher_fit1.pdf', 0, 0, 'BASIC', NOW() - INTERVAL 6 DAY, 0, NULL, NOW() - INTERVAL 129 DAY, NOW() - INTERVAL 129 DAY, NULL, 0),
@@ -779,7 +776,7 @@ INSERT INTO `enrollment` (`id`, `completed_count`, `enrolled_at`, `lecture_id`, 
   (329, 2, NOW() - INTERVAL 14 DAY, 48, 29, 125, FALSE),
   (330, 5, NOW() - INTERVAL 10 DAY, 10, 77, 125, FALSE);
 -- =====================================================================
---  5. friend — 350건 large 원본
+--  5. friend
 -- =====================================================================
 INSERT INTO `friend` (`id`, `created_at`, `status`, `updated_at`, `from_user_id`, `to_user_id`)
 VALUES (1, NOW() - INTERVAL 490 DAY, 'FRIEND', NOW() - INTERVAL 490 DAY, 12, 5),
