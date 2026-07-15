@@ -22,7 +22,6 @@ public class GroupRoom {
 
     private Long id;
     private Long hostUserId;
-    private String inviteCode;
     private GroupRoomStatus status;
     private int maxMember;
     private LocalDateTime deletedAt;
@@ -30,10 +29,9 @@ public class GroupRoom {
     private LocalDateTime updatedAt;
 
     // 신규 생성용
-    public static GroupRoom create(Long hostUserId, String inviteCode) {
+    public static GroupRoom create(Long hostUserId) {
         GroupRoom room = new GroupRoom();
         room.hostUserId = hostUserId;
-        room.inviteCode = inviteCode;
         room.status = GroupRoomStatus.ACTIVE;
         room.maxMember = MAX_MEMBER;
         return room;
@@ -41,14 +39,13 @@ public class GroupRoom {
 
     // DB 복원용
     public static GroupRoom reconstitute(
-            Long id, Long hostUserId, String inviteCode, GroupRoomStatus status,
+            Long id, Long hostUserId, GroupRoomStatus status,
             int maxMember, LocalDateTime deletedAt,
             LocalDateTime createdAt, LocalDateTime updatedAt
     ) {
         GroupRoom room = new GroupRoom();
         room.id = id;
         room.hostUserId = hostUserId;
-        room.inviteCode = inviteCode;
         room.status = status;
         room.maxMember = maxMember;
         room.deletedAt = deletedAt;
@@ -78,7 +75,6 @@ public class GroupRoom {
 
     public Long getId() { return id; }
     public Long getHostUserId() { return hostUserId; }
-    public String getInviteCode() { return inviteCode; }
     public GroupRoomStatus getStatus() { return status; }
     public int getMaxMember() { return maxMember; }
     public LocalDateTime getDeletedAt() { return deletedAt; }

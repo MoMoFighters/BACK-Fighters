@@ -16,7 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.security.SecureRandom;
 import java.time.LocalDateTime;
 
 /*
@@ -38,11 +37,6 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class RoomCommandService implements RoomCommandUseCase {
 
-    // invite_code 문자 구성 - 혼동되기 쉬운 문자(0/O, 1/I) 제외
-    private static final String INVITE_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    private static final int INVITE_CODE_LENGTH = 6;
-    private static final SecureRandom RANDOM = new SecureRandom();
-
     private final GroupRoomRepository groupRoomRepository;
     private final GroupRoomMemberRepository groupRoomMemberRepository;
     private final GroupRoomMemberCountAdapter groupRoomMemberCountAdapter;
@@ -52,8 +46,7 @@ public class RoomCommandService implements RoomCommandUseCase {
     public RoomCreateResult createRoom(Long userId) {
 
         // 방 생성 - 유니크한 초대코드가 나올 때까지 재시도
-        String inviteCode = generateUniqueInviteCode();
-        GroupRoom room = GroupRoom.create(userId, inviteCode);
+        GroupRoom room = GroupRoom.create(userId);
         GroupRoom savedRoom = groupRoomRepository.save(room);
 
         // 방장을 JOINED 상태로 즉시 참가시킴 (초대 절차 없이 바로 확정)
@@ -67,36 +60,13 @@ public class RoomCommandService implements RoomCommandUseCase {
         User host = studyUserInfoPort.findById(userId)
                 .orElseThrow(() -> new StudyNotFoundException("사용자를 찾을 수 없습니다."));
 
-        log.info("[Study] 그룹방 생성 완료 | roomId={}, hostUserId={}, inviteCode={}",
-                savedRoom.getId(), userId, inviteCode);
+        log.info("[Study] 그룹방 생성 완료 | roomId={}, hostUserId={}",
+                savedRoom.getId(), userId);
 
         return new RoomCreateResult(
                 savedRoom.getId(), savedRoom.getHostUserId(), host.getNickname(),
-                savedRoom.getInviteCode(), savedRoom.getStatus().name(), savedRoom.getMaxMember()
+                savedRoom.getStatus().name(), savedRoom.getMaxMember()
         );
     }
 
-    /*
-     * comment.
-     *  중복되지 않는 초대코드를 생성
-     *  - 6자리 랜덤 문자열(대문자+숫자, 혼동되는 문자 제외)을 만들고 DB에 존재하는지 확인, 존재시 재시도
-     *    실무적으로 충돌이 거의 없지만, 최대 5회까지만 재시도 후 실패시 예외로 처리
-     * */
-    private String generateUniqueInviteCode() {
-        for (int attempt = 0; attempt < 5; attempt++) {
-            String candidate = generateRandomCode();
-            if (groupRoomRepository.findByInviteCode(candidate).isEmpty()) {
-                return candidate;
-            }
-        }
-        throw new DomainRuleViolationException("초대코드 생성에 반복적으로 실패했습니다. 잠시 후 다시 시도해주세요.");
-    }
-
-    private String generateRandomCode() {
-        StringBuilder sb = new StringBuilder(INVITE_CODE_LENGTH);
-        for (int i = 0; i < INVITE_CODE_LENGTH; i++) {
-            sb.append(INVITE_CODE_CHARS.charAt(RANDOM.nextInt(INVITE_CODE_CHARS.length())));
-        }
-        return sb.toString();
-    }
 }
