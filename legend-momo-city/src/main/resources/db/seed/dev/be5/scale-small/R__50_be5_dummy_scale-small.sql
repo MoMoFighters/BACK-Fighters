@@ -12,16 +12,16 @@ TRUNCATE TABLE `post`;
 --  1. post — 10개 large 원본
 -- =====================================================================
 INSERT INTO `post` (`id`, `created_at`, `updated_at`, `category`, `deleted_at`, `post_like`, `thumbnail_url`, `title`, `user_id`, `view_count`) VALUES
-  (1, NOW() - INTERVAL 90 DAY, NOW() - INTERVAL 90 DAY, 'ART', NULL, 30, 'https://d1w7ptjpsyo7f4.cloudfront.net/community/images/e23f166f-d620-440d-b77a-1780cadfff02_lecture46Thumbnail.jpg', '드로잉 도구 추천해주세요', 60, 164),
-  (2, NOW() - INTERVAL 89 DAY, NOW() - INTERVAL 89 DAY, 'STUDY', NULL, 0, 'https://d1w7ptjpsyo7f4.cloudfront.net/community/images/92bb0466-b007-4e21-a670-2ca21aa743e2_chapter43Thumbnail.jpg', '영어회화 스터디 모집', 22, 21),
-  (3, NOW() - INTERVAL 88 DAY, NOW() - INTERVAL 88 DAY, 'FITNESS', NULL, 1, 'https://d1w7ptjpsyo7f4.cloudfront.net/community/images/4c4ce488-71f6-47ba-b6af-eccea12f3075_chapter30Thumbnail.jpg', '아침 루틴 공유합니다', 78, 52),
-  (4, NOW() - INTERVAL 87 DAY, NOW() - INTERVAL 87 DAY, 'FITNESS', NULL, 1, 'https://d1w7ptjpsyo7f4.cloudfront.net/community/images/45c84c27-0e10-4c5d-9b22-f06d9b7c5b0b_chapter04Thumbnail.jpg', '운동 부상 조심하세요', 31, 41),
-  (5, NOW() - INTERVAL 86 DAY, NOW() - INTERVAL 86 DAY, 'STUDY', NULL, 30, 'https://d1w7ptjpsyo7f4.cloudfront.net/community/images/189bc226-5fac-4d78-8cd3-dd7781458b94_lecture13Thumbnail.jpg', '공부 인증샷', 73, 111),
-  (6, NOW() - INTERVAL 85 DAY, NOW() - INTERVAL 85 DAY, 'FREE', NULL, 8, 'https://d1w7ptjpsyo7f4.cloudfront.net/community/images/d8d690c4-039a-483b-bdbf-bd6a7658366c_CommunityFreeThumbnail.png', '공부 인증샷', 30, 74),
-  (7, NOW() - INTERVAL 84 DAY, NOW() - INTERVAL 84 DAY, 'FREE', NULL, 30, 'https://d1w7ptjpsyo7f4.cloudfront.net/community/images/d8d690c4-039a-483b-bdbf-bd6a7658366c_CommunityFreeThumbnail.png', '잔디 채우는 재미', 80, 222),
-  (8, NOW() - INTERVAL 83 DAY, NOW() - INTERVAL 83 DAY, 'FITNESS', NULL, 30, 'https://d1w7ptjpsyo7f4.cloudfront.net/community/images/9ffaa983-86d0-4b5b-96ba-dd325f0c8929_lecture14Thumbnail.jpg', '운동 부상 조심하세요', 42, 115),
-  (9, NOW() - INTERVAL 82 DAY, NOW() - INTERVAL 82 DAY, 'ART', NULL, 1, 'https://d1w7ptjpsyo7f4.cloudfront.net/community/images/62d2067d-4e34-417a-be6c-4878cc2ed798_lecture08Thumbnail.jpeg', '수채화 그림 그려봤어요', 86, 54),
-  (10, NOW() - INTERVAL 81 DAY, NOW() - INTERVAL 81 DAY, 'FITNESS', NULL, 3, 'https://d1w7ptjpsyo7f4.cloudfront.net/community/images/ed14f966-4c4d-4f12-bb5d-60d713ea4c13_lecture21Thumbnail.jpg', '스트레칭 효과 좋네요', 45, 43);
+  (1, NOW() - INTERVAL 90 DAY, NOW() - INTERVAL 90 DAY, 'ART', NULL, 30, 'https://d1w7ptjpsyo7f4.cloudfront.net/community/images/e23f166f-d620-440d-b77a-1780cadfff02_lecture46Thumbnail.jpg', '드로잉 도구 추천해주세요', 18, 164),
+  (2, NOW() - INTERVAL 89 DAY, NOW() - INTERVAL 89 DAY, 'STUDY', NULL, 0, 'https://d1w7ptjpsyo7f4.cloudfront.net/community/images/92bb0466-b007-4e21-a670-2ca21aa743e2_chapter43Thumbnail.jpg', '영어회화 스터디 모집', 19, 21),
+  (3, NOW() - INTERVAL 88 DAY, NOW() - INTERVAL 88 DAY, 'FITNESS', NULL, 1, 'https://d1w7ptjpsyo7f4.cloudfront.net/community/images/4c4ce488-71f6-47ba-b6af-eccea12f3075_chapter30Thumbnail.jpg', '아침 루틴 공유합니다', 20, 52),
+  (4, NOW() - INTERVAL 87 DAY, NOW() - INTERVAL 87 DAY, 'FITNESS', NULL, 1, 'https://d1w7ptjpsyo7f4.cloudfront.net/community/images/45c84c27-0e10-4c5d-9b22-f06d9b7c5b0b_chapter04Thumbnail.jpg', '운동 부상 조심하세요', 21, 41),
+  (5, NOW() - INTERVAL 86 DAY, NOW() - INTERVAL 86 DAY, 'STUDY', NULL, 30, 'https://d1w7ptjpsyo7f4.cloudfront.net/community/images/189bc226-5fac-4d78-8cd3-dd7781458b94_lecture13Thumbnail.jpg', '공부 인증샷', 13, 111),
+  (6, NOW() - INTERVAL 85 DAY, NOW() - INTERVAL 85 DAY, 'FREE', NULL, 8, 'https://d1w7ptjpsyo7f4.cloudfront.net/community/images/d8d690c4-039a-483b-bdbf-bd6a7658366c_CommunityFreeThumbnail.png', '공부 인증샷', 12, 74),
+  (7, NOW() - INTERVAL 84 DAY, NOW() - INTERVAL 84 DAY, 'FREE', NULL, 30, 'https://d1w7ptjpsyo7f4.cloudfront.net/community/images/d8d690c4-039a-483b-bdbf-bd6a7658366c_CommunityFreeThumbnail.png', '잔디 채우는 재미', 15, 222),
+  (8, NOW() - INTERVAL 83 DAY, NOW() - INTERVAL 83 DAY, 'FITNESS', NULL, 30, 'https://d1w7ptjpsyo7f4.cloudfront.net/community/images/9ffaa983-86d0-4b5b-96ba-dd325f0c8929_lecture14Thumbnail.jpg', '운동 부상 조심하세요', 16, 115),
+  (9, NOW() - INTERVAL 82 DAY, NOW() - INTERVAL 82 DAY, 'ART', NULL, 1, 'https://d1w7ptjpsyo7f4.cloudfront.net/community/images/62d2067d-4e34-417a-be6c-4878cc2ed798_lecture08Thumbnail.jpeg', '수채화 그림 그려봤어요', 17, 54),
+  (10, NOW() - INTERVAL 81 DAY, NOW() - INTERVAL 81 DAY, 'FITNESS', NULL, 3, 'https://d1w7ptjpsyo7f4.cloudfront.net/community/images/ed14f966-4c4d-4f12-bb5d-60d713ea4c13_lecture21Thumbnail.jpg', '스트레칭 효과 좋네요', 14, 43);
 -- =====================================================================
 --  2. post_like — 20건
 -- =====================================================================
