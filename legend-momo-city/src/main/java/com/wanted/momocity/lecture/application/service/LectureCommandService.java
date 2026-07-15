@@ -14,9 +14,8 @@ import com.wanted.momocity.lecture.application.port.TeacherAccountPort;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCases.AdminLectureCommandUseCase;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCases.ChapterCommandUseCase;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCases.LectureCommandUseCase;
-import com.wanted.momocity.lecture.domain.event.ChapterDeletedEvent;
+import com.wanted.momocity.lecture.domain.event.ChapterUpdatedEvent;
 import com.wanted.momocity.lecture.domain.event.LectureCreatedEvent;
-import com.wanted.momocity.lecture.domain.event.LectureDeletedEvent;
 import com.wanted.momocity.lecture.domain.event.LectureStatusChangedEvent;
 import com.wanted.momocity.lecture.domain.exception.ChapterLimitExceededException;
 import com.wanted.momocity.lecture.domain.exception.ChapterNotFoundException;
@@ -215,15 +214,6 @@ public class LectureCommandService implements
 
         // 변경된 상태를 DB에 저장
         LectureAggregate savedLecture = lectureRepository.save(deletedLecture);
-
-        // 강의 삭제 사실을 후속 이벤트 리스너에 전달합니다.
-        eventPublisher.publishEvent(
-                new LectureDeletedEvent(
-                        savedLecture.getId(),
-                        Instant.now()
-                )
-        );
-
 
         long elapsedTime = System.currentTimeMillis() - startTime;
 
@@ -478,15 +468,6 @@ public class LectureCommandService implements
         // 검증이 다 끝난 경우 DB에서 실제 삭제 진행
         chapterRepository.deleteById(chapter.getId());
 
-        // 챕터 삭제 사실을 후속 이벤트 리스너에 전달합니다.
-        eventPublisher.publishEvent(
-                new ChapterDeletedEvent(
-                        chapter.getLectureId(),
-                        chapter.getId(),
-                        Instant.now()
-                )
-        );
-
         long elapsedTime = System.currentTimeMillis() - startTime;
 
         log.info("챕터 삭제 완료 - teacherId={}, lectureId={}, chapterId={}, elapsedTime={}",
@@ -532,15 +513,6 @@ public class LectureCommandService implements
 
          chapterRepository.deleteById(chapter.getId());
 
-        // 챕터 삭제 사실을 후속 이벤트 리스너에 전달합니다.
-        eventPublisher.publishEvent(
-                new ChapterDeletedEvent(
-                        chapter.getLectureId(),
-                        chapter.getId(),
-                        Instant.now()
-                )
-        );
-
          long elapsedTime = System.currentTimeMillis() - startTime;
 
          log.info("동영상 삭제 완료 - teacherId={}, lectureId={}, chapterId={}, elapsedTime={}",
@@ -548,6 +520,78 @@ public class LectureCommandService implements
                  command.lectureId(),
                  command.chapterId(),
                  elapsedTime);
+    }
+
+    // 챕터 수정
+    @Override
+    public void updateChapter(LectureCommand.UpdateChapterCommand command) {
+        long startTime = System.currentTimeMillis();
+        log.info("챕터 수정 시작 - userId={}, lectureId={}, chapterId={}, orderNo={}",
+                command.teacherId(),
+                command.lectureId(),
+                command.chapterId(),
+                command.orderNo()
+        );
+
+        Long teacherId = teacherAccountPort.getTeacherId(command.teacherId());
+
+        LectureAggregate  lecture = lectureRepository.findById(command.lectureId())
+                .orElseThrow(() -> new LectureNotFoundException("강의를 찾을 수 없습니다."));
+
+        if (!lecture.isOwnedBy(teacherId)) {
+            throw new AccessDeniedException("본인이 등록한 강의의 챕터만 수정할 수 있습니다.");
+        }
+
+        if (lecture.getStatus() == LectureStatus.DELETED) {
+            throw new DomainRuleViolationException("삭제된 강의의 챕터는 수정할 수 없습니다.");
+        }
+
+        LectureChapter chapter = chapterRepository.findById(command.chapterId())
+                .orElseThrow(() -> new ChapterNotFoundException("챕터를 찾을 수 없습니다."));
+
+        // 조회한 챕터가 URL의 강의에 실제로 속하는지 확인합니다.
+        if (!chapter.belongsTo(command.lectureId())) {
+            throw new ChapterNotFoundException("유효하지 않은 챕터 식별자입니다.");
+        }
+
+        // 현재 탭터 제외하고 같은 순서가 사용 중인지 확인
+        boolean duplicatedOrderNo =
+                chapterRepository.existsByLectureIdAndOrderNoAndIdNot(
+                        command.lectureId(),
+                        command.orderNo(),
+                        command.chapterId()
+                );
+
+        // 다른 챕터에서 동일한 순서를 사용하는지 확인
+        if (duplicatedOrderNo) {
+            throw new  DuplicateChapterOrderException("이미 사용 중인 챕터 순서입니다.");
+        }
+
+        // 기존 영상과 썸네일은 유지하고 제목과 순서만 변경
+        LectureChapter updatedChapter = chapter.update(
+                command.title(),
+                command.orderNo()
+        );
+
+        // 제목과 순서가 변경된 챕터를 DB에 저장합니다.
+        LectureChapter savedChapter = chapterRepository.save(updatedChapter);
+
+        // 챕터 수정 사실을 후속 처리 계층에 전달합니다.
+        eventPublisher.publishEvent(
+                new ChapterUpdatedEvent(
+                        savedChapter.getId(),
+                        savedChapter.getLectureId(),
+                        Instant.now()
+                )
+        );
+
+        long elapsedTime = System.currentTimeMillis() - startTime;
+        log.info("챕터 수정 완료 - lectureId={}, chapterId={}, orderNo={}, elapsedTime={}",
+                command.lectureId(),
+                command.chapterId(),
+                command.orderNo(),
+                elapsedTime
+                );
     }
 
     /**

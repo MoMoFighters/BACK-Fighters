@@ -3,6 +3,7 @@ package com.wanted.momocity.lecture.presentation.api;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
+import com.wanted.momocity.lecture.application.command.LectureCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.UpdateLectureCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.DeleteChapterVideoCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.DeleteChapterCommand;
@@ -25,6 +26,7 @@ import com.wanted.momocity.lecture.domain.model.LectureAggregate;
 import com.wanted.momocity.lecture.domain.model.LectureCategory;
 import com.wanted.momocity.lecture.domain.model.LectureChapter;
 import com.wanted.momocity.lecture.domain.model.LectureStatus;
+import com.wanted.momocity.lecture.presentation.api.request.LectureRequest.UpdateChapterRequest;
 import com.wanted.momocity.lecture.presentation.api.request.LectureRequest.UpdateLectureRequest;
 import com.wanted.momocity.lecture.presentation.api.request.LectureRequest.AdminChangeLectureStatusRequest;
 import com.wanted.momocity.lecture.presentation.api.request.LectureRequest.ChangeLectureStatusRequest;
@@ -48,7 +50,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.checkerframework.checker.units.qual.A;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -251,6 +252,41 @@ public class LectureController {
         return ResponseEntity.ok(ApiResponse.success(
                 ApiResponseCode.SUCCESS,
                 "챕터가 성공적으로 삭제되었습니다.",
+                null
+        ));
+    }
+
+    @Operation(
+            summary = "챕터 수정",
+            description = "강사가 본인 강의의 챕터 제목과 순서를 수정합니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "챕터 수정 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "입력값 검증 실패 또는 챕터 순서 중복"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "강사 권한 없음 또는 본인 강의가 아님"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "강의 또는 챕터를 찾을 수 없음")
+    })
+    @PatchMapping("/{lectureId}/chapters/{chapterId}")
+    @PreAuthorize("hasAuthority('ROLE_TEACHER')")
+    public ResponseEntity<ApiResponse<Void>> updateChapter(
+            Authentication authentication,
+            @PathVariable Long lectureId,
+            @PathVariable Long chapterId,
+            @Valid @RequestBody UpdateChapterRequest request
+    ) {
+        Long teacherId = Long.parseLong(authentication.getName());
+        LectureCommand.UpdateChapterCommand command = request.toCommand(
+                teacherId,
+                lectureId,
+                chapterId
+        );
+
+        chapterCommandUseCase.updateChapter(command);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                ApiResponseCode.SUCCESS,
+                "챕터가 수정되었습니다.",
                 null
         ));
     }

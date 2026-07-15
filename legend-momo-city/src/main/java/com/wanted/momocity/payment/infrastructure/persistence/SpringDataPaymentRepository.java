@@ -1,13 +1,14 @@
 package com.wanted.momocity.payment.infrastructure.persistence;
 
+import com.wanted.momocity.payment.domain.model.AdminPaymentItem;
 import com.wanted.momocity.payment.domain.model.MonthlySalesResult;
 import com.wanted.momocity.payment.domain.model.Status;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 public interface SpringDataPaymentRepository extends JpaRepository<PaymentJpaEntity, Long> {
@@ -15,6 +16,8 @@ public interface SpringDataPaymentRepository extends JpaRepository<PaymentJpaEnt
     Optional<PaymentJpaEntity> findByPaymentId(String paymentId);
 
     boolean existsByOriginalPaymentIdAndStatus(String paymentId, Status status);
+
+    List<PaymentJpaEntity> findByStatusAndCreatedAtBefore(Status status, LocalDateTime threshold);
 
     // 총 매출 조회
     /*comment
@@ -36,5 +39,39 @@ public interface SpringDataPaymentRepository extends JpaRepository<PaymentJpaEnt
             "ORDER BY MONTH(p.createdAt)")
     List<MonthlySalesResult> getMonthlySales(@Param("year") int year);
 
+    // 개인 결제 내역 조회
+    @Query("SELECT p FROM PaymentJpaEntity p WHERE p.userId = :userId " +
+            "AND p.status <> 'PENDING' " +
+            "AND (:status IS NULL OR p.status = :status) " +
+            "ORDER BY p.createdAt DESC")
+    List<PaymentJpaEntity> findPersonalPaymentList(
+            @Param("userId") Long userId,
+            @Param("status") Status status,
+            Pageable pageable
+    );
+
+    // 페이지네이션용
+    @Query("SELECT COUNT(p) FROM PaymentJpaEntity p WHERE p.userId = :userId " +
+            "AND p.status <> 'PENDING' " +
+            "AND (:status IS NULL OR p.status = :status)")
+    long countPersonalPaymentList(
+            @Param("userId") Long userId,
+            @Param("status") Status status
+    );
+
+    @Query("SELECT new com.wanted.momocity.payment.domain.model.AdminPaymentItem(" +
+            "u.name, p.price, p.plan, p.status, p.createdAt) " +
+            "FROM PaymentJpaEntity p JOIN UserUser u ON p.userId = u.id " +
+            "WHERE p.status IN ('SUCCESS', 'REFUND') " +
+            "AND (:status IS NULL OR p.status = :status) " +
+            "ORDER BY p.createdAt DESC")
+    List<AdminPaymentItem> findAdminPaymentList(
+            @Param("status") Status status,
+            Pageable pageable
+    );
+
+    @Query("SELECT COUNT(p) FROM PaymentJpaEntity p WHERE p.status IN ('SUCCESS', 'REFUND') " +
+            "AND (:status IS NULL OR p.status = :status)")
+    long countAdminPaymentList(@Param("status") Status status);
 }
 
