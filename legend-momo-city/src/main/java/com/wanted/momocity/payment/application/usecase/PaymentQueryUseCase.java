@@ -11,7 +11,7 @@ public interface PaymentQueryUseCase {
     long getTotalSales();
 
     // 월별 매출 조회
-    List<MonthlySalesResult> getMonthlySales(int year);
+    List<MonthlySalesResult> getMonthlySales();
 
     // 개인의 결제 내역 조회
     PersonalPaymentListResult getPersonalPaymentList(Long userId, Status status, int page, int size);
@@ -20,5 +20,5 @@ public interface PaymentQueryUseCase {
     AdminPaymentListResult getAdminPaymentList(Status status, int page, int size);
 
     // 월별 + 플랜별 분포
-    List<MonthlyPlanDistributionResult> getMonthlyPlanDistribution(int year);
+    List<MonthlyPlanDistributionResult> getMonthlyPlanDistribution();
 }

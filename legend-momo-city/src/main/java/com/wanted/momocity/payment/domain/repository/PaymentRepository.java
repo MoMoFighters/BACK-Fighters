@@ -20,7 +20,7 @@ public interface PaymentRepository {
     long getTotalSales();
 
     // 월별 매출 조회
-    List<MonthlySalesResult> getMonthlySales(int year);
+    List<MonthlySalesResult> getMonthlySales();
 
     // 개인 결제 내역 조회
     List<PersonalPaymentItem> findPersonalPaymentList(Long userId, Status status, int page, int size);
@@ -32,5 +32,5 @@ public interface PaymentRepository {
 
     long countAdminPaymentList(Status status);
     // 월별 + 플랜별 분포
-    List<MonthlyPlanDistributionResult> getMonthlyPlanDistribution(int year);
+    List<MonthlyPlanDistributionResult> getMonthlyPlanDistribution();
 }

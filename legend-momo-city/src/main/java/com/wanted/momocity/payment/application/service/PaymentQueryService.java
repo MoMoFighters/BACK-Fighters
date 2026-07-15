@@ -26,8 +26,8 @@ public class PaymentQueryService implements PaymentQueryUseCase {
 
     // 월별 매출 조회
     @Override
-    public List<MonthlySalesResult> getMonthlySales(int year) {
-        return paymentRepository.getMonthlySales(year);
+    public List<MonthlySalesResult> getMonthlySales() {
+        return paymentRepository.getMonthlySales();
     }
 
     // 개인 결제 내역 조회
@@ -52,7 +52,7 @@ public class PaymentQueryService implements PaymentQueryUseCase {
 
     // 월별 + 플랜별 분포
     @Override
-    public List<MonthlyPlanDistributionResult> getMonthlyPlanDistribution(int year) {
-        return paymentRepository.getMonthlyPlanDistribution(year);
+    public List<MonthlyPlanDistributionResult> getMonthlyPlanDistribution() {
+        return paymentRepository.getMonthlyPlanDistribution();
     }
 }

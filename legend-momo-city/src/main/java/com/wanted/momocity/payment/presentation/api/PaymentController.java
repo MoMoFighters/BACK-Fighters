@@ -144,9 +144,8 @@ public class PaymentController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한 없음")
     })
     public ResponseEntity<ApiResponse<List<MonthlySalesResponse>>> getMonthlySales(
-            @RequestParam int year
     ) {
-        List<MonthlySalesResult> result = paymentQueryUseCase.getMonthlySales(year);
+        List<MonthlySalesResult> result = paymentQueryUseCase.getMonthlySales();
         List<MonthlySalesResponse> response = result.stream()
                 .map(MonthlySalesResponse::from)
                 .toList();
@@ -217,9 +216,8 @@ public class PaymentController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "관리자 권한 없음")
     })
     public ResponseEntity<ApiResponse<List<MonthlyPlanDistributionResponse>>> getMonthlyPlanDistribution(
-            @RequestParam int year
     ) {
-        List<MonthlyPlanDistributionResponse> response = paymentQueryUseCase.getMonthlyPlanDistribution(year)
+        List<MonthlyPlanDistributionResponse> response = paymentQueryUseCase.getMonthlyPlanDistribution()
                 .stream()
                 .map(MonthlyPlanDistributionResponse::from)
                 .toList();

@@ -32,11 +32,11 @@ public interface SpringDataPaymentRepository extends JpaRepository<PaymentJpaEnt
     @Query("SELECT new com.wanted.momocity.payment.domain.model.MonthlySalesResult(MONTH(p.createdAt), COALESCE(SUM(p.price), 0)) " +
             "FROM PaymentJpaEntity p " +
             "WHERE p.status = 'SUCCESS' " +
-            "AND YEAR(p.createdAt) = :year " +
+            "AND p.createdAt >= :startDate AND p.createdAt < :endDate " +
             "AND NOT EXISTS (SELECT 1 FROM PaymentJpaEntity r WHERE r.originalPaymentId = p.paymentId AND r.status = 'REFUND') " +
             "GROUP BY MONTH(p.createdAt) " +
             "ORDER BY MONTH(p.createdAt)")
-    List<MonthlySalesResult> getMonthlySales(@Param("year") int year);
+    List<MonthlySalesResult> getMonthlySales(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 
     // 개인 결제 내역 조회
     @Query("SELECT p FROM PaymentJpaEntity p WHERE p.userId = :userId " +
@@ -78,10 +78,10 @@ public interface SpringDataPaymentRepository extends JpaRepository<PaymentJpaEnt
     @Query("SELECT new com.wanted.momocity.payment.domain.model.MonthlyPlanCount(MONTH(p.createdAt), p.plan, COUNT(p)) " +
             "FROM PaymentJpaEntity p " +
             "WHERE p.status = 'SUCCESS' " +
-            "AND YEAR(p.createdAt) = :year " +
+            "AND p.createdAt >= :startDate AND p.createdAt < :endDate " +
             "AND NOT EXISTS (SELECT 1 FROM PaymentJpaEntity r WHERE r.originalPaymentId = p.paymentId AND r.status = 'REFUND') " +
             "GROUP BY MONTH(p.createdAt), p.plan " +
             "ORDER BY MONTH(p.createdAt)")
-    List<MonthlyPlanCount> getMonthlyPlanDistribution(@Param("year") int year);
+    List<MonthlyPlanCount> getMonthlyPlanDistribution(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 }
 
