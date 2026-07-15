@@ -1,7 +1,7 @@
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- =====================================================================
---  1. chat_room — 기본 125개(나와의 채팅)
+--  1. chat_room
 -- =====================================================================
 INSERT INTO `chat_room` (`id`, `created_at`, `title`, `updated_at`)
 VALUES
@@ -139,7 +139,7 @@ VALUES
     (132, NOW() - INTERVAL 10 DAY, '다 같이 놀자!', NOW() - INTERVAL 3 HOUR);
 
 -- =====================================================================
---  2. chat_room_member — 기본 125건(나와의 채팅)
+--  2. chat_room_member
 -- =====================================================================
 INSERT INTO `chat_room_member` (`id`, `joined_at`, `room_id`, `user_id`)
 VALUES
@@ -286,7 +286,7 @@ VALUES
     (141, NOW() - INTERVAL 5 DAY,  132, 60);  -- 민서60 (나중에 추가 초대)
 
 -- =====================================================================
---  3. message — 100건
+--  3. message
 -- =====================================================================
 INSERT INTO `message` (`id`, `content`, `created_at`, `updated_at`, `room_id`, `sender_id`)
 VALUES
@@ -950,7 +950,7 @@ VALUES
     (658, '좋은 하루 보내세요들', NOW() - INTERVAL 1 HOUR, NOW() - INTERVAL 1 HOUR, 132, 60);
 
 -- =====================================================================
---  4. message_read — 100건
+--  4. message_read
 -- =====================================================================
 INSERT INTO `message_read` (`id`, `is_deleted`, `is_msg_read`, `is_noti_read`, `message_id`, `room_id`, `user_id`)
 VALUES
@@ -1171,61 +1171,45 @@ VALUES
     (4, '준호68님이 나갔습니다.', NOW() - INTERVAL 10 MINUTE, 'LEAVE', 132, 68);
 
 -- =====================================================================
---  5. guestbook — 50건
+--  5. guestbook
 -- =====================================================================
-INSERT INTO `guestbook` (`id`, `content`, `created_at`, `owner_id`, `writer_id`) VALUES
-  (1,  '방명록 내용 1', NOW() - INTERVAL 0 DAY, 12, 13),
-  (2,  '방명록 내용 2', NOW() - INTERVAL 5 DAY, 13, 14),
-  (3,  '방명록 내용 3', NOW() - INTERVAL 10 DAY, 14, 15),
-  (4,  '방명록 내용 4', NOW() - INTERVAL 15 DAY, 15, 16),
-  (5,  '방명록 내용 5', NOW() - INTERVAL 20 DAY, 16, 17),
-  (6,  '방명록 내용 6', NOW() - INTERVAL 25 DAY, 17, 18),
-  (7,  '방명록 내용 7', NOW() - INTERVAL 30 DAY, 18, 19),
-  (8,  '방명록 내용 8', NOW() - INTERVAL 35 DAY, 19, 20),
-  (9,  '방명록 내용 9', NOW() - INTERVAL 40 DAY, 20, 21),
-  (10,  '방명록 내용 10', NOW() - INTERVAL 45 DAY, 21, 22),
-  (11,  '방명록 내용 11', NOW() - INTERVAL 50 DAY, 22, 23),
-  (12,  '방명록 내용 12', NOW() - INTERVAL 55 DAY, 23, 24),
-  (13,  '방명록 내용 13', NOW() - INTERVAL 60 DAY, 24, 25),
-  (14, '방명록 내용 14', NOW() - INTERVAL 65 DAY, 25, 26),
-  (15,  '방명록 내용 15', NOW() - INTERVAL 70 DAY, 26, 27),
-  (16,  '방명록 내용 16', NOW() - INTERVAL 75 DAY, 27, 28),
-  (17,  '방명록 내용 17', NOW() - INTERVAL 80 DAY, 28, 29),
-  (18,  '방명록 내용 18', NOW() - INTERVAL 85 DAY, 29, 30),
-  (19, '방명록 내용 19', NOW() - INTERVAL 90 DAY, 30, 31),
-  (20,  '방명록 내용 20', NOW() - INTERVAL 95 DAY, 31, 32),
-  (21,  '방명록 내용 21', NOW() - INTERVAL 100 DAY, 32, 33),
-  (22,  '방명록 내용 22', NOW() - INTERVAL 105 DAY, 33, 34),
-  (23,  '방명록 내용 23', NOW() - INTERVAL 110 DAY, 34, 35),
-  (24,  '방명록 내용 24', NOW() - INTERVAL 115 DAY, 35, 36),
-  (25,  '방명록 내용 25', NOW() - INTERVAL 120 DAY, 36, 37),
-  (26,  '방명록 내용 26', NOW() - INTERVAL 125 DAY, 37, 38),
-  (27,  '방명록 내용 27', NOW() - INTERVAL 130 DAY, 38, 39),
-  (28,  '방명록 내용 28', NOW() - INTERVAL 135 DAY, 39, 40),
-  (29,  '방명록 내용 29', NOW() - INTERVAL 140 DAY, 40, 41),
-  (30,  '방명록 내용 30', NOW() - INTERVAL 145 DAY, 41, 42),
-  (31,  '방명록 내용 31', NOW() - INTERVAL 150 DAY, 42, 43),
-  (32,  '방명록 내용 32', NOW() - INTERVAL 155 DAY, 43, 44),
-  (33,  '방명록 내용 33', NOW() - INTERVAL 160 DAY, 44, 45),
-  (34,  '방명록 내용 34', NOW() - INTERVAL 165 DAY, 45, 46),
-  (35,  '방명록 내용 35', NOW() - INTERVAL 170 DAY, 46, 47),
-  (36,  '방명록 내용 36', NOW() - INTERVAL 175 DAY, 47, 48),
-  (37,  '방명록 내용 37', NOW() - INTERVAL 180 DAY, 48, 49),
-  (38,  '방명록 내용 38', NOW() - INTERVAL 185 DAY, 49, 50),
-  (39,  '방명록 내용 39', NOW() - INTERVAL 190 DAY, 50, 51),
-  (40,  '방명록 내용 40', NOW() - INTERVAL 195 DAY, 51, 52),
-  (41,  '방명록 내용 41', NOW() - INTERVAL 200 DAY, 52, 53),
-  (42,  '방명록 내용 42', NOW() - INTERVAL 205 DAY, 53, 54),
-  (43,  '방명록 내용 43', NOW() - INTERVAL 210 DAY, 54, 55),
-  (44,  '방명록 내용 44', NOW() - INTERVAL 215 DAY, 55, 56),
-  (45,  '방명록 내용 45', NOW() - INTERVAL 220 DAY, 56, 57),
-  (46,  '방명록 내용 46', NOW() - INTERVAL 225 DAY, 57, 58),
-  (47,  '방명록 내용 47', NOW() - INTERVAL 230 DAY, 58, 59),
-  (48,  '방명록 내용 48', NOW() - INTERVAL 235 DAY, 59, 60),
-  (49,  '방명록 내용 49', NOW() - INTERVAL 240 DAY, 60, 61),
-  (50,  '방명록 내용 50', NOW() - INTERVAL 245 DAY, 61, 62);
+INSERT INTO `guestbook` (`id`, `content`, `created_at`, `owner_id`, `writer_id`)
+VALUES
+    (1, '너 요즘 바빠 보이더라', NOW() - INTERVAL 103 DAY, 12, 68),
+    (2, '보고 싶다 얼른 보자', NOW() - INTERVAL 98 DAY, 68, 12),
+    (3, '응원할게 항상', NOW() - INTERVAL 97 DAY, 12, 68),
+    (4, '방명록 남기고 간다~', NOW() - INTERVAL 94 DAY, 68, 12),
+    (5, '너도 화이팅해!', NOW() - INTERVAL 87 DAY, 12, 68),
+    (6, '고마워 항상 :)', NOW() - INTERVAL 85 DAY, 68, 12),
+    (7, '다음 주에 시간 어때?', NOW() - INTERVAL 75 DAY, 12, 68),
+    (8, '고마워 항상 :)', NOW() - INTERVAL 71 DAY, 12, 60),
+    (9, '좋은 하루 보내', NOW() - INTERVAL 63 DAY, 60, 12),
+    (10, '우리 다음에 또 놀자', NOW() - INTERVAL 59 DAY, 12, 60),
+    (11, '보고 싶다 얼른 보자', NOW() - INTERVAL 52 DAY, 60, 12),
+    (12, '우리 다음에 또 놀자', NOW() - INTERVAL 45 DAY, 12, 38),
+    (13, '생일 축하해!!', NOW() - INTERVAL 44 DAY, 12, 60),
+    (14, '너도 화이팅해!', NOW() - INTERVAL 40 DAY, 38, 12),
+    (15, '보고 싶다 얼른 보자', NOW() - INTERVAL 29 DAY, 12, 38),
+    (16, '너 요즘 바빠 보이더라', NOW() - INTERVAL 28 DAY, 38, 12),
+    (17, '요즘 어떻게 지내?', NOW() - INTERVAL 27 DAY, 12, 38),
+    (18, '오랜만이야 잘 지내지?', NOW() - INTERVAL 21 DAY, 60, 12),
+    (19, '보고 싶다 얼른 보자', NOW() - INTERVAL 19 DAY, 12, 23),
+    (20, '좋은 하루 보내', NOW() - INTERVAL 18 DAY, 23, 12),
+    (21, '생일 축하해!!', NOW() - INTERVAL 16 DAY, 12, 23),
+    (22, '방명록 남기고 간다~', NOW() - INTERVAL 16 DAY, 12, 60),
+    (23, '민수야 오늘도 화이팅!', NOW() - INTERVAL 15 DAY, 38, 12),
+    (24, '민수야 오늘도 화이팅!', NOW() - INTERVAL 14 DAY, 23, 12),
+    (25, '민수야 오늘도 화이팅!', NOW() - INTERVAL 13 DAY, 12, 23),
+    (26, '요즘 어떻게 지내?', NOW() - INTERVAL 10 DAY, 23, 12),
+    (27, '고마워 항상 :)', NOW() - INTERVAL 10 DAY, 12, 38),
+    (28, '언제 시간 되면 밥 한번 먹자', NOW() - INTERVAL 10 DAY, 68, 12),
+    (29, '다음 주에 시간 어때?', NOW() - INTERVAL 6 DAY, 12, 23),
+    (30, '오랜만이야 잘 지내지?', NOW() - INTERVAL 4 DAY, 23, 12),
+    (31, '오랜만이야 잘 지내지?', NOW() - INTERVAL 3 DAY, 38, 12),
+    (32, '방명록 남기고 간다~', NOW() - INTERVAL 3 DAY, 60, 12);
+
 -- =====================================================================
---  6. notification — 50건
+--  6. notification
 -- =====================================================================
 INSERT INTO `notification` (`id`, `created_at`, `is_read`, `message`, `ref_id`, `type`, `user_id`)
 VALUES
@@ -1506,7 +1490,39 @@ VALUES
     (275, NOW() - INTERVAL 35 HOUR, NULL, '[민수의 친구들] 수아38님이 메시지를 보냈습니다.', 132, 'MESSAGE', 38),
     (276, NOW() - INTERVAL 10 HOUR, NULL, '[민수의 친구들] 민수님이 메시지를 보냈습니다.', 132, 'MESSAGE', 12),
     (277, NOW() - INTERVAL 5 HOUR, NULL, '[민수의 친구들] 태양님이 메시지를 보냈습니다.', 132, 'MESSAGE', 23),
-    (278, NOW() - INTERVAL 1 HOUR, NULL, '[민수의 친구들] 민서60님이 메시지를 보냈습니다.', 132, 'MESSAGE', 60);
+    (278, NOW() - INTERVAL 1 HOUR, NULL, '[민수의 친구들] 민서60님이 메시지를 보냈습니다.', 132, 'MESSAGE', 60),
+    (279, NOW() - INTERVAL 103 DAY, 1, '준호68님이 회원님의 도시에 방명록을 남겼습니다.', 1, 'GUESTBOOK', 12),
+    (280, NOW() - INTERVAL 98 DAY, 1, '민수님이 회원님의 도시에 방명록을 남겼습니다.', 2, 'GUESTBOOK', 68),
+    (281, NOW() - INTERVAL 97 DAY, 0, '준호68님이 회원님의 도시에 방명록을 남겼습니다.', 3, 'GUESTBOOK', 12),
+    (282, NOW() - INTERVAL 94 DAY, 1, '민수님이 회원님의 도시에 방명록을 남겼습니다.', 4, 'GUESTBOOK', 68),
+    (283, NOW() - INTERVAL 87 DAY, 0, '준호68님이 회원님의 도시에 방명록을 남겼습니다.', 5, 'GUESTBOOK', 12),
+    (284, NOW() - INTERVAL 85 DAY, 0, '민수님이 회원님의 도시에 방명록을 남겼습니다.', 6, 'GUESTBOOK', 68),
+    (285, NOW() - INTERVAL 75 DAY, 0, '준호68님이 회원님의 도시에 방명록을 남겼습니다.', 7, 'GUESTBOOK', 12),
+    (286, NOW() - INTERVAL 71 DAY, 0, '민서60님이 회원님의 도시에 방명록을 남겼습니다.', 8, 'GUESTBOOK', 12),
+    (287, NOW() - INTERVAL 63 DAY, 1, '민수님이 회원님의 도시에 방명록을 남겼습니다.', 9, 'GUESTBOOK', 60),
+    (288, NOW() - INTERVAL 59 DAY, 1, '민서60님이 회원님의 도시에 방명록을 남겼습니다.', 10, 'GUESTBOOK', 12),
+    (289, NOW() - INTERVAL 52 DAY, 0, '민수님이 회원님의 도시에 방명록을 남겼습니다.', 11, 'GUESTBOOK', 60),
+    (290, NOW() - INTERVAL 45 DAY, 1, '수아38님이 회원님의 도시에 방명록을 남겼습니다.', 12, 'GUESTBOOK', 12),
+    (291, NOW() - INTERVAL 44 DAY, 0, '민서60님이 회원님의 도시에 방명록을 남겼습니다.', 13, 'GUESTBOOK', 12),
+    (292, NOW() - INTERVAL 40 DAY, 0, '민수님이 회원님의 도시에 방명록을 남겼습니다.', 14, 'GUESTBOOK', 38),
+    (293, NOW() - INTERVAL 29 DAY, 0, '수아38님이 회원님의 도시에 방명록을 남겼습니다.', 15, 'GUESTBOOK', 12),
+    (294, NOW() - INTERVAL 28 DAY, 0, '민수님이 회원님의 도시에 방명록을 남겼습니다.', 16, 'GUESTBOOK', 38),
+    (295, NOW() - INTERVAL 27 DAY, 1, '수아38님이 회원님의 도시에 방명록을 남겼습니다.', 17, 'GUESTBOOK', 12),
+    (296, NOW() - INTERVAL 21 DAY, 1, '민수님이 회원님의 도시에 방명록을 남겼습니다.', 18, 'GUESTBOOK', 60),
+    (297, NOW() - INTERVAL 19 DAY, 0, '태양님이 회원님의 도시에 방명록을 남겼습니다.', 19, 'GUESTBOOK', 12),
+    (298, NOW() - INTERVAL 18 DAY, 1, '민수님이 회원님의 도시에 방명록을 남겼습니다.', 20, 'GUESTBOOK', 23),
+    (299, NOW() - INTERVAL 16 DAY, 0, '태양님이 회원님의 도시에 방명록을 남겼습니다.', 21, 'GUESTBOOK', 12),
+    (300, NOW() - INTERVAL 16 DAY, 0, '민서60님이 회원님의 도시에 방명록을 남겼습니다.', 22, 'GUESTBOOK', 12),
+    (301, NOW() - INTERVAL 15 DAY, 0, '민수님이 회원님의 도시에 방명록을 남겼습니다.', 23, 'GUESTBOOK', 38),
+    (302, NOW() - INTERVAL 14 DAY, 1, '민수님이 회원님의 도시에 방명록을 남겼습니다.', 24, 'GUESTBOOK', 23),
+    (303, NOW() - INTERVAL 13 DAY, 0, '태양님이 회원님의 도시에 방명록을 남겼습니다.', 25, 'GUESTBOOK', 12),
+    (304, NOW() - INTERVAL 10 DAY, 0, '민수님이 회원님의 도시에 방명록을 남겼습니다.', 26, 'GUESTBOOK', 23),
+    (305, NOW() - INTERVAL 10 DAY, 0, '수아38님이 회원님의 도시에 방명록을 남겼습니다.', 27, 'GUESTBOOK', 12),
+    (306, NOW() - INTERVAL 10 DAY, 0, '민수님이 회원님의 도시에 방명록을 남겼습니다.', 28, 'GUESTBOOK', 68),
+    (307, NOW() - INTERVAL 6 DAY, 0, '태양님이 회원님의 도시에 방명록을 남겼습니다.', 29, 'GUESTBOOK', 12),
+    (308, NOW() - INTERVAL 4 DAY, 0, '민수님이 회원님의 도시에 방명록을 남겼습니다.', 30, 'GUESTBOOK', 23),
+    (309, NOW() - INTERVAL 3 DAY, 0, '민수님이 회원님의 도시에 방명록을 남겼습니다.', 31, 'GUESTBOOK', 38),
+    (310, NOW() - INTERVAL 3 DAY, 0, '민수님이 회원님의 도시에 방명록을 남겼습니다.', 32, 'GUESTBOOK', 60);
 
 
 SET FOREIGN_KEY_CHECKS = 1;
