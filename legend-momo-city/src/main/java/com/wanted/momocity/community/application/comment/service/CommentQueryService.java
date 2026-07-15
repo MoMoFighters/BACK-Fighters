@@ -103,7 +103,7 @@ public class CommentQueryService implements CommentQueryUseCase {
                                         r.getId(),
                                         r.getUserId(),
                                         r.getContent(),
-                                        replyAuthor.getName(),
+                                        replyAuthor.getNickname(),
                                         replyAuthor.getProfileImageUrl(),
                                         replyAuthor.getRole().name(),
                                         // 대댓글 작성자가 본인인지 확인
@@ -119,7 +119,7 @@ public class CommentQueryService implements CommentQueryUseCase {
                             c.getId(),
                             c.getUserId(),
                             c.getContent(),
-                            commentAuthor.getName(),
+                            commentAuthor.getNickname(),
                             commentAuthor.getProfileImageUrl(),
                             commentAuthor.getRole().name(),
                             // 댓글 작성자가 본인인지 확인
@@ -186,7 +186,7 @@ public class CommentQueryService implements CommentQueryUseCase {
                             r.getId(),
                             r.getUserId(),
                             r.getContent(),
-                            replyAuthor.getName(),
+                            replyAuthor.getNickname(),
                             replyAuthor.getProfileImageUrl(),
                             replyAuthor.getRole().name(),
                             // 대댓글 작성자가 본인인지 확인

@@ -103,7 +103,7 @@ public class PostQueryService implements PostQueryUseCase {
                             commentCount,
                             post.getThumbnailUrl(),
                             post.getUserId(),
-                            user.getName(),
+                            user.getNickname(),
                             user.getProfileImageUrl(),
                             user.getRole().name(),
                             post.getCreatedAt()
@@ -160,7 +160,7 @@ public class PostQueryService implements PostQueryUseCase {
                 isLiked,
                 isMine,
                 post.getUserId(),
-                author.getName(),
+                author.getNickname(),
                 author.getProfileImageUrl(),
                 author.getRole().name(),
                 contents,
@@ -221,7 +221,7 @@ public class PostQueryService implements PostQueryUseCase {
                             commentCountMap.getOrDefault(post.getId(), 0L).intValue(),
                             post.getThumbnailUrl(),
                             post.getUserId(),
-                            user.getName(),
+                            user.getNickname(),
                             user.getProfileImageUrl(),
                             user.getRole().name(),
                             post.getCreatedAt()
@@ -313,7 +313,7 @@ public class PostQueryService implements PostQueryUseCase {
                             commentCountMap.getOrDefault(post.getId(), 0L).intValue(),
                             post.getThumbnailUrl(),
                             post.getUserId(),
-                            user.getName(),
+                            user.getNickname(),
                             user.getProfileImageUrl(),
                             user.getRole().name(),
                             post.getCreatedAt()
@@ -363,7 +363,7 @@ public class PostQueryService implements PostQueryUseCase {
                             p.getLikeCount(),
                             p.getThumbnailUrl(),
                             p.getUserId(),
-                            author.getName(),
+                            author.getNickname(),
                             p.getCreatedAt()
                     );
                 })
@@ -383,7 +383,7 @@ public class PostQueryService implements PostQueryUseCase {
                             p.getLikeCount(),
                             p.getThumbnailUrl(),
                             p.getUserId(),
-                            author.getName(),
+                            author.getNickname(),
                             p.getCreatedAt()
                     );
                 })

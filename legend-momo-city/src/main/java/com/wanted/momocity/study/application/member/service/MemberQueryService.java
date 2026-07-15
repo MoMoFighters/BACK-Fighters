@@ -45,7 +45,7 @@ public class MemberQueryService implements MemberQueryUseCase {
                             member.getId(),
                             member.getGroupRoomId(),
                             room.getHostUserId(),
-                            host.getName(),
+                            host.getNickname(),
                             member.getInvitedAt()
                     );
                 })
