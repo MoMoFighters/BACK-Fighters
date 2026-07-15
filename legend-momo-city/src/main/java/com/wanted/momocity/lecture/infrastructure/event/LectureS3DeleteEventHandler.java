@@ -37,7 +37,7 @@ public class LectureS3DeleteEventHandler {
     // 영상 미 썸네일 삭제를 별도 스레드에서 실행
     @Async("domainEventExecutor")
     public void handleChapterDeleted(ChapterDeletedEvent event) {
-        String prefix = "lectures/" + event.lectureId() + "chapters/" + event.chapterId() + "/";
+        String prefix = "lectures/" + event.lectureId() + "/chapters/" + event.chapterId() + "/";
 
         deletePrefixSafely(
                 "챕터",
