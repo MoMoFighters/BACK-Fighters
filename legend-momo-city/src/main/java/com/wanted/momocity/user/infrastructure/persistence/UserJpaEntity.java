@@ -60,7 +60,7 @@ public class UserJpaEntity {
     @Column(nullable = false)
     private Membership membership;
 
-    @Column(name = "membership_start")
+    @Column(name = "membership_start",nullable = false)
     private LocalDateTime membershipStart;
 
     @Column(name = "do_not_disturb")

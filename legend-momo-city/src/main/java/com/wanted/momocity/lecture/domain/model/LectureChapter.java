@@ -270,6 +270,30 @@ public class LectureChapter {
         return updatedAt;
     }
 
+    public LectureChapter update(
+            String title,
+            int orderNo
+    ) {
+        // 챕터 제목이 비어있는지는 않은지 검증
+         validateTitle(title);
+         // 챕터 갯수가 1 이상인지 확인
+         validateOrderNo(orderNo);
+
+         return new LectureChapter(
+                 id,
+                 lectureId,
+                 title,
+                 orderNo,
+                 videoUrl,
+                 videoSizeBytes,
+                 durationSec,
+                 originalFilename,
+                 chapterThumbnailUrl,
+                 createdAt,
+                 updatedAt
+         );
+    }
+
     public LectureChapter changedChapterThumbnailUrl(String chapterThumbnailUrl) {
         validateChapterThumbnailUrl(chapterThumbnailUrl);
 

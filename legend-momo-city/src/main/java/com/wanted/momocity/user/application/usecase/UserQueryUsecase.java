@@ -33,6 +33,7 @@ public interface UserQueryUsecase {
             Boolean doNotDisturb,
             Membership membership,
             LocalDateTime membershipStart,
+            LocalDateTime membershipUntil,
             String nickname,
             Boolean isTempPwd,
             LocalDateTime createdAt
@@ -55,7 +56,7 @@ public interface UserQueryUsecase {
     }
 
     // 관리자 회원관리용 사용자 조회
-    AdminUserListResult getAdminUserList(String role, String status, int page, int size);
+    AdminUserListResult getAdminUserList(String role, String status, String keyword,int page, int size);
 
     record AdminUserListResult(
             List<?> users,
