@@ -1,0 +1,12 @@
+package com.wanted.momocity.payment.presentation.api.common;
+
+public final class PaymentResponseCode {
+    private PaymentResponseCode(){}
+
+    public static final String PAYMENT_READY = "PAYMENT_READY";
+    public static final String PAYMENT_VERIFIED = "PAYMENT_VERIFIED";
+    public static final String SUBSCRIBE_CANCEL = "SUBSCRIBE_CANCEL";
+    public static final String FETCH_SUCCESS = "FETCH_SUCCESS";
+
+
+}

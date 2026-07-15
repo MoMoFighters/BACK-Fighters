@@ -2,6 +2,7 @@ package com.wanted.momocity.lecture.application.service;
 
 import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
+import com.wanted.momocity.lecture.application.command.LectureCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.DeleteChapterCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.DeleteLectureCommand;
 import com.wanted.momocity.lecture.application.command.LectureCommand.AdminChangeLectureStatusCommand;
@@ -13,6 +14,7 @@ import com.wanted.momocity.lecture.application.port.TeacherAccountPort;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCases.AdminLectureCommandUseCase;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCases.ChapterCommandUseCase;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCases.LectureCommandUseCase;
+import com.wanted.momocity.lecture.domain.event.ChapterUpdatedEvent;
 import com.wanted.momocity.lecture.domain.event.LectureCreatedEvent;
 import com.wanted.momocity.lecture.domain.event.LectureStatusChangedEvent;
 import com.wanted.momocity.lecture.domain.exception.ChapterLimitExceededException;
@@ -203,6 +205,10 @@ public class LectureCommandService implements
             throw new DomainRuleViolationException("이미 삭제된 강의입니다.");
         }
 
+        // 강의 삭제 시 해당 강의에 속한 모든 챕터를 실제 삭제
+        // 챕터 row에 있는 영상 URL, 파일 크기, 재생시간, 원본파일명이 포함되어 있어, 챕터 삭제 시 DB 기준 영상 정보도 함께 삭제
+        chapterRepository.deleteAllByLectureId(lecture.getId());
+
         // 강의 상태를 DELETED로 변경한 도메인 객체 생성
         LectureAggregate deletedLecture = lecture.changeStatus(LectureStatus.DELETED);
 
@@ -220,6 +226,51 @@ public class LectureCommandService implements
                 );
 
         return savedLecture;
+    }
+
+    // 강사가 강의 수정
+    @Override
+    public void updateLecture(LectureCommand.UpdateLectureCommand command) {
+        long startTime = System.currentTimeMillis();
+        log.info("강의 수정 시작 - teacherId={}, lectureId={}",
+                command.teacherId(),
+                command.lectureId()
+        );
+
+        Long teacherId = teacherAccountPort.getTeacherId(command.teacherId());
+
+        // 수정 대상의 강의 조회
+        LectureAggregate lecture = lectureRepository.findById(command.lectureId())
+                // 없으면 예외
+                .orElseThrow(() -> new LectureNotFoundException("강의를 찾을 수 없습니다."));
+
+        // 본인 강의인지 확인
+        if (!lecture.isOwnedBy(teacherId)) {
+            // 아니라면 예외
+            throw new AccessDeniedException("본인이 등록한 강의만 수정할 수 있습니다.");
+        }
+
+        // 이미 삭제된 강의는 수정할 수 없게 막기
+        if (lecture.getStatus() == LectureStatus.DELETED) {
+            throw new DomainRuleViolationException("삭제된 강의는 수정할 수 없습니다.");
+        }
+
+        LectureAggregate updateLecture = lecture.update(
+                command.title(),
+                command.description(),
+                lecture.getThumbnailUrl(), // 글만 수정하기 때문에 썸네일 URL은 유지
+                command.category()
+        );
+
+        // 수정한 강의 저장
+        lectureRepository.save(updateLecture);
+
+        long elapsedTime = System.currentTimeMillis() - startTime;
+        log.info("강의 수정 완료 - teacherId={}, lectureId={}, elapsedTime={}",
+                command.teacherId(),
+                command.lectureId(),
+                elapsedTime
+        );
     }
 
     /**
@@ -425,6 +476,122 @@ public class LectureCommandService implements
                 command.chapterId(),
                 elapsedTime
         );
+    }
+
+    @Override
+    public void deleteChapterVideo(LectureCommand.DeleteChapterVideoCommand command) {
+         long startTime = System.currentTimeMillis();
+
+         log.info("동영상 삭제 시작 - teacherId={}, lectureId={}, chapterId={}",
+                 command.teacherId(),
+                 command.lectureId(),
+                 command.chapterId());
+
+         Long teacherId = teacherAccountPort.getTeacherId(command.teacherId());
+
+         LectureAggregate lecture = lectureRepository.findById(command.lectureId())
+                 .orElseThrow(() -> new LectureNotFoundException("강의를 찾을 수 없습니다."));
+
+         if (!lecture.isOwnedBy(teacherId)) {
+             throw new AccessDeniedException("본인이 등록한 강의의 동영상만 삭제할 수 있습니다.");
+         }
+
+         if (lecture.getStatus() == LectureStatus.DELETED) {
+             throw new DomainRuleViolationException("삭제된 강의의 동영상은 삭제할 수 없습니다.");
+         }
+
+         LectureChapter chapter = chapterRepository.findById(command.chapterId())
+                 .orElseThrow(() -> new ChapterNotFoundException("챕터를 찾을 수 없습니다."));
+
+         if (!chapter.belongsTo(command.lectureId())) {
+            throw new ChapterNotFoundException("유효하지 않은 챕터 식별자입니다.");
+         }
+
+         if (!chapter.hasVideo()) {
+             throw new DomainRuleViolationException("삭제할 동영상이 없습니다.");
+         }
+
+         chapterRepository.deleteById(chapter.getId());
+
+         long elapsedTime = System.currentTimeMillis() - startTime;
+
+         log.info("동영상 삭제 완료 - teacherId={}, lectureId={}, chapterId={}, elapsedTime={}",
+                 teacherId,
+                 command.lectureId(),
+                 command.chapterId(),
+                 elapsedTime);
+    }
+
+    // 챕터 수정
+    @Override
+    public void updateChapter(LectureCommand.UpdateChapterCommand command) {
+        long startTime = System.currentTimeMillis();
+        log.info("챕터 수정 시작 - userId={}, lectureId={}, chapterId={}, orderNo={}",
+                command.teacherId(),
+                command.lectureId(),
+                command.chapterId(),
+                command.orderNo()
+        );
+
+        Long teacherId = teacherAccountPort.getTeacherId(command.teacherId());
+
+        LectureAggregate  lecture = lectureRepository.findById(command.lectureId())
+                .orElseThrow(() -> new LectureNotFoundException("강의를 찾을 수 없습니다."));
+
+        if (!lecture.isOwnedBy(teacherId)) {
+            throw new AccessDeniedException("본인이 등록한 강의의 챕터만 수정할 수 있습니다.");
+        }
+
+        if (lecture.getStatus() == LectureStatus.DELETED) {
+            throw new DomainRuleViolationException("삭제된 강의의 챕터는 수정할 수 없습니다.");
+        }
+
+        LectureChapter chapter = chapterRepository.findById(command.chapterId())
+                .orElseThrow(() -> new ChapterNotFoundException("챕터를 찾을 수 없습니다."));
+
+        // 조회한 챕터가 URL의 강의에 실제로 속하는지 확인합니다.
+        if (!chapter.belongsTo(command.lectureId())) {
+            throw new ChapterNotFoundException("유효하지 않은 챕터 식별자입니다.");
+        }
+
+        // 현재 탭터 제외하고 같은 순서가 사용 중인지 확인
+        boolean duplicatedOrderNo =
+                chapterRepository.existsByLectureIdAndOrderNoAndIdNot(
+                        command.lectureId(),
+                        command.orderNo(),
+                        command.chapterId()
+                );
+
+        // 다른 챕터에서 동일한 순서를 사용하는지 확인
+        if (duplicatedOrderNo) {
+            throw new  DuplicateChapterOrderException("이미 사용 중인 챕터 순서입니다.");
+        }
+
+        // 기존 영상과 썸네일은 유지하고 제목과 순서만 변경
+        LectureChapter updatedChapter = chapter.update(
+                command.title(),
+                command.orderNo()
+        );
+
+        // 제목과 순서가 변경된 챕터를 DB에 저장합니다.
+        LectureChapter savedChapter = chapterRepository.save(updatedChapter);
+
+        // 챕터 수정 사실을 후속 처리 계층에 전달합니다.
+        eventPublisher.publishEvent(
+                new ChapterUpdatedEvent(
+                        savedChapter.getId(),
+                        savedChapter.getLectureId(),
+                        Instant.now()
+                )
+        );
+
+        long elapsedTime = System.currentTimeMillis() - startTime;
+        log.info("챕터 수정 완료 - lectureId={}, chapterId={}, orderNo={}, elapsedTime={}",
+                command.lectureId(),
+                command.chapterId(),
+                command.orderNo(),
+                elapsedTime
+                );
     }
 
     /**

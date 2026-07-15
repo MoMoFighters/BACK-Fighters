@@ -3,6 +3,7 @@ package com.wanted.momocity.user.infrastructure.persistence;
 
 import com.wanted.momocity.admin.application.port.MonthlyCount;
 import com.wanted.momocity.global.domain.model.Category;
+import com.wanted.momocity.user.domain.model.Membership;
 import com.wanted.momocity.user.domain.model.Role;
 import com.wanted.momocity.user.domain.model.Status;
 import org.springframework.data.domain.Pageable;
@@ -100,10 +101,12 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
             "u.role <> 'ADMIN' AND u.status <> 'REJECTED' AND (" +
             "(:status = 'DELETED' AND u.status = :status) OR " +
             "(:status IS NULL AND u.status <> 'DELETED' AND (:role IS NULL OR u.role = :role))) " +
+            "AND (:keyword IS NULL OR u.name LIKE %:keyword%) " +
             "ORDER BY u.createdAt DESC")
     List<UserJpaEntity> findAllForAdmin(
             @Param("role") Role role,
             @Param("status") Status status,
+            @Param("keyword") String keyword,
             Pageable pageable
     );
 
@@ -111,10 +114,12 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
     @Query("SELECT COUNT(u) FROM UserUser u WHERE " +
             "u.role <> 'ADMIN' AND u.status <> 'REJECTED' AND (" +
             "(:status = 'DELETED' AND u.status = :status) OR " +
-            "(:status IS NULL AND u.status <> 'DELETED' AND (:role IS NULL OR u.role = :role))) " )
+            "(:status IS NULL AND u.status <> 'DELETED' AND (:role IS NULL OR u.role = :role))) " +
+            "AND (:keyword IS NULL OR u.name LIKE %:keyword%)")
     long countForAdmin(
             @Param("role") Role role,
-            @Param("status") Status status
+            @Param("status") Status status,
+            @Param("keyword") String keyword
     );
 
     // 밤티 알림 설정
@@ -233,4 +238,20 @@ public interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, L
     // 온보딩 페이지용 사용자 수 세기
     @Query("SELECT COUNT(u) FROM UserUser u WHERE u.status <> 'DELETED'")
     long countOnboardingUsers();
-}
+
+    // 구독 플랜 변경
+    @Modifying
+    @Transactional
+    @Query("UPDATE UserUser u SET u.membership = :membership, u.membershipStart = :membershipStart WHERE u.id = :id")
+    void updateMembership(@Param("id") Long id,
+                          @Param("membership") Membership membership,
+                          @Param("membershipStart") LocalDateTime membershipStart);
+
+
+    // 멤버십 기간 만료된 유저 BASIC으로 전환
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Transactional
+    @Query("UPDATE UserUser u SET u.membership = 'BASIC', u.membershipStart = :now " +
+            "WHERE u.membership <> 'BASIC' AND u.membershipStart <= :threshold")
+    int revertExpiredMemberships(@Param("threshold") LocalDateTime threshold,
+                                 @Param("now") LocalDateTime now);}

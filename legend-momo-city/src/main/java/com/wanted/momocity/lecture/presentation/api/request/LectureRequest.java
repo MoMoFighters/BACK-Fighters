@@ -7,6 +7,7 @@ import com.wanted.momocity.lecture.domain.model.LectureStatus;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import org.checkerframework.checker.units.qual.K;
 import org.springframework.web.multipart.MultipartFile;
 
 public final class LectureRequest {
@@ -115,6 +116,26 @@ public final class LectureRequest {
         }
     }
 
+    // 챕터 텍스트 수정
+    public record UpdateChapterRequest(
+            @NotBlank(message = "챕터 제목은 필수입니다.")
+            String title,
+
+            // 챕터는 1개 이상
+            @Min(value = 1, message = "챕터 순서는 1 이상이어야 합니다.")
+            int orderNo
+    ) {
+        public LectureCommand.UpdateChapterCommand toCommand(Long teacherId, Long lectureId, Long chapterId){
+            return new LectureCommand.UpdateChapterCommand(
+                    teacherId,
+                    lectureId,
+                    chapterId,
+                    title,
+                    orderNo
+            );
+        }
+    }
+
     // CreateLectureRequest는 multipart/form-data 요청을 받는 DTO
     public record CreateLectureRequest(
 
@@ -163,6 +184,42 @@ public final class LectureRequest {
         public void validateThumbnailSize() {
             if (thumbnail != null && thumbnail.getSize() > MAX_THUMBNAIL_SIZE_BYTES) {
                 throw new DomainRuleViolationException("썸네일 파일 크기는 5MB 이하만 가능합니다.");
+            }
+        }
+    }
+
+    // 강의 텍스트 수정 요청 DTO
+    public record UpdateLectureRequest(
+
+            // 강의 제목, 내용, 카테고리는 필수이기 때문에 비어 있으면 @NotBlank로 막기
+            @NotBlank(message = "강의 제목은 필수입니다.")
+            String title,
+
+            @NotBlank( message = "강의 설명은 필수입니다.")
+            String description,
+
+            @NotBlank(message = "강의 카테고리는 필수입니다.")
+            String category
+    ) {
+        public LectureCommand.UpdateLectureCommand toCommand(Long teacherId, Long lectureId) {
+
+            // 카테고리 문자열을 ENUM 값으로 변경
+            LectureCategory lectureCategory = parseCategory(category);
+
+            return new LectureCommand.UpdateLectureCommand(
+                    teacherId,
+                    lectureId,
+                    title,
+                    description,
+                    lectureCategory
+            );
+        }
+
+        private LectureCategory parseCategory(@NotBlank(message = "강의 카테고리는 필수입니다.") String category) {
+            try {
+                return LectureCategory.valueOf(category);
+            } catch (IllegalArgumentException exception) {
+                throw new DomainRuleViolationException("허용되지 않은 강의 카테고리입니다.");
             }
         }
     }

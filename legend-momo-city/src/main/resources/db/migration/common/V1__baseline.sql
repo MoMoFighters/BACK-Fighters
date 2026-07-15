@@ -2,14 +2,20 @@
 --  MoMo City - Database Schema (DDL) [V1 baseline]
 --  Engine : InnoDB / Charset : utf8mb4
 -- =====================================================================
-USE momo;
-
 SET FOREIGN_KEY_CHECKS = 0;
 SET NAMES utf8mb4;
 
 -- =====================================================================
 --  DROP (역순 안전 삭제)
 -- =====================================================================
+DROP TABLE IF EXISTS `daily_study_record`;
+DROP TABLE IF EXISTS `monthly_study_record`;
+DROP TABLE IF EXISTS `solo_session`;
+DROP TABLE IF EXISTS `group_room_member`;
+DROP TABLE IF EXISTS `group_room`;
+DROP TABLE IF EXISTS `chatbot_daily_usage`;
+DROP TABLE IF EXISTS `chatbot_question_log`;
+DROP TABLE IF EXISTS `payment`;
 DROP TABLE IF EXISTS `order_history`;
 DROP TABLE IF EXISTS `store`;
 DROP TABLE IF EXISTS `admin_notice`;
@@ -56,7 +62,7 @@ CREATE TABLE `user` (
     `point`             BIGINT       NULL,
     `do_not_disturb`    BOOLEAN      NOT NULL DEFAULT FALSE,
     `membership`        ENUM('BASIC','PLUS','PRO')                                     NOT NULL DEFAULT 'BASIC',
-    `membership_start`  DATETIME     NULL,
+    `membership_start`  DATETIME     NOT NULL,
     `suspension_count`  BIGINT       NOT NULL DEFAULT 0,
     `suspended_until`   DATETIME     NULL,
     `created_at`        DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
