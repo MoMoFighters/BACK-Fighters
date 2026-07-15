@@ -1,4 +1,4 @@
-package com.wanted.momocity.study.application.member.result;
+package com.wanted.momocity.study.application.member.timer.result;
 
 import com.wanted.momocity.study.domain.model.GroupRoomMember;
 
@@ -9,10 +9,8 @@ import java.time.LocalDateTime;
  *  그룹방 내 타이머 시작/일시정지/종료 공통 결과 DTO
  *  -
  *  action : STARTED(신규 시작) / RESUMED(재개) / PAUSED / ENDED
- *  -> start API 하나가 "신규 시작"과 "재개"를 함께 처리하므로,
- *     프론트가 버튼 라벨/토스트 문구를 다르게 보여줄 수 있도록 이 필드로 구분해서 내려준다.
+ *  -> start API 하나가 "신규 시작"과 "재개"를 함께 처리
  *  -
- *  startedAt : start(재개 포함) 응답에서만 의미 있음. TimerStartResponse.startedAt으로 매핑된다.
  *  accumulatedSeconds : STARTED/RESUMED 시엔 재개 시점까지의 기존 누적값(0 또는 이전 값),
  *                        PAUSED/ENDED 시엔 이번에 갱신된 최종 누적값
  * */
@@ -51,4 +49,5 @@ public record TimerActionResult(
     public enum Action {
         STARTED, RESUMED, PAUSED, ENDED
     }
+
 }

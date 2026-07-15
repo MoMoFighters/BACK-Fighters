@@ -32,6 +32,10 @@ public interface GroupRoomMemberRepository {
     // 방 상세 조회, 랭킹 조회(동시에 DailyStudyRecord/MonthlyStudyRecord와 조합)에 사용
     List<GroupRoomMember> findAllByGroupRoomIdAndJoined(Long groupRoomId);
 
+    // 방의 대기 중인 초대 목록 조회 (status=INVITED만)
+    // 초대 발송 시 인원 선제 차단 계산(JOINED + INVITED 합산)에 사용
+    List<GroupRoomMember> findAllByGroupRoomIdAndInvited(Long groupRoomId);
+
     // 유저가 현재 JOINED 상태로 속한 방 목록 조회 ("내가 속한 그룹방 목록" 용)
     List<GroupRoomMember> findAllByUserIdAndJoined(Long userId);
 
