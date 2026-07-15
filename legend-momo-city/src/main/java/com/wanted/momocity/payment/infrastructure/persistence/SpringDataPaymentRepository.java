@@ -17,6 +17,8 @@ public interface SpringDataPaymentRepository extends JpaRepository<PaymentJpaEnt
 
     boolean existsByOriginalPaymentIdAndStatus(String paymentId, Status status);
 
+    List<PaymentJpaEntity> findByStatusAndCreatedAtBefore(Status status, LocalDateTime threshold);
+
     // 총 매출 조회
     /*comment
      *  COALESCE(SUM(p.price), 0) -> 합산 결과가 널이면 0, 아니면 합산 결과 반환

@@ -90,9 +90,6 @@ public class PaymentCommandService implements PaymentCommandUseCase {
             log.error("[verify] 포트원 API 호출 실패 paymentId={}, userId={}",
                     command.paymentId(), command.userId(), e);
 
-            Payment failed = payment.markFailed();
-            paymentStatusUpdater.saveFailed(failed);
-            paymentLockPort.unlock(command.userId(), payment.getPlan());
             throw e;
         }
 
