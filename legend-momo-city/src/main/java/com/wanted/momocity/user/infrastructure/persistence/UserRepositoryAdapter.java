@@ -93,16 +93,16 @@ public class UserRepositoryAdapter implements UserRepository {
 
     // 관리자 회원관리용 회원 목록 조회 - role/status 조건에 따라
     @Override
-    public List<User> findAllForAdmin(Role role, Status status, int page, int size) {
+    public List<User> findAllForAdmin(Role role, Status status,String keyword ,int page, int size) {
         Pageable pageable = PageRequest.of(page - 1, size);
-        return springDataUserRepository.findAllForAdmin(role, status, pageable)
+        return springDataUserRepository.findAllForAdmin(role, status,keyword, pageable)
                 .stream().map(this::toDomainForAdmin).toList();
     }
 
     // 페이지네이션 totalElements 계산용 전체 개수 조회
     @Override
-    public long countForAdmin(Role role, Status status) {
-        return springDataUserRepository.countForAdmin(role, status);
+    public long countForAdmin(Role role, Status status, String keyword) {
+        return springDataUserRepository.countForAdmin(role, status,keyword);
     }
 
 

@@ -3,8 +3,8 @@ package com.wanted.momocity.payment.domain.model;
 public enum Plan {
     // 구독 플랜 종류
     BASIC(0L),
-    PLUS(30000L),
-    PRO(50000L);
+    PLUS(29900L),
+    PRO(49900L);
 
     private final Long price;
 
