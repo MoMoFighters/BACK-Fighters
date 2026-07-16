@@ -472,7 +472,7 @@ VALUES
     (64, NOW() - INTERVAL 25 DAY, 0, '서연님이 친구 요청을 보냈습니다.', 15, 'FRIEND_REQUEST', 12),
     (65, NOW() - INTERVAL 20 DAY, 0, '민수님이 친구 요청을 보냈습니다.', 12, 'FRIEND_REQUEST', 16),
     (66, NOW() - INTERVAL 18 DAY, 1, '하늘님이 친구 요청을 보냈습니다.', 17, 'FRIEND_REQUEST', 12),
-    (67, NOW() - INTERVAL 17 DAY, 1, '민수님과 친구가 되었습니다. 교류를 시작해보세요!', 12, 'FRIEND_REQUEST', 12),
+    (67, NOW() - INTERVAL 17 DAY, 1, '민수님과 친구가 되었습니다. 교류를 시작해보세요!', 12, 'FRIEND_REQUEST', 17),
     (68, NOW() - INTERVAL 96 HOUR, NULL, '민수님이 메시지를 보냈습니다.', 33, 'MESSAGE', 12),
     (69, NOW() - INTERVAL 86 HOUR, NULL, '코딩쌤님이 메시지를 보냈습니다.', 33, 'MESSAGE', 6),
     (70, NOW() - INTERVAL 68 HOUR, NULL, '민수님이 메시지를 보냈습니다.', 35, 'MESSAGE', 12),

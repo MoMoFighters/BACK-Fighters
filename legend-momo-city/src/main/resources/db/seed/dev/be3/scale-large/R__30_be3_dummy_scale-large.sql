@@ -1490,7 +1490,7 @@ VALUES
     (275, NOW() - INTERVAL 35 HOUR, NULL, '[민수의 친구들] 수아38님이 메시지를 보냈습니다.', 132, 'MESSAGE', 38),
     (276, NOW() - INTERVAL 10 HOUR, NULL, '[민수의 친구들] 민수님이 메시지를 보냈습니다.', 132, 'MESSAGE', 12),
     (277, NOW() - INTERVAL 5 HOUR, NULL, '[민수의 친구들] 태양님이 메시지를 보냈습니다.', 132, 'MESSAGE', 23),
-    (278, NOW() - INTERVAL 1 HOUR, NULL, '[민수의 친구들] 민서60님이 메시지를 보냈습니다.', 132, 'MESSAGE', 60),
+    (278, NOW() - INTERVAL 1 HOUR, NULL, '[다 같이 놀자!] 민서60님이 메시지를 보냈습니다.', 132, 'MESSAGE', 60),
     (279, NOW() - INTERVAL 103 DAY, 1, '준호68님이 회원님의 도시에 방명록을 남겼습니다.', 1, 'GUESTBOOK', 12),
     (280, NOW() - INTERVAL 98 DAY, 1, '민수님이 회원님의 도시에 방명록을 남겼습니다.', 2, 'GUESTBOOK', 68),
     (281, NOW() - INTERVAL 97 DAY, 0, '준호68님이 회원님의 도시에 방명록을 남겼습니다.', 3, 'GUESTBOOK', 12),
