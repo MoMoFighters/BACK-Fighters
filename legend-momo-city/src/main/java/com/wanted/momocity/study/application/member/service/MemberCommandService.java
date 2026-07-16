@@ -71,6 +71,12 @@ public class MemberCommandService implements MemberCommandUseCase {
     public InvitationResult invite(Long userId, Long roomId, InviteMemberCommand command) {
 
         GroupRoom room = getActiveRoom(roomId);
+
+        // 방장만 초대할 수 있다는 정책 검증
+        if (!room.isHost(userId)) {
+            throw new StudyAccessDeniedException("방장만 멤버를 초대할 수 있습니다.");
+        }
+
         Long inviteeId = command.inviteeId();
 
         // 친구 관계 재검증 (프론트 필터링과 별개로 서버가 반드시 재검증)
@@ -122,7 +128,7 @@ public class MemberCommandService implements MemberCommandUseCase {
         // 현재 정책상 초대 발송 자체 방장만 가능 -> 방장만 취소 가능하도록 방어
         GroupRoom room = getActiveRoom(roomId);
         if (!room.isHost(userId)) {
-            throw new StudyAccessDeniedException("본인이 발송한 초대만 취소할 수 있습니다.");
+            throw new StudyAccessDeniedException("초대를 발송한 방장만 취소할 수 있습니다.");
         }
         if (!member.isInvited()) {
             throw new DomainRuleViolationException("이미 처리된 초대입니다.");

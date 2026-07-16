@@ -87,8 +87,8 @@ public class RoomQueryService implements RoomQueryUseCase {
                     int memberCount = groupRoomMemberRepository.findAllByGroupRoomIdAndJoined(room.getId()).size();
 
                     return new GroupRoomListResponse.RoomItem(
-                            room.getId(), room.getHostUserId(), host.getNickname(),
-                            room.getTitle(), memberCount, room.getStatus().name(),
+                            room.getId(), room.getHostUserId(),room.getTitle(),
+                            host.getNickname(), memberCount, room.getStatus().name(),
                             membership.getTimerStatus() == null ? null : membership.getTimerStatus().name()
                     );
                 })

@@ -66,8 +66,8 @@ public class RoomCommandService implements RoomCommandUseCase {
                 savedRoom.getId(), userId);
 
         return new RoomCreateResult(
-                savedRoom.getId(), savedRoom.getHostUserId(), host.getNickname(),
-                savedRoom.getTitle(), savedRoom.getStatus().name(), savedRoom.getMaxMember()
+                savedRoom.getId(), savedRoom.getHostUserId(), savedRoom.getTitle(),
+                host.getNickname(), savedRoom.getStatus().name(), savedRoom.getMaxMember()
         );
     }
 

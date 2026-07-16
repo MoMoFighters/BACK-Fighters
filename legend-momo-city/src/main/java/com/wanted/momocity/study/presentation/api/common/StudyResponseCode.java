@@ -24,6 +24,7 @@ public class StudyResponseCode {
     public static final String INVITATION_ACCEPTED    = "STUDY-INVITATION-ACCEPTED";
     public static final String INVITATION_REJECTED    = "STUDY-INVITATION-REJECTED";
     public static final String INVITATION_LIST_FETCHED = "STUDY-INVITATION-LIST-FETCHED";
+    public static final String INVITATION_SENT_LIST_FETCHED = "STUDY-INVITATION_SENT_LIST_FETCHED";
 
     // ===== member : timer =====
     public static final String TIMER_STARTED  = "STUDY-TIMER-STARTED";  // action=STARTED/RESUMED 로 세부 구분
