@@ -41,7 +41,6 @@ INSERT INTO `order_history` (`id`, `amount`, `created_at`, `item_id`, `reason`, 
 --  payment
 -- =====================================================================
 INSERT INTO `payment` (`id`, `user_id`, `payment_id`, `original_payment_id`, `plan`, `price`, `status`, `created_at`, `updated_at`) VALUES
-INSERT INTO `payment` (`id`, `user_id`, `payment_id`, `original_payment_id`, `plan`, `price`, `status`, `created_at`, `updated_at`) VALUES
 
 -- 김민수 (12) - PLUS 결제 시도했다가 실패
     (1,  12, 'pay-12-001', NULL, 'PLUS', 29900, 'FAILED',  NOW() - INTERVAL 100 DAY, NOW() - INTERVAL 100 DAY),
