@@ -16,6 +16,7 @@ public class StudyResponseCode {
     public static final String ROOM_CREATED       = "STUDY-ROOM-CREATED";
     public static final String ROOM_FETCHED       = "STUDY-ROOM-FETCHED";
     public static final String ROOM_LIST_FETCHED  = "STUDY-ROOM-LIST-FETCHED";
+    public static final String ROOM_UPDATED       = "STUDY-ROOM-UPDATED";
 
     // ===== member : invitation =====
     public static final String INVITATION_SENT        = "STUDY-INVITATION-SENT";

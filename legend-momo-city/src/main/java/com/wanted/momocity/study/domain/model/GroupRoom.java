@@ -22,6 +22,7 @@ public class GroupRoom {
 
     private Long id;
     private Long hostUserId;
+    private String title;
     private GroupRoomStatus status;
     private int maxMember;
     private LocalDateTime deletedAt;
@@ -29,9 +30,10 @@ public class GroupRoom {
     private LocalDateTime updatedAt;
 
     // 신규 생성용
-    public static GroupRoom create(Long hostUserId) {
+    public static GroupRoom create(Long hostUserId, String title) {
         GroupRoom room = new GroupRoom();
         room.hostUserId = hostUserId;
+        room.title = title;
         room.status = GroupRoomStatus.ACTIVE;
         room.maxMember = MAX_MEMBER;
         return room;
@@ -39,13 +41,14 @@ public class GroupRoom {
 
     // DB 복원용
     public static GroupRoom reconstitute(
-            Long id, Long hostUserId, GroupRoomStatus status,
+            Long id, Long hostUserId, String title, GroupRoomStatus status,
             int maxMember, LocalDateTime deletedAt,
             LocalDateTime createdAt, LocalDateTime updatedAt
     ) {
         GroupRoom room = new GroupRoom();
         room.id = id;
         room.hostUserId = hostUserId;
+        room.title = title;
         room.status = status;
         room.maxMember = maxMember;
         room.deletedAt = deletedAt;
@@ -57,6 +60,11 @@ public class GroupRoom {
     // 방장 위임 (방장이 나갔을 때 다음 입장자에게)
     public void changeHost(Long newHostUserId) {
         this.hostUserId = newHostUserId;
+    }
+
+    // 방 제목 수정 (방장만 가능 - 권한 검증은 Service 담당)
+    public void updateTitle(String newTitle) {
+        this.title = newTitle;
     }
 
     // 방 종료 (소프트딜리트, 인원 0명이 되었을 때)
@@ -75,6 +83,7 @@ public class GroupRoom {
 
     public Long getId() { return id; }
     public Long getHostUserId() { return hostUserId; }
+    public String getTitle() { return title; }
     public GroupRoomStatus getStatus() { return status; }
     public int getMaxMember() { return maxMember; }
     public LocalDateTime getDeletedAt() { return deletedAt; }

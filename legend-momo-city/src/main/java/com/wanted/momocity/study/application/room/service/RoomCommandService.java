@@ -4,7 +4,9 @@ import com.wanted.momocity.auth.domain.model.User;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.study.application.common.port.StudyUserInfoPort;
 import com.wanted.momocity.study.application.room.result.RoomCreateResult;
+import com.wanted.momocity.study.application.room.result.RoomUpdateResult;
 import com.wanted.momocity.study.application.room.usecase.RoomCommandUseCase;
+import com.wanted.momocity.study.domain.exception.StudyAccessDeniedException;
 import com.wanted.momocity.study.domain.exception.StudyNotFoundException;
 import com.wanted.momocity.study.domain.model.GroupRoom;
 import com.wanted.momocity.study.domain.model.GroupRoomMember;
@@ -43,10 +45,14 @@ public class RoomCommandService implements RoomCommandUseCase {
     private final StudyUserInfoPort studyUserInfoPort;
 
     @Override
-    public RoomCreateResult createRoom(Long userId) {
+    public RoomCreateResult createRoom(Long userId, String title) {
 
-        // 방 생성 - 유니크한 초대코드가 나올 때까지 재시도
-        GroupRoom room = GroupRoom.create(userId);
+        // 화면 표시용 닉네임 조회를 먼저 수행 (코드리뷰 반영 - 방/멤버 저장 전에 유저 존재 확인)
+        User host = studyUserInfoPort.findById(userId)
+                .orElseThrow(() -> new StudyNotFoundException("사용자를 찾을 수 없습니다."));
+
+        // 방 생성
+        GroupRoom room = GroupRoom.create(userId, title);
         GroupRoom savedRoom = groupRoomRepository.save(room);
 
         // 방장을 JOINED 상태로 즉시 참가시킴 (초대 절차 없이 바로 확정)
@@ -56,17 +62,29 @@ public class RoomCommandService implements RoomCommandUseCase {
         // Redis 인원 카운트 초기화 (방장 1명 포함)
         groupRoomMemberCountAdapter.initialize(savedRoom.getId(), 1);
 
-        // 화면 표시용 닉네임 조회 (본인 정보라 실패할 일이 거의 없지만, 방어적으로 예외 처리)
-        User host = studyUserInfoPort.findById(userId)
-                .orElseThrow(() -> new StudyNotFoundException("사용자를 찾을 수 없습니다."));
-
         log.info("[Study] 그룹방 생성 완료 | roomId={}, hostUserId={}",
                 savedRoom.getId(), userId);
 
         return new RoomCreateResult(
                 savedRoom.getId(), savedRoom.getHostUserId(), host.getNickname(),
-                savedRoom.getStatus().name(), savedRoom.getMaxMember()
+                savedRoom.getTitle(), savedRoom.getStatus().name(), savedRoom.getMaxMember()
         );
     }
 
+    // 방 제목 수정 (방장만 가능)
+    @Override
+    public RoomUpdateResult updateTitle(Long userId, Long roomId, String newTitle) {
+        GroupRoom room = groupRoomRepository.findByIdAndActive(roomId)
+                .orElseThrow(() -> new StudyNotFoundException("그룹방을 찾을 수 없습니다."));
+
+        if (!room.isHost(userId)) {
+            throw new StudyAccessDeniedException("방장만 방 제목을 수정할 수 있습니다.");
+        }
+
+        room.updateTitle(newTitle);
+        GroupRoom saved = groupRoomRepository.save(room);
+
+        log.info("[Study] 그룹방 제목 수정 완료 | roomId={}, newTitle={}", roomId, newTitle);
+        return new RoomUpdateResult(saved.getId(), saved.getTitle());
+    }
 }

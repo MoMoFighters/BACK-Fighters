@@ -15,6 +15,7 @@ public record GroupRoomDetailResponse(
         Long roomId,
         Long hostUserId,
         String hostNickname,
+        String title,
         String status,
         int maxMember,
         List<MemberItem> members

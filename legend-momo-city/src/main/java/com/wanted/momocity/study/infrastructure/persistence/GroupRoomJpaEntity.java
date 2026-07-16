@@ -36,6 +36,9 @@ public class GroupRoomJpaEntity extends BaseTimeEntity {
     @Column(name = "host_user_id", nullable = false)
     private Long hostUserId;
 
+    @Column(name = "title", nullable = false, length = 50)
+    private String title;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private GroupRoom.GroupRoomStatus status;
@@ -51,6 +54,7 @@ public class GroupRoomJpaEntity extends BaseTimeEntity {
         GroupRoomJpaEntity entity = new GroupRoomJpaEntity();
         entity.id = domain.getId();
         entity.hostUserId = domain.getHostUserId();
+        entity.title = domain.getTitle();
         entity.status = domain.getStatus();
         entity.maxMember = (byte)domain.getMaxMember();
         entity.deletedAt = domain.getDeletedAt();
@@ -60,7 +64,7 @@ public class GroupRoomJpaEntity extends BaseTimeEntity {
     // JpaEntity -> Domain 변환 (조회용)
     public GroupRoom toDomain() {
         return GroupRoom.reconstitute(
-                id, hostUserId, status, maxMember, deletedAt,
+                id, hostUserId, title, status, maxMember, deletedAt,
                 getCreatedAt(), getUpdatedAt()
         );
     }

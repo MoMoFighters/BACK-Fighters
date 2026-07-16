@@ -19,6 +19,7 @@ public record InvitationListResponse(
     public record InvitationItem(
             Long invitationId,
             Long roomId,
+            String title,
             Long hostUserId,
             String hostNickname,
             LocalDateTime invitedAt

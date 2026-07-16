@@ -44,6 +44,7 @@ public class MemberQueryService implements MemberQueryUseCase {
                     return new InvitationListResponse.InvitationItem(
                             member.getId(),
                             member.getGroupRoomId(),
+                            room.getTitle(),
                             room.getHostUserId(),
                             host.getNickname(),
                             member.getInvitedAt()
