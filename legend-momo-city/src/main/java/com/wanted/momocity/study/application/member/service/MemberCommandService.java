@@ -230,6 +230,8 @@ public class MemberCommandService implements MemberCommandUseCase {
             groupRoomRepository.save(room);
             // 방이 완전히 종료됐으므로 Redis 카운트 키 자체를 삭제 (decrement로 0 남기지 않고 clear)
             groupRoomMemberCountAdapter.clear(roomId);
+            // 마지막 사람이 나간 경우 이벤트 발행
+            eventPublisher.publishEvent(new MemberLeftEvent(roomId, userId));
             eventPublisher.publishEvent(new RoomEndedEvent(roomId));
             log.info("[Study] 마지막 인원 퇴장으로 방 종료 | roomId={}", roomId);
             return LeaveResult.of(roomId, false, null, true);
