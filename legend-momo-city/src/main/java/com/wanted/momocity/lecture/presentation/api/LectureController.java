@@ -36,6 +36,7 @@ import com.wanted.momocity.lecture.presentation.api.request.LectureRequest.Creat
 import com.wanted.momocity.lecture.presentation.api.response.AdminLectureResponse.AdminChangeLectureStatusResponse;
 import com.wanted.momocity.lecture.presentation.api.response.AdminLectureResponse.AdminLectureDetailResponse;
 import com.wanted.momocity.lecture.presentation.api.response.AdminLectureResponse.AdminLecturePageResponse;
+import com.wanted.momocity.lecture.presentation.api.response.LectureResponse;
 import com.wanted.momocity.lecture.presentation.api.response.LectureResponse.DeleteLectureResponse;
 import com.wanted.momocity.lecture.presentation.api.response.LectureResponse.ChangeLectureStatusResponse;
 import com.wanted.momocity.lecture.presentation.api.response.LectureResponse.CreateChapterResponse;
@@ -375,6 +376,32 @@ public class LectureController {
                 ApiResponseCode.SUCCESS,
                 "챕터 동영상이 삭제되었습니다",
                 null
+        ));
+    }
+
+    // 온보딩 강의 통계 조회 API 정보를 표시합니다.
+    @Operation(
+            summary = "온보딩 강의 통계 조회",
+            description = "토큰 없이 ACTIVE 강의 수와 ACTIVE 강의의 수강평 평균을 조회합니다."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "200",
+                    description = "온보딩 강의 통계 조회 성공"
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "500",
+                    description = "서버 내부 오류"
+            )
+    })
+    @GetMapping("/onboarding")
+    public ResponseEntity<ApiResponse<LectureResponse.OnboardingLectureStatsResponse>> getOnboardingLectureStats() {
+        LectureResponse.OnboardingLectureStatsResponse response = lectureQueryUseCase.getOnboardingLectureStats();
+
+        return ResponseEntity.ok(ApiResponse.success(
+                ApiResponseCode.SUCCESS,
+                "온보딩 강의 통계 조회에 성공했습니다.",
+                response
         ));
     }
 

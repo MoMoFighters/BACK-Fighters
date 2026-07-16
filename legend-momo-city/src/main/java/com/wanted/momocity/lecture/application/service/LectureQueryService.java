@@ -18,6 +18,7 @@ import com.wanted.momocity.lecture.domain.repository.LectureRepository;
 import com.wanted.momocity.lecture.presentation.api.response.AdminLectureResponse.AdminLectureDetailResponse;
 import com.wanted.momocity.lecture.presentation.api.response.AdminLectureResponse.AdminLectureListItemResponse;
 import com.wanted.momocity.lecture.presentation.api.response.AdminLectureResponse.AdminLecturePageResponse;
+import com.wanted.momocity.lecture.presentation.api.response.LectureResponse.OnboardingLectureStatsResponse;
 import com.wanted.momocity.lecture.presentation.api.response.StudentLectureResponse.StudentLectureDetailResponse;
 import com.wanted.momocity.lecture.presentation.api.response.StudentLectureResponse.StudentLectureListItemResponse;
 import com.wanted.momocity.lecture.presentation.api.response.StudentLectureResponse.StudentLecturePageResponse;
@@ -73,6 +74,31 @@ public class LectureQueryService implements
     // 학생 상세 조회에서 챕터별 진척도 조회
     private final LectureChapterProgressPort lectureChapterProgressPort;
     private final LectureS3UrlResolver lectureS3UrlResolver;
+
+    // 비로그인 화면 (온보딩)에 필요한 강의 통계 조회
+    @Override
+    public OnboardingLectureStatsResponse getOnboardingLectureStats() {
+        // 사용자에게 공개된 ACTIVE 상태의 전체 강의 수를 조회
+        long activeLectureCount = lectureRepository.countByStatus(LectureStatus.ACTIVE);
+
+        // ACTIVE 강의 수를 100 단위로 내림 처리
+        long roundedLectureCount = (activeLectureCount / 100) * 100;
+
+        // ACTIVE 상태인 강의의 ID 목록만 조회
+        List<Long> activeLectureIds = lectureRepository.findIdsByStatus(LectureStatus.ACTIVE);
+
+        // ACTIVE 강의에 작성된 ACTIVE 수강평의 전체 평균 별점 조회
+        double averageRating =
+                lectureReviewQueryPort.getAverageRatingByLectureIds(activeLectureIds);
+
+        // 평균 별점을 소수좀 첫째 자리까지 반올림
+        double roundedAverageRating = Math.round(averageRating * 10.0) / 10.0;
+
+        return new OnboardingLectureStatsResponse(
+                roundedLectureCount,
+                roundedAverageRating
+        );
+    }
 
     // 학생/비로그인 기준 강의 목록 조회.
     @Override

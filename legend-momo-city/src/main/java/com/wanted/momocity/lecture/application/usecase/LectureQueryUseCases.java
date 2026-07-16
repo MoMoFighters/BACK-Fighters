@@ -8,6 +8,7 @@ import com.wanted.momocity.lecture.application.query.LectureQuery.GetTeacherLect
 import com.wanted.momocity.lecture.application.query.LectureQuery.GetStudentLectureDetailQuery;
 import com.wanted.momocity.lecture.presentation.api.response.AdminLectureResponse.AdminLectureDetailResponse;
 import com.wanted.momocity.lecture.presentation.api.response.AdminLectureResponse.AdminLecturePageResponse;
+import com.wanted.momocity.lecture.presentation.api.response.LectureResponse.OnboardingLectureStatsResponse;
 import com.wanted.momocity.lecture.presentation.api.response.StudentLectureResponse.StudentLecturePageResponse;
 import com.wanted.momocity.lecture.presentation.api.response.StudentLectureResponse.StudentLectureDetailResponse;
 import com.wanted.momocity.lecture.presentation.api.response.TeacherLectureResponse.TeacherLecturePageResponse;
@@ -19,6 +20,9 @@ public final class LectureQueryUseCases {
     private LectureQueryUseCases() {}
 
     public interface LectureQueryUseCase {
+
+        // 비로그인 온보딩 화면에 표시할 강의 수와 평균 평점을 조회
+        OnboardingLectureStatsResponse getOnboardingLectureStats();
 
         // 학생용 강의 목록 조회
         StudentLecturePageResponse getLectures(GetLecturesQuery query);
