@@ -1,5 +1,6 @@
 package com.wanted.momocity.global.infrastructure.config;
 
+import com.wanted.momocity.chatbot.infrastructure.config.PolicySearchProperties;
 import com.wanted.momocity.payment.infrastructure.portone.PortOneProperties;
 import io.netty.channel.ChannelOption;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -13,7 +14,13 @@ import reactor.netty.http.client.HttpClient;
 import java.time.Duration;
 
 @Configuration
-@EnableConfigurationProperties(PortOneProperties.class)
+@EnableConfigurationProperties(
+        {PortOneProperties.class, PolicySearchProperties.class})
+
+/* comment.
+    momo-ai 서비스 를 보낼 전용 WebClient 빈을 추가한다.
+ */
+
 public class WebClientConfig {
 
     @Bean
@@ -46,6 +53,18 @@ public class WebClientConfig {
                 // 이 WebClient로 나가는 모든 요청에 자동으로 붙는 인증 헤더
                 // PortOne API 인증 방식이 "Authorization: PortOne {API_SECRET}" 형태인 걸로 보임
                 .defaultHeader(HttpHeaders.AUTHORIZATION, "PortOne " + props.getApiSecret())
+                .build();
+    }
+    // momo-ai(Chroma+Gemini RAG) 서비스 전용 WebClient - PolicySearchProperties 빈 주입
+    @Bean
+    public WebClient policySearchWebClient(PolicySearchProperties props) {
+        HttpClient httpClient = HttpClient.create()
+                .responseTimeout(Duration.ofSeconds(5))
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 3000);
+
+        return WebClient.builder()
+                .baseUrl(props.getBaseUrl())
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
     }
 }
