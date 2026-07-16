@@ -10,7 +10,6 @@ public record RoomCreateResult(
         Long roomId,
         Long hostUserId,
         String hostNickname,
-        String inviteCode,
         String status,
         int maxMember
 ) {

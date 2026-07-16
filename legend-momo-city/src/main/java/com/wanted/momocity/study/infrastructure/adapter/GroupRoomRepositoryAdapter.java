@@ -35,13 +35,6 @@ public class GroupRoomRepositoryAdapter implements GroupRoomRepository {
                 .map(GroupRoomJpaEntity::toDomain);
     }
 
-    // 초대코드 중복 확인용 조회
-    @Override
-    public Optional<GroupRoom> findByInviteCode(String inviteCode) {
-        return groupRoomJpaRepository.findByInviteCode(inviteCode)
-                .map(GroupRoomJpaEntity::toDomain);
-    }
-
     // 특정 유저가 host인 ACTIVE 방 목록 조회
     @Override
     public List<GroupRoom> findAllByHostUserIdAndActive(Long hostUserId) {

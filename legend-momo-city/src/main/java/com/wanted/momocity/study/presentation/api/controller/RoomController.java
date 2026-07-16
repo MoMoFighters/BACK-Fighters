@@ -45,7 +45,7 @@ public class RoomController {
                 "그룹방을 생성했습니다.",
                 new GroupRoomResponse(
                         result.roomId(), result.hostUserId(), result.hostNickname(),
-                        result.inviteCode(), result.status(), result.maxMember()
+                        result.status(), result.maxMember()
                 )
         ));
     }
