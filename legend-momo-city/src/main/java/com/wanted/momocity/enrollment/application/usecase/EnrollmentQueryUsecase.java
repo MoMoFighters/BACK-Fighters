@@ -13,12 +13,21 @@ public interface EnrollmentQueryUsecase {
     List<RenderingBuildingsView> userBuildingInfo(Long userId);
 
     // 친구 마을 건물 정보 조회하는 메서드
-    List<RenderingBuildingsView> friendBuildingInfo(Long loginUserId, Long targetUserId);
+    FriendBuildingsView friendBuildingInfo(
+            Long loginUserId,
+            Long targetUserId
+    );
 
     // 학습 진척도 조회 기능입니다.
     EnrollmentProgressResponse getProgress(
             EnrollmentQuery.GetEnrollmentProgressQuery query
     );
+
+    // 친구 도시 주인의 닉네임과 건물 목록을 함께 전달하는 응답 객체
+    record FriendBuildingsView(
+            String nickname,
+            List<RenderingBuildingsView> buildings
+    ) {}
 
     record RenderingBuildingsView(
     Category category,

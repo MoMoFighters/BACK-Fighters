@@ -4,7 +4,6 @@ import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.enrollment.application.usecase.EnrollmentQueryUsecase;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
-import com.wanted.momocity.user.presentation.api.response.UserResponseMessage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -57,7 +56,7 @@ public class BuildingController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
     })
-    public ResponseEntity<ApiResponse<List<EnrollmentQueryUsecase.RenderingBuildingsView>>> getFriendBuildings(
+    public ResponseEntity<ApiResponse<EnrollmentQueryUsecase.FriendBuildingsView>> getFriendBuildings(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long userId
     ) {
@@ -65,7 +64,7 @@ public class BuildingController {
         Long loginUserId = userDetails.getUserId();
 
         // 친구 건물 목록 조회
-        List<EnrollmentQueryUsecase.RenderingBuildingsView> buildings =
+        EnrollmentQueryUsecase.FriendBuildingsView friendBuildings =
                 enrollmentQueryUsecase.friendBuildingInfo(
                         loginUserId,
                         userId
@@ -73,8 +72,8 @@ public class BuildingController {
 
         return ResponseEntity.ok(ApiResponse.success(
                 ApiResponseCode.SUCCESS,
-                "사용자 빌딩 정보가 조회되었습니다.",
-                buildings
+                "친구 도시 정보가 조회되었습니다.",
+                friendBuildings
         ));
     }
 }
