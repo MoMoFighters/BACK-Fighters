@@ -7,8 +7,9 @@ import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
+import com.wanted.momocity.lecture.domain.event.ChapterDeletedEvent;
 
-// 챕터 수정 후 Viewing Redis 캐시를 삭제하는 이벤트 리스너
+// 챕터 수정, 삭제 Viewing Redis 캐시를 삭제하는 이벤트 리스너
 @Slf4j
 @Component
 public class ChapterCacheInvalidationEventHandler {
@@ -34,6 +35,27 @@ public class ChapterCacheInvalidationEventHandler {
         // 캐시 삭제 이벤트가 실행됐는지 확인하기 위한 로그
         log.info(
                 "[Viewing] 챕터 수정 캐시 삭제 - lectureId={}, chapterId={}",
+                event.lectureId(),
+                event.chapterId()
+        );
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @Caching(evict = {
+            @CacheEvict(
+                    value = "chapter",
+                    key = "#event.chapterId()",
+                    cacheManager = "redisCacheManager"
+            ),
+            @CacheEvict(
+                    value = "chapters",
+                    key = "#event.lectureId()",
+                    cacheManager = "redisCacheManager"
+            )
+    })
+    public void handleChapterDeleted(ChapterDeletedEvent event) {
+        log.info(
+                "[Viewing] 챕터 삭제 캐시 제거 - lectureId={}, chapterId={}",
                 event.lectureId(),
                 event.chapterId()
         );

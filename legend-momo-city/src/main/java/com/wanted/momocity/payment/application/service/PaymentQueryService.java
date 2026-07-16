@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -25,8 +26,8 @@ public class PaymentQueryService implements PaymentQueryUseCase {
 
     // 월별 매출 조회
     @Override
-    public List<MonthlySalesResult> getMonthlySales(int year) {
-        return paymentRepository.getMonthlySales(year);
+    public List<MonthlySalesResult> getMonthlySales() {
+        return paymentRepository.getMonthlySales();
     }
 
     // 개인 결제 내역 조회
@@ -47,5 +48,11 @@ public class PaymentQueryService implements PaymentQueryUseCase {
         int totalPages = (int) Math.ceil((double) totalElements / size);
 
         return new AdminPaymentListResult(payments, page, size, totalElements, totalPages);
+    }
+
+    // 월별 + 플랜별 분포
+    @Override
+    public List<MonthlyPlanDistributionResult> getMonthlyPlanDistribution() {
+        return paymentRepository.getMonthlyPlanDistribution();
     }
 }
