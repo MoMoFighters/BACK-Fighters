@@ -1,4 +1,6 @@
-package com.wanted.momocity.study.presentation.api.response;
+package com.wanted.momocity.study.presentation.api.response.solo;
+
+import com.wanted.momocity.study.presentation.api.response.common.LapItem;
 
 import java.time.LocalDateTime;
 
@@ -17,6 +19,7 @@ public record SoloSessionStartResponse(
         String status,
         String action,
         LocalDateTime startTime,
-        int accumulatedSeconds
+        int accumulatedSeconds,
+        LapItem lap
 ) {
 }

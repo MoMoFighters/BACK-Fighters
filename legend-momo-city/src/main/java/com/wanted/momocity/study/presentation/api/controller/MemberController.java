@@ -10,7 +10,7 @@ import com.wanted.momocity.study.application.member.usecase.MemberCommandUseCase
 import com.wanted.momocity.study.application.member.usecase.MemberQueryUseCase;
 import com.wanted.momocity.study.presentation.api.common.StudyResponseCode;
 import com.wanted.momocity.study.presentation.api.request.InviteMemberRequest;
-import com.wanted.momocity.study.presentation.api.response.*;
+import com.wanted.momocity.study.presentation.api.response.member.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;

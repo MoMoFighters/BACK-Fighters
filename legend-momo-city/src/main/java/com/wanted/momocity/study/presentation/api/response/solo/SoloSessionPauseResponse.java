@@ -1,6 +1,4 @@
-package com.wanted.momocity.study.presentation.api.response;
-
-import java.time.LocalDateTime;
+package com.wanted.momocity.study.presentation.api.response.solo;
 
 /*
  * comment.
@@ -11,9 +9,12 @@ import java.time.LocalDateTime;
  *  accumulatedSeconds : pause 시점까지의 누적값
  * */
 
+import com.wanted.momocity.study.presentation.api.response.common.LapItem;
+
 public record SoloSessionPauseResponse(
         Long sessionId,
         String status,
-        int accumulatedSeconds
+        int accumulatedSeconds,
+        LapItem lap
 ) {
 }

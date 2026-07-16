@@ -44,7 +44,7 @@ public class GroupRoomJpaEntity extends BaseTimeEntity {
     private GroupRoom.GroupRoomStatus status;
 
     @Column(name = "max_member", nullable = false)
-    private int maxMember;
+    private byte maxMember;
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
@@ -56,7 +56,7 @@ public class GroupRoomJpaEntity extends BaseTimeEntity {
         entity.hostUserId = domain.getHostUserId();
         entity.inviteCode = domain.getInviteCode();
         entity.status = domain.getStatus();
-        entity.maxMember = domain.getMaxMember();
+        entity.maxMember = (byte)domain.getMaxMember();
         entity.deletedAt = domain.getDeletedAt();
         return entity;
     }

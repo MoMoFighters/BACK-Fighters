@@ -1,7 +1,7 @@
 package com.wanted.momocity.study.application.room.usecase;
 
-import com.wanted.momocity.study.presentation.api.response.GroupRoomDetailResponse;
-import com.wanted.momocity.study.presentation.api.response.GroupRoomListResponse;
+import com.wanted.momocity.study.presentation.api.response.room.GroupRoomDetailResponse;
+import com.wanted.momocity.study.presentation.api.response.room.GroupRoomListResponse;
 
 /*
  * comment.

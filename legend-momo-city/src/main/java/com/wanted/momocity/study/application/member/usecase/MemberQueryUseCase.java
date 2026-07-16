@@ -1,6 +1,6 @@
 package com.wanted.momocity.study.application.member.usecase;
 
-import com.wanted.momocity.study.presentation.api.response.InvitationListResponse;
+import com.wanted.momocity.study.presentation.api.response.member.InvitationListResponse;
 
 /*
  * comment.

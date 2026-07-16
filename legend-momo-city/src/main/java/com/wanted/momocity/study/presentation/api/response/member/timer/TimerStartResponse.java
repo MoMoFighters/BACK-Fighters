@@ -1,4 +1,4 @@
-package com.wanted.momocity.study.presentation.api.response;
+package com.wanted.momocity.study.presentation.api.response.member.timer;
 
 /*
  * comment.
@@ -11,6 +11,8 @@ package com.wanted.momocity.study.presentation.api.response;
  *     다르게 보여줄 수 있도록 이 필드로 구분해서 내려줌 (application.member.result.TimerActionResult 참고)
  * */
 
+import com.wanted.momocity.study.presentation.api.response.common.LapItem;
+
 import java.time.LocalDateTime;
 
 public record TimerStartResponse(
@@ -19,6 +21,7 @@ public record TimerStartResponse(
         String action,
         String timerStatus,
         LocalDateTime startedAt,
-        int accumulatedSeconds
+        int accumulatedSeconds,
+        LapItem lap
 ) {
 }

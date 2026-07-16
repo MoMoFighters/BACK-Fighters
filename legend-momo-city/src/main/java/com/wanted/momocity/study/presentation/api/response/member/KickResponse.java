@@ -1,4 +1,4 @@
-package com.wanted.momocity.study.presentation.api.response;
+package com.wanted.momocity.study.presentation.api.response.member;
 
 /*
  * comment.

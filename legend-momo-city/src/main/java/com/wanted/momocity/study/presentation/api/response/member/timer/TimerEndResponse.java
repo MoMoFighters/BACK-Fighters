@@ -1,4 +1,4 @@
-package com.wanted.momocity.study.presentation.api.response;
+package com.wanted.momocity.study.presentation.api.response.member.timer;
 
 /*
  * comment.
@@ -7,9 +7,12 @@ package com.wanted.momocity.study.presentation.api.response;
  *      POST /api/v3/study/rooms/{roomId}/members/timer/end
  * */
 
+import com.wanted.momocity.study.presentation.api.response.common.LapItem;
+
 public record TimerEndResponse(
         Long roomId,
         Long memberId,
-        int totalSeconds
+        int totalSeconds,
+        LapItem lap
 ) {
 }

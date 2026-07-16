@@ -1,6 +1,4 @@
-package com.wanted.momocity.study.presentation.api.response;
-
-import java.time.LocalDateTime;
+package com.wanted.momocity.study.presentation.api.response.member;
 
 /*
  * comment.

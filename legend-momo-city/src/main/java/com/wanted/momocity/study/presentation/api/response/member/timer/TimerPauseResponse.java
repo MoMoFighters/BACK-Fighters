@@ -1,4 +1,4 @@
-package com.wanted.momocity.study.presentation.api.response;
+package com.wanted.momocity.study.presentation.api.response.member.timer;
 
 /*
  * comment.
@@ -10,10 +10,13 @@ package com.wanted.momocity.study.presentation.api.response;
  *  accumulatedSeconds :  pause/end 호출 시에만 실제 누적값
  * */
 
+import com.wanted.momocity.study.presentation.api.response.common.LapItem;
+
 public record TimerPauseResponse(
         Long roomId,
         Long memberId,
         String timerStatus,
-        int accumulatedSeconds
+        int accumulatedSeconds,
+        LapItem lap
 ) {
 }
