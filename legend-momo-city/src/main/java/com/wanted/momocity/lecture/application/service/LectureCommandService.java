@@ -14,9 +14,7 @@ import com.wanted.momocity.lecture.application.port.TeacherAccountPort;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCases.AdminLectureCommandUseCase;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCases.ChapterCommandUseCase;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCases.LectureCommandUseCase;
-import com.wanted.momocity.lecture.domain.event.ChapterUpdatedEvent;
-import com.wanted.momocity.lecture.domain.event.LectureCreatedEvent;
-import com.wanted.momocity.lecture.domain.event.LectureStatusChangedEvent;
+import com.wanted.momocity.lecture.domain.event.*;
 import com.wanted.momocity.lecture.domain.exception.ChapterLimitExceededException;
 import com.wanted.momocity.lecture.domain.exception.ChapterNotFoundException;
 import com.wanted.momocity.lecture.domain.exception.ChapterVideoAlreadyExistsException;
@@ -28,7 +26,6 @@ import com.wanted.momocity.lecture.domain.model.LectureStatus;
 import com.wanted.momocity.lecture.domain.repository.ChapterRepository;
 import com.wanted.momocity.lecture.domain.repository.LectureRepository;
 import com.wanted.momocity.lecture.presentation.api.response.AdminLectureResponse.AdminChangeLectureStatusResponse;
-import com.wanted.momocity.viewing.domain.model.Lecture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -214,6 +211,14 @@ public class LectureCommandService implements
 
         // 변경된 상태를 DB에 저장
         LectureAggregate savedLecture = lectureRepository.save(deletedLecture);
+
+        // 강의 삭제 사실을 후속 이벤트 리스너에 전달합니다.
+                eventPublisher.publishEvent(
+                        new LectureDeletedEvent(
+                                savedLecture.getId(),
+                                Instant.now()
+                        )
+                );
 
         long elapsedTime = System.currentTimeMillis() - startTime;
 
@@ -468,6 +473,15 @@ public class LectureCommandService implements
         // 검증이 다 끝난 경우 DB에서 실제 삭제 진행
         chapterRepository.deleteById(chapter.getId());
 
+        // 챕터 삭제 사실을 후속 이벤트 리스너에 전달합니다.
+        eventPublisher.publishEvent(
+                new ChapterDeletedEvent(
+                        chapter.getLectureId(),
+                        chapter.getId(),
+                        Instant.now()
+                )
+        );
+
         long elapsedTime = System.currentTimeMillis() - startTime;
 
         log.info("챕터 삭제 완료 - teacherId={}, lectureId={}, chapterId={}, elapsedTime={}",
@@ -512,6 +526,15 @@ public class LectureCommandService implements
          }
 
          chapterRepository.deleteById(chapter.getId());
+
+        // 챕터 삭제 사실을 후속 이벤트 리스너에 전달합니다.
+        eventPublisher.publishEvent(
+                new ChapterDeletedEvent(
+                        chapter.getLectureId(),
+                        chapter.getId(),
+                        Instant.now()
+                )
+        );
 
          long elapsedTime = System.currentTimeMillis() - startTime;
 
