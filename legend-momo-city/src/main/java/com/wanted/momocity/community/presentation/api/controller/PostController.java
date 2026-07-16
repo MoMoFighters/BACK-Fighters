@@ -119,9 +119,9 @@ public class PostController {
             @RequestParam(required = false) PostCategory category,
             @RequestParam(required = false) Long cursor,
             @RequestParam(defaultValue = "10") int size,
-            @AuthenticationPrincipal CustomUserDetails userDetails
+            @AuthenticationPrincipal (errorOnInvalidType = false) CustomUserDetails userDetails
     ) {
-        Long userId = userDetails.getUserId();
+        Long userId = userDetails != null ? userDetails.getUserId() : null;
 
         return ResponseEntity.ok(ApiResponse.success(
                 CommunityResponseCode.POST_LIST_FOUND,
@@ -142,9 +142,9 @@ public class PostController {
     public ResponseEntity<ApiResponse<PostDetailResponse>> getPost(
             @PathVariable Long postId,
             @RequestParam(required = false) PostCategory category,
-            @AuthenticationPrincipal CustomUserDetails userDetails
+            @AuthenticationPrincipal (errorOnInvalidType = false) CustomUserDetails userDetails
     ) {
-        Long userId = userDetails.getUserId();
+        Long userId = userDetails != null ? userDetails.getUserId() : null;
 
         return ResponseEntity.ok(ApiResponse.success(
                 CommunityResponseCode.POST_FOUND,
@@ -256,9 +256,9 @@ public class PostController {
             @PathVariable Long targetUserId,
             @RequestParam(required = false)  Long cursor,
             @RequestParam(defaultValue = "10")  int size,
-            @AuthenticationPrincipal CustomUserDetails userDetails
+            @AuthenticationPrincipal (errorOnInvalidType = false) CustomUserDetails userDetails
     ) {
-        Long userId = userDetails.getUserId();
+        Long userId = userDetails != null ? userDetails.getUserId() : null;
 
         // 본인 페이지 접근 방지
         if (targetUserId.equals(userId)) {
@@ -294,10 +294,10 @@ public class PostController {
     @GetMapping("/users/{targetUserId}/dashboard")
     public ResponseEntity<ApiResponse<DashboardResponse>> getUserDashboard(
             @PathVariable Long targetUserId,
-            @AuthenticationPrincipal CustomUserDetails userDetails
+            @AuthenticationPrincipal (errorOnInvalidType = false) CustomUserDetails userDetails
     ) {
 
-        Long userId = userDetails.getUserId();
+        Long userId = userDetails != null ? userDetails.getUserId() : null;
 
         // 본인 페이지 접근 방지
         if (targetUserId.equals(userId)) {
@@ -320,7 +320,7 @@ public class PostController {
             @RequestParam(required = false) PostCategory category,
             @RequestParam(required = false) Long cursor,
             @RequestParam(defaultValue = "10") int size,
-            @AuthenticationPrincipal CustomUserDetails userDetails
+            @AuthenticationPrincipal (errorOnInvalidType = false) CustomUserDetails userDetails
     ) {
         // 공백 검증
         if (keyword == null || keyword.isBlank()) {
@@ -345,7 +345,7 @@ public class PostController {
     @GetMapping("/{postId}/recommendations")
     public ResponseEntity<ApiResponse<PostRecommendationResponse>> getRecommendations(
             @PathVariable Long postId,
-            @AuthenticationPrincipal CustomUserDetails userDetails
+            @AuthenticationPrincipal (errorOnInvalidType = false) CustomUserDetails userDetails
     ) {
         return ResponseEntity.ok(ApiResponse.success(
                 CommunityResponseCode.POST_RECOMMENDATIONS_FOUND,
