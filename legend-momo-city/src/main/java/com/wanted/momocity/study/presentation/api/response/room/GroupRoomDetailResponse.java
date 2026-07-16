@@ -24,6 +24,7 @@ public record GroupRoomDetailResponse(
             Long userId,
             String nickname,
             String status,
-            String timerStatus
+            String timerStatus,
+            int totalSeconds
     ) {}
 }

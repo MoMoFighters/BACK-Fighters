@@ -20,6 +20,7 @@ public record GroupRoomListResponse(
             String title,
             String hostNickname,
             int memberCount,
-            String status
+            String status,
+            String myTimerStatus
     ) {}
 }
