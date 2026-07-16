@@ -30,6 +30,7 @@ public class StudyResponseCode {
     public static final String TIMER_PAUSED   = "STUDY-TIMER-PAUSED";
     public static final String TIMER_ENDED    = "STUDY-TIMER-ENDED";
     public static final String TIMER_LAPS_FETCHED = "STUDY-TIMER-LAPS-FETCHED";
+    public static final String TIMER_AVAILABILITY_FETCHED = "TIMER-AVAILABILITY-FETCHED";
 
     // ===== member : leave / kick =====
     public static final String MEMBER_LEFT    = "STUDY-MEMBER-LEFT";
