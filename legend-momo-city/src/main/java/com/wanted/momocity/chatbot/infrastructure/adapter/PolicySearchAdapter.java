@@ -5,6 +5,7 @@ import com.wanted.momocity.chatbot.domain.exception.PolicySearchException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.util.List;
@@ -38,6 +39,8 @@ public class PolicySearchAdapter implements PolicySearchPort {
         } catch (WebClientResponseException e) {
             throw new PolicySearchException(
                     "정책 검색 실패: " + e.getStatusCode() + " " + e.getResponseBodyAsString());
+        } catch (WebClientRequestException e) {
+            throw new PolicySearchException("momo-ai 서버 연결 실패: " + e.getMessage());
         }
 
         // 검색 결과가 없을 때의 예외처리
@@ -45,6 +48,7 @@ public class PolicySearchAdapter implements PolicySearchPort {
             throw new PolicySearchException("정책 검색 응답이 비어있습니다.");
         }
 
-        return (List<String>) response.get("results");
+        List<String> results = (List<String>) response.get("results");
+        return results != null ? results : List.of();
     }
 }
