@@ -110,8 +110,12 @@ public class PaymentCommandService implements PaymentCommandUseCase {
             LocalDateTime currentUntil = membership.membershipStart().plusDays(30);
 
             // BASIC이면 오늘부터 시작
-            // 유료 플랜이고 기간 남아있으면 기존 종료일부터 연장
-            LocalDateTime newMembershipStart = (membership.plan() != Plan.BASIC && currentUntil.isAfter(LocalDateTime.now()))
+            // Plus 쓰다 Plus 재결제 → 만료 시점부터 연장
+            // Plus 쓰다 Pro 결제 → 즉시 오늘부터 시작
+            boolean isSamePlanRenewal = membership.plan() == payment.getPlan();
+            boolean hasRemainingTime = currentUntil.isAfter(LocalDateTime.now());
+
+            LocalDateTime newMembershipStart = (isSamePlanRenewal && hasRemainingTime)
                     ? currentUntil
                     : LocalDateTime.now();
 
