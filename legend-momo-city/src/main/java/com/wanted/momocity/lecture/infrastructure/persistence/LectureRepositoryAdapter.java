@@ -197,6 +197,19 @@ public class LectureRepositoryAdapter implements LectureRepository {
         );
     }
 
+    // 강의 수 조회 기능
+    @Override
+    public long countByStatus(LectureStatus status) {
+        // Spring Data Repository를 통해 해당 상태의 강의 수를 반환
+        return repository.countByStatus(status);
+    }
+
+    // 강의 ID 목록 조회 기능
+    @Override
+    public List<Long> findIdsByStatus(LectureStatus status) {
+        return repository.findIdsByStatus(status);
+    }
+
     // keyword가 비어 있으면 검색 조건을 적용하지 않기 위해 null로 변환
     private String normalizeKeyword(String keyword) {
         if (keyword == null || keyword.isBlank()) {

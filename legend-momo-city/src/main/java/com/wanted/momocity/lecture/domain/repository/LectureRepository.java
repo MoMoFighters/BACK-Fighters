@@ -52,4 +52,10 @@ public interface LectureRepository {
             int page,
             int size
     );
+
+    // 전달받은 상태에 해당하는 전체 강의 수 조회
+    long countByStatus(LectureStatus status);
+
+    // 전달받은 상태에 해당하는 강의 ID 목록을 조회
+    List<Long> findIdsByStatus(LectureStatus status);
 }
