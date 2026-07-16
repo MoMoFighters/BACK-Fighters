@@ -61,7 +61,7 @@ public class LikeCommandService implements LikeCommandUseCase {
         if (!post.getUserId().equals(userId)) {
             String likerName = userInfoPort.findById(userId)
                     .orElseThrow(() -> new CommunityNotFoundException("사용자를 찾을 수 없습니다."))
-                    .getName();
+                    .getNickname();
             eventPublisher.publishEvent(
                     new PostLikedEvent(postId, post.getUserId(), userId, likerName));
         }

@@ -54,7 +54,7 @@ public class LikeQueryService implements LikeQueryUseCase {
                             .orElseThrow(() -> new CommunityNotFoundException("사용자를 찾을 수 없습니다."));
                     return new PostLikeListResponse.LikeUserItem(
                             user.getId(),
-                            user.getName(),
+                            user.getNickname(),
                             user.getProfileImageUrl(),
                             user.getRole().name()
                     );

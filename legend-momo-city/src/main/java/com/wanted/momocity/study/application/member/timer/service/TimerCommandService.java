@@ -56,6 +56,7 @@ public class TimerCommandService implements TimerCommandUseCase {
         }
         validateNoOtherActiveTimer(userId);
 
+        LocalDateTime now = LocalDateTime.now();
         member.startTimer(LocalDateTime.now());
         GroupRoomMember saved = groupRoomMemberRepository.save(member);
 
@@ -88,7 +89,7 @@ public class TimerCommandService implements TimerCommandUseCase {
         eventPublisher.publishEvent(new TimerStatusChangedEvent(roomId, userId, saved.getTimerStatus()));
 
         log.info("[Study] 그룹 타이머 일시정지 | roomId={}, userId={}", roomId, userId);
-        return TimerActionResult.ofPaused(saved, toLapItem(newLap, lapNumber));
+        return TimerActionResult.ofPaused(saved, toLapItem(closedLap, lapNumber));
     }
 
     /*
