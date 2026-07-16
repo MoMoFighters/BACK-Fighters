@@ -1,0 +1,113 @@
+package com.wanted.momocity.payment.application.service;
+
+import com.wanted.momocity.payment.application.port.GetUserMembershipPort;
+import com.wanted.momocity.payment.application.port.PaymentLockPort;
+import com.wanted.momocity.payment.application.port.PortOnePaymentPort;
+import com.wanted.momocity.payment.application.port.SetUserMembershipPort;
+import com.wanted.momocity.payment.application.supporter.PaymentStatusUpdater;
+import com.wanted.momocity.payment.domain.exception.PaymentAmountMismatchException;
+import com.wanted.momocity.payment.domain.exception.PaymentCancelFailedException;
+import com.wanted.momocity.payment.domain.exception.PaymentAlreadyInProgressException;
+import com.wanted.momocity.payment.domain.exception.PortOneApiException;
+import com.wanted.momocity.payment.domain.model.Payment;
+import com.wanted.momocity.payment.domain.model.PaymentVerifyResult;
+import com.wanted.momocity.payment.domain.model.PortOnePaymentDetail;
+import com.wanted.momocity.payment.domain.repository.PaymentRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+
+@Service
+@Slf4j
+@RequiredArgsConstructor
+@Transactional
+public class PaymentConfirmService {
+
+    private final PaymentRepository paymentRepository;
+    private final GetUserMembershipPort getUserMembershipPort;
+    private final SetUserMembershipPort setUserMembershipPort;
+    private final PortOnePaymentPort portOnePaymentPort;
+    private final PaymentLockPort paymentLockPort;
+    private final PaymentStatusUpdater paymentStatusUpdater;
+
+    @Transactional
+    public PaymentVerifyResult confirm(Payment payment) {
+        // /verify와 웹훅이 같은 결제 건을 거의 동시에 확정 처리하려 드는 걸 막기 위한 락.
+        // 이 락을 못 잡으면 "누군가 이미 처리 중"이라는 뜻이므로 여기서 바로 튕겨낸다.
+        if (!paymentLockPort.tryLock(payment.getUserId(), payment.getPlan())) {
+            throw new PaymentAlreadyInProgressException(
+                    "이미 처리 중인 결제 건입니다. paymentId=" + payment.getPaymentId());
+        }
+
+        PortOnePaymentDetail detail;
+        try {
+            detail = portOnePaymentPort.verifyPayment(payment.getPaymentId());
+        } catch (PortOneApiException e) {
+            log.error("[confirm] 포트원 API 호출 실패 paymentId={}", payment.getPaymentId(), e);
+            paymentLockPort.unlock(payment.getUserId(), payment.getPlan());
+            throw e;
+        }
+
+        boolean amountMatches = detail.isPaid() && payment.getPrice().equals(detail.amount());
+
+        if (amountMatches) {
+            return handleSuccess(payment);}
+
+        if (detail.isPaid()) {
+            return handleAmountMismatch(payment, detail);}
+
+        return handleNotPaid(payment);
+    }
+
+    private PaymentVerifyResult handleSuccess(Payment payment) {
+        Payment result = payment.markSuccess();
+
+        GetUserMembershipPort.UserMembership membership =
+                getUserMembershipPort.getUserMembership(payment.getUserId());
+        LocalDateTime currentUntil = membership.membershipStart().plusDays(30);
+
+        // 갱신 일정 분기
+        boolean isSamePlanRenewal = membership.plan() == payment.getPlan();
+        boolean hasRemainingTime = currentUntil.isAfter(LocalDateTime.now());
+
+        LocalDateTime newMembershipStart = (isSamePlanRenewal && hasRemainingTime)
+                ? currentUntil
+                : LocalDateTime.now();
+
+        // 사용자 멤버십 업데이트 
+        setUserMembershipPort.updateMembership(payment.getUserId(), payment.getPlan(), newMembershipStart);
+        LocalDateTime newMembershipUntil = newMembershipStart.plusDays(30);
+
+        paymentRepository.save(result);
+        paymentLockPort.unlock(payment.getUserId(), payment.getPlan());
+        return new PaymentVerifyResult(result.getPaymentId(), result.getStatus(), newMembershipUntil);
+    }
+
+    private PaymentVerifyResult handleAmountMismatch(Payment payment, PortOnePaymentDetail detail) {
+        try {
+            portOnePaymentPort.cancelPayment(payment.getPaymentId(), "결제 금액 불일치로 인한 자동 취소");
+            Payment failed = payment.markFailed();
+            paymentStatusUpdater.saveFailed(failed);
+            throw new PaymentAmountMismatchException(
+                    "결제 금액이 일치하지 않아 취소 처리되었습니다. 예상 결제 금액=" + payment.getPrice()
+                            + ", 실제 결제 금액=" + detail.amount()
+            );
+        } catch (PortOneApiException e) {
+            Payment cancelFailed = payment.markCancelFailed();
+            paymentStatusUpdater.saveCancelFailed(cancelFailed);
+            throw new PaymentCancelFailedException("취소 처리 실패 paymentId=" + payment.getPaymentId());
+        } finally {
+            paymentLockPort.unlock(payment.getUserId(), payment.getPlan());
+        }
+    }
+
+    private PaymentVerifyResult handleNotPaid(Payment payment) {
+        Payment failed = payment.markFailed();
+        paymentStatusUpdater.saveFailed(failed);
+        paymentLockPort.unlock(payment.getUserId(), payment.getPlan());
+        throw new PaymentAmountMismatchException("결제가 완료되지 않았습니다.");
+    }
+}

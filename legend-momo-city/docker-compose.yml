@@ -25,6 +25,7 @@ services:
       AWS_SECRET_KEY: ${AWS_SECRET_KEY}
       MESSAGE_ENCRYPTION_KEY: ${MESSAGE_ENCRYPTION_KEY} #<-얘가 추가됐습니다.
       PORTONE_API_SECRET : ${PORTONE_API_SECRET}
+      PORTONE_WEBHOOK_SECRET: ${PORTONE_WEBHOOK_SECRET}
     depends_on:
       mysql:
         condition: service_healthy
