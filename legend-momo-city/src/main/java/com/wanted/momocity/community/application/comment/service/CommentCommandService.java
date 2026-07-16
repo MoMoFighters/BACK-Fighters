@@ -58,7 +58,7 @@ public class CommentCommandService implements CommentCommandUseCase {
         // 본인 게시글 댓글 시 알림 제외
         if (!post.getUserId().equals(userId)) {
             eventPublisher.publishEvent(
-                    new CommentCreatedEvent(postId, post.getUserId(), userId, user.getName()));
+                    new CommentCreatedEvent(postId, post.getUserId(), userId, user.getNickname()));
         }
 
         log.info("[Community] 댓글 작성 완료 | userId={}, postId={}, commentId={}",
@@ -133,7 +133,7 @@ public class CommentCommandService implements CommentCommandUseCase {
                     post.getUserId(),
                     parentComment.getUserId(),
                     userId,
-                    user.getName()
+                    user.getNickname()
             ));
         }
 

@@ -1,5 +1,6 @@
 package com.wanted.momocity.study.application.member.timer.service;
 
+import com.wanted.momocity.study.application.common.service.StudyLapService;
 import com.wanted.momocity.study.application.member.timer.result.TimerActionResult;
 import com.wanted.momocity.study.application.member.timer.usecase.TimerCommandUseCase;
 import com.wanted.momocity.study.domain.event.StudySessionEndedEvent;
@@ -7,9 +8,11 @@ import com.wanted.momocity.study.domain.event.TimerStatusChangedEvent;
 import com.wanted.momocity.study.domain.exception.StudyAccessDeniedException;
 import com.wanted.momocity.study.domain.model.GroupRoomMember;
 import com.wanted.momocity.study.domain.model.SoloSession;
+import com.wanted.momocity.study.domain.model.StudyLap;
 import com.wanted.momocity.study.domain.repository.GroupRoomMemberRepository;
 import com.wanted.momocity.study.domain.repository.SoloSessionRepository;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
+import com.wanted.momocity.study.presentation.api.response.common.LapItem;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -32,6 +35,7 @@ public class TimerCommandService implements TimerCommandUseCase {
 
     private final GroupRoomMemberRepository groupRoomMemberRepository;
     private final SoloSessionRepository soloSessionRepository;
+    private final StudyLapService studyLapService;
     private final ApplicationEventPublisher eventPublisher;
 
     /*
@@ -52,13 +56,17 @@ public class TimerCommandService implements TimerCommandUseCase {
         }
         validateNoOtherActiveTimer(userId);
 
+        LocalDateTime now = LocalDateTime.now();
         member.startTimer(LocalDateTime.now());
         GroupRoomMember saved = groupRoomMemberRepository.save(member);
+
+        StudyLap newLap = studyLapService.startLap(userId, roomId, saved.getId(), now);
+        int lapNumber = (int) studyLapService.countLaps(roomId, saved.getId());
 
         eventPublisher.publishEvent(new TimerStatusChangedEvent(roomId, userId, saved.getTimerStatus()));
 
         log.info("[Study] 그룹 타이머 시작 | roomId={}, userId={}, resumed={}", roomId, userId, wasResumed);
-        return TimerActionResult.ofStarted(saved, wasResumed);
+        return TimerActionResult.ofStarted(saved, wasResumed, toLapItem(newLap, lapNumber));
     }
 
     // 타이머 일시정지 - 누적 시간 확정 후 상태 전환
@@ -74,10 +82,14 @@ public class TimerCommandService implements TimerCommandUseCase {
         member.pauseTimer();
         GroupRoomMember saved = groupRoomMemberRepository.save(member);
 
+        LocalDateTime now = LocalDateTime.now();
+        StudyLap closedLap = studyLapService.closeLap(roomId, saved.getId(), now);
+        int lapNumber = (int) studyLapService.countLaps(roomId, saved.getId());
+
         eventPublisher.publishEvent(new TimerStatusChangedEvent(roomId, userId, saved.getTimerStatus()));
 
         log.info("[Study] 그룹 타이머 일시정지 | roomId={}, userId={}", roomId, userId);
-        return TimerActionResult.ofPaused(saved);
+        return TimerActionResult.ofPaused(saved, toLapItem(closedLap, lapNumber));
     }
 
     /*
@@ -101,13 +113,19 @@ public class TimerCommandService implements TimerCommandUseCase {
         member.endTimer();
         GroupRoomMember saved = groupRoomMemberRepository.save(member);
 
+        LocalDateTime now = LocalDateTime.now();
+        // solo와 동일한 이유로 방어적 처리
+        // PAUSED 상태에서 end가 호출되면 이미 pause 시점에 랩이 마감되어 있어 closeLap()이 null을 반환 가능
+        StudyLap closedLap = studyLapService.closeLap(roomId, saved.getId(), now);
+        int lapNumber = (int) studyLapService.countLaps(roomId, saved.getId());
+
         eventPublisher.publishEvent(
                 new StudySessionEndedEvent(userId, LocalDateTime.now().toLocalDate(), saved.getTotalSeconds())
         );
         eventPublisher.publishEvent(new TimerStatusChangedEvent(roomId, userId, null));
 
         log.info("[Study] 그룹 타이머 종료 | roomId={}, userId={}", roomId, userId);
-        return TimerActionResult.ofEnded(saved);
+        return TimerActionResult.ofEnded(saved, closedLap == null ? null : toLapItem(closedLap, lapNumber));
     }
 
     // ===== 내부 헬퍼 (MemberCommandService와 동일한 로직, 의도적으로 중복 유지) =====
@@ -142,4 +160,10 @@ public class TimerCommandService implements TimerCommandUseCase {
         long elapsed = Duration.between(member.getLastResumedAt(), LocalDateTime.now()).getSeconds();
         member.accumulateSeconds((int) Math.max(elapsed, 0));
     }
+
+    // StudyLap(도메인) -> LapItem(Response) 변환 + 순번 매기기
+    private LapItem toLapItem(StudyLap lap, int lapNumber) {
+        return new LapItem(lapNumber, lap.getStartedAt(), lap.getEndedAt(), lap.getSeconds());
+    }
+
 }

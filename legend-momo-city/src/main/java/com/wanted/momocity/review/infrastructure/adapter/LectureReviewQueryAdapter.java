@@ -49,4 +49,15 @@ public class LectureReviewQueryAdapter implements LectureReviewQueryPort {
                         )
                 ));
     }
+
+    @Override
+    public double getAverageRatingByLectureIds(List<Long> lectureIds) {
+        // ACTIVE 강의가 하나도 없으면 잘못된 IN 쿼리를 실행하지 않고 0.0을 반환
+        if (lectureIds == null || lectureIds.isEmpty()) {
+            return 0.0;
+        }
+
+        // Review Repository에 강의 ID 목록을 전달하여 ACTIVE 수강평의 전체 평균 조회
+        return reviewJpaRepository.findAverageRatingByLectureIds(lectureIds);
+    }
 }

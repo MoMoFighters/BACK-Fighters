@@ -1,13 +1,13 @@
 package com.wanted.momocity.study.application.member.service;
 
 import com.wanted.momocity.auth.domain.model.User;
-import com.wanted.momocity.study.application.member.port.StudyUserInfoPort;
+import com.wanted.momocity.study.application.common.port.StudyUserInfoPort;
 import com.wanted.momocity.study.application.member.usecase.MemberQueryUseCase;
 import com.wanted.momocity.study.domain.exception.StudyNotFoundException;
 import com.wanted.momocity.study.domain.model.GroupRoom;
 import com.wanted.momocity.study.domain.repository.GroupRoomMemberRepository;
 import com.wanted.momocity.study.domain.repository.GroupRoomRepository;
-import com.wanted.momocity.study.presentation.api.response.InvitationListResponse;
+import com.wanted.momocity.study.presentation.api.response.member.InvitationListResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -45,7 +45,7 @@ public class MemberQueryService implements MemberQueryUseCase {
                             member.getId(),
                             member.getGroupRoomId(),
                             room.getHostUserId(),
-                            host.getName(),
+                            host.getNickname(),
                             member.getInvitedAt()
                     );
                 })

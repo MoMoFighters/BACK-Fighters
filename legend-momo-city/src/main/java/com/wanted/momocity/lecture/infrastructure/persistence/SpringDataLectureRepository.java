@@ -66,6 +66,18 @@ public interface SpringDataLectureRepository extends JpaRepository<LectureJpaEnt
      */
     long countByStatus(LectureStatus status);
 
+    // 전달받은 상태에 해당하는 강의의 ID만 조회하는 JPQL이다.
+    @Query("""
+            select l.id
+            from LectureJpaEntity l
+            where l.status = :status
+            """)
+    // 조회할 상태를 받아 해당 상태의 강의 ID 목록을 반환합니다.
+    List<Long> findIdsByStatus(
+            // JPQL의 :status에 메서드로 전달받은 강의 상태를 연결합니다.
+            @Param("status") LectureStatus status
+    );
+
     /* comment
      * 특정 날짜 이전에 생성된 특정 상태의 강의 개수를 조회한다.
      * 관리자 대시보드에서 이전 기간 대비 증감률을 계산할 때 사용한다.

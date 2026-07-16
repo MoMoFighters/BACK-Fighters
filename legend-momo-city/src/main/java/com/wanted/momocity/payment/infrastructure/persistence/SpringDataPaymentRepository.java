@@ -1,8 +1,6 @@
 package com.wanted.momocity.payment.infrastructure.persistence;
 
-import com.wanted.momocity.payment.domain.model.AdminPaymentItem;
-import com.wanted.momocity.payment.domain.model.MonthlySalesResult;
-import com.wanted.momocity.payment.domain.model.Status;
+import com.wanted.momocity.payment.domain.model.*;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -34,11 +32,11 @@ public interface SpringDataPaymentRepository extends JpaRepository<PaymentJpaEnt
     @Query("SELECT new com.wanted.momocity.payment.domain.model.MonthlySalesResult(MONTH(p.createdAt), COALESCE(SUM(p.price), 0)) " +
             "FROM PaymentJpaEntity p " +
             "WHERE p.status = 'SUCCESS' " +
-            "AND YEAR(p.createdAt) = :year " +
+            "AND p.createdAt >= :startDate AND p.createdAt < :endDate " +
             "AND NOT EXISTS (SELECT 1 FROM PaymentJpaEntity r WHERE r.originalPaymentId = p.paymentId AND r.status = 'REFUND') " +
             "GROUP BY MONTH(p.createdAt) " +
             "ORDER BY MONTH(p.createdAt)")
-    List<MonthlySalesResult> getMonthlySales(@Param("year") int year);
+    List<MonthlySalesResult> getMonthlySales(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 
     // 개인 결제 내역 조회
     @Query("SELECT p FROM PaymentJpaEntity p WHERE p.userId = :userId " +
@@ -74,5 +72,16 @@ public interface SpringDataPaymentRepository extends JpaRepository<PaymentJpaEnt
     @Query("SELECT COUNT(p) FROM PaymentJpaEntity p WHERE p.status IN ('SUCCESS', 'REFUND') " +
             "AND (:status IS NULL OR p.status = :status)")
     long countAdminPaymentList(@Param("status") Status status);
+
+
+    // 월별 플랜별 분포 조회
+    @Query("SELECT new com.wanted.momocity.payment.domain.model.MonthlyPlanCount(MONTH(p.createdAt), p.plan, COUNT(p)) " +
+            "FROM PaymentJpaEntity p " +
+            "WHERE p.status = 'SUCCESS' " +
+            "AND p.createdAt >= :startDate AND p.createdAt < :endDate " +
+            "AND NOT EXISTS (SELECT 1 FROM PaymentJpaEntity r WHERE r.originalPaymentId = p.paymentId AND r.status = 'REFUND') " +
+            "GROUP BY MONTH(p.createdAt), p.plan " +
+            "ORDER BY MONTH(p.createdAt)")
+    List<MonthlyPlanCount> getMonthlyPlanDistribution(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 }
 

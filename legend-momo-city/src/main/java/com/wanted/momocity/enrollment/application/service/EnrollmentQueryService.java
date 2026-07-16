@@ -11,6 +11,7 @@ import com.wanted.momocity.enrollment.presentation.api.response.EnrollmentProgre
 import com.wanted.momocity.friend.domain.repository.FriendRepository;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.global.domain.model.Category;
+import com.wanted.momocity.user.domain.model.User;
 import com.wanted.momocity.user.domain.repository.UserRepository;
 import com.wanted.momocity.viewing.application.port.CategoryProgressInfo;
 import com.wanted.momocity.viewing.application.port.CategoryProgressPort;
@@ -204,7 +205,7 @@ public class EnrollmentQueryService implements EnrollmentQueryUsecase {
     }
 
     @Override
-    public List<RenderingBuildingsView> friendBuildingInfo(Long loginUserId, Long targetUserId) {
+    public FriendBuildingsView friendBuildingInfo(Long loginUserId, Long targetUserId) {
 
         long startTime = System.currentTimeMillis();
         log.info("친구 마을 건물 조회 시작 - loginUserId={}, targetUserId={}",
@@ -220,7 +221,7 @@ public class EnrollmentQueryService implements EnrollmentQueryUsecase {
             throw new BuildingSelfAccessException("사용자 본인이기 때문에 메인페이지로 이동합니다.");
         }
 
-        userRepository.findById(targetUserId)
+        User targetUser = userRepository.findById(targetUserId)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다."));
 
         // 두 사용자 사이의 친구 관계 조회
@@ -247,6 +248,9 @@ public class EnrollmentQueryService implements EnrollmentQueryUsecase {
                 elapsedTime
                 );
 
-        return buildings;
+        return new FriendBuildingsView(
+                targetUser.getNickname(),
+                buildings
+        );
     }
 }

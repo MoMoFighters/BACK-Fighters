@@ -32,7 +32,7 @@ import java.time.LocalDateTime;
  *  타이머 시작/일시정지/종료는 TimerCommandService(application.member.timer)로 이관
  *   "멤버 자격의 생명주기"와 "반복되는 타이머 상태 변화"는 다른 축의 개념이라 판단
  *  -
- *  검증(친구 여부, 방 상태, 인원 제한, 상태 전이 가능 여부 등)은 전부 이 Service가 담당한
+ *  검증(친구 여부, 방 상태, 인원 제한, 상태 전이 가능 여부 등)은 전부 이 Service가 담당
  *  domain.model(GroupRoomMember/GroupRoom)은 상태값만 바꾸는 순수 메서드만 제공
  *  -
  *  인원 제한(4명) 이중 체크
@@ -49,7 +49,7 @@ public class MemberCommandService implements MemberCommandUseCase {
     private final GroupRoomMemberRepository groupRoomMemberRepository;
     private final GroupRoomRepository groupRoomRepository;
     private final FriendCatalogPort friendCatalogPort;
-    // Redis 원자적 인원 카운트 어댑터 - 수락 시점 최종 방어선(2번 작업으로 신규 연결)
+    // Redis 원자적 인원 카운트 어댑터 - 수락 시점 최종 방어선
     private final GroupRoomMemberCountAdapter groupRoomMemberCountAdapter;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -89,7 +89,7 @@ public class MemberCommandService implements MemberCommandUseCase {
                     || member.getStatus() == GroupRoomMember.MemberStatus.JOINED) {
                 throw new DomainRuleViolationException("이미 초대되었거나 참가 중인 사용자입니다.");
             }
-            // LEFT/REJECTED/CANCELED 이력이 있으면 새로 초대 가능 -> 아래에서 새 row 생성
+            // LEFT/REJECTED/CANCELED 이력이 있으면 기존 row 를 재사용해서 재초대
         }
 
         // 인원 제한 선제 차단 (현재 JOINED + 대기 중 INVITED 합산 기준)
@@ -99,8 +99,13 @@ public class MemberCommandService implements MemberCommandUseCase {
             throw new DomainRuleViolationException("그룹방 인원이 가득 찼습니다.");
         }
 
-        GroupRoomMember invited = GroupRoomMember.invite(roomId, inviteeId, LocalDateTime.now());
-        GroupRoomMember saved = groupRoomMemberRepository.save(invited);
+        GroupRoomMember target = existing
+                .map(member -> {
+                    member.reinvite(LocalDateTime.now());
+                    return member;
+                })
+                .orElseGet(() -> GroupRoomMember.invite(roomId, inviteeId, LocalDateTime.now()));
+        GroupRoomMember saved = groupRoomMemberRepository.save(target);
 
         // 알림 발송은 별도 이벤트(예: InvitationCreatedEvent)로 확장 가능 - 여기서는 notification 테이블 연동은 생략 -> 추후 구현
         log.info("[Study] 그룹방 초대 발송 완료 | roomId={}, inviterId={}, inviteeId={}", roomId, userId, inviteeId);
@@ -138,7 +143,7 @@ public class MemberCommandService implements MemberCommandUseCase {
         GroupRoomMember member = getMyInvitation(userId, roomId);
 
         /*
-         * 기존에는 DB에서 findAllByGroupRoomIdAndJoined().size()로 카운트를 세서 비교하는 방식
+         * 기존 : DB에서 findAllByGroupRoomIdAndJoined().size()로 카운트를 세서 비교하는 방식
          * 해당 방식은 동시에 여러 명이 수락할 때 "조회 -> 판단 -> 저장" 사이에 레이스 컨디션이 생길 수 있는 문제 존재
          * -> Redis INCR 기반 원자적 카운트(GroupRoomMemberCountAdapter.tryIncrement)로 교체
          * tryIncrement가 false를 반환하면 이미 정원이 가득 찬 것이므로 즉시 예외를 던지고,
@@ -170,10 +175,6 @@ public class MemberCommandService implements MemberCommandUseCase {
         log.info("[Study] 초대 거절 완료 | roomId={}, userId={}", roomId, userId);
         return InvitationResult.ofRejected(saved);
     }
-
-
-    // ===== 타이머(start/pause/end)는 TimerCommandService(member.timer)로 이관됨 =====
-
 
     /*
      * comment.
@@ -217,7 +218,7 @@ public class MemberCommandService implements MemberCommandUseCase {
         if (remaining.isEmpty()) {
             room.end(LocalDateTime.now());
             groupRoomRepository.save(room);
-            // [추가] 방이 완전히 종료됐으므로 Redis 카운트 키 자체를 삭제 (decrement로 0 남기지 않고 clear)
+            // 방이 완전히 종료됐으므로 Redis 카운트 키 자체를 삭제 (decrement로 0 남기지 않고 clear)
             groupRoomMemberCountAdapter.clear(roomId);
             eventPublisher.publishEvent(new RoomEndedEvent(roomId));
             log.info("[Study] 마지막 인원 퇴장으로 방 종료 | roomId={}", roomId);
@@ -247,7 +248,7 @@ public class MemberCommandService implements MemberCommandUseCase {
      *  강퇴 (방장만 가능)
      *  -
      *  - target.kick()은 상태를 LEFT가 아닌 KICKED (재초대 불가 이력으로 남김)
-     *  - 대상이 강퇴당하는 시점에 타이머가 STUDYING이었다면 leave()와 동일하게 먼저 시간을 확정한다.
+     *  - 대상이 강퇴당하는 시점에 타이머가 STUDYING이었다면 leave()와 동일하게 먼저 시간을 확정
      * */
 
     // 강퇴 (방장만 가능)
@@ -276,7 +277,7 @@ public class MemberCommandService implements MemberCommandUseCase {
         target.kick(LocalDateTime.now());
         groupRoomMemberRepository.save(target);
 
-        // [추가] 강퇴로 인원이 줄었으므로 Redis 카운트도 -1
+        // 강퇴로 인원 감소 -> Redis 카운트도 -1
         groupRoomMemberCountAdapter.decrement(roomId);
 
         eventPublisher.publishEvent(new MemberKickedEvent(roomId, targetUserId, hostUserId));

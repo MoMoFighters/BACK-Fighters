@@ -14,9 +14,7 @@ import com.wanted.momocity.lecture.application.port.TeacherAccountPort;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCases.AdminLectureCommandUseCase;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCases.ChapterCommandUseCase;
 import com.wanted.momocity.lecture.application.usecase.LectureCommandUseCases.LectureCommandUseCase;
-import com.wanted.momocity.lecture.domain.event.ChapterUpdatedEvent;
-import com.wanted.momocity.lecture.domain.event.LectureCreatedEvent;
-import com.wanted.momocity.lecture.domain.event.LectureStatusChangedEvent;
+import com.wanted.momocity.lecture.domain.event.*;
 import com.wanted.momocity.lecture.domain.exception.ChapterLimitExceededException;
 import com.wanted.momocity.lecture.domain.exception.ChapterNotFoundException;
 import com.wanted.momocity.lecture.domain.exception.ChapterVideoAlreadyExistsException;
@@ -28,7 +26,6 @@ import com.wanted.momocity.lecture.domain.model.LectureStatus;
 import com.wanted.momocity.lecture.domain.repository.ChapterRepository;
 import com.wanted.momocity.lecture.domain.repository.LectureRepository;
 import com.wanted.momocity.lecture.presentation.api.response.AdminLectureResponse.AdminChangeLectureStatusResponse;
-import com.wanted.momocity.viewing.domain.model.Lecture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -37,6 +34,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 
 /*
  * Lecture 명령 기능을 처리하는 Application Service.
@@ -205,6 +203,16 @@ public class LectureCommandService implements
             throw new DomainRuleViolationException("이미 삭제된 강의입니다.");
         }
 
+        // DB에서 챕터를 삭제하기 전에 해당 강의의 챕터 목록을 조회
+        List<Long> deletedChapterIds =
+                chapterRepository.findAllByLectureIdOrderByOrderNoAsc(lecture.getId())
+                        // 조회한 챕터 목록을 Stream으로 변환
+                        .stream()
+                        // 각 챕터 객체에서 캐시 삭제에 필요한 챕터 ID만 추출
+                        .map(LectureChapter::getId)
+                        // 추출한 챕터 ID를 불변 List로 생성
+                        .toList();
+
         // 강의 삭제 시 해당 강의에 속한 모든 챕터를 실제 삭제
         // 챕터 row에 있는 영상 URL, 파일 크기, 재생시간, 원본파일명이 포함되어 있어, 챕터 삭제 시 DB 기준 영상 정보도 함께 삭제
         chapterRepository.deleteAllByLectureId(lecture.getId());
@@ -214,6 +222,15 @@ public class LectureCommandService implements
 
         // 변경된 상태를 DB에 저장
         LectureAggregate savedLecture = lectureRepository.save(deletedLecture);
+
+        // 강의 삭제 사실을 후속 이벤트 리스너에 전달합니다.
+                eventPublisher.publishEvent(
+                        new LectureDeletedEvent(
+                                savedLecture.getId(),
+                                deletedChapterIds,
+                                Instant.now()
+                        )
+                );
 
         long elapsedTime = System.currentTimeMillis() - startTime;
 
@@ -468,6 +485,15 @@ public class LectureCommandService implements
         // 검증이 다 끝난 경우 DB에서 실제 삭제 진행
         chapterRepository.deleteById(chapter.getId());
 
+        // 챕터 삭제 사실을 후속 이벤트 리스너에 전달합니다.
+        eventPublisher.publishEvent(
+                new ChapterDeletedEvent(
+                        chapter.getLectureId(),
+                        chapter.getId(),
+                        Instant.now()
+                )
+        );
+
         long elapsedTime = System.currentTimeMillis() - startTime;
 
         log.info("챕터 삭제 완료 - teacherId={}, lectureId={}, chapterId={}, elapsedTime={}",
@@ -512,6 +538,15 @@ public class LectureCommandService implements
          }
 
          chapterRepository.deleteById(chapter.getId());
+
+        // 챕터 삭제 사실을 후속 이벤트 리스너에 전달합니다.
+        eventPublisher.publishEvent(
+                new ChapterDeletedEvent(
+                        chapter.getLectureId(),
+                        chapter.getId(),
+                        Instant.now()
+                )
+        );
 
          long elapsedTime = System.currentTimeMillis() - startTime;
 

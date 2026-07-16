@@ -1,5 +1,6 @@
 package com.wanted.momocity.study.infrastructure.catalog;
 
+//import com.wanted.momocity.friend.application.port.FriendQueryPort;
 import com.wanted.momocity.study.application.member.port.FriendCatalogPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -27,6 +28,7 @@ public class FriendCatalogAdapter implements FriendCatalogPort {
     @Override
     public boolean isFriend(Long userId1, Long userId2) {
         // TODO: friendQueryPort.isFriend(userId1, userId2) 로 교체 필요
+//        return friendQueryPort.isFriend(userId1, userId2);
         throw new UnsupportedOperationException("friend 담당자의 Port 연동 대기 중입니다.");
     }
 }

@@ -12,6 +12,12 @@ public interface LectureReviewQueryPort {
     // 여러 강의 리뷰 통계를 한 번에 처리 메서
     Map<Long, ReviewStats> getReviewStatsMap(List<Long> lectureIds);
 
+    // 전닯다은 강의 ID 목록에 작성된 ACTIVE 수강평의 전체 평균 별점 조회
+    double getAverageRatingByLectureIds(
+            // 평균 계산 대상인 ACTIVE 강의 ID 목록을 전달
+            List<Long> lectureIds
+    );
+
     // 리뷰 통계 DTO
     record ReviewStats(
             // 평균 평점
