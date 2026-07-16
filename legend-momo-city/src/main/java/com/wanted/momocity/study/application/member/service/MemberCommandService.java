@@ -195,8 +195,8 @@ public class MemberCommandService implements MemberCommandUseCase {
     @Override
     public LeaveResult leave(Long userId, Long roomId) {
 
-        GroupRoom room = getActiveRoom(roomId);
         GroupRoomMember member = getJoinedMember(userId, roomId);
+        GroupRoom room = getActiveRoom(roomId);
 
         // 진행 중인 타이머가 있으면 먼저 종료 처리
         if (member.getTimerStatus() == GroupRoomMember.TimerStatus.STUDYING) {
