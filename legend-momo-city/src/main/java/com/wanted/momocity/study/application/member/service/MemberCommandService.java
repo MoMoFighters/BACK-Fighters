@@ -207,6 +207,10 @@ public class MemberCommandService implements MemberCommandUseCase {
         // 진행 중인 타이머가 있으면 먼저 종료 처리
         if (member.getTimerStatus() == GroupRoomMember.TimerStatus.STUDYING) {
             accumulateElapsed(member);
+        }
+
+        // getTotalSeconds() > 0 이상이면 전부 이벤트 발행 -> 기록 누적
+        if (member.getTotalSeconds() > 0) {
             eventPublisher.publishEvent(
                     new StudySessionEndedEvent(userId, LocalDateTime.now().toLocalDate(), member.getTotalSeconds())
             );
@@ -275,6 +279,10 @@ public class MemberCommandService implements MemberCommandUseCase {
 
         if (target.getTimerStatus() == GroupRoomMember.TimerStatus.STUDYING) {
             accumulateElapsed(target);
+        }
+
+        // getTotalSeconds() > 0 이상이면 전부 이벤트 발행 -> 기록 누적
+        if (target.getTotalSeconds() > 0) {
             eventPublisher.publishEvent(
                     new StudySessionEndedEvent(targetUserId, LocalDateTime.now().toLocalDate(), target.getTotalSeconds())
             );
