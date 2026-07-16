@@ -12,23 +12,55 @@ INSERT INTO `user_oauth` (`id`, `created_at`, `provider`, `provider_id`, `user_i
 INSERT INTO `store`
 (`id`, `price`, `type`, `url`, `name`, `created_at`)
 VALUES
-    (1,  150, 'PROFILE',  'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/store/item01.png', 'cat1',      NOW() - INTERVAL 60 DAY),
-    (2,  150, 'PROFILE',  'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/store/item02.png', 'cat2',        NOW() - INTERVAL 58 DAY),
-    (3,  150, 'PROFILE',  'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/store/item03.png', 'cat3',      NOW() - INTERVAL 55 DAY),
-    (4,  150, 'PROFILE',  'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/store/item04.png', 'cat4',      NOW() - INTERVAL 52 DAY),
-    (5,  150, 'PROFILE',  'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/store/item05.png', 'dog1',      NOW() - INTERVAL 50 DAY),
-    (6,  150, 'PROFILE',  'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/store/item06.png', 'dog2',       NOW() - INTERVAL 48 DAY),
-    (7,  150, 'PROFILE',  'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/store/item07.png', 'dog3',           NOW() - INTERVAL 45 DAY),
-    (8,  150, 'PROFILE',  'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/store/item08.png', 'dog4',         NOW() - INTERVAL 42 DAY),
-    (9,  150, 'PROFILE',  'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/store/item09.png', 'penguin1',           NOW() - INTERVAL 40 DAY),
-    (10, 150, 'PROFILE',  'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/store/item10.png', 'penguin2',    NOW() - INTERVAL 38 DAY),
-    (11, 150, 'PROFILE',  'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/store/item11.png', 'penguin3',         NOW() - INTERVAL 35 DAY),
-    (12, 150, 'PROFILE',  'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/store/item12.png', 'penguin4',           NOW() - INTERVAL 32 DAY),
-    (13, 150, 'PROFILE',  'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/store/item13.png', 'rabbit1',     NOW() - INTERVAL 28 DAY),
-    (14, 150, 'PROFILE',  'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/store/item14.png', 'rabbit2',       NOW() - INTERVAL 24 DAY),
-    (15, 150, 'PROFILE',  'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/store/item15.png', 'rabbit3',    NOW() - INTERVAL 20 DAY),
-    (16, 150, 'PROFILE',  'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/store/item16.png', 'rabbit4',      NOW() - INTERVAL 15 DAY);
---  3. order_history
+    -- 50
+    (1,   50, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/rabbit.png',     '토끼',       NOW() - INTERVAL 68 DAY),
+    (2,   50, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/pig.png',        '돼지',       NOW() - INTERVAL 66 DAY),
+    (3,   50, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/frog.png',       '개구리',     NOW() - INTERVAL 64 DAY),
+    (4,   50, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/cat.png',        '고양이',     NOW() - INTERVAL 62 DAY),
+
+    -- 100
+    (5,  100, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/hamstar.png',    '햄스터',     NOW() - INTERVAL 60 DAY),
+    (6,  100, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/lion.png',       '사자',       NOW() - INTERVAL 58 DAY),
+    (7,  100, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/otter.png',      '수달',       NOW() - INTERVAL 56 DAY),
+    (8,  100, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/panda.png',      '판다',       NOW() - INTERVAL 54 DAY),
+
+    -- 150
+    (9,  150, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/chick.png',      '병아리',     NOW() - INTERVAL 52 DAY),
+    (10, 150, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/dolphin.png',    '돌고래',     NOW() - INTERVAL 50 DAY),
+    (11, 150, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/desertfox.png',  '사막여우',   NOW() - INTERVAL 48 DAY),
+    (12, 150, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/gorila.png',     '고릴라',     NOW() - INTERVAL 46 DAY),
+    (13, 150, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/quokka.png',     '쿼카',       NOW() - INTERVAL 44 DAY),
+    (14, 150, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/hedgehog.png',   '고슴도치',   NOW() - INTERVAL 42 DAY),
+    (15, 150, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/cow.png',        '젖소',       NOW() - INTERVAL 40 DAY),
+    (16, 150, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/penguin.png',    '펭귄',       NOW() - INTERVAL 38 DAY),
+
+    -- 200
+    (17, 200, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/monkey.png',     '원숭이',     NOW() - INTERVAL 36 DAY),
+    (18, 200, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/sheep.png',      '양',         NOW() - INTERVAL 34 DAY),
+    (19, 200, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/squirrel.png',   '다람쥐',     NOW() - INTERVAL 32 DAY),
+    (20, 200, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/tiger.png',      '호랑이',     NOW() - INTERVAL 30 DAY),
+
+    -- 250
+    (21, 250, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/zebra.png',      '얼룩말',     NOW() - INTERVAL 28 DAY),
+    (22, 250, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/rhinoceros.png', '코뿔소',     NOW() - INTERVAL 26 DAY),
+    (23, 250, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/elephant.png',   '코끼리',     NOW() - INTERVAL 24 DAY),
+    (24, 250, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/polarbear.png',  '북극곰',     NOW() - INTERVAL 22 DAY),
+
+    -- 300
+    (25, 300, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/giraffe.png',    '기린',       NOW() - INTERVAL 20 DAY),
+    (26, 300, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/dear.png',       '사슴',       NOW() - INTERVAL 18 DAY),
+    (27, 300, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/redpanda.png',   '레서판다',   NOW() - INTERVAL 16 DAY),
+    (28, 300, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/eagal.png',      '독수리',     NOW() - INTERVAL 14 DAY),
+
+    -- 350
+    (29, 350, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/raccoon.png',    '라쿤',       NOW() - INTERVAL 12 DAY),
+    (30, 350, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/koala.png',      '코알라',     NOW() - INTERVAL 10 DAY),
+    (31, 350, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/parrot.png',     '앵무새',     NOW() - INTERVAL 8 DAY),
+    (32, 350, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/jaguar.png',     '재규어',     NOW() - INTERVAL 6 DAY),
+
+    -- 1000 (프리미엄)
+    (33, 1000, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/momo-gorila.png', '프리미엄 고릴라', NOW() - INTERVAL 4 DAY),
+    (34, 1000, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/momo-cat.png',    '프리미엄 고양이', NOW() - INTERVAL 2 DAY);--  3. order_history
 -- =====================================================================
 INSERT INTO `order_history` (`id`, `amount`, `created_at`, `item_id`, `reason`, `type`, `user_id`) VALUES
   (1, 100, NOW() - INTERVAL 90 DAY, 1, 'PROFILE', 'USED', 12),
