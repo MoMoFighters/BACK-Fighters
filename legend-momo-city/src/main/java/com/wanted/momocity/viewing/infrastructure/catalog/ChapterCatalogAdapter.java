@@ -207,8 +207,7 @@ public class ChapterCatalogAdapter implements ChapterPort {
         return Chapter.reconstitute(
                 entity.getId(),
                 entity.getLectureId(),
-//                entity.getChapterThumbnailUrl(),
-                null,
+                entity.getChapterThumbnailUrl(),
                 entity.getTitle(),
                 entity.getOrderNo(),
                 entity.getVideoUrl(),

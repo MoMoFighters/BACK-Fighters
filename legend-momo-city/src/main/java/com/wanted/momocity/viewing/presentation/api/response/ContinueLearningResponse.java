@@ -5,6 +5,7 @@ public record ContinueLearningResponse(
         String lectureTitle,
         Long chapterId,
         String chapterTitle,
+        String chapterThumbnailUrl,
         int chapterProgress
 ) {
 }
