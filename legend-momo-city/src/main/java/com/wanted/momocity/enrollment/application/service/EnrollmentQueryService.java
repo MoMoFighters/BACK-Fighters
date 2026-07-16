@@ -42,7 +42,7 @@ public class EnrollmentQueryService implements EnrollmentQueryUsecase {
     private final FriendRepository friendRepository;
 
     // S3 빌딩 건물 기본 경로를 상수로 둔다
-    private static final String BUILDING_IMAGE_BASE_URL = "https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/building";
+    private static final String BUILDING_IMAGE_BASE_URL = "https://momocity-media.s3.ap-northeast-2.amazonaws.com/building";
 
     @Override
     public List<RenderingBuildingsView> userBuildingInfo(Long userId) {
@@ -136,7 +136,7 @@ public class EnrollmentQueryService implements EnrollmentQueryUsecase {
     // 카테고리와 레벨로 S3 건물 이미지 url 생성
     private String createBuildingUrl(String category, Integer level) {
         // S3 버킷 Url
-        String baseUrl = "https://momocity-bucket.s3.ap-northeast-2.amazonaws.com";
+        String baseUrl = "https://momocity-meaid.s3.ap-northeast-2.amazonaws.com";
         // ENUM 문자열을 소문자로 지정
         String lowerCategory = category.toLowerCase();
         // 최종 건물 이미지 URL 반환
