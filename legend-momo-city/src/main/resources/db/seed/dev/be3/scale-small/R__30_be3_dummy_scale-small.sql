@@ -537,6 +537,16 @@ VALUES
     (129, CURDATE() - INTERVAL 1 DAY + INTERVAL 9 HOUR, 0, '오늘 일정 [완료한 강의 메모] 이 있습니다!', 3, 'CALENDAR', 13),
     (130, CURDATE() - INTERVAL 0 DAY + INTERVAL 9 HOUR, 0, '오늘 할 일 [프로그래밍 복습] 을 완료해주세요!', 4, 'CALENDAR', 14),
     (131, CURDATE() - INTERVAL 0 DAY + INTERVAL 9 HOUR, 1, '오늘 일정 [요리 레시피 메모] 이 있습니다!', 5, 'CALENDAR', 15),
-    (132, CURDATE() - INTERVAL 2 DAY + INTERVAL 9 HOUR, 0, '오늘 할 일 [완료 운동] 을 완료해주세요!', 6, 'CALENDAR', 16);
+    (132, CURDATE() - INTERVAL 2 DAY + INTERVAL 9 HOUR, 0, '오늘 할 일 [완료 운동] 을 완료해주세요!', 6, 'CALENDAR', 16),
+    (133, NOW() - INTERVAL 56 DAY, 1, '[홈트레이닝 기초] 강의가 승인되었습니다.', 1, 'APPROVAL', 2),
+    (134, NOW() - INTERVAL 52 DAY, 1, '[집밥 요리 입문] 강의가 승인되었습니다.', 2, 'APPROVAL', 4),
+    (135, NOW() - INTERVAL 48 DAY, 1, '[프로그래밍 기초] 강의가 승인되었습니다.', 3, 'APPROVAL', 6),
+    (136, NOW() - INTERVAL 44 DAY, 1, '[요가 기초] 강의가 승인되었습니다.', 4, 'APPROVAL', 3),
+    (137, NOW() - INTERVAL 40 DAY, 1, '[스킨케어 루틴] 강의가 승인되었습니다.', 5, 'APPROVAL', 8),
+    (138, NOW() - INTERVAL 36 DAY, 0, '[메이크업 기초] 강의가 승인되었습니다.', 6, 'APPROVAL', 8),
+    (139, NOW() - INTERVAL 32 DAY, 0, '[수채화 입문] 강의가 승인되었습니다.', 7, 'APPROVAL', 9),
+    (140, NOW() - INTERVAL 28 DAY, 1, '[드로잉 기초] 강의가 승인되었습니다.', 8, 'APPROVAL', 9),
+    (141, NOW() - INTERVAL 24 DAY, 1, '[베이킹 기초] 강의가 승인되었습니다.', 9, 'APPROVAL', 5),
+    (142, NOW() - INTERVAL 20 DAY, 1, '[영어 회화 기초] 강의가 승인되었습니다.', 10, 'APPROVAL', 7);
 
 SET FOREIGN_KEY_CHECKS = 1;
