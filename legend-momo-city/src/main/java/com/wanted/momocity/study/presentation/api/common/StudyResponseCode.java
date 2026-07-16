@@ -28,6 +28,7 @@ public class StudyResponseCode {
     public static final String TIMER_STARTED  = "STUDY-TIMER-STARTED";  // action=STARTED/RESUMED 로 세부 구분
     public static final String TIMER_PAUSED   = "STUDY-TIMER-PAUSED";
     public static final String TIMER_ENDED    = "STUDY-TIMER-ENDED";
+    public static final String TIMER_LAPS_FETCHED = "STUDY-TIMER-LAPS-FETCHED";
 
     // ===== member : leave / kick =====
     public static final String MEMBER_LEFT    = "STUDY-MEMBER-LEFT";
@@ -39,7 +40,7 @@ public class StudyResponseCode {
     public static final String SOLO_ENDED          = "STUDY-SOLO-ENDED";
     public static final String SOLO_CURRENT_FETCHED = "STUDY-SOLO-CURRENT-FETCHED";
     public static final String SOLO_CURRENT_EMPTY   = "STUDY-SOLO-CURRENT-EMPTY";
-    public static final String SOLO_HISTORY_FETCHED = "STUDY-SOLO-HISTORY-FETCHED";
+    public static final String SOLO_LAPS_FETCHED    = "STUDY-SOLO-LAPS-FETCHED";
 
     // ===== record =====
     public static final String RECORD_DAILY_FETCHED    = "STUDY-RECORD-DAILY-FETCHED";

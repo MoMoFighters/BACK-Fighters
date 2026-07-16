@@ -8,10 +8,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Repository("paymentAdapter")
 @Transactional
@@ -47,11 +45,15 @@ public class PaymentRepositoryAdapter implements PaymentRepository {
 
     // 월별 총매출
     @Override
-    public List<MonthlySalesResult> getMonthlySales(int year) {
+    public List<MonthlySalesResult> getMonthlySales() {
+        int currentYear = LocalDateTime.now().getYear();
+        LocalDateTime startDate = LocalDateTime.of(currentYear, 1, 1, 0, 0, 0);
+        LocalDateTime endDate = LocalDateTime.of(currentYear + 1, 1, 1, 0, 0, 0);
+
         Map<Integer, Long> monthMap = new LinkedHashMap<>();
         for (int i = 1; i <= 12; i++) monthMap.put(i, 0L);
 
-        springDataPaymentRepository.getMonthlySales(year)
+        springDataPaymentRepository.getMonthlySales(startDate, endDate)
                 .forEach(mc -> monthMap.put(mc.month(), mc.sales()));
 
         return monthMap.entrySet().stream()
@@ -89,4 +91,27 @@ public class PaymentRepositoryAdapter implements PaymentRepository {
         return springDataPaymentRepository.countAdminPaymentList(status);
     }
 
+    // 월별 + 플랜별 분포
+    @Override
+    public List<MonthlyPlanDistributionResult> getMonthlyPlanDistribution() {
+        int currentYear = LocalDateTime.now().getYear();
+        LocalDateTime startDate = LocalDateTime.of(currentYear, 1, 1, 0, 0, 0);
+        LocalDateTime endDate = LocalDateTime.of(currentYear + 1, 1, 1, 0, 0, 0);
+
+        List<MonthlyPlanCount> monthlyPlan = springDataPaymentRepository.getMonthlyPlanDistribution(startDate, endDate);
+
+        Map<Integer, Map<String, Long>> grouped = new LinkedHashMap<>();
+        for (int i = 1; i <= 12; i++) grouped.put(i, new HashMap<>());
+
+        monthlyPlan.forEach(mc -> grouped.get(mc.month()).put(mc.plan().name(), mc.count()));
+
+        return grouped.entrySet().stream()
+                .map(e -> new MonthlyPlanDistributionResult(
+                        e.getKey(),
+                        e.getValue().getOrDefault(Plan.BASIC.name(), 0L),
+                        e.getValue().getOrDefault(Plan.PLUS.name(), 0L),
+                        e.getValue().getOrDefault(Plan.PRO.name(), 0L)
+                ))
+                .toList();
+    }
 }
