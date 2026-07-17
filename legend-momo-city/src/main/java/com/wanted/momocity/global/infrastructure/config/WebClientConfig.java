@@ -1,5 +1,6 @@
 package com.wanted.momocity.global.infrastructure.config;
 
+import com.wanted.momocity.chatbot.infrastructure.config.GeminiProperties;
 import com.wanted.momocity.chatbot.infrastructure.config.PolicySearchProperties;
 import com.wanted.momocity.payment.infrastructure.portone.PortOneProperties;
 import io.netty.channel.ChannelOption;
@@ -15,7 +16,7 @@ import java.time.Duration;
 
 @Configuration
 @EnableConfigurationProperties(
-        {PortOneProperties.class, PolicySearchProperties.class})
+        {PortOneProperties.class, PolicySearchProperties.class, GeminiProperties.class})
 
 /* comment.
     momo-ai 서비스 를 보낼 전용 WebClient 빈을 추가한다.
@@ -67,4 +68,22 @@ public class WebClientConfig {
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
     }
+
+    // Gemini 스트리밍 API 전용 WebClient - GeminiProperties 빈 주입
+    @Bean
+    public WebClient geminiWebClient(GeminiProperties props) {
+        HttpClient httpClient = HttpClient.create()
+                // 스트리밍 응답이라 5초로는 부족함 - SSE 전체 타임아웃(60초) 기준에 맞춤
+                .responseTimeout(Duration.ofSeconds(60))
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 3000);
+
+        return WebClient.builder()
+                // Gemini API 기본 도메인은 환경별로 안 바뀌는 고정값이라 yaml 없이 하드코딩
+                // 현재 Module05 에서는 Gemini 모델만 사용할꺼라 이렇게 판단해서 넣었음.
+                .baseUrl("https://generativelanguage.googleapis.com")
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .defaultHeader("x-goog-api-key", props.getApiKey())
+                .build();
+    }
+
 }

@@ -15,7 +15,7 @@ import java.util.Locale;
 public class UserBuildingsAdapter implements GetUserBuildingsPort {
 
     private final SpringDataBuildingRepository springDataBuildingRepository;
-    private static final String BUILDING_IMAGE_BASE_URL = "https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/building";
+    private static final String BUILDING_IMAGE_BASE_URL = "https://momocity-media.s3.ap-northeast-2.amazonaws.com/building";
 
 
     @Override

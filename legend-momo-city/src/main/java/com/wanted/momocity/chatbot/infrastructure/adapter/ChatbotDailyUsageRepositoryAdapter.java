@@ -40,6 +40,13 @@ public class ChatbotDailyUsageRepositoryAdapter implements ChatbotDailyUsageRepo
                 .map(this::toDomain);
     }
 
+    // 포트에 추가한 메서드 실제 구현, JPA 의 락 걸린 조회로 위임
+    @Override
+    public Optional<ChatbotDailyUsage> findByUserIdAndUsageDateForUpdate(Long userId, LocalDate usageDate) {
+        return chatbotDailyUsageJpaRepository.findByUserIdAndUsageDateForUpdate(userId, usageDate)
+                .map(this::toDomain);
+    }
+
     @Override
     // id가 없으면 오늘 첫 호출 → 신규 insert, 있으면 기존 행 찾아서 값만 갱신
     public ChatbotDailyUsage save(ChatbotDailyUsage chatbotDailyUsage) {
