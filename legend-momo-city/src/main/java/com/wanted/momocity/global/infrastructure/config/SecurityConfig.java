@@ -6,6 +6,7 @@ import com.wanted.momocity.auth.infrastructure.handler.CustomAccessDeniedHandler
 import com.wanted.momocity.auth.infrastructure.handler.CustomAuthenticationEntryPoint;
 import com.wanted.momocity.auth.infrastructure.jwt.JwtAuthenticationFilter;
 import com.wanted.momocity.auth.infrastructure.jwt.JwtTokenProvider;
+import com.wanted.momocity.chatbot.infrastructure.security.ChatbotSseTokenFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -162,6 +163,11 @@ public class SecurityConfig {
 //                ========================================================================
 
                 //.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                // 챗봇 SSE 경로 전용 - 쿼리파라미터 token 인증, 기존 JwtAuthenticationFilter보다 먼저 실행
+                .addFilterBefore(
+                        new ChatbotSseTokenFilter(jwtTokenProvider),
+                        JwtAuthenticationFilter.class
+                )
                 .addFilterBefore(
                         new JwtAuthenticationFilter(jwtTokenProvider, refreshService,blacklistPort),
                         UsernamePasswordAuthenticationFilter.class
