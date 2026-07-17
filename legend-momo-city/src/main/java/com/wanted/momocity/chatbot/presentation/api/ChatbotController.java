@@ -3,6 +3,7 @@ package com.wanted.momocity.chatbot.presentation.api;
 import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.chatbot.application.usecase.ChatbotQuestionUseCase;
 import com.wanted.momocity.chatbot.application.usecase.ChatbotUsageUseCase;
+import com.wanted.momocity.chatbot.domain.exception.ChatbotInvalidQuestionException;
 import com.wanted.momocity.chatbot.presentation.api.common.ChatbotResponseCode;
 import com.wanted.momocity.chatbot.presentation.api.response.ChatbotUsageResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
@@ -67,6 +68,14 @@ public class ChatbotController {
             @RequestParam(required = false) Long lectureId,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
+        // @Valid 자동 검증이 안 붙는 GET+쿼리파라미터 구조라 직접적으로 검사
+        if (question == null || question.isBlank()) {
+            throw new ChatbotInvalidQuestionException("질문 내용을 입력해주세요!");
+        }
+        if (question.length() > 255) {
+            throw new ChatbotInvalidQuestionException("질문은 255자 이하로 입력해주세요!");
+        }
+
         Long userId = userDetails.getUserId();
         SseEmitter emitter = new SseEmitter(60_000L);
 

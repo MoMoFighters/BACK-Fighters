@@ -13,7 +13,7 @@ public class ChatbotResponseCode {
     public static final String USAGE_FETCHED =
             "CHATBOT-USAGE-FETCHED";
 
-    // ===== 실패 4xx, 5xx(도메인 예외 3개와 1:1 매칭) =====
+    // ===== 실패 4xx, 5xx(도메인 예외 4개와 1:1 매칭) =====
     public static final String DAILY_LIMIT_EXCEEDED =
             "CHATBOT-DAILY-LIMIT-EXCEEDED";
 
@@ -24,5 +24,9 @@ public class ChatbotResponseCode {
     // PolicySearchException 모모 서버 연결 실패할 경우
     public static final String
     POLICY_SEARCH_FAILED = "CHATBOT-POLICY-SEARCH-FAILED";
+
+    // ChatbotInvalidQuestionException 매핑용
+    public static final String INVALID_QUESTION =
+            "CHATBOT-INVALID-QUESTION";
 
 }
