@@ -6,7 +6,7 @@ public enum FortuneTone {
     GOOD,
 
     // 긍정, 부정 둘 다 치우치지 않은 운세 (중립)
-    NETURAL,
+    NEUTRAL,
 
     // 부정적인 운세
     BAD
