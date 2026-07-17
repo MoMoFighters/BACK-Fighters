@@ -60,6 +60,8 @@ public class ChatbotDailyUsage {
     public Long getUserId() { return userId; }
     public LocalDate getUsageDate() { return usageDate; }
     public int getCallCount() { return callCount; }
+    // DAILY_LIMIT 가 private static final 이라 밖에 못 꺼낸다.
+    public int getDailyLimit() { return DAILY_LIMIT; }
     public Integer getTokenUsed() { return tokenUsed; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }

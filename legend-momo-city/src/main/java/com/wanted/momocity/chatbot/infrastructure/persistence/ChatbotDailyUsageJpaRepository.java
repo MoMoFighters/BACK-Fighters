@@ -5,7 +5,9 @@ package com.wanted.momocity.chatbot.infrastructure.persistence;
     유저의 오늘자 사용량 행 하나를 찾는 용도이다.
  */
 
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 
 import java.time.LocalDate;
 import java.util.Optional;
@@ -15,4 +17,7 @@ public interface ChatbotDailyUsageJpaRepository extends JpaRepository<ChatbotDai
     // 유저의 특정 날짜 사용량 행 조회 — 없으면 오늘 첫 호출이라는 뜻 (Optional.empty())
     Optional<ChatbotDailyUsageJpaEntity> findByUserIdAndUsageDate(Long userId, LocalDate usageDate);
 
+    // @ 실제 @Lock 이 걸리는 지점은 여기, JPA 쿼리 메서드 레벨
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<ChatbotDailyUsageJpaEntity> findByUserIdAndUsageDateForUpdate(Long userId, LocalDate usageDate);
 }
