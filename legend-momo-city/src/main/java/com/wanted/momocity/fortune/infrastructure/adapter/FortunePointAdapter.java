@@ -2,7 +2,7 @@ package com.wanted.momocity.fortune.infrastructure.adapter;
 
 import com.wanted.momocity.fortune.application.port.FortunePointPort;
 import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
@@ -16,7 +16,7 @@ public class FortunePointAdapter implements FortunePointPort {
     @Override
     // 반드시 상위 서비스의 트랜잭션 안에서 실행되도록 제한
     @Transactional(propagation = Propagation.MANDATORY)
-    public void deductPointIfEnough(Long userId, Long amount) {
+    public boolean deductPointIfEnough(Long userId, Long amount) {
         int updatedRows = entityManager.createNativeQuery(
                 """
                         UPDATE `user`
