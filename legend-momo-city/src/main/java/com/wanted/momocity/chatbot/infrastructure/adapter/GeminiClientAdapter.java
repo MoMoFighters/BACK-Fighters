@@ -42,16 +42,19 @@ public class GeminiClientAdapter implements GeminiClientPort {
                 );
     }
 
-    // Gemini 응답 청크 하나에서 텍스트만 뽑아냄, candidates/parts 가 비어있을 수도 있어 방어적으로 처리
+    // Gemini 응답 청크 하나에서 텍스트만 뽑아냄, candidates/content/parts 가 비어있을 수도 있어 방어적으로 처리
     private List<String> extractText(GeminiStreamChunk chunk) {
+        // candidates 자체가 비어있으면 텍스트 없음
         if (chunk.candidates() == null || chunk.candidates().isEmpty()) {
             return List.of();
         }
-        List<GeminiStreamChunk.Part> parts = chunk.candidates().get(0).content().parts();
-        if (parts == null) {
+        // finishReason만 있고 content 자체가 없는 종료 청크일 수 있어 null 체크
+        GeminiStreamChunk.Content content = chunk.candidates().get(0).content();
+        if (content == null || content.parts() == null) {
             return List.of();
         }
-        return parts.stream().map(GeminiStreamChunk.Part::text).filter(text -> text != null).toList();
+        // 텍스트만 꺼내서 리스트로 반환
+        return content.parts().stream().map(GeminiStreamChunk.Part::text).filter(text -> text != null).toList();
     }
 
     // Gemini 스트리밍 응답 JSON 모양 그대로 옮겨 담는 전용 DTO (이 파일 안에서만 씀)

@@ -57,31 +57,32 @@ public class ChatbotQuestionService implements ChatbotQuestionUseCase {
     private final PolicySearchPort policySearchPort;
 
     // 전체 흐름을 통솔한다. 판별 -> 컨텍스트 -> 프롬프트 -> 로그 -> Gemini 순서
-    // 실패하면 callback.onError 로 통일해서 던짐
+    // 도메인 예외는 여기서 잡지 않고 그대로 던져서 ChatbotExceptionHandler가 처리하게 한다
     @Override
     public void ask(AskCommand command, AnswerCallback callback) {
-        try {
-            if (isDuplicateQuestion(command)) {
-                chatbotQuestionLogRepository.save(new ChatbotQuestionLog(
-                        command.userId(), command.lectureId(), command.question(), false));
-                callback.onChunk(DUPLICATE_QUESTION_GUIDE_MESSAGE);
-                callback.onComplete();
-                return;
-            }
-
-            ChatbotPromptBuilder.PromptContext context = buildContext(command);
-
-            chatbotUsageUseCase.checkAndIncrease(command.userId());
-
-            String prompt = chatbotPromptBuilder.build(context);
+        // 유사 질문 3번째면 Gemini 호출 없이 안내 메시지로 끝
+        if (isDuplicateQuestion(command)) {
             chatbotQuestionLogRepository.save(new ChatbotQuestionLog(
-                    command.userId(), command.lectureId(), command.question(),
-                    !context.policyResults().isEmpty()));
-
-            geminiClientPort.streamAnswer(prompt, toGeminiCallback(callback));
-        } catch (Exception e) {
-            callback.onError(e);
+                    command.userId(), command.lectureId(), command.question(), false));
+            callback.onChunk(DUPLICATE_QUESTION_GUIDE_MESSAGE);
+            callback.onComplete();
+            return;
         }
+
+        // 강의 질문/정책 질문 분기 나눠서 컨텍스트 수집
+        ChatbotPromptBuilder.PromptContext context = buildContext(command);
+
+        // 하루 호출 한도 체크 + 증가
+        chatbotUsageUseCase.checkAndIncrease(command.userId());
+
+        // 프롬프트 조립 + 질문 로그 저장
+        String prompt = chatbotPromptBuilder.build(context);
+        chatbotQuestionLogRepository.save(new ChatbotQuestionLog(
+                command.userId(), command.lectureId(), command.question(),
+                !context.policyResults().isEmpty()));
+
+        // Gemini 스트리밍 호출, 콜백은 Controller 쪽 콜백으로 그대로 연결
+        geminiClientPort.streamAnswer(prompt, toGeminiCallback(callback));
     }
 
     // 오늘 자정 이후 질문들 중, 핵심 단어가 겹치는 게 2개 이상이면 이번 질문이 3번째 반복

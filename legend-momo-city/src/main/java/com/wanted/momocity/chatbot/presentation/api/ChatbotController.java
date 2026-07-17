@@ -79,6 +79,11 @@ public class ChatbotController {
         Long userId = userDetails.getUserId();
         SseEmitter emitter = new SseEmitter(60_000L);
 
+        // 타임아웃(60초 경과) 시 emitter 정리
+        emitter.onTimeout(emitter::complete);
+        // 클라이언트 연결 종료/스트림 완료 시 정리 로그(필요시 리소스 정리 지점)
+        emitter.onCompletion(() -> {});
+
         ChatbotQuestionUseCase.AskCommand command =
                 new ChatbotQuestionUseCase.AskCommand(userId, lectureId, question);
 
