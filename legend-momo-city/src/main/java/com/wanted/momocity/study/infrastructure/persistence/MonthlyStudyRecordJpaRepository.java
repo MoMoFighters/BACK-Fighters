@@ -31,10 +31,10 @@ public interface MonthlyStudyRecordJpaRepository extends JpaRepository<MonthlySt
      * */
     @Modifying
     @Query(value = """
-    INSERT INTO monthly_study_record (user_id, year_month, total_seconds, created_at, updated_at)
-    VALUES (:userId, :yearMonth, :seconds, NOW(6), NOW(6))
+    INSERT INTO monthly_study_record (user_id, `year_month`, total_seconds, created_at, updated_at)
+    VALUES (:userId, :yearMonth, :seconds, NOW(6), NOW(6)) AS new_data
     ON DUPLICATE KEY UPDATE
-        total_seconds = total_seconds + VALUES(total_seconds),
+        total_seconds = monthly_study_record.total_seconds + new_data.total_seconds,
         updated_at = NOW(6)
     """, nativeQuery = true)
     void incrementSeconds(
