@@ -11,12 +11,15 @@ import com.wanted.momocity.payment.domain.exception.PaymentAlreadyInProgressExce
 import com.wanted.momocity.payment.domain.exception.PortOneApiException;
 import com.wanted.momocity.payment.domain.model.Payment;
 import com.wanted.momocity.payment.domain.model.PaymentVerifyResult;
+import com.wanted.momocity.payment.domain.model.Plan;
 import com.wanted.momocity.payment.domain.model.PortOnePaymentDetail;
 import com.wanted.momocity.payment.domain.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 
@@ -35,19 +38,25 @@ public class PaymentConfirmService {
 
     @Transactional
     public PaymentVerifyResult confirm(Payment payment) {
-        // /verify와 웹훅이 같은 결제 건을 거의 동시에 확정 처리하려 드는 걸 막기 위한 락.
+        // /verify와 웹훅이 같은 결제 건을 거의 동시에 확정 처리하려 드는 걸 막기 위한 락
         // 이 락을 못 잡으면 "누군가 이미 처리 중"이라는 뜻이므로 여기서 바로 튕겨낸다.
         if (!paymentLockPort.tryLock(payment.getUserId(), payment.getPlan())) {
             throw new PaymentAlreadyInProgressException(
                     "이미 처리 중인 결제 건입니다. paymentId=" + payment.getPaymentId());
         }
 
+        /* comment
+        *   이 트랜잭션이 커밋되든 롤백되든 끝난 직후 딱 한 번 락을 해제하도록
+        *   이렇게 하면 DB 반영이 실제로 끝난 뒤에만 락이 풀리고
+        *   아래에서 어떤 예외가 나든 unlock()이 누락되지 X
+        */
+        registerUnlockAfterCompletion(payment.getUserId(), payment.getPlan());
+
         PortOnePaymentDetail detail;
         try {
             detail = portOnePaymentPort.verifyPayment(payment.getPaymentId());
         } catch (PortOneApiException e) {
             log.error("[confirm] 포트원 API 호출 실패 paymentId={}", payment.getPaymentId(), e);
-            paymentLockPort.unlock(payment.getUserId(), payment.getPlan());
             throw e;
         }
 
@@ -60,6 +69,15 @@ public class PaymentConfirmService {
             return handleAmountMismatch(payment, detail);}
 
         return handleNotPaid(payment);
+    }
+
+    private void registerUnlockAfterCompletion(Long userId, Plan plan) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                paymentLockPort.unlock(userId, plan);
+            }
+        });
     }
 
     private PaymentVerifyResult handleSuccess(Payment payment) {
@@ -77,12 +95,11 @@ public class PaymentConfirmService {
                 ? currentUntil
                 : LocalDateTime.now();
 
-        // 사용자 멤버십 업데이트 
+        // 사용자 멤버십 업데이트
         setUserMembershipPort.updateMembership(payment.getUserId(), payment.getPlan(), newMembershipStart);
         LocalDateTime newMembershipUntil = newMembershipStart.plusDays(30);
 
         paymentRepository.save(result);
-        paymentLockPort.unlock(payment.getUserId(), payment.getPlan());
         return new PaymentVerifyResult(result.getPaymentId(), result.getStatus(), newMembershipUntil);
     }
 
@@ -99,15 +116,12 @@ public class PaymentConfirmService {
             Payment cancelFailed = payment.markCancelFailed();
             paymentStatusUpdater.saveCancelFailed(cancelFailed);
             throw new PaymentCancelFailedException("취소 처리 실패 paymentId=" + payment.getPaymentId());
-        } finally {
-            paymentLockPort.unlock(payment.getUserId(), payment.getPlan());
         }
     }
 
     private PaymentVerifyResult handleNotPaid(Payment payment) {
         Payment failed = payment.markFailed();
         paymentStatusUpdater.saveFailed(failed);
-        paymentLockPort.unlock(payment.getUserId(), payment.getPlan());
         throw new PaymentAmountMismatchException("결제가 완료되지 않았습니다.");
     }
 }

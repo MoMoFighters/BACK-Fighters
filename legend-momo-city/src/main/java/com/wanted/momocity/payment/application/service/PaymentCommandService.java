@@ -14,6 +14,7 @@ import com.wanted.momocity.payment.application.usecase.PaymentCommandUseCase;
 import com.wanted.momocity.payment.domain.exception.*;
 import com.wanted.momocity.payment.domain.model.*;
 import com.wanted.momocity.payment.domain.repository.PaymentRepository;
+import com.wanted.momocity.payment.infrastructure.applier.PaymentRefetcher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -37,6 +38,7 @@ public class PaymentCommandService implements PaymentCommandUseCase {
     private final PaymentStatusUpdater paymentStatusUpdater;
     private final CancelPolicy cancelPolicy;
     private final PaymentConfirmService paymentConfirmService;
+    private final PaymentRefetcher paymentRefetcher;
 
     // 결제 준비 - 결제 금액 저장용
     @Override
@@ -55,6 +57,7 @@ public class PaymentCommandService implements PaymentCommandUseCase {
             String paymentId = UUID.randomUUID().toString();
             Payment payment = Payment.createPending(command.userId(), paymentId, null,command.plan(), price);
             Payment prepare = paymentRepository.save(payment);
+            paymentLockPort.unlock(command.userId(), command.plan());
             return new PaymentPrepareResult(prepare.getPrice(), prepare.getCreatedAt(), prepare.getPaymentId());
 
         } catch (Exception e) {
@@ -80,7 +83,11 @@ public class PaymentCommandService implements PaymentCommandUseCase {
 
         // 이미 웹훅이 처리한 경우 -> 그 결과 그대로 응답
         if (payment.isFinalized()) {
-            return toVerifyResult(payment);
+            if (payment.getStatus() == Status.SUCCESS) {
+                return toVerifyResult(payment);
+            }
+            throw new PaymentAlreadyVerifiedException(
+                    "이미 처리된 결제 건입니다. status=" + payment.getStatus());
         }
 
         try {
@@ -108,19 +115,24 @@ public class PaymentCommandService implements PaymentCommandUseCase {
     private PaymentVerifyResult waitAndFetchResult(String paymentId) {
         for (int i = 0; i < 5; i++) {
             try {
-                Thread.sleep(500);
+                Thread.sleep(200);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;
             }
 
-            Payment refreshed = paymentRepository.findByPaymentId(paymentId)
-                    .orElseThrow(() -> new PaymentNotFoundException("결제 정보를 찾을 수 없습니다."));
+            // REQUIRES_NEW로 새 트랜잭션을 열어야 웹훅이 커밋해놓은 최신 상태를 볼 수 있음 !!!
+            Payment refreshed = paymentRefetcher.refetch(paymentId);
 
             if (refreshed.isFinalized()) {
-                return toVerifyResult(refreshed);
+                if (refreshed.getStatus() == Status.SUCCESS) {
+                    return toVerifyResult(refreshed);
+                }
+                throw new PaymentAlreadyVerifiedException(
+                        "이미 처리된 결제 건입니다. status=" + refreshed.getStatus());
             }
         }
+
         throw new PaymentAlreadyInProgressException("결제 처리 중입니다. 잠시 후 다시 확인해주세요.");
     }
 
