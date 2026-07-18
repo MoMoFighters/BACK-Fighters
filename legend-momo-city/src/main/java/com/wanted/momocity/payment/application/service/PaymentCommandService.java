@@ -14,6 +14,7 @@ import com.wanted.momocity.payment.application.usecase.PaymentCommandUseCase;
 import com.wanted.momocity.payment.domain.exception.*;
 import com.wanted.momocity.payment.domain.model.*;
 import com.wanted.momocity.payment.domain.repository.PaymentRepository;
+import com.wanted.momocity.payment.infrastructure.applier.PaymentRefetcher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -36,7 +37,8 @@ public class PaymentCommandService implements PaymentCommandUseCase {
     private final PaymentLockPort paymentLockPort;
     private final PaymentStatusUpdater paymentStatusUpdater;
     private final CancelPolicy cancelPolicy;
-
+    private final PaymentConfirmService paymentConfirmService;
+    private final PaymentRefetcher paymentRefetcher;
 
     // 결제 준비 - 결제 금액 저장용
     @Override
@@ -55,6 +57,7 @@ public class PaymentCommandService implements PaymentCommandUseCase {
             String paymentId = UUID.randomUUID().toString();
             Payment payment = Payment.createPending(command.userId(), paymentId, null,command.plan(), price);
             Payment prepare = paymentRepository.save(payment);
+            paymentLockPort.unlock(command.userId(), command.plan());
             return new PaymentPrepareResult(prepare.getPrice(), prepare.getCreatedAt(), prepare.getPaymentId());
 
         } catch (Exception e) {
@@ -63,7 +66,10 @@ public class PaymentCommandService implements PaymentCommandUseCase {
         }
     }
 
-    // 결제 검증
+    /*comment
+    *  1. 이 결제 건이 진짜 이 사람 건이 맞는지
+    *  2. 이미 처리 끝난 건 아닌지
+    *  이 두가 지에 대한 검증만 하고 실제 db에 적용하고 처리하는 건 confirmservice가 함 */
     @Override
     public PaymentVerifyResult paymentVerify(PaymentVerifyCommand command) {
         // 결제 건 조회
@@ -75,78 +81,59 @@ public class PaymentCommandService implements PaymentCommandUseCase {
             throw new PaymentAccessDeniedException("결제 소유자가 아닙니다.");
         }
 
-        // 이미 검증 처리가 완료된 결제건
+        // 이미 웹훅이 처리한 경우 -> 그 결과 그대로 응답
         if (payment.isFinalized()) {
-            throw new PaymentAlreadyVerifiedException(
-                    "이미 처리된 결제 건입니다. status=" + payment.getStatus()
-            );
-        }
-
-        // 포트원에서 실제 결제 내역 조회
-        PortOnePaymentDetail detail;
-        try {
-            detail = portOnePaymentPort.verifyPayment(command.paymentId());
-        } catch (PortOneApiException e) {
-            log.error("[verify] 포트원 API 호출 실패 paymentId={}, userId={}",
-                    command.paymentId(), command.userId(), e);
-
-            throw e;
-        }
-
-        // 검증
-        /*comment
-         *  1.포트원 응답 상태가 실제로 "결제완료(PAID)"인지
-         *  2. 우리가 /prepare 때 저장해둔 가격과 포트원이 실제로 받은 금액이 정확히 일치하는지 */
-        boolean amountMatches = detail.isPaid() && payment.getPrice().equals(detail.amount());
-
-        // 검증 성송
-        if (amountMatches) {
-            Payment result = payment.markSuccess();
-
-            // 현재 멤버십 시작일 조회 - 갱신 결제 시 기존 종료일 기준으로 연장
-            GetUserMembershipPort.UserMembership membership = getUserMembershipPort.getUserMembership(command.userId());
-
-            // 현재 멤버십 종료일 계산 (membershipStart + 30일)
-            LocalDateTime currentUntil = membership.membershipStart().plusDays(30);
-
-            // BASIC이면 오늘부터 시작
-            // 유료 플랜이고 기간 남아있으면 기존 종료일부터 연장
-            LocalDateTime newMembershipStart = (membership.plan() != Plan.BASIC && currentUntil.isAfter(LocalDateTime.now()))
-                    ? currentUntil
-                    : LocalDateTime.now();
-
-            setUserMembershipPort.updateMembership(command.userId(), payment.getPlan(), newMembershipStart);
-            LocalDateTime newMembershipUntil  = newMembershipStart.plusDays(30);
-
-            paymentRepository.save(result);
-            paymentLockPort.unlock(command.userId(), payment.getPlan()); // 여기서 캐시 제거
-            return new PaymentVerifyResult(result.getPaymentId(), result.getStatus(), newMembershipUntil );
-        }
-
-        // 금액 불일치 - 여기서부터는 전부 실패
-        if (detail.isPaid()) {
-            try {
-                portOnePaymentPort.cancelPayment(command.paymentId(), "결제 금액 불일치로 인한 자동 취소");
-                Payment failed = payment.markFailed();
-                paymentStatusUpdater.saveFailed(failed);
-                throw new PaymentAmountMismatchException(
-                        "결제 금액이 일치하지 않아 취소 처리되었습니다. 예상 결제 금액 =" + payment.getPrice() + ", 실제 결제 금액=" + detail.amount()
-                );
-            } catch (PortOneApiException e) {
-                Payment cancelFailed = payment.markCancelFailed();
-                paymentStatusUpdater.saveCancelFailed(cancelFailed);
-                throw new PaymentCancelFailedException(
-                        "취소 처리 실패  paymentId=" + command.paymentId()
-                );
-            }finally {
-                paymentLockPort.unlock(command.userId(), payment.getPlan());
+            if (payment.getStatus() == Status.SUCCESS) {
+                return toVerifyResult(payment);
             }
-        } else {
-            Payment failed = payment.markFailed();
-            paymentStatusUpdater.saveFailed(failed);
-            paymentLockPort.unlock(command.userId(), payment.getPlan());
-            throw new PaymentAmountMismatchException("결제가 완료되지 않았습니다.");
+            throw new PaymentAlreadyVerifiedException(
+                    "이미 처리된 결제 건입니다. status=" + payment.getStatus());
         }
+
+        try {
+            return paymentConfirmService.confirm(payment);
+        } catch (PaymentAlreadyInProgressException e) {
+            // 웹훅이 처리 중인 상황 -> 기다렸다가 결과를 다시 확인
+            return waitAndFetchResult(command.paymentId());
+        }
+    }
+
+
+     // 이미 확정된 결제 건을 응답 형태로 변환
+    private PaymentVerifyResult toVerifyResult(Payment payment) {
+        GetUserMembershipPort.UserMembership membership =
+                getUserMembershipPort.getUserMembership(payment.getUserId());
+        LocalDateTime membershipUntil = membership.membershipStart().plusDays(30);
+        return new PaymentVerifyResult(payment.getPaymentId(), payment.getStatus(), membershipUntil);
+    }
+
+    /*comment
+     * 다른 요청이 이미 락을 잡고 처리 중일 때 그 처리가 끝날 때까지 기다렸다가
+     * 상태를 다시 읽어 오고 정해진 횟수 안에 끝나지 않으면 그때는 진짜로
+     * 409
+     */
+    private PaymentVerifyResult waitAndFetchResult(String paymentId) {
+        for (int i = 0; i < 5; i++) {
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+
+            // REQUIRES_NEW로 새 트랜잭션을 열어야 웹훅이 커밋해놓은 최신 상태를 볼 수 있음 !!!
+            Payment refreshed = paymentRefetcher.refetch(paymentId);
+
+            if (refreshed.isFinalized()) {
+                if (refreshed.getStatus() == Status.SUCCESS) {
+                    return toVerifyResult(refreshed);
+                }
+                throw new PaymentAlreadyVerifiedException(
+                        "이미 처리된 결제 건입니다. status=" + refreshed.getStatus());
+            }
+        }
+
+        throw new PaymentAlreadyInProgressException("결제 처리 중입니다. 잠시 후 다시 확인해주세요.");
     }
 
     @Override

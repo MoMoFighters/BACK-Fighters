@@ -77,7 +77,10 @@ public class SecurityConfig {
                 "Access-Control-Request-Method",
                 "Access-Control-Request-Headers",
                 "X-Refresh-Token", // 리프레시 토큰을 위한 커스텀 헤더
-                "Cookie"
+                "Cookie",
+                "webhook-id",
+                "webhook-timestamp",
+                "webhook-signature"
         ));
 
         configuration.setExposedHeaders(Arrays.asList(
@@ -159,6 +162,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/**").permitAll() // 인증 없이 허용
                         .requestMatchers("/api/v1/user/onboarding").permitAll() // 인증 없이 허용
                         .requestMatchers("/ws-chat/**").permitAll()
+                        .requestMatchers("/api/v3/payment/webhook").permitAll()
                         .anyRequest().authenticated()) // 나머지는 인증 필요
 //                ========================================================================
 
