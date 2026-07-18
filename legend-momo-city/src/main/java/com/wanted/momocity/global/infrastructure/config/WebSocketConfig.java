@@ -24,6 +24,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final TopicSubscriptionInterceptor subscriptionInterceptor;
     private final ViewingProgressChannelInterceptor viewingProgressChannelInterceptor;
+    private final StudyStompInterceptor studyStompInterceptor;
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
@@ -52,7 +53,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registration.interceptors(
                 subscriptionInterceptor,
                 // 수강 페이지 STOMP JWT 검증 인터셉터
-                viewingProgressChannelInterceptor
+                viewingProgressChannelInterceptor,
+                // study(열품타) 그룹방 구독 시 멤버십 검증 인터셉터
+                // subscriptionInterceptor가 먼저 CONNECT 인증을 끝내야
+                // 이 인터셉터가 Principal/세션 attributes를 읽을 수 있으므로 반드시 뒤에 위치
+                studyStompInterceptor
         );
     }
+
 }
