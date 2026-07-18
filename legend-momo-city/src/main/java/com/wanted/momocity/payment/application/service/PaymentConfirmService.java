@@ -5,15 +5,10 @@ import com.wanted.momocity.payment.application.port.PaymentLockPort;
 import com.wanted.momocity.payment.application.port.PortOnePaymentPort;
 import com.wanted.momocity.payment.application.port.SetUserMembershipPort;
 import com.wanted.momocity.payment.application.supporter.PaymentStatusUpdater;
-import com.wanted.momocity.payment.domain.exception.PaymentAmountMismatchException;
-import com.wanted.momocity.payment.domain.exception.PaymentCancelFailedException;
-import com.wanted.momocity.payment.domain.exception.PaymentAlreadyInProgressException;
-import com.wanted.momocity.payment.domain.exception.PortOneApiException;
-import com.wanted.momocity.payment.domain.model.Payment;
-import com.wanted.momocity.payment.domain.model.PaymentVerifyResult;
-import com.wanted.momocity.payment.domain.model.Plan;
-import com.wanted.momocity.payment.domain.model.PortOnePaymentDetail;
+import com.wanted.momocity.payment.domain.exception.*;
+import com.wanted.momocity.payment.domain.model.*;
 import com.wanted.momocity.payment.domain.repository.PaymentRepository;
+import com.wanted.momocity.payment.infrastructure.applier.PaymentRefetcher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -35,6 +30,7 @@ public class PaymentConfirmService {
     private final PortOnePaymentPort portOnePaymentPort;
     private final PaymentLockPort paymentLockPort;
     private final PaymentStatusUpdater paymentStatusUpdater;
+    private final PaymentRefetcher paymentRefetcher;
 
     @Transactional
     public PaymentVerifyResult confirm(Payment payment) {
@@ -51,6 +47,14 @@ public class PaymentConfirmService {
         *   아래에서 어떤 예외가 나든 unlock()이 누락되지 X
         */
         registerUnlockAfterCompletion(payment.getUserId(), payment.getPlan());
+
+        // 락을 잡은 직후에 캐시 말고 진짜 최신 상태를 한 번 더 확인
+        Payment freshPayment = paymentRefetcher.refetch(payment.getPaymentId());
+        if (freshPayment.isFinalized()) {
+            log.info("[confirm] 락 획득 전 이미 다른 요청이 처리를 완료함 - 중복 처리 방지 paymentId={}",
+                    freshPayment.getPaymentId());
+            return handleAlreadyFinalized(freshPayment);
+        }
 
         PortOnePaymentDetail detail;
         try {
@@ -69,6 +73,19 @@ public class PaymentConfirmService {
             return handleAmountMismatch(payment, detail);}
 
         return handleNotPaid(payment);
+    }
+
+    // 재확인 결과 이미 처리가 끝나 있던 경우
+    // SUCCESS면 그 결과를 그대로 돌려주rh / 그 외에는 /verify와 동일하게 예외 처리
+    private PaymentVerifyResult handleAlreadyFinalized(Payment payment) {
+        if (payment.getStatus() == Status.SUCCESS) {
+            GetUserMembershipPort.UserMembership membership =
+                    getUserMembershipPort.getUserMembership(payment.getUserId());
+            LocalDateTime membershipUntil = membership.membershipStart().plusDays(30);
+            return new PaymentVerifyResult(payment.getPaymentId(), payment.getStatus(), membershipUntil);
+        }
+        throw new PaymentAlreadyVerifiedException(
+                "이미 처리된 결제 건입니다. status=" + payment.getStatus());
     }
 
     private void registerUnlockAfterCompletion(Long userId, Plan plan) {
