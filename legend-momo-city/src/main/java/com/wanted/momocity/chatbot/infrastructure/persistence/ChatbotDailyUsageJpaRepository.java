@@ -8,6 +8,7 @@ package com.wanted.momocity.chatbot.infrastructure.persistence;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDate;
 import java.util.Optional;
@@ -18,6 +19,8 @@ public interface ChatbotDailyUsageJpaRepository extends JpaRepository<ChatbotDai
     Optional<ChatbotDailyUsageJpaEntity> findByUserIdAndUsageDate(Long userId, LocalDate usageDate);
 
     // @ 실제 @Lock 이 걸리는 지점은 여기, JPA 쿼리 메서드 레벨
+    // "ForUpdate" 접미사를 Spring Data가 키워드로 못 알아들어서 @Query로 직접 JPQL 명시함
     @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT e FROM ChatbotDailyUsageJpaEntity e WHERE e.userId = :userId AND e.usageDate = :usageDate")
     Optional<ChatbotDailyUsageJpaEntity> findByUserIdAndUsageDateForUpdate(Long userId, LocalDate usageDate);
 }

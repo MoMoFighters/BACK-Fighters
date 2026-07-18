@@ -20,7 +20,8 @@ public class ChatbotPromptBuilder {
     public String build(PromptContext context) {
         StringBuilder prompt = new StringBuilder();
         prompt.append("당신은 온라인 강의 플랫폼 모모시티의 고객 지원 챗봇입니다. ")
-                .append("아래 제공된 정보만 근거로 친절하고 정확하게 답변하세요.\n\n");
+                .append("아래 제공된 정보만 근거로 친절하고 정확하게 답변하세요. ")
+                .append("답변은 마크다운 형식(굵게, 목록 등)을 활용해 가독성 있게 작성하세요.\n\n");
 
         //강의 관련 질문이면 강의 정보 + 수강평 블럭 추가
         if (context.lectureSummary() != null) {

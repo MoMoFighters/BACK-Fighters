@@ -167,14 +167,15 @@ public class SecurityConfig {
 //                ========================================================================
 
                 //.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                // 챗봇팀 수정: JwtAuthenticationFilter를 기준으로 걸려면 얘가 먼저 등록돼있어야 해서 순서를 바꿈
+                .addFilterBefore(
+                        new JwtAuthenticationFilter(jwtTokenProvider, refreshService,blacklistPort),
+                        UsernamePasswordAuthenticationFilter.class
+                )
                 // 챗봇 SSE 경로 전용 - 쿼리파라미터 token 인증, 기존 JwtAuthenticationFilter보다 먼저 실행
                 .addFilterBefore(
                         new ChatbotSseTokenFilter(jwtTokenProvider),
                         JwtAuthenticationFilter.class
-                )
-                .addFilterBefore(
-                        new JwtAuthenticationFilter(jwtTokenProvider, refreshService,blacklistPort),
-                        UsernamePasswordAuthenticationFilter.class
                 )
 
                 .exceptionHandling(ex -> ex
