@@ -17,9 +17,6 @@ public interface GroupRoomJpaRepository extends JpaRepository<GroupRoomJpaEntity
     // 방 단건 조회 (소프트딜리트 제외, status=ACTIVE)
     Optional<GroupRoomJpaEntity> findByIdAndStatus(Long id, GroupRoom.GroupRoomStatus status);
 
-    // 초대코드 중복 확인용 조회 (invite_code 생성 시 유니크 보장)
-    Optional<GroupRoomJpaEntity> findByInviteCode(String inviteCode);
-
     // 특정 유저가 host인 ACTIVE 방 목록 조회
     List<GroupRoomJpaEntity> findAllByHostUserIdAndStatus(Long hostUserId, GroupRoom.GroupRoomStatus status);
 

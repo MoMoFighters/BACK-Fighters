@@ -3,14 +3,19 @@ package com.wanted.momocity.study.presentation.api.controller;
 import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import com.wanted.momocity.study.application.room.result.RoomCreateResult;
+import com.wanted.momocity.study.application.room.result.RoomUpdateResult;
 import com.wanted.momocity.study.application.room.usecase.RoomCommandUseCase;
 import com.wanted.momocity.study.application.room.usecase.RoomQueryUseCase;
 import com.wanted.momocity.study.presentation.api.common.StudyResponseCode;
+import com.wanted.momocity.study.presentation.api.request.CreateGroupRoomRequest;
+import com.wanted.momocity.study.presentation.api.request.UpdateRoomTitleRequest;
 import com.wanted.momocity.study.presentation.api.response.room.GroupRoomDetailResponse;
 import com.wanted.momocity.study.presentation.api.response.room.GroupRoomListResponse;
 import com.wanted.momocity.study.presentation.api.response.room.GroupRoomResponse;
+import com.wanted.momocity.study.presentation.api.response.room.RoomUpdateResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -36,17 +41,37 @@ public class RoomController {
     @Operation(summary = "그룹방 생성", description = "새 그룹방을 생성합니다. 생성자가 자동으로 방장이 됩니다.")
     @PostMapping
     public ResponseEntity<ApiResponse<GroupRoomResponse>> createRoom(
+            @Valid @RequestBody CreateGroupRoomRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        RoomCreateResult result = roomCommandUseCase.createRoom(userDetails.getUserId());
+        RoomCreateResult result = roomCommandUseCase.createRoom(userDetails.getUserId(),request.title());
 
         return ResponseEntity.status(201).body(ApiResponse.created(
                 StudyResponseCode.ROOM_CREATED,
                 "그룹방을 생성했습니다.",
                 new GroupRoomResponse(
                         result.roomId(), result.hostUserId(), result.hostNickname(),
-                        result.inviteCode(), result.status(), result.maxMember()
+                        result.title(), result.status(), result.maxMember()
                 )
+        ));
+    }
+
+    // 그룹방 제목 수정
+    @Operation(summary = "그룹방 제목 수정", description = "방장이 방 제목을 수정합니다.")
+    @PatchMapping("/{roomId}")
+    public ResponseEntity<ApiResponse<RoomUpdateResponse>> updateTitle(
+            @PathVariable Long roomId,
+            @Valid @RequestBody UpdateRoomTitleRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        RoomUpdateResult result = roomCommandUseCase.updateTitle(
+                userDetails.getUserId(), roomId, request.title()
+        );
+
+        return ResponseEntity.ok(ApiResponse.success(
+                StudyResponseCode.ROOM_UPDATED,
+                "방 제목을 수정했습니다.",
+                new RoomUpdateResponse(result.roomId(), result.title())
         ));
     }
 

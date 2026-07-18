@@ -4,7 +4,9 @@ import com.wanted.momocity.auth.domain.model.User;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.study.application.common.port.StudyUserInfoPort;
 import com.wanted.momocity.study.application.room.result.RoomCreateResult;
+import com.wanted.momocity.study.application.room.result.RoomUpdateResult;
 import com.wanted.momocity.study.application.room.usecase.RoomCommandUseCase;
+import com.wanted.momocity.study.domain.exception.StudyAccessDeniedException;
 import com.wanted.momocity.study.domain.exception.StudyNotFoundException;
 import com.wanted.momocity.study.domain.model.GroupRoom;
 import com.wanted.momocity.study.domain.model.GroupRoomMember;
@@ -16,7 +18,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.security.SecureRandom;
 import java.time.LocalDateTime;
 
 /*
@@ -38,22 +39,20 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class RoomCommandService implements RoomCommandUseCase {
 
-    // invite_code 문자 구성 - 혼동되기 쉬운 문자(0/O, 1/I) 제외
-    private static final String INVITE_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    private static final int INVITE_CODE_LENGTH = 6;
-    private static final SecureRandom RANDOM = new SecureRandom();
-
     private final GroupRoomRepository groupRoomRepository;
     private final GroupRoomMemberRepository groupRoomMemberRepository;
     private final GroupRoomMemberCountAdapter groupRoomMemberCountAdapter;
     private final StudyUserInfoPort studyUserInfoPort;
 
     @Override
-    public RoomCreateResult createRoom(Long userId) {
+    public RoomCreateResult createRoom(Long userId, String title) {
 
-        // 방 생성 - 유니크한 초대코드가 나올 때까지 재시도
-        String inviteCode = generateUniqueInviteCode();
-        GroupRoom room = GroupRoom.create(userId, inviteCode);
+        // 화면 표시용 닉네임 조회를 먼저 수행 (코드리뷰 반영 - 방/멤버 저장 전에 유저 존재 확인)
+        User host = studyUserInfoPort.findById(userId)
+                .orElseThrow(() -> new StudyNotFoundException("사용자를 찾을 수 없습니다."));
+
+        // 방 생성
+        GroupRoom room = GroupRoom.create(userId, title);
         GroupRoom savedRoom = groupRoomRepository.save(room);
 
         // 방장을 JOINED 상태로 즉시 참가시킴 (초대 절차 없이 바로 확정)
@@ -63,40 +62,29 @@ public class RoomCommandService implements RoomCommandUseCase {
         // Redis 인원 카운트 초기화 (방장 1명 포함)
         groupRoomMemberCountAdapter.initialize(savedRoom.getId(), 1);
 
-        // 화면 표시용 닉네임 조회 (본인 정보라 실패할 일이 거의 없지만, 방어적으로 예외 처리)
-        User host = studyUserInfoPort.findById(userId)
-                .orElseThrow(() -> new StudyNotFoundException("사용자를 찾을 수 없습니다."));
-
-        log.info("[Study] 그룹방 생성 완료 | roomId={}, hostUserId={}, inviteCode={}",
-                savedRoom.getId(), userId, inviteCode);
+        log.info("[Study] 그룹방 생성 완료 | roomId={}, hostUserId={}",
+                savedRoom.getId(), userId);
 
         return new RoomCreateResult(
-                savedRoom.getId(), savedRoom.getHostUserId(), host.getNickname(),
-                savedRoom.getInviteCode(), savedRoom.getStatus().name(), savedRoom.getMaxMember()
+                savedRoom.getId(), savedRoom.getHostUserId(), savedRoom.getTitle(),
+                host.getNickname(), savedRoom.getStatus().name(), savedRoom.getMaxMember()
         );
     }
 
-    /*
-     * comment.
-     *  중복되지 않는 초대코드를 생성
-     *  - 6자리 랜덤 문자열(대문자+숫자, 혼동되는 문자 제외)을 만들고 DB에 존재하는지 확인, 존재시 재시도
-     *    실무적으로 충돌이 거의 없지만, 최대 5회까지만 재시도 후 실패시 예외로 처리
-     * */
-    private String generateUniqueInviteCode() {
-        for (int attempt = 0; attempt < 5; attempt++) {
-            String candidate = generateRandomCode();
-            if (groupRoomRepository.findByInviteCode(candidate).isEmpty()) {
-                return candidate;
-            }
-        }
-        throw new DomainRuleViolationException("초대코드 생성에 반복적으로 실패했습니다. 잠시 후 다시 시도해주세요.");
-    }
+    // 방 제목 수정 (방장만 가능)
+    @Override
+    public RoomUpdateResult updateTitle(Long userId, Long roomId, String newTitle) {
+        GroupRoom room = groupRoomRepository.findByIdAndActive(roomId)
+                .orElseThrow(() -> new StudyNotFoundException("그룹방을 찾을 수 없습니다."));
 
-    private String generateRandomCode() {
-        StringBuilder sb = new StringBuilder(INVITE_CODE_LENGTH);
-        for (int i = 0; i < INVITE_CODE_LENGTH; i++) {
-            sb.append(INVITE_CODE_CHARS.charAt(RANDOM.nextInt(INVITE_CODE_CHARS.length())));
+        if (!room.isHost(userId)) {
+            throw new StudyAccessDeniedException("방장만 방 제목을 수정할 수 있습니다.");
         }
-        return sb.toString();
+
+        room.updateTitle(newTitle);
+        GroupRoom saved = groupRoomRepository.save(room);
+
+        log.info("[Study] 그룹방 제목 수정 완료 | roomId={}, newTitle={}", roomId, newTitle);
+        return new RoomUpdateResult(saved.getId(), saved.getTitle());
     }
 }

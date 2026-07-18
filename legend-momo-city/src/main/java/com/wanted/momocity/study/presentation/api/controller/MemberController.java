@@ -126,6 +126,19 @@ public class MemberController {
         ));
     }
 
+    // 내가 보낸 초대 목록 조회
+    @Operation(summary = "보낸 초대 목록 조회", description = "내가 방장으로서 보낸 그룹방 초대 목록을 조회합니다.")
+    @GetMapping("/members/invitations/sent")
+    public ResponseEntity<ApiResponse<SentInvitationListResponse>> getSentInvitations(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(
+                StudyResponseCode.INVITATION_SENT_LIST_FETCHED,
+                "보낸 초대 목록을 조회했습니다.",
+                memberQueryUseCase.getSentInvitations(userDetails.getUserId())
+        ));
+    }
+
     // 방 나가기 (자진 퇴장)
     @Operation(summary = "그룹방 나가기", description = "그룹방에서 나갑니다.")
     @PostMapping("/rooms/{roomId}/members/leave")

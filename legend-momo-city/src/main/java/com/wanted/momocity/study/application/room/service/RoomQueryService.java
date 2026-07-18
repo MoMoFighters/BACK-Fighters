@@ -58,7 +58,8 @@ public class RoomQueryService implements RoomQueryUseCase {
                             member.getUserId(),
                             user.getNickname(),
                             member.getStatus().name(),
-                            member.getTimerStatus() == null ? null : member.getTimerStatus().name()
+                            member.getTimerStatus() == null ? null : member.getTimerStatus().name(),
+                            member.getTotalSeconds()
                     );
                 })
                 .toList();
@@ -67,7 +68,7 @@ public class RoomQueryService implements RoomQueryUseCase {
 
         return new GroupRoomDetailResponse(
                 room.getId(), room.getHostUserId(), host.getNickname(),
-                room.getStatus().name(), room.getMaxMember(), members
+                room.getTitle(), room.getStatus().name(), room.getMaxMember(), members
         );
     }
 
@@ -86,8 +87,9 @@ public class RoomQueryService implements RoomQueryUseCase {
                     int memberCount = groupRoomMemberRepository.findAllByGroupRoomIdAndJoined(room.getId()).size();
 
                     return new GroupRoomListResponse.RoomItem(
-                            room.getId(), room.getHostUserId(), host.getNickname(),
-                            memberCount, room.getStatus().name()
+                            room.getId(), room.getHostUserId(),room.getTitle(),
+                            host.getNickname(), memberCount, room.getStatus().name(),
+                            membership.getTimerStatus() == null ? null : membership.getTimerStatus().name()
                     );
                 })
                 .toList();

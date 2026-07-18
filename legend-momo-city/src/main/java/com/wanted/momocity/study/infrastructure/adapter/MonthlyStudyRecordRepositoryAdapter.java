@@ -45,4 +45,10 @@ public class MonthlyStudyRecordRepositoryAdapter implements MonthlyStudyRecordRe
                 .toList();
     }
 
+    // 원자적 증분 upsert를 그대로 JpaRepository에 위임 (YearMonth -> String 변환은 여기서 담당)
+    @Override
+    public void incrementSeconds(Long userId, YearMonth yearMonth, int seconds) {
+        monthlyStudyRecordJpaRepository.incrementSeconds(userId, yearMonth.toString(), seconds);
+    }
+
 }
