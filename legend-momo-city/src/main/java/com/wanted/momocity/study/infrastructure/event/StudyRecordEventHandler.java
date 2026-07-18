@@ -27,6 +27,7 @@ import java.time.YearMonth;
  *  @TransactionalEventListener(AFTER_COMMIT) : 세션/타이머 종료 트랜잭션이 커밋된 후에만 누적을 반영
  *  (트랜잭션 롤백됐는데 기록만 먼저 반영되는 정합성 문제 방지)
  *  @Async("domainEventExecutor") : Community 패턴과 동일하게 별도 스레드에서 처리
+ *  @Transactional(REQUIRES_NEW) : AFTER_COMMIT 시점엔 원본 트랜잭션이 이미 끝나있으므로 새 트랜잭션을 독립적으로 열어야 함
  *  -
  *  [수정 사항]
  *  자정을 걸친 세션의 날짜 분할 로직은 아직 없다. 지금은 이벤트 발행 시점에 넘어온 studyDate 하나에 seconds를 그대로 몰아서 누적
@@ -44,32 +45,15 @@ public class StudyRecordEventHandler {
     @Async("domainEventExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional (propagation = Propagation.REQUIRES_NEW)
-    public void onStudySessionEnded(StudySessionAccumulatedEvent event) {
-        accumulateDaily(event);
-        accumulateMonthly(event);
-        log.info("[Study] 공부 기록 누적 완료 | userId={}, date={}, seconds={}",
-                event.userId(), event.studyDate(), event.seconds());
-    }
+    public void onStudySessionAccumulated(StudySessionAccumulatedEvent event) {
 
-    // 일별 기록 누적 - 없으면 신규 생성, 있으면 누적
-    private void accumulateDaily(StudySessionAccumulatedEvent event) {
-        DailyStudyRecord record = dailyStudyRecordRepository
-                .findByUserIdAndStudyDate(event.userId(), event.studyDate())
-                .orElseGet(() -> DailyStudyRecord.create(event.userId(), event.studyDate(), 0));
+        dailyStudyRecordRepository.incrementSeconds(event.userId(), event.studyDate(), event.seconds());
 
-        record.accumulate(event.seconds());
-        dailyStudyRecordRepository.save(record);
-    }
-
-    // 월별 기록 누적 - 없으면 신규 생성, 있으면 누적
-    private void accumulateMonthly(StudySessionAccumulatedEvent event) {
         YearMonth yearMonth = YearMonth.from(event.studyDate());
-        MonthlyStudyRecord record = monthlyStudyRecordRepository
-                .findByUserIdAndYearMonth(event.userId(), yearMonth)
-                .orElseGet(() -> MonthlyStudyRecord.create(event.userId(), yearMonth, 0));
+        monthlyStudyRecordRepository.incrementSeconds(event.userId(), yearMonth, event.seconds());
 
-        record.accumulate(event.seconds());
-        monthlyStudyRecordRepository.save(record);
+        log.info("[Study] 공부 기록 원자적 누적 완료 | userId={}, date={}, seconds={}",
+                event.userId(), event.studyDate(), event.seconds());
     }
 
 }
