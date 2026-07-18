@@ -72,9 +72,23 @@ public class SoloCommandService implements SoloCommandUseCase {
             // 재개 케이스 - 24시간 초과 여부 먼저 확인
             SoloSession session = existing.get();
             long elapsedFromStart = Duration.between(session.getStartTime(), now).getSeconds();
+
             if (elapsedFromStart >= MAX_DURATION_SECONDS) {
-                throw new DomainRuleViolationException("세션이 만료되어 재개할 수 없습니다.");
+                session.end(now);
+                soloSessionRepository.save(session);
+                log.info("[Study] 24시간 초과 세션 자동 만료 처리 | userId={}, sessionId={}", userId, session.getId());
+
+                // 만료 처리 후, 같은 start() 요청을 "신규 시작"으로 이어서 처리한다
+                SoloSession newSession = SoloSession.create(userId, now);
+                SoloSession saved = soloSessionRepository.save(newSession);
+
+                StudyLap newLap = studyLapService.startLap(userId, null, saved.getId(), now);
+
+                log.info("[Study] 솔로 세션 시작 | userId={}, sessionId={}", userId, saved.getId());
+                return SoloActionResult.ofStarted(saved, false, toLapItem(newLap, 1));
             }
+
+            // 정상 재개 케이스 (24시간 이내)
             session.resume(now);
             SoloSession saved = soloSessionRepository.save(session);
 
@@ -104,17 +118,17 @@ public class SoloCommandService implements SoloCommandUseCase {
             throw new DomainRuleViolationException("진행 중인 타이머가 없습니다.");
         }
 
+        LocalDateTime now = LocalDateTime.now();
         int increment = accumulateElapsed(session);
         session.pause();
         SoloSession saved = soloSessionRepository.save(session);
 
         if(increment > 0) {
             eventPublisher.publishEvent(
-                    new StudySessionAccumulatedEvent(userId, LocalDate.now(), increment)
+                    new StudySessionAccumulatedEvent(userId, now.toLocalDate(), increment)
             );
         }
-
-        LocalDateTime now = LocalDateTime.now();
+        
         StudyLap closedLap = studyLapService.closeLap(null, saved.getId(), now);
         int lapNumber = (int) studyLapService.countLaps(null, saved.getId());
 
