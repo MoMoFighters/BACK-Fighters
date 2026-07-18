@@ -1,6 +1,6 @@
 package com.wanted.momocity.study.infrastructure.event;
 
-import com.wanted.momocity.study.domain.event.StudySessionEndedEvent;
+import com.wanted.momocity.study.domain.event.StudySessionAccumulatedEvent;
 import com.wanted.momocity.study.domain.model.DailyStudyRecord;
 import com.wanted.momocity.study.domain.model.MonthlyStudyRecord;
 import com.wanted.momocity.study.domain.repository.DailyStudyRecordRepository;
@@ -44,7 +44,7 @@ public class StudyRecordEventHandler {
     @Async("domainEventExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional (propagation = Propagation.REQUIRES_NEW)
-    public void onStudySessionEnded(StudySessionEndedEvent event) {
+    public void onStudySessionEnded(StudySessionAccumulatedEvent event) {
         accumulateDaily(event);
         accumulateMonthly(event);
         log.info("[Study] 공부 기록 누적 완료 | userId={}, date={}, seconds={}",
@@ -52,7 +52,7 @@ public class StudyRecordEventHandler {
     }
 
     // 일별 기록 누적 - 없으면 신규 생성, 있으면 누적
-    private void accumulateDaily(StudySessionEndedEvent event) {
+    private void accumulateDaily(StudySessionAccumulatedEvent event) {
         DailyStudyRecord record = dailyStudyRecordRepository
                 .findByUserIdAndStudyDate(event.userId(), event.studyDate())
                 .orElseGet(() -> DailyStudyRecord.create(event.userId(), event.studyDate(), 0));
@@ -62,7 +62,7 @@ public class StudyRecordEventHandler {
     }
 
     // 월별 기록 누적 - 없으면 신규 생성, 있으면 누적
-    private void accumulateMonthly(StudySessionEndedEvent event) {
+    private void accumulateMonthly(StudySessionAccumulatedEvent event) {
         YearMonth yearMonth = YearMonth.from(event.studyDate());
         MonthlyStudyRecord record = monthlyStudyRecordRepository
                 .findByUserIdAndYearMonth(event.userId(), yearMonth)

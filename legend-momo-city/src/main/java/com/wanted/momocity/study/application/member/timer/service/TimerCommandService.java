@@ -3,7 +3,7 @@ package com.wanted.momocity.study.application.member.timer.service;
 import com.wanted.momocity.study.application.common.service.StudyLapService;
 import com.wanted.momocity.study.application.member.timer.result.TimerActionResult;
 import com.wanted.momocity.study.application.member.timer.usecase.TimerCommandUseCase;
-import com.wanted.momocity.study.domain.event.StudySessionEndedEvent;
+import com.wanted.momocity.study.domain.event.StudySessionAccumulatedEvent;
 import com.wanted.momocity.study.domain.event.TimerStatusChangedEvent;
 import com.wanted.momocity.study.domain.exception.StudyAccessDeniedException;
 import com.wanted.momocity.study.domain.model.GroupRoomMember;
@@ -78,9 +78,16 @@ public class TimerCommandService implements TimerCommandUseCase {
             throw new DomainRuleViolationException("진행 중인 타이머가 없습니다.");
         }
 
-        accumulateElapsed(member);
+        // pause 시 이번 구간 증분 이벤트 발행
+        int increment = accumulateElapsed(member);
         member.pauseTimer();
         GroupRoomMember saved = groupRoomMemberRepository.save(member);
+
+        if (increment > 0) {
+            eventPublisher.publishEvent(
+                    new StudySessionAccumulatedEvent(userId, LocalDateTime.now().toLocalDate(), increment)
+            );
+        }
 
         LocalDateTime now = LocalDateTime.now();
         StudyLap closedLap = studyLapService.closeLap(roomId, saved.getId(), now);
@@ -107,8 +114,10 @@ public class TimerCommandService implements TimerCommandUseCase {
             throw new DomainRuleViolationException("진행 중인 타이머가 없습니다.");
         }
 
+        // RESTING 상태였다면(이미 pause 시점에 누적 끝남) increment=0이 된다.
+        int increment = 0;
         if (member.getTimerStatus() == GroupRoomMember.TimerStatus.STUDYING) {
-            accumulateElapsed(member);
+            increment = accumulateElapsed(member);
         }
         member.endTimer();
         GroupRoomMember saved = groupRoomMemberRepository.save(member);
@@ -119,12 +128,15 @@ public class TimerCommandService implements TimerCommandUseCase {
         StudyLap closedLap = studyLapService.closeLap(roomId, saved.getId(), now);
         int lapNumber = (int) studyLapService.countLaps(roomId, saved.getId());
 
-        eventPublisher.publishEvent(
-                new StudySessionEndedEvent(userId, LocalDateTime.now().toLocalDate(), saved.getTotalSeconds())
-        );
+        // 증분 값이 존재할 때만 이벤트 발행
+        if (increment > 0) {
+            eventPublisher.publishEvent(
+                    new StudySessionAccumulatedEvent(userId, now.toLocalDate(), increment)
+            );
+        }
         eventPublisher.publishEvent(new TimerStatusChangedEvent(roomId, userId, null));
 
-        log.info("[Study] 그룹 타이머 종료 | roomId={}, userId={}", roomId, userId);
+        log.info("[Study] 그룹 타이머 종료 | roomId={}, userId={}, increment={}", roomId, userId, increment);
         return TimerActionResult.ofEnded(saved, closedLap == null ? null : toLapItem(closedLap, lapNumber));
     }
 
@@ -152,13 +164,15 @@ public class TimerCommandService implements TimerCommandUseCase {
                 });
     }
 
-    // lastResumedAt ~ now 구간 경과 시간을 계산해서 누적
-    private void accumulateElapsed(GroupRoomMember member) {
+    // lastResumedAt ~ now 구간 경과 시간을 계산해서 누적, 이에 더해진 증분을 반환
+    private int accumulateElapsed(GroupRoomMember member) {
         if (member.getLastResumedAt() == null) {
-            return;
+            return 0;
         }
         long elapsed = Duration.between(member.getLastResumedAt(), LocalDateTime.now()).getSeconds();
-        member.accumulateSeconds((int) Math.max(elapsed, 0));
+        int increment = (int) Math.max(elapsed, 0);
+        member.accumulateSeconds(increment);
+        return increment;
     }
 
     // StudyLap(도메인) -> LapItem(Response) 변환 + 순번 매기기

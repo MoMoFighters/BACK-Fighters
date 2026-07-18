@@ -204,15 +204,17 @@ public class MemberCommandService implements MemberCommandUseCase {
         GroupRoomMember member = getJoinedMember(userId, roomId);
         GroupRoom room = getActiveRoom(roomId);
 
-        // 진행 중인 타이머가 있으면 먼저 종료 처리
+        // 진행 중인 타이머(STUDYING) 존재 시, 마지막 구간 시간을 확정해서 누적 -> increment 기억
+        // RESTING이었다면 increment=0.
+        int increment = 0;
         if (member.getTimerStatus() == GroupRoomMember.TimerStatus.STUDYING) {
-            accumulateElapsed(member);
+            increment = accumulateElapsed(member);
         }
 
-        // getTotalSeconds() > 0 이상이면 전부 이벤트 발행 -> 기록 누적
-        if (member.getTotalSeconds() > 0) {
+        // increment > 0 이상이면 전부 이벤트 발행 -> 기록 누적
+        if (increment > 0) {
             eventPublisher.publishEvent(
-                    new StudySessionEndedEvent(userId, LocalDateTime.now().toLocalDate(), member.getTotalSeconds())
+                    new StudySessionAccumulatedEvent(userId, LocalDateTime.now().toLocalDate(), increment)
             );
         }
 
@@ -230,7 +232,7 @@ public class MemberCommandService implements MemberCommandUseCase {
             groupRoomRepository.save(room);
             // 방이 완전히 종료됐으므로 Redis 카운트 키 자체를 삭제 (decrement로 0 남기지 않고 clear)
             groupRoomMemberCountAdapter.clear(roomId);
-            // 마지막 사람이 나간 경우 이벤트 발행
+            // 마지막 사람이 나간 경우 이벤트 발환
             eventPublisher.publishEvent(new MemberLeftEvent(roomId, userId));
             eventPublisher.publishEvent(new RoomEndedEvent(roomId));
             log.info("[Study] 마지막 인원 퇴장으로 방 종료 | roomId={}", roomId);
@@ -279,14 +281,15 @@ public class MemberCommandService implements MemberCommandUseCase {
                 .filter(GroupRoomMember::isJoined)
                 .orElseThrow(() -> new StudyNotFoundException("그룹방 참가자가 아닙니다."));
 
+        int increment = 0;
         if (target.getTimerStatus() == GroupRoomMember.TimerStatus.STUDYING) {
-            accumulateElapsed(target);
+            increment = accumulateElapsed(target);
         }
 
         // getTotalSeconds() > 0 이상이면 전부 이벤트 발행 -> 기록 누적
-        if (target.getTotalSeconds() > 0) {
+        if (increment > 0) {
             eventPublisher.publishEvent(
-                    new StudySessionEndedEvent(targetUserId, LocalDateTime.now().toLocalDate(), target.getTotalSeconds())
+                    new StudySessionAccumulatedEvent(targetUserId, LocalDateTime.now().toLocalDate(), increment)
             );
         }
 
@@ -343,11 +346,13 @@ public class MemberCommandService implements MemberCommandUseCase {
     }
 
     // lastResumedAt ~ now 구간 경과 시간을 계산해서 누적 (leave/kick에서 타이머 종료 처리 시 사용)
-    private void accumulateElapsed(GroupRoomMember member) {
+    private int accumulateElapsed(GroupRoomMember member) {
         if (member.getLastResumedAt() == null) {
-            return;
+            return 0;
         }
         long elapsed = Duration.between(member.getLastResumedAt(), LocalDateTime.now()).getSeconds();
-        member.accumulateSeconds((int) Math.max(elapsed, 0));
+        int increment = (int) Math.max(elapsed, 0);
+        member.accumulateSeconds(increment);
+        return increment;
     }
 }
