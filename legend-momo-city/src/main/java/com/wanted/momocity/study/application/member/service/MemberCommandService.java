@@ -1,5 +1,6 @@
 package com.wanted.momocity.study.application.member.service;
 
+import com.wanted.momocity.study.application.common.service.StudyLapService;
 import com.wanted.momocity.study.application.member.command.InviteMemberCommand;
 import com.wanted.momocity.study.application.member.port.FriendCatalogPort;
 import com.wanted.momocity.study.application.member.result.InvitationResult;
@@ -52,6 +53,7 @@ public class MemberCommandService implements MemberCommandUseCase {
     // Redis 원자적 인원 카운트 어댑터 - 수락 시점 최종 방어선
     private final GroupRoomMemberCountAdapter groupRoomMemberCountAdapter;
     private final ApplicationEventPublisher eventPublisher;
+    private final StudyLapService studyLapService;
 
     /*
      * comment.
@@ -204,21 +206,25 @@ public class MemberCommandService implements MemberCommandUseCase {
         GroupRoomMember member = getJoinedMember(userId, roomId);
         GroupRoom room = getActiveRoom(roomId);
 
+        LocalDateTime now = LocalDateTime.now();
+
         // 진행 중인 타이머(STUDYING) 존재 시, 마지막 구간 시간을 확정해서 누적 -> increment 기억
         // RESTING이었다면 increment=0.
         int increment = 0;
         if (member.getTimerStatus() == GroupRoomMember.TimerStatus.STUDYING) {
-            increment = accumulateElapsed(member);
+            increment = accumulateElapsed(member, now);
+            // STUDYING 상태로 나가면 StudyLap이 ended_at=null인 채로 열려있는 상태 -> leave 시점에 반드시 닫아줘야 함
+            studyLapService.closeLap(roomId, member.getId(), now);
         }
 
         // increment > 0 이상이면 전부 이벤트 발행 -> 기록 누적
         if (increment > 0) {
             eventPublisher.publishEvent(
-                    new StudySessionAccumulatedEvent(userId, LocalDateTime.now().toLocalDate(), increment)
+                    new StudySessionAccumulatedEvent(userId, now.toLocalDate(), increment)
             );
         }
 
-        member.leave(LocalDateTime.now());
+        member.leave(now);
         groupRoomMemberRepository.save(member);
 
         // 인원 감소 -> Redis 카운트도 -1 (수락 시 tryIncrement로 +1 했던 것과 짝을 맞춤)
@@ -228,7 +234,7 @@ public class MemberCommandService implements MemberCommandUseCase {
 
         // 마지막 사람이 나간 경우 -> 방 종료
         if (remaining.isEmpty()) {
-            room.end(LocalDateTime.now());
+            room.end(now);
             groupRoomRepository.save(room);
             // 방이 완전히 종료됐으므로 Redis 카운트 키 자체를 삭제 (decrement로 0 남기지 않고 clear)
             groupRoomMemberCountAdapter.clear(roomId);
@@ -281,19 +287,22 @@ public class MemberCommandService implements MemberCommandUseCase {
                 .filter(GroupRoomMember::isJoined)
                 .orElseThrow(() -> new StudyNotFoundException("그룹방 참가자가 아닙니다."));
 
+        LocalDateTime now = LocalDateTime.now();
+
         int increment = 0;
         if (target.getTimerStatus() == GroupRoomMember.TimerStatus.STUDYING) {
-            increment = accumulateElapsed(target);
+            increment = accumulateElapsed(target, now);
+            studyLapService.closeLap(roomId, target.getId(), now);
         }
 
         // getTotalSeconds() > 0 이상이면 전부 이벤트 발행 -> 기록 누적
         if (increment > 0) {
             eventPublisher.publishEvent(
-                    new StudySessionAccumulatedEvent(targetUserId, LocalDateTime.now().toLocalDate(), increment)
+                    new StudySessionAccumulatedEvent(targetUserId, now.toLocalDate(), increment)
             );
         }
 
-        target.kick(LocalDateTime.now());
+        target.kick(now);
         groupRoomMemberRepository.save(target);
 
         // 강퇴로 인원 감소 -> Redis 카운트도 -1
@@ -346,11 +355,11 @@ public class MemberCommandService implements MemberCommandUseCase {
     }
 
     // lastResumedAt ~ now 구간 경과 시간을 계산해서 누적 (leave/kick에서 타이머 종료 처리 시 사용)
-    private int accumulateElapsed(GroupRoomMember member) {
+    private int accumulateElapsed(GroupRoomMember member, LocalDateTime now) {
         if (member.getLastResumedAt() == null) {
             return 0;
         }
-        long elapsed = Duration.between(member.getLastResumedAt(), LocalDateTime.now()).getSeconds();
+        long elapsed = Duration.between(member.getLastResumedAt(), now).getSeconds();
         int increment = (int) Math.max(elapsed, 0);
         member.accumulateSeconds(increment);
         return increment;
