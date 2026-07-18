@@ -49,7 +49,9 @@ public class TimerQueryService implements TimerQueryUseCase {
                 .filter(GroupRoomMember::isJoined)
                 .orElseThrow(() -> new StudyNotFoundException("그룹방 참가자가 아닙니다."));
 
-        var laps = studyLapService.getLaps(roomId, target.getId());
+        var laps = studyLapService.getLaps(roomId, target.getId()).stream()
+                .filter(lap -> !lap.getStartedAt().isBefore(target.getJoinedAt()))
+                .toList();
 
         var items = IntStream.range(0, laps.size())
                 .mapToObj(i -> {
