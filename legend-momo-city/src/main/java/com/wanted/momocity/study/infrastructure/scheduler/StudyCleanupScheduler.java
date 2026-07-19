@@ -2,12 +2,10 @@ package com.wanted.momocity.study.infrastructure.scheduler;
 
 import com.wanted.momocity.study.domain.model.GroupRoom;
 import com.wanted.momocity.study.domain.repository.GroupRoomRepository;
-import com.wanted.momocity.study.domain.repository.StudyLapRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -31,7 +29,7 @@ public class StudyCleanupScheduler {
     private static final int RETENTION_DAYS = 30;
 
     private final GroupRoomRepository groupRoomRepository;
-    private final StudyLapRepository studyLapRepository;
+    private final StudyRoomHardDeleteService studyRoomHardDeleteService;
 
     @Scheduled(cron = "0 0 4 * * *")
     public void cleanupEndedRooms() {
@@ -48,21 +46,15 @@ public class StudyCleanupScheduler {
 
         for (GroupRoom room : targets) {
             try {
-                deleteRoom(room.getId());
+                // this.deleteRoom() 자기 자신 호출 -> 프록시를 거치는 외부 빈 호출로 변경
+                // (같은 클래스 내부 호출은 @Transactional 프록시를 우회해 트랜잭션이 안 걸리는 문제가 있었음)
+                studyRoomHardDeleteService.deleteRoom(room.getId());
                 log.info("[StudyCleanup] 방 하드딜리트 완료 | roomId={}, endedAt={}", room.getId(), room.getDeletedAt());
             } catch (Exception e) {
                 // 방 하나 삭제 실패가 전체 배치를 중단시키지 않도록 개별 try-catch로 격리
                 log.error("[StudyCleanup] 방 하드딜리트 실패 | roomId={}, message={}", room.getId(), e.getMessage(), e);
             }
         }
-    }
-
-    // 방 하나를 삭제 - study_lap 먼저 지우고 group_room 삭제 (member는 CASCADE)
-    // 각 방 삭제를 별도 트랜잭션으로 묶어서, 하나 실패해도 다른 방 삭제에 영향 없게 함
-    @Transactional
-    public void deleteRoom(Long roomId) {
-        studyLapRepository.deleteAllByRoomId(roomId);
-        groupRoomRepository.deleteById(roomId);
     }
 
 }
