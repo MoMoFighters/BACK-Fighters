@@ -22,7 +22,7 @@ public class PaymentPolicy {
 
         if (targetPlan.isDowngradeFrom(currentPlan)) {
             throw new PaymentDowngradeNotAllowedException(
-                    "다운그레이드는 결제가 필요하지 않습니다. 구독 만료 시점에 자동으로 적용됩니다."
+                    "플랜 다운그레이드는 지원하지 않습니다. 구독을 취소하시면 BASIC 플랜으로 전환됩니다."
             );
         }
 
