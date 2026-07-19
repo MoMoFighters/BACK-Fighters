@@ -63,7 +63,7 @@ public class SecurityConfig {
                 "http://localhost:3000", // React, Vue 등의 개발서버
                 "http://localhost:8081", // 다른 로컬 개발 환경
                 "https://momocity-six.vercel.app", // 배포하게 될 경우
-                "*"
+                "https://momocity.kro.kr"
         ));
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
