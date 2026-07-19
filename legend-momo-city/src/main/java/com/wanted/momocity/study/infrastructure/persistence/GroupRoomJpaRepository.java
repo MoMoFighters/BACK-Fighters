@@ -20,4 +20,10 @@ public interface GroupRoomJpaRepository extends JpaRepository<GroupRoomJpaEntity
     // 특정 유저가 host인 ACTIVE 방 목록 조회
     List<GroupRoomJpaEntity> findAllByHostUserIdAndStatus(Long hostUserId, GroupRoom.GroupRoomStatus status);
 
+    // 하드딜리트 대상 조회 - ENDED 상태이면서 deletedAt이 threshold보다 이전인 방들
+    List<GroupRoomJpaEntity> findAllByStatusAndDeletedAtBefore(
+            GroupRoom.GroupRoomStatus status,
+            java.time.LocalDateTime threshold
+    );
+
 }
