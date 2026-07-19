@@ -108,9 +108,16 @@ public class PaymentConfirmService {
         boolean isSamePlanRenewal = membership.plan() == payment.getPlan();
         boolean hasRemainingTime = currentUntil.isAfter(LocalDateTime.now());
 
-        LocalDateTime newMembershipStart = (isSamePlanRenewal && hasRemainingTime)
-                ? currentUntil
-                : LocalDateTime.now();
+        LocalDateTime newMembershipStart;
+        if (isSamePlanRenewal && hasRemainingTime) {
+            newMembershipStart = currentUntil;              // 갱신
+        } else if (isSamePlanRenewal) {
+            newMembershipStart = LocalDateTime.now();        // 갱신(만료됨)
+        } else if (membership.plan() == Plan.BASIC || !hasRemainingTime) {
+            newMembershipStart = LocalDateTime.now();        // BASIC→유료: 신규 구독, 오늘부터 30일
+        } else {
+            newMembershipStart = membership.membershipStart(); // PLUS→PRO: 종료일 유지
+        }
 
         // 사용자 멤버십 업데이트
         setUserMembershipPort.updateMembership(payment.getUserId(), payment.getPlan(), newMembershipStart);

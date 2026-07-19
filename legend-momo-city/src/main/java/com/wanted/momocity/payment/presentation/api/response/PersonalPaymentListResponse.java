@@ -15,6 +15,7 @@ public record PersonalPaymentListResponse(
         int totalPages
 ) {
     public record Item(
+            String paymentId,
             long price,
             Plan plan,
             Status status,
@@ -24,7 +25,7 @@ public record PersonalPaymentListResponse(
 
     public static PersonalPaymentListResponse from(PersonalPaymentListResult result) {
         List<Item> payments = result.payments().stream()
-                .map(item -> new Item(item.price(), item.plan(), item.status(), item.createdAt()))
+                .map(item -> new Item(item.paymentId(), item.price(), item.plan(), item.status(), item.createdAt()))
                 .toList();
 
         return new PersonalPaymentListResponse(
