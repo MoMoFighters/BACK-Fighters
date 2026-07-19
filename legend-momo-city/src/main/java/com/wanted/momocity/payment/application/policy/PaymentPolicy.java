@@ -13,6 +13,7 @@ public class PaymentPolicy {
 
     private static final long MEMBERSHIP_PERIOD_DAYS = 30;
     private static final long RENEWAL_ALLOWED_DAYS = 7;
+    private static final long MINIMUM_PAYMENT_AMOUNT = 100L;
 
     /*comment
      * 플랜 변경 요청이 유효한지 검증하고, 결제해야 할 금액 계산
@@ -32,21 +33,24 @@ public class PaymentPolicy {
             throw new PaymentSamePlanException("이미 " + targetPlan + " 플랜을 이용 중입니다.");
         }
 
+        // BASIC에서 올라가거나, 이미 만료된 유료 플랜에서 전환하는 건 정가
+        if (currentPlan == Plan.BASIC || !hasRemainingTime) {
+            return targetPlan.getPrice();
+        }
+
         if (targetPlan.isDowngradeFrom(currentPlan)) {
             throw new PaymentDowngradeNotAllowedException(
                     "플랜 다운그레이드는 지원하지 않습니다. 구독을 취소하시면 BASIC 플랜으로 전환됩니다."
             );
         }
 
-        // BASIC에서 올라가거나, 이미 만료된 유료 플랜에서 전환하는 건 정가
-        if (currentPlan == Plan.BASIC || !hasRemainingTime) {
-            return targetPlan.getPrice();
-        }
-
         long remainingDays = calculateRemainingDays(membershipStart);
         long priceDiff = targetPlan.getPrice() - currentPlan.getPrice();
-        return priceDiff * remainingDays / MEMBERSHIP_PERIOD_DAYS;
+        long amount = priceDiff * remainingDays / MEMBERSHIP_PERIOD_DAYS;
+
+        return Math.max(amount, MINIMUM_PAYMENT_AMOUNT);
     }
+
 
     private long calculateRemainingDays(LocalDateTime membershipStart) {
         LocalDateTime membershipUntil = membershipStart.plusDays(MEMBERSHIP_PERIOD_DAYS);
