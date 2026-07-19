@@ -44,4 +44,20 @@ public class GroupRoomRepositoryAdapter implements GroupRoomRepository {
                 .map(GroupRoomJpaEntity::toDomain)
                 .toList();
     }
+
+    // 하드딜리트 대상 조회
+    @Override
+    public List<GroupRoom> findAllByStatusAndDeletedAtBefore(GroupRoom.GroupRoomStatus status, java.time.LocalDateTime threshold) {
+        return groupRoomJpaRepository.findAllByStatusAndDeletedAtBefore(status, threshold)
+                .stream()
+                .map(GroupRoomJpaEntity::toDomain)
+                .toList();
+    }
+
+    // 방 하드딜리트 (group_room_member는 FK CASCADE로 자동 삭제됨)
+    @Override
+    public void deleteById(Long roomId) {
+        groupRoomJpaRepository.deleteById(roomId);
+    }
+
 }

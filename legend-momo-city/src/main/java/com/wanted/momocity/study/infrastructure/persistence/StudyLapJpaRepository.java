@@ -63,4 +63,9 @@ public interface StudyLapJpaRepository extends JpaRepository<StudyLapJpaEntity, 
             @Param("sessionId") Long sessionId
     );
 
+    // 특정 방의 랩 기록 전체 삭제 (하드딜리트 시 study_lap은 FK가 없어 직접 지워야 함)
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("DELETE FROM StudyLapJpaEntity l WHERE l.roomId = :roomId")
+    void deleteAllByRoomId(@Param("roomId") Long roomId);
+
 }

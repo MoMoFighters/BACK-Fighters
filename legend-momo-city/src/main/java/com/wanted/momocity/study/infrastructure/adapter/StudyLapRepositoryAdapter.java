@@ -50,4 +50,10 @@ public class StudyLapRepositoryAdapter implements StudyLapRepository {
         return studyLapJpaRepository.countBySessionId(roomId, sessionId);
     }
 
+    // 그룹방 삭제시 하드 딜리트 스케줄러
+    @Override
+    public void deleteAllByRoomId(Long roomId) {
+        studyLapJpaRepository.deleteAllByRoomId(roomId);
+    }
+
 }
