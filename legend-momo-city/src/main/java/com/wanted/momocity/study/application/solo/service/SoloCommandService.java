@@ -4,7 +4,7 @@ import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationExc
 import com.wanted.momocity.study.application.common.service.StudyLapService;
 import com.wanted.momocity.study.application.solo.result.SoloActionResult;
 import com.wanted.momocity.study.application.solo.usecase.SoloCommandUseCase;
-import com.wanted.momocity.study.domain.event.StudySessionEndedEvent;
+import com.wanted.momocity.study.domain.event.StudySessionAccumulatedEvent;
 import com.wanted.momocity.study.domain.exception.StudyNotFoundException;
 import com.wanted.momocity.study.domain.model.SoloSession;
 import com.wanted.momocity.study.domain.model.StudyLap;
@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /*
@@ -71,9 +72,23 @@ public class SoloCommandService implements SoloCommandUseCase {
             // 재개 케이스 - 24시간 초과 여부 먼저 확인
             SoloSession session = existing.get();
             long elapsedFromStart = Duration.between(session.getStartTime(), now).getSeconds();
+
             if (elapsedFromStart >= MAX_DURATION_SECONDS) {
-                throw new DomainRuleViolationException("세션이 만료되어 재개할 수 없습니다.");
+                session.end(now);
+                soloSessionRepository.save(session);
+                log.info("[Study] 24시간 초과 세션 자동 만료 처리 | userId={}, sessionId={}", userId, session.getId());
+
+                // 만료 처리 후, 같은 start() 요청을 "신규 시작"으로 이어서 처리한다
+                SoloSession newSession = SoloSession.create(userId, now);
+                SoloSession saved = soloSessionRepository.save(newSession);
+
+                StudyLap newLap = studyLapService.startLap(userId, null, saved.getId(), now);
+
+                log.info("[Study] 솔로 세션 시작 | userId={}, sessionId={}", userId, saved.getId());
+                return SoloActionResult.ofStarted(saved, false, toLapItem(newLap, 1));
             }
+
+            // 정상 재개 케이스 (24시간 이내)
             session.resume(now);
             SoloSession saved = soloSessionRepository.save(session);
 
@@ -103,11 +118,17 @@ public class SoloCommandService implements SoloCommandUseCase {
             throw new DomainRuleViolationException("진행 중인 타이머가 없습니다.");
         }
 
-        accumulateElapsed(session);
+        LocalDateTime now = LocalDateTime.now();
+        int increment = accumulateElapsed(session);
         session.pause();
         SoloSession saved = soloSessionRepository.save(session);
 
-        LocalDateTime now = LocalDateTime.now();
+        if(increment > 0) {
+            eventPublisher.publishEvent(
+                    new StudySessionAccumulatedEvent(userId, now.toLocalDate(), increment)
+            );
+        }
+        
         StudyLap closedLap = studyLapService.closeLap(null, saved.getId(), now);
         int lapNumber = (int) studyLapService.countLaps(null, saved.getId());
 
@@ -127,8 +148,9 @@ public class SoloCommandService implements SoloCommandUseCase {
 
         SoloSession session = getActiveSession(userId);
 
+        int increment = 0;
         if (session.isRunning()) {
-            accumulateElapsed(session);
+            increment = accumulateElapsed(session);
         }
         session.end(LocalDateTime.now());
         SoloSession saved = soloSessionRepository.save(session);
@@ -139,12 +161,14 @@ public class SoloCommandService implements SoloCommandUseCase {
         StudyLap closedLap = studyLapService.closeLap(null, saved.getId(), now);
         int lapNumber = (int) studyLapService.countLaps(null, saved.getId());
 
-        eventPublisher.publishEvent(
-                new StudySessionEndedEvent(userId, LocalDateTime.now().toLocalDate(), saved.getTotalSeconds())
-        );
+        if (increment > 0) {
+            eventPublisher.publishEvent(
+                    new StudySessionAccumulatedEvent(userId, now.toLocalDate(), increment)
+            );
+        }
 
-        log.info("[Study] 솔로 세션 종료 | userId={}, sessionId={}, totalSeconds={}",
-                userId, saved.getId(), saved.getTotalSeconds());
+        log.info("[Study] 솔로 세션 종료 | userId={}, sessionId={}, increment={}",
+                userId, saved.getId(), increment);
         return SoloActionResult.ofEnded(saved, closedLap == null ? null : toLapItem(closedLap, lapNumber));
     }
 
@@ -168,12 +192,14 @@ public class SoloCommandService implements SoloCommandUseCase {
     }
 
     // lastResumedAt ~ now 구간 경과 시간을 계산해서 누적
-    private void accumulateElapsed(SoloSession session) {
+    private int accumulateElapsed(SoloSession session) {
         if (session.getLastResumedAt() == null) {
-            return;
+            return 0;
         }
         long elapsed = Duration.between(session.getLastResumedAt(), LocalDateTime.now()).getSeconds();
-        session.accumulateSeconds((int) Math.max(elapsed, 0));
+        int increment = (int) Math.max(elapsed, 0);
+        session.accumulateSeconds(increment);
+        return increment;
     }
 
     // StudyLap(도메인) -> LapItem(Response) 변환 + 순번 매기기

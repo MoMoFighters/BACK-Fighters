@@ -107,4 +107,20 @@ public class TimerController {
         ));
     }
 
+    // 내 랩 목록 조회
+    @Operation(summary = "내 랩 목록 조회", description = "로그인한 유저 본인의 이 방에서의 랩 목록을 조회합니다.")
+    @GetMapping("/me/laps")
+    public ResponseEntity<ApiResponse<MemberLapListResponse>> myLaps(
+            @PathVariable Long roomId,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        Long userId = userDetails.getUserId();
+
+        return ResponseEntity.ok(ApiResponse.success(
+                StudyResponseCode.MY_LAPS_FETCHED,
+                "내 랩 목록을 조회했습니다.",
+                timerQueryUseCase.getMemberLaps(userId, roomId, userId)
+        ));
+    }
+
 }

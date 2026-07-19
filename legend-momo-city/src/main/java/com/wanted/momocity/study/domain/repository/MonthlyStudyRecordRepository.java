@@ -2,6 +2,7 @@ package com.wanted.momocity.study.domain.repository;
 
 import com.wanted.momocity.study.domain.model.MonthlyStudyRecord;
 
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
@@ -24,5 +25,8 @@ public interface MonthlyStudyRecordRepository {
 
     // 여러 유저의 특정 년월 record를 한 번에 조회 (방 월별 랭킹 조회 시 N+1 방지)
     List<MonthlyStudyRecord> findAllByUserIdsAndYearMonth(List<Long> userIds, YearMonth yearMonth);
+
+    // 특정 유저 + 날짜 누적시간 증가 (있으면 UPDATE, 없으면 INSERT)
+    void incrementSeconds(Long userId, YearMonth yearMonth, int seconds);
 
 }

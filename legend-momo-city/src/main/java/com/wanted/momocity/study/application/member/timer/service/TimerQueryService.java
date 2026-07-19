@@ -6,6 +6,7 @@ import com.wanted.momocity.study.domain.exception.StudyAccessDeniedException;
 import com.wanted.momocity.study.domain.exception.StudyNotFoundException;
 import com.wanted.momocity.study.domain.model.GroupRoomMember;
 import com.wanted.momocity.study.domain.repository.GroupRoomMemberRepository;
+import com.wanted.momocity.study.domain.repository.GroupRoomRepository;
 import com.wanted.momocity.study.presentation.api.response.common.LapItem;
 import com.wanted.momocity.study.presentation.api.response.member.timer.MemberLapListResponse;
 import lombok.RequiredArgsConstructor;
@@ -34,9 +35,13 @@ public class TimerQueryService implements TimerQueryUseCase {
 
     private final GroupRoomMemberRepository groupRoomMemberRepository;
     private final StudyLapService studyLapService;
+    private final GroupRoomRepository groupRoomRepository;
 
     @Override
     public MemberLapListResponse getMemberLaps(Long requesterId, Long roomId, Long targetUserId) {
+
+        groupRoomRepository.findByIdAndActive(roomId)
+                .orElseThrow(() -> new StudyNotFoundException("그룹방을 찾을 수 없습니다."));
 
         boolean requesterIsMember = groupRoomMemberRepository.findByGroupRoomIdAndUserId(roomId, requesterId)
                 .map(GroupRoomMember::isJoined)
@@ -49,7 +54,9 @@ public class TimerQueryService implements TimerQueryUseCase {
                 .filter(GroupRoomMember::isJoined)
                 .orElseThrow(() -> new StudyNotFoundException("그룹방 참가자가 아닙니다."));
 
-        var laps = studyLapService.getLaps(roomId, target.getId());
+        var laps = studyLapService.getLaps(roomId, target.getId()).stream()
+                .filter(lap -> !lap.getStartedAt().isBefore(target.getJoinedAt()))
+                .toList();
 
         var items = IntStream.range(0, laps.size())
                 .mapToObj(i -> {

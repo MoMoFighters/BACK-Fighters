@@ -12,7 +12,7 @@ import java.time.LocalDate;
  *  이 이벤트를 날짜별로 2번 발행 (10분은 어제 날짜로, 20분은 오늘 날짜로 각각)
  *  그래서 이 이벤트 자체는 "분할된 하루 몫"만 표현하면 되므로 studyDate 하나만 가짐
  * */
-public record StudySessionEndedEvent(
+public record StudySessionAccumulatedEvent(
         Long userId,
         LocalDate studyDate,
         int seconds

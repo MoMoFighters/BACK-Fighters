@@ -56,4 +56,10 @@ public class DailyStudyRecordRepositoryAdapter implements DailyStudyRecordReposi
                 .toList();
     }
 
+    // 원자적 증분 upsert를 그대로 JpaRepository에 위임 (lost update 방지, 코드리뷰 크리티컬 9번 수정)
+    @Override
+    public void incrementSeconds(Long userId, LocalDate studyDate, int seconds) {
+        dailyStudyRecordJpaRepository.incrementSeconds(userId, studyDate, seconds);
+    }
+
 }

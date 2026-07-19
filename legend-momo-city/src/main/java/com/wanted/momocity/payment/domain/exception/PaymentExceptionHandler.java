@@ -142,4 +142,15 @@ public class PaymentExceptionHandler {
                         e.getMessage()
                 ));
     }
+
+    // 웹훅 이벤트를 아직 완전히 처리하지 못한 경우 (예: 취소 이벤트 수동 확인 대기)
+    @ExceptionHandler(WebhookProcessingIncompleteException.class)
+    public ResponseEntity<ApiErrorResponse> handleWebhookProcessingIncomplete(WebhookProcessingIncompleteException e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiErrorResponse.of(
+                        HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                        "WEBHOOK_PROCESSING_INCOMPLETE",
+                        e.getMessage()
+                ));
+    }
 }
