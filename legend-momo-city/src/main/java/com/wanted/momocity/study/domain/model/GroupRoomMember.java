@@ -109,6 +109,11 @@ public class GroupRoomMember {
     public void reinvite(LocalDateTime now) {
         this.status = MemberStatus.INVITED;
         this.invitedAt = now;
+        this.joinedAt = null;
+        this.leftAt = null;
+        this.totalSeconds = 0;
+        this.timerStatus = null;
+        this.lastResumedAt = null;
     }
 
     // 강퇴 (JOINED -> KICKED, 방장에 의한 처리)

@@ -1,6 +1,7 @@
 package com.wanted.momocity.study.application.room.usecase;
 
 import com.wanted.momocity.study.application.room.result.RoomCreateResult;
+import com.wanted.momocity.study.application.room.result.RoomUpdateResult;
 
 /*
  * comment.
@@ -15,6 +16,9 @@ import com.wanted.momocity.study.application.room.result.RoomCreateResult;
 public interface RoomCommandUseCase {
 
     // 그룹방 생성 (생성자는 host로 자동 지정되며, 동시에 GroupRoomMember도 JOINED로 함께 생성됨)
-    RoomCreateResult createRoom(Long userId);
+    RoomCreateResult createRoom(Long userId, String title);
+
+    // 방 제목 수정 (방장만 가능)
+    RoomUpdateResult updateTitle(Long userId, Long roomId, String newTitle);
 
 }

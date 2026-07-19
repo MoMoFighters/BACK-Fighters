@@ -28,4 +28,7 @@ public interface DailyStudyRecordRepository {
     // 여러 유저의 특정 날짜 record를 한 번에 조회 (방 일별 랭킹 조회 시 N+1 방지)
     List<DailyStudyRecord> findAllByUserIdsAndStudyDate(List<Long> userIds, LocalDate studyDate);
 
+    // 특정 유저 + 날짜 누적시간 증가 (있으면 UPDATE, 없으면 INSERT)
+    void incrementSeconds(Long userId, LocalDate studyDate, int seconds);
+
 }

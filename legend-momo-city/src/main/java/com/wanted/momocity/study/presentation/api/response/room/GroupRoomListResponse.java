@@ -17,8 +17,10 @@ public record GroupRoomListResponse(
     public record RoomItem(
             Long roomId,
             Long hostUserId,
+            String title,
             String hostNickname,
             int memberCount,
-            String status
+            String status,
+            String myTimerStatus
     ) {}
 }
