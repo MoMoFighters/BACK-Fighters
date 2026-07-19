@@ -1,5 +1,6 @@
 package com.wanted.momocity.friend.infrastructure.adapter;
 
+import com.wanted.momocity.friend.application.port.FriendQueryPort;
 import com.wanted.momocity.friend.domain.repository.FriendRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
