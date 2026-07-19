@@ -66,6 +66,7 @@ public class PaymentRepositoryAdapter implements PaymentRepository {
         Pageable pageable = PageRequest.of(page - 1, size);
         return springDataPaymentRepository.findPersonalPaymentList(userId, status, pageable).stream()
                 .map(entity -> new PersonalPaymentItem(
+                        entity.getPaymentId(),
                         entity.getPrice(),
                         entity.getPlan(),
                         entity.getStatus(),
