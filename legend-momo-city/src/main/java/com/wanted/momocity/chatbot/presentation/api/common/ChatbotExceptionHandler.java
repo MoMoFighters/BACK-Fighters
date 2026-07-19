@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice(basePackages = "com.wanted.momocity.chatbot")
 public class ChatbotExceptionHandler {
 
-    // 질문이 비어있거나 255자를 초과했을 때 (400)
+    // 질문이 비어있거나 100자를 초과했을 때 (400)
     @ExceptionHandler(ChatbotInvalidQuestionException.class)
     public ResponseEntity<ApiErrorResponse> handleInvalidQuestion(ChatbotInvalidQuestionException exception) {
         return ResponseEntity.badRequest()

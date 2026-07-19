@@ -1,7 +1,7 @@
 package com.wanted.momocity.chatbot.domain.exception;
 
 /* comment.
-    챗봇의 질문이 비어있거나 질문의 컨텍스트 양이 255 자 이상을 넘었을 경우 던지는
+    챗봇의 질문이 비어있거나 질문의 컨텍스트 양이 100 자 이상을 넘었을 경우 던지는
     챗봇 도메인 전용 검증 예외이다.
  */
 

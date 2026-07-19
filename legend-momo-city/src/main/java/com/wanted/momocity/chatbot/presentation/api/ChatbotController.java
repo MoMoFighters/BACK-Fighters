@@ -72,8 +72,9 @@ public class ChatbotController {
         if (question == null || question.isBlank()) {
             throw new ChatbotInvalidQuestionException("질문 내용을 입력해주세요!");
         }
-        if (question.length() > 255) {
-            throw new ChatbotInvalidQuestionException("질문은 255자 이하로 입력해주세요!");
+        // DB의 chatbot_question_log.question 컬럼이 varchar(100)이라 길이 제한도 맞춤
+        if (question.length() > 100) {
+            throw new ChatbotInvalidQuestionException("질문은 100자 이하로 입력해주세요!");
         }
 
         Long userId = userDetails.getUserId();
