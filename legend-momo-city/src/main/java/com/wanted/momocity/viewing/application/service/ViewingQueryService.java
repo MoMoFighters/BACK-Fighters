@@ -129,8 +129,7 @@ public class ViewingQueryService implements ViewingQueryUseCase {
 
                                     return new LectureMetaResponse.ChapterItem(
                                             chapter.getId(),
-//                                            chapter.getChapterThumbnailUrl(),
-                                            null,
+                                            chapter.getChapterThumbnailUrl(),
                                             chapter.getTitle(),
                                             chapter.getOrderNo(),
                                             chapter.getDurationSec(),
@@ -315,7 +314,7 @@ public class ViewingQueryService implements ViewingQueryUseCase {
                   .toList();
 
         if(targetLectureIds.isEmpty()) {
-            return new CategoryProgressInfo(0, null, null, null, null, 0);
+            return new CategoryProgressInfo(0, null, null, null, null, null, 0);
         }
 
         // 전체 진척도 계산 -> 대상 강의들의 진척도 평균
@@ -332,7 +331,7 @@ public class ViewingQueryService implements ViewingQueryUseCase {
                 .orElse(null);
 
         if (latestHistory == null) {
-            return new CategoryProgressInfo(myTotalProgress, null, null, null, null, 0);
+            return new CategoryProgressInfo(myTotalProgress, null, null, null, null, null, 0);
         }
 
         Lecture lecture = lecturePort.findById(latestHistory.getLectureId());
@@ -347,6 +346,7 @@ public class ViewingQueryService implements ViewingQueryUseCase {
                 lecture.getTitle(),
                 chapter.getId(),
                 chapter.getTitle(),
+                chapter.getChapterThumbnailUrl(),
                 latestHistory.getProgressRate()
         );
 
