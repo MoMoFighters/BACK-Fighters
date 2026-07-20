@@ -7,6 +7,7 @@ import com.wanted.momocity.friend.domain.event.*;
 import com.wanted.momocity.lecture.domain.event.LectureStatusChangedEvent;
 import com.wanted.momocity.message.domain.event.SendMessagePublishedEvent;
 import com.wanted.momocity.notification.application.service.NotificationHandlerService;
+import com.wanted.momocity.study.domain.event.StudyInviteEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -186,17 +187,17 @@ public class NotificationLifecycleEventHandler {
         );
     }
 
-//    //열품타 초대 알림
-//    @Async("domainEventExecutor")
-//    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-//    public void handleStudyInvite( event) {
-//        log.info("[NotificationLifecycleEventHandler] 그룹 스터티 초대 알림 행 추가 이벤트 수신 -> 알림 서비스로 이동");
-//
-//        notificationHandlerService.studyInviteNotification(
-//                event.lectureId(), //초대자 닉네임
-//                event.teacherId(), //초대 대상자 아이디
-//                event.adminId(), //그룹방 아이디
-//                event.lectureTitle() //초대 날짜
-//        );
-//    }
+    //열품타 초대 알림
+    @Async("domainEventExecutor")
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleStudyInvite(StudyInviteEvent event) {
+        log.info("[NotificationLifecycleEventHandler] 그룹 스터디 초대 알림 행 추가 이벤트 수신 -> 알림 서비스로 이동");
+
+        notificationHandlerService.studyInviteNotification(
+                event.inviterNickname(), //초대자 닉네임
+                event.invitedUserId(), //초대 대상자 아이디
+                event.roomId(), //그룹방 아이디
+                event.invitedAt() //초대 날짜
+        );
+    }
 }
