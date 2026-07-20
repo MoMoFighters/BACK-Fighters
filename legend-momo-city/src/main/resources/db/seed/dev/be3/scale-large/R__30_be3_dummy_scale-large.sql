@@ -136,7 +136,11 @@ VALUES
     (129, NOW() - INTERVAL 51 DAY, NULL, NOW() - INTERVAL 51 DAY),    -- 12-38
     (130, NOW() - INTERVAL 70 DAY, NULL, NOW() - INTERVAL 70 DAY),    -- 12-60
     (131, NOW() - INTERVAL 95 DAY, NULL, NOW() - INTERVAL 95 DAY),    -- 12-68
-    (132, NOW() - INTERVAL 10 DAY, '다 같이 놀자!', NOW() - INTERVAL 3 HOUR);
+    (132, NOW() - INTERVAL 10 DAY, '다 같이 놀자!', NOW() - INTERVAL 3 HOUR)
+    ON DUPLICATE KEY UPDATE
+                         created_at = VALUES(created_at),
+                         title = VALUES(title),
+                         updated_at = VALUES(updated_at);
 
 -- =====================================================================
 --  2. chat_room_member
@@ -283,7 +287,11 @@ VALUES
     (138, NOW() - INTERVAL 10 DAY, 132, 12),  -- 민수 (개설자)
     (139, NOW() - INTERVAL 10 DAY, 132, 23),  -- 태양 (개설 시 초대)
     (140, NOW() - INTERVAL 10 DAY, 132, 38),  -- 수아38 (개설 시 초대)
-    (141, NOW() - INTERVAL 5 DAY,  132, 60);  -- 민서60 (나중에 추가 초대)
+    (141, NOW() - INTERVAL 5 DAY,  132, 60)  -- 민서60 (나중에 추가 초대)
+    ON DUPLICATE KEY UPDATE
+                         joined_at = VALUES(joined_at),
+                         room_id = VALUES(room_id),
+                         user_id = VALUES(user_id);
 
 -- =====================================================================
 --  3. message
@@ -947,7 +955,13 @@ VALUES
     (655, '나도 강의 듣고 있어', NOW() - INTERVAL 20 HOUR, NOW() - INTERVAL 20 HOUR, 132, 60),
     (656, '다들 화이팅~', NOW() - INTERVAL 10 HOUR, NOW() - INTERVAL 10 HOUR, 132, 12),
     (657, '화이팅!!', NOW() - INTERVAL 5 HOUR, NOW() - INTERVAL 5 HOUR, 132, 23),
-    (658, '좋은 하루 보내세요들', NOW() - INTERVAL 1 HOUR, NOW() - INTERVAL 1 HOUR, 132, 60);
+    (658, '좋은 하루 보내세요들', NOW() - INTERVAL 1 HOUR, NOW() - INTERVAL 1 HOUR, 132, 60)
+    ON DUPLICATE KEY UPDATE
+                         content = VALUES(content),
+                         created_at = VALUES(created_at),
+                         updated_at = VALUES(updated_at),
+                         room_id = VALUES(room_id),
+                         sender_id = VALUES(sender_id);
 
 -- =====================================================================
 --  4. message_read
@@ -1158,7 +1172,14 @@ VALUES
     (202, 1, 1, 1, 657, 132, 60),
     (203, 0, 0, 0, 658, 132, 12),
     (204, 1, 0, 0, 658, 132, 23),
-    (205, 0, 0, 0, 658, 132, 38);
+    (205, 0, 0, 0, 658, 132, 38)
+    ON DUPLICATE KEY UPDATE
+                         is_deleted = VALUES(is_deleted),
+                         is_msg_read = VALUES(is_msg_read),
+                         is_noti_read = VALUES(is_noti_read),
+                         message_id = VALUES(message_id),
+                         room_id = VALUES(room_id),
+                         user_id = VALUES(user_id);
 
 -- =====================================================================
 -- message_announce
@@ -1168,7 +1189,13 @@ VALUES
     (1, '민수님이 민서60님을 초대했습니다.', NOW() - INTERVAL 5 DAY, 'INVITE', 132, 12),
     (2, '태양님이 채팅방 이름을 [다 같이 놀자!](으)로 변경했습니다.', NOW() - INTERVAL 3 HOUR, 'RENAME', 132, 23),
     (3, '민수님이 준호68님을 초대했습니다.', NOW() - INTERVAL 30 MINUTE, 'INVITE', 132, 12),
-    (4, '준호68님이 나갔습니다.', NOW() - INTERVAL 10 MINUTE, 'LEAVE', 132, 68);
+    (4, '준호68님이 나갔습니다.', NOW() - INTERVAL 10 MINUTE, 'LEAVE', 132, 68)
+    ON DUPLICATE KEY UPDATE
+                         content = VALUES(content),
+                         created_at = VALUES(created_at),
+                         type = VALUES(type),
+                         room_id = VALUES(room_id),
+                         target_id = VALUES(target_id);
 
 -- =====================================================================
 --  5. guestbook
@@ -1206,7 +1233,12 @@ VALUES
     (29, '다음 주에 시간 어때?', NOW() - INTERVAL 6 DAY, 12, 23),
     (30, '오랜만이야 잘 지내지?', NOW() - INTERVAL 4 DAY, 23, 12),
     (31, '오랜만이야 잘 지내지?', NOW() - INTERVAL 3 DAY, 38, 12),
-    (32, '방명록 남기고 간다~', NOW() - INTERVAL 3 DAY, 60, 12);
+    (32, '방명록 남기고 간다~', NOW() - INTERVAL 3 DAY, 60, 12)
+    ON DUPLICATE KEY UPDATE
+                         content = VALUES(content),
+                         created_at = VALUES(created_at),
+                         owner_id = VALUES(owner_id),
+                         writer_id = VALUES(writer_id);
 
 -- =====================================================================
 --  6. notification
@@ -1871,6 +1903,13 @@ VALUES
     (656, NOW() - INTERVAL 7 DAY, 1, '[바디프로필 웨이트] 강의가 승인되었습니다.', 31, 'APPROVAL', 3),
     (657, NOW() - INTERVAL 6 DAY, 0, '[메이크업 기초 심화반 36] 강의가 승인되었습니다.', 46, 'APPROVAL', 8),
     (658, NOW() - INTERVAL 5 DAY, 1, '[폼롤러 스트레칭과 이완] 강의가 승인되었습니다.', 34, 'APPROVAL', 3),
-    (659, NOW() - INTERVAL 5 DAY, 1, '[베이킹 기초 심화반 39] 강의가 승인되었습니다.', 49, 'APPROVAL', 5);
+    (659, NOW() - INTERVAL 5 DAY, 1, '[베이킹 기초 심화반 39] 강의가 승인되었습니다.', 49, 'APPROVAL', 5)
+    ON DUPLICATE KEY UPDATE
+                         created_at = VALUES(created_at),
+                         is_read = VALUES(is_read),
+                         message = VALUES(message),
+                         ref_id = VALUES(ref_id),
+                         type = VALUES(type),
+                         user_id = VALUES(user_id);
 
 SET FOREIGN_KEY_CHECKS = 1;

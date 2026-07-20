@@ -129,7 +129,26 @@ VALUES
     (122, 'social_naver_122@gmail.com', NULL, 'naver유저122', 'naver122', 'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png', 'STUDENT', 'ACTIVE', NULL, NULL, 10, 0, 'PRO', NOW() - INTERVAL 370 DAY, 0, NULL, NOW() - INTERVAL 379 DAY, NOW() - INTERVAL 379 DAY, NULL, 0),
     (123, 'social_google_123@gmail.com', NULL, 'google유저123', 'google123', 'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png', 'STUDENT', 'ACTIVE', NULL, NULL, 0, 0, 'BASIC', NOW() - INTERVAL 73 DAY, 0, NULL, NOW() - INTERVAL 123 DAY, NOW() - INTERVAL 123 DAY, NULL, 0),
     (124, 'social_google_124@gmail.com', NULL, 'google유저124', 'google124', 'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png', 'STUDENT', 'ACTIVE', NULL, NULL, 50, 0, 'PLUS', NOW() - INTERVAL 124 DAY, 0, NULL, NOW() - INTERVAL 362 DAY, NOW() - INTERVAL 362 DAY, NULL, 0),
-    (125, 'social_google_125@gmail.com', NULL, 'google유저125', 'google125', 'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png', 'STUDENT', 'ACTIVE', NULL, NULL, 10, 0, 'BASIC', NOW() - INTERVAL 103 DAY, 0, NULL, NOW() - INTERVAL 124 DAY, NOW() - INTERVAL 124 DAY, NULL, 0);
+    (125, 'social_google_125@gmail.com', NULL, 'google유저125', 'google125', 'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/profile/momoProfile.png', 'STUDENT', 'ACTIVE', NULL, NULL, 10, 0, 'BASIC', NOW() - INTERVAL 103 DAY, 0, NULL, NOW() - INTERVAL 124 DAY, NOW() - INTERVAL 124 DAY, NULL, 0)
+    ON DUPLICATE KEY UPDATE
+                         email = VALUES(email),
+                         password = VALUES(password),
+                         name = VALUES(name),
+                         nickname = VALUES(nickname),
+                         profile_image_url = VALUES(profile_image_url),
+                         role = VALUES(role),
+                         status = VALUES(status),
+                         category = VALUES(category),
+                         proof = VALUES(proof),
+                         point = VALUES(point),
+                         do_not_disturb = VALUES(do_not_disturb),
+                         membership = VALUES(membership),
+                         membership_start = VALUES(membership_start),
+                         suspension_count = VALUES(suspension_count),
+                         suspended_until = VALUES(suspended_until),
+                         updated_at = VALUES(updated_at),
+                         deleted_at = VALUES(deleted_at),
+                         is_tempPWD = VALUES(is_tempPWD);
 -- =====================================================================
 --  2. lecture — 50개 large 원본
 -- =====================================================================
@@ -183,7 +202,17 @@ INSERT INTO `lecture` (`id`, `title`, `created_at`, `updated_at`, `deleted_at`, 
   (47, '수채화 입문 심화반 37', NOW() - INTERVAL 42 DAY, NOW() - INTERVAL 42 DAY, NULL, 'ART', 0, '색감과 번짐 기법을 활용한 수채화 기초를 배웁니다.', 'ACTIVE', 9, 'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/lectures/47/lecture47Thumbnail.jpg'),
   (48, '드로잉 기초 심화반 38', NOW() - INTERVAL 45 DAY, NOW() - INTERVAL 45 DAY, NULL, 'ART', 0, '선 긋기부터 인체 드로잉까지 기초 드로잉을 배웁니다.', 'ACTIVE', 9, 'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/lectures/48/lecture48Thumbnail.jpg'),
   (49, '베이킹 기초 심화반 39', NOW() - INTERVAL 5 DAY, NOW() - INTERVAL 5 DAY, NULL, 'COOK', 0, '쿠키, 케이크 등 홈베이킹의 기초를 배웁니다.', 'ACTIVE', 5, 'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/lectures/49/lecture49Thumbnail.jpg'),
-  (50, '영어 회화 기초 심화반 40', NOW() - INTERVAL 19 DAY, NOW() - INTERVAL 19 DAY, NULL, 'STUDY', 0, '일상에서 바로 쓸 수 있는 영어 회화 표현을 배웁니다.', 'ACTIVE', 7, 'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/lectures/50/lecture50Thumbnail.jpg');
+  (50, '영어 회화 기초 심화반 40', NOW() - INTERVAL 19 DAY, NOW() - INTERVAL 19 DAY, NULL, 'STUDY', 0, '일상에서 바로 쓸 수 있는 영어 회화 표현을 배웁니다.', 'ACTIVE', 7, 'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/lectures/50/lecture50Thumbnail.jpg')
+    ON DUPLICATE KEY UPDATE
+                         title = VALUES(title),
+                         updated_at = VALUES(updated_at),
+                         deleted_at = VALUES(deleted_at),
+                         category = VALUES(category),
+                         completed_user_count = VALUES(completed_user_count),
+                         description = VALUES(description),
+                         status = VALUES(status),
+                         teacher_id = VALUES(teacher_id),
+                         thumbnail_url = VALUES(thumbnail_url);
 -- =====================================================================
 --  3. chapter — 254개 large 원본
 -- =====================================================================
@@ -441,7 +470,18 @@ INSERT INTO `chapter` (`id`, `created_at`, `updated_at`, `deleted_at`, `thumbnai
   (251, NOW() - INTERVAL 19 DAY, NOW() - INTERVAL 19 DAY, NULL, 'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/lectures/10/chapters/4/chapter47Thumbnail.jpg', 217, 50, 4, NULL, '식당 회화', NULL, 'lectures/10/chapters/4/chapter04.mp4'),
   (252, NOW() - INTERVAL 19 DAY, NOW() - INTERVAL 19 DAY, NULL, 'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/lectures/10/chapters/5/chapter48Thumbnail.jpg', 199, 50, 5, NULL, '길 찾기 회화', NULL, 'lectures/10/chapters/5/chapter05.mp4'),
   (253, NOW() - INTERVAL 19 DAY, NOW() - INTERVAL 19 DAY, NULL, 'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/lectures/10/chapters/6/chapter49Thumbnail.png', 278, 50, 6, NULL, '병원 회화', NULL, 'lectures/10/chapters/6/chapter06.mp4'),
-  (254, NOW() - INTERVAL 19 DAY, NOW() - INTERVAL 19 DAY, NULL, 'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/lectures/10/chapters/7/chapter50Thumbnail.jpg', 596, 50, 7, NULL, '비즈니스 이메일 영어', NULL, 'lectures/10/chapters/7/chapter07.mp4');
+  (254, NOW() - INTERVAL 19 DAY, NOW() - INTERVAL 19 DAY, NULL, 'https://momocity-bucket.s3.ap-northeast-2.amazonaws.com/lectures/10/chapters/7/chapter50Thumbnail.jpg', 596, 50, 7, NULL, '비즈니스 이메일 영어', NULL, 'lectures/10/chapters/7/chapter07.mp4')
+    ON DUPLICATE KEY UPDATE
+                         updated_at = VALUES(updated_at),
+                         deleted_at = VALUES(deleted_at),
+                         thumbnail_url = VALUES(thumbnail_url),
+                         duration_sec = VALUES(duration_sec),
+                         lecture_id = VALUES(lecture_id),
+                         order_no = VALUES(order_no),
+                         original_filename = VALUES(original_filename),
+                         title = VALUES(title),
+                         video_size_bytes = VALUES(video_size_bytes),
+                         video_url = VALUES(video_url);
 -- =====================================================================
 --  4. enrollment — 330건 large 원본
 -- =====================================================================
@@ -776,7 +816,14 @@ VALUES
     (327, 3, NOW() - INTERVAL 17 DAY, 18, 37, 124, FALSE),
     (328, 0, NOW() - INTERVAL 8 DAY, 24, 68, 124, FALSE),
     (329, 2, NOW() - INTERVAL 15 DAY, 48, 29, 125, FALSE),
-    (330, 5, NOW() - INTERVAL 11 DAY, 10, 77, 125, FALSE);
+    (330, 5, NOW() - INTERVAL 11 DAY, 10, 77, 125, FALSE)
+    ON DUPLICATE KEY UPDATE
+                         completed_count = VALUES(completed_count),
+                         enrolled_at = VALUES(enrolled_at),
+                         lecture_id = VALUES(lecture_id),
+                         total_progress = VALUES(total_progress),
+                         user_id = VALUES(user_id),
+                         is_completed = VALUES(is_completed);
 
 -- =====================================================================
 --  5. friend
@@ -1039,7 +1086,10 @@ VALUES
     (254, NOW() - INTERVAL 70 DAY, 'FRIEND', NOW() - INTERVAL 70 DAY + INTERVAL 243 MINUTE, 12, 60),
     (255, NOW() - INTERVAL 95 DAY, 'FRIEND', NOW() - INTERVAL 95 DAY + INTERVAL 136 MINUTE, 68, 12),
     (256, NOW() - INTERVAL 25 DAY, 'SENT', NOW() - INTERVAL 25 DAY + INTERVAL 220 MINUTE, 21, 12),
-    (257, NOW() - INTERVAL 56 DAY, 'BLOCK', NOW() - INTERVAL 53 DAY, 12, 44);
+    (257, NOW() - INTERVAL 56 DAY, 'BLOCK', NOW() - INTERVAL 53 DAY, 12, 44)
+    ON DUPLICATE KEY UPDATE
+                         status = VALUES(status),
+                         updated_at = VALUES(updated_at);
 
 -- 운세 마스터 데이터 366개를 최초 한 번만 저장합니다.
 INSERT INTO `fortunes` (
