@@ -191,7 +191,7 @@ public class NotificationLifecycleEventHandler {
     @Async("domainEventExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleStudyInvite(StudyInviteEvent event) {
-        log.info("[NotificationLifecycleEventHandler] 그룹 스터티 초대 알림 행 추가 이벤트 수신 -> 알림 서비스로 이동");
+        log.info("[NotificationLifecycleEventHandler] 그룹 스터디 초대 알림 행 추가 이벤트 수신 -> 알림 서비스로 이동");
 
         notificationHandlerService.studyInviteNotification(
                 event.inviterNickname(), //초대자 닉네임
