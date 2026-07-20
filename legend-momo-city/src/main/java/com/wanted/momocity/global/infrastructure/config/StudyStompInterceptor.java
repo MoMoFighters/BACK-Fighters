@@ -3,6 +3,7 @@ package com.wanted.momocity.global.infrastructure.config;
 import com.wanted.momocity.auth.infrastructure.security.CustomUserDetails;
 import com.wanted.momocity.study.domain.model.GroupRoomMember;
 import com.wanted.momocity.study.domain.repository.GroupRoomMemberRepository;
+import com.wanted.momocity.study.infrastructure.scheduler.StudyReconnectGraceManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
@@ -26,10 +27,32 @@ public class StudyStompInterceptor implements ChannelInterceptor {
     // study가 관여하는 구독 destination의 접두사 (그룹방 실시간 상태 브로드캐스트 채널)
     private static final String STUDY_ROOM_PREFIX = "/sub/study/room/";
 
+    // 유예시간 관리자 주입
+    private final StudyReconnectGraceManager reconnectGraceManager;
+
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
         StompCommand command = accessor.getCommand();
+
+        // CONNECT(재접속) 처리 - TopicSubscriptionInterceptor가 이미 인증을 끝낸 뒤이므로
+        // 이 시점에 accessor.getUser()에서 유저 정보를 바로 꺼낼 수 있음
+        if (StompCommand.CONNECT.equals(command)) {
+            Long userId = getUserIdFromAccessor(accessor);
+            if (userId != null) {
+                reconnectGraceManager.onReconnect(userId);
+            }
+            return message;
+        }
+
+        // DISCONNECT 처리 - 즉시 정리하지 않고 유예시간 예약만 걺
+        if (StompCommand.DISCONNECT.equals(command)) {
+            Long userId = getUserIdFromAccessor(accessor);
+            if (userId != null) {
+                reconnectGraceManager.onDisconnect(userId);
+            }
+            return message;
+        }
 
         // [1] SUBSCRIBE가 아니면 study는 관여하지 않고 그대로 통과.
         //     (CONNECT/DISCONNECT/UNSUBSCRIBE 등은 TopicSubscriptionInterceptor가 이미 처리 중)
