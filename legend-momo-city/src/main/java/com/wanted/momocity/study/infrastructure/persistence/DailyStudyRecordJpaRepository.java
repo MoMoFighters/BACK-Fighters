@@ -1,6 +1,7 @@
 package com.wanted.momocity.study.infrastructure.persistence;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -42,6 +43,27 @@ public interface DailyStudyRecordJpaRepository extends JpaRepository<DailyStudyR
      *  - IN 절로 벌크 조회, PostRepositoryAdapter의 findPostIdsByUserId 등과 동일한 패턴
      * */
     List<DailyStudyRecordJpaEntity> findAllByUserIdInAndStudyDate(List<Long> userIds, LocalDate studyDate);
+
+    /*
+     * comment.
+     *  INSERT ... ON DUPLICATE KEY UPDATE를 사용한 원자적 증분 upsert
+     *  - uq_daily_study_record (user_id, study_date) 유니크 제약을 활용
+     *  - 없으면 새로 만들고(seconds로 초기화), 있으면 기존 total_seconds에 seconds를 더함
+     *  - 이 연산 자체가 DB 레벨에서 원자적으로 처리되므로 동시 호출에도 값이 유실되지 않음
+     * */
+    @Modifying
+    @Query(value = """
+    INSERT INTO daily_study_record (user_id, study_date, total_seconds, created_at, updated_at)
+    VALUES (:userId, :studyDate, :seconds, NOW(6), NOW(6)) AS new_data
+    ON DUPLICATE KEY UPDATE
+        total_seconds = daily_study_record.total_seconds + new_data.total_seconds,
+        updated_at = NOW(6)
+    """, nativeQuery = true)
+    void incrementSeconds(
+            @Param("userId") Long userId,
+            @Param("studyDate") LocalDate studyDate,
+            @Param("seconds") int seconds
+    );
 
 
 }

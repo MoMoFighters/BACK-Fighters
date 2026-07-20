@@ -36,4 +36,7 @@ public interface StudyLapRepository {
     // 특정 세션의 전체 랩 개수 조회 (lapNumber 계산용)
     long countBySessionId(Long roomId, Long sessionId);
 
+    // 특정 방의 랩 기록 전체 삭제 (하드딜리트 시 FK 없어서 직접 지워야 함)
+    void deleteAllByRoomId(Long roomId);
+
 }

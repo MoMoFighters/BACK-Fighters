@@ -1,0 +1,25 @@
+# trigger test
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - Release
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/BACK-Fighters/legend-momo-city
+            git fetch origin
+            git checkout Release
+            git pull origin Release
+            docker compose -f docker-compose.backend.yml down
+            docker compose -f docker-compose.backend.yml up -d --build

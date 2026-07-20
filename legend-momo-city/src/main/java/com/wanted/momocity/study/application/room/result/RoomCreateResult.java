@@ -9,6 +9,7 @@ package com.wanted.momocity.study.application.room.result;
 public record RoomCreateResult(
         Long roomId,
         Long hostUserId,
+        String title,
         String hostNickname,
         String status,
         int maxMember

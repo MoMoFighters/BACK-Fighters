@@ -541,7 +541,7 @@ CREATE TABLE `order_history` (
     `amount`     BIGINT                                                NOT NULL,
     `created_at` DATETIME(6)                                           NOT NULL,
     `item_id`    BIGINT                                                DEFAULT NULL,
-    `reason`     ENUM('BUS','COMPLETE','GUESTBOOK','PROFILE','REVIEW') NOT NULL,
+    `reason`     ENUM('BUS','COMPLETE','GUESTBOOK','PROFILE','REVIEW','FORTUNE') NOT NULL,
     `type`       ENUM('GAINED','USED')                                 NOT NULL,
     `user_id`    BIGINT                                                NOT NULL,
 

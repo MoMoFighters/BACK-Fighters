@@ -6,6 +6,7 @@ import com.wanted.momocity.auth.infrastructure.handler.CustomAccessDeniedHandler
 import com.wanted.momocity.auth.infrastructure.handler.CustomAuthenticationEntryPoint;
 import com.wanted.momocity.auth.infrastructure.jwt.JwtAuthenticationFilter;
 import com.wanted.momocity.auth.infrastructure.jwt.JwtTokenProvider;
+import com.wanted.momocity.chatbot.infrastructure.security.ChatbotSseTokenFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -62,7 +63,7 @@ public class SecurityConfig {
                 "http://localhost:3000", // React, Vue 등의 개발서버
                 "http://localhost:8081", // 다른 로컬 개발 환경
                 "https://momocity-six.vercel.app", // 배포하게 될 경우
-                "*"
+                "https://momocity.kro.kr"
         ));
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
@@ -76,7 +77,10 @@ public class SecurityConfig {
                 "Access-Control-Request-Method",
                 "Access-Control-Request-Headers",
                 "X-Refresh-Token", // 리프레시 토큰을 위한 커스텀 헤더
-                "Cookie"
+                "Cookie",
+                "webhook-id",
+                "webhook-timestamp",
+                "webhook-signature"
         ));
 
         configuration.setExposedHeaders(Arrays.asList(
@@ -158,13 +162,20 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/**").permitAll() // 인증 없이 허용
                         .requestMatchers("/api/v1/user/onboarding").permitAll() // 인증 없이 허용
                         .requestMatchers("/ws-chat/**").permitAll()
+                        .requestMatchers("/api/v3/payment/webhook").permitAll()
                         .anyRequest().authenticated()) // 나머지는 인증 필요
 //                ========================================================================
 
                 //.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                // 챗봇팀 수정: JwtAuthenticationFilter를 기준으로 걸려면 얘가 먼저 등록돼있어야 해서 순서를 바꿈
                 .addFilterBefore(
                         new JwtAuthenticationFilter(jwtTokenProvider, refreshService,blacklistPort),
                         UsernamePasswordAuthenticationFilter.class
+                )
+                // 챗봇 SSE 경로 전용 - 쿼리파라미터 token 인증, 기존 JwtAuthenticationFilter보다 먼저 실행
+                .addFilterBefore(
+                        new ChatbotSseTokenFilter(jwtTokenProvider),
+                        JwtAuthenticationFilter.class
                 )
 
                 .exceptionHandling(ex -> ex

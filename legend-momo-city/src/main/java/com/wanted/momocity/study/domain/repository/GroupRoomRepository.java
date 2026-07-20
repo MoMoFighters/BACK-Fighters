@@ -2,6 +2,7 @@ package com.wanted.momocity.study.domain.repository;
 
 import com.wanted.momocity.study.domain.model.GroupRoom;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,5 +27,11 @@ public interface GroupRoomRepository {
     // 특정 유저가 host인 ACTIVE 방 목록 조회
     // (member 목록 조회는 별도 - "내가 속한 그룹방 목록"은 GroupRoomMemberRepository와 조합해서 application에서 처리)
     List<GroupRoom> findAllByHostUserIdAndActive(Long hostUserId);
+
+    // ENDED 상태로 특정 시각 이전에 종료된 방 목록 조회 (하드딜리트 대상 찾기용)
+    List<GroupRoom> findAllByStatusAndDeletedAtBefore(GroupRoom.GroupRoomStatus status, LocalDateTime threshold);
+
+    // 방 하드딜리트 (group_room_member는 FK CASCADE로 자동 삭제됨)
+    void deleteById(Long roomId);
 
 }
