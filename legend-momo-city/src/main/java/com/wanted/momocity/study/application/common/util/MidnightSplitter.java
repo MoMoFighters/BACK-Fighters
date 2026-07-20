@@ -1,5 +1,6 @@
 package com.wanted.momocity.study.application.common.util;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -28,20 +29,32 @@ public class MidnightSplitter {
     public static List<DateSeconds> split(LocalDateTime from, LocalDateTime to) {
         List<DateSeconds> result = new ArrayList<>();
 
-        LocalDateTime cursor = from;
-        while (cursor.toLocalDate().isBefore(to.toLocalDate())) {
-            // cursor가 속한 날짜의 자정(다음날 00:00) 직전까지가 이 날짜의 몫
-            LocalDateTime endOfDay = LocalDateTime.of(cursor.toLocalDate(), LocalTime.MAX);
-            long seconds = java.time.Duration.between(cursor, endOfDay).getSeconds() + 1; // MAX는 23:59:59.999... 라 1초 보정
-            result.add(new DateSeconds(cursor.toLocalDate(), (int) Math.max(seconds, 0)));
-
-            cursor = LocalDateTime.of(cursor.toLocalDate().plusDays(1), LocalTime.MIN);
+        long totalSeconds = Duration.between(from, to).getSeconds();
+        if (totalSeconds <= 0) {
+            return result;
         }
 
-        // 마지막(또는 자정을 안 걸친 경우 유일한) 구간
-        long lastSeconds = java.time.Duration.between(cursor, to).getSeconds();
-        if (lastSeconds > 0) {
-            result.add(new DateSeconds(to.toLocalDate(), (int) lastSeconds));
+        LocalDateTime cursor = from;
+        long remaining = totalSeconds;
+
+        while (cursor.toLocalDate().isBefore(to.toLocalDate())) {
+            // LocalTime.MAX 대신 다음날 자정(atStartOfDay)을 경계로 사용 - 더 명확하고 오차 없음
+            LocalDateTime nextMidnight = cursor.toLocalDate().plusDays(1).atStartOfDay();
+
+            //  이 날짜 몫은 "자정까지 남은 초"와 "전체 남은 초" 중 작은 값으로 캡핑
+            // -> 중간 구간에서 실수로 remaining을 초과해서 배분하는 일이 없도록 방어
+            long segmentSeconds = Math.min(Duration.between(cursor, nextMidnight).getSeconds(), remaining);
+            if (segmentSeconds > 0) {
+                result.add(new DateSeconds(cursor.toLocalDate(), (int) segmentSeconds));
+            }
+            remaining -= segmentSeconds;
+            cursor = nextMidnight;
+        }
+
+        // 마지막(또는 자정을 안 걸친 경우 유일한) 구간 - 남은 초를 그대로 전부 배정
+        // -> 반올림 오차가 있더라도 여기서 흡수되므로, 전체 합은 항상 totalSeconds와 정확히 일치
+        if (remaining > 0) {
+            result.add(new DateSeconds(to.toLocalDate(), (int) remaining));
         }
 
         return result;

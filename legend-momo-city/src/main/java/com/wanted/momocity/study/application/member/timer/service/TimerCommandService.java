@@ -64,7 +64,7 @@ public class TimerCommandService implements TimerCommandUseCase {
 
         // 재개 케이스일 때만 24시간 초과 여부 확인 (신규 시작은 timerStartedAt이 없으므로 해당 없음)
         // SoloCommandService.start()의 elapsedFromStart 체크와 동일한 로직
-        if (wasResumed) {
+        if (wasResumed && member.getTimerStartedAt() != null) {
             long elapsedFromStart = Duration.between(member.getTimerStartedAt(), now).getSeconds();
             if (elapsedFromStart >= MAX_DURATION_SECONDS) {
                 member.endTimer();

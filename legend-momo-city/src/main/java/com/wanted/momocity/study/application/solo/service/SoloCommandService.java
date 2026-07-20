@@ -121,7 +121,7 @@ public class SoloCommandService implements SoloCommandUseCase {
 
         LocalDateTime from = session.getLastResumedAt();
         LocalDateTime now = LocalDateTime.now();
-        int increment = accumulateElapsed(session);
+        int increment = accumulateElapsed(session, now);
         session.pause();
         SoloSession saved = soloSessionRepository.save(session);
 
@@ -147,16 +147,16 @@ public class SoloCommandService implements SoloCommandUseCase {
 
         SoloSession session = getActiveSession(userId);
 
+        // 자정 분할용 시작 시각 확보
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime from = session.getLastResumedAt();
+
         int increment = 0;
         if (session.isRunning()) {
-            increment = accumulateElapsed(session);
+            increment = accumulateElapsed(session, now);
         }
-        session.end(LocalDateTime.now());
+        session.end(now);
         SoloSession saved = soloSessionRepository.save(session);
-
-        // 자정 분할용 시작 시각 확보
-        LocalDateTime from = session.getLastResumedAt();
-        LocalDateTime now = LocalDateTime.now();
 
         // 세션이 RUNNING이 아니라 PAUSED 상태에서 end()가 호출된 경우, 마감할 진행 중인 랩이
         // 없을 수 있다 (이미 pause 시점에 마감됨) - closeLap()은 이 경우 null을 반환하므로 안전하다
@@ -188,7 +188,7 @@ public class SoloCommandService implements SoloCommandUseCase {
     }
 
     // lastResumedAt ~ now 구간 경과 시간을 계산해서 누적
-    private int accumulateElapsed(SoloSession session) {
+    private int accumulateElapsed(SoloSession session, LocalDateTime now) {
         if (session.getLastResumedAt() == null) {
             return 0;
         }
