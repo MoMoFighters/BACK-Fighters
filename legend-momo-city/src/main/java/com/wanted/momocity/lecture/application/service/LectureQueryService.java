@@ -81,8 +81,17 @@ public class LectureQueryService implements
         // 사용자에게 공개된 ACTIVE 상태의 전체 강의 수를 조회
         long activeLectureCount = lectureRepository.countByStatus(LectureStatus.ACTIVE);
 
-        // ACTIVE 강의 수를 100 단위로 내림 처리
-        long roundedLectureCount = (activeLectureCount / 100) * 100;
+        // ACTIVE 강의 수를 자릿수별 내림 결과를 저장할 변수 선언
+        long roundedLectureCount;
+
+        // 한 자릿수인 0~9는 실제 강의 수를 그대로 사용
+        if (activeLectureCount <10) {
+            roundedLectureCount = activeLectureCount;
+        } else if (activeLectureCount <100) { // 두 자릿수인 10~99는 10단위로 내린다.
+            roundedLectureCount = (activeLectureCount /10) * 10;
+        } else { // 세 자릿수 이상은 100단위로 내린다.
+            roundedLectureCount = (activeLectureCount / 100) * 100;
+        }
 
         // ACTIVE 상태인 강의의 ID 목록만 조회
         List<Long> activeLectureIds = lectureRepository.findIdsByStatus(LectureStatus.ACTIVE);
