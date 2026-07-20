@@ -46,7 +46,7 @@ public class PaymentCommandService implements PaymentCommandUseCase {
 
         // 플랜 변경 유효성 검증 + 결제 금액 계산
         GetUserMembershipPort.UserMembership membership = getUserMembershipPort.getUserMembership(command.userId());
-        Long price = paymentPolicy.calculatePrice(membership.plan(), command.plan());
+        Long price = paymentPolicy.calculatePrice(membership.plan(), command.plan(),membership.membershipStart());
 
         // 중복 결제 방지
         if (!paymentLockPort.tryLock(command.userId(), command.plan())) {

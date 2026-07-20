@@ -196,6 +196,7 @@ public class ViewingController {
                         info.lectureTitle(),
                         info.chapterId(),
                         info.chapterTitle(),
+                        info.chapterThumbnailUrl(),
                         info.chapterProgress()
                 )
 

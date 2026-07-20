@@ -19,6 +19,8 @@ public record CategoryProgressInfo (
         Long chapterId,
         // 최근 본 챕터 제목
         String chapterTitle,
+        // 최근 본 챕터 썸네일
+        String chapterThumbnailUrl,
         // 최근 본 챕터 진척도
         int chapterProgress
 ){}
