@@ -1,7 +1,7 @@
 package com.wanted.momocity.chatbot.domain.model;
 
 /* comment.
-    유저 한 명의 하루치 챗봇 호출 횟수를 표현하고, 하루 5회 한도를 스스로 판단
+    유저 한 명의 하루치 챗봇 호출 횟수를 표현하고, 하루 40회 한도를 스스로 판단
     그리고 증가시기키는 도메인 모델이다.
  */
 
@@ -42,7 +42,7 @@ public class ChatbotDailyUsage {
         this.updatedAt = updatedAt;
     }
 
-    // 하루 호출 한도(5회)를 넘겼는지 판단
+    // 하루 호출 한도(40회)를 넘겼는지 판단
     public boolean isLimitExceeded() {
         return callCount >= DAILY_LIMIT;
     }
