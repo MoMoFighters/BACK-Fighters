@@ -121,6 +121,8 @@ public class ChatbotController {
             )));
         } catch (IOException e) {
             emitter.completeWithError(e);
+        } catch (IllegalStateException e) {
+            // emitter가 이미 종료된 상태에서 send() 호출된 경우 - 조용히 무시(재종료 시도 안 함)
         }
     }
 
