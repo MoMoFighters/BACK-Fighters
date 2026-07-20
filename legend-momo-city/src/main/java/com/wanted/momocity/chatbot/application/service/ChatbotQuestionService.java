@@ -45,7 +45,12 @@ public class ChatbotQuestionService implements ChatbotQuestionUseCase {
 
     // 모든 형용사 조사 패턴 케이스 분석
     private static final Set<String> STOPWORDS = Set.of(
-            "어떻게", "왜", "언제", "어디", "어디서", "무엇", "뭐", "좀", "저", "제가", "혹시", "그냥"
+            "어떻게", "왜", "언제", "어디", "어디서", "무엇", "뭐", "좀", "저", "제가", "혹시", "그냥", "어떤"
+    );
+
+    // 모든 어미 패턴 케이스 분석
+    private static final Pattern EOMI = Pattern.compile(
+            "(있어|있나요|있습니까|가능해|가능한가요|돼|되나요|할까요|인가요|이야)\\??$"
     );
 
     private final ChatbotUsageUseCase chatbotUsageUseCase;
@@ -121,6 +126,7 @@ public class ChatbotQuestionService implements ChatbotQuestionUseCase {
         Set<String> result = new HashSet<>();
         for (String token : text.split("\\s+")) {
             String stripped = JOSA.matcher(token).replaceAll("");
+            stripped = EOMI.matcher(stripped).replaceAll("");
             if (stripped.length() >= 2 && !STOPWORDS.contains(stripped)) {
                 result.add(stripped);
             }
