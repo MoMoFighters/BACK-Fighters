@@ -2,6 +2,7 @@ package com.wanted.momocity.study.application.solo.service;
 
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.study.application.common.service.StudyLapService;
+import com.wanted.momocity.study.application.common.util.MidnightSplitter;
 import com.wanted.momocity.study.application.solo.result.SoloActionResult;
 import com.wanted.momocity.study.application.solo.usecase.SoloCommandUseCase;
 import com.wanted.momocity.study.domain.event.StudySessionAccumulatedEvent;
@@ -118,16 +119,14 @@ public class SoloCommandService implements SoloCommandUseCase {
             throw new DomainRuleViolationException("진행 중인 타이머가 없습니다.");
         }
 
+        LocalDateTime from = session.getLastResumedAt();
         LocalDateTime now = LocalDateTime.now();
         int increment = accumulateElapsed(session);
         session.pause();
         SoloSession saved = soloSessionRepository.save(session);
 
-        if(increment > 0) {
-            eventPublisher.publishEvent(
-                    new StudySessionAccumulatedEvent(userId, now.toLocalDate(), increment)
-            );
-        }
+        // 단일 발행 -> 자정 분할 발행
+        publishAccumulatedEvents(userId, from, now, increment);
         
         StudyLap closedLap = studyLapService.closeLap(null, saved.getId(), now);
         int lapNumber = (int) studyLapService.countLaps(null, saved.getId());
@@ -155,17 +154,17 @@ public class SoloCommandService implements SoloCommandUseCase {
         session.end(LocalDateTime.now());
         SoloSession saved = soloSessionRepository.save(session);
 
+        // 자정 분할용 시작 시각 확보
+        LocalDateTime from = session.getLastResumedAt();
         LocalDateTime now = LocalDateTime.now();
+
         // 세션이 RUNNING이 아니라 PAUSED 상태에서 end()가 호출된 경우, 마감할 진행 중인 랩이
         // 없을 수 있다 (이미 pause 시점에 마감됨) - closeLap()은 이 경우 null을 반환하므로 안전하다
         StudyLap closedLap = studyLapService.closeLap(null, saved.getId(), now);
         int lapNumber = (int) studyLapService.countLaps(null, saved.getId());
 
-        if (increment > 0) {
-            eventPublisher.publishEvent(
-                    new StudySessionAccumulatedEvent(userId, now.toLocalDate(), increment)
-            );
-        }
+        // 단일 발행 -> 자정 분할 발행
+        publishAccumulatedEvents(userId, from, now, increment);
 
         log.info("[Study] 솔로 세션 종료 | userId={}, sessionId={}, increment={}",
                 userId, saved.getId(), increment);
@@ -180,10 +179,7 @@ public class SoloCommandService implements SoloCommandUseCase {
                 .orElseThrow(() -> new StudyNotFoundException("진행 중인 세션이 없습니다."));
     }
 
-    /*
-     * comment.
-     *  유저가 그룹방에서 이미 타이머를 진행 중인지 검증 (동시 활성화 금지 정책)
-     * */
+     // 유저가 그룹방에서 이미 타이머를 진행 중인지 검증 (동시 활성화 금지 정책)
     private void validateNoOtherActiveTimer(Long userId) {
         var studyingElsewhere = groupRoomMemberRepository.findAllByUserIdAndStudying(userId);
         if (!studyingElsewhere.isEmpty()) {
@@ -200,6 +196,20 @@ public class SoloCommandService implements SoloCommandUseCase {
         int increment = (int) Math.max(elapsed, 0);
         session.accumulateSeconds(increment);
         return increment;
+    }
+
+    // 내부 헬퍼 - TimerCommandService와 동일한 패턴 (의도적 중복, 팀 컨벤션 그대로)
+    private void publishAccumulatedEvents(Long userId, LocalDateTime from, LocalDateTime to, int increment) {
+        if (increment <= 0 || from == null) {
+            return;
+        }
+        for (MidnightSplitter.DateSeconds part : MidnightSplitter.split(from, to)) {
+            if (part.seconds() > 0) {
+                eventPublisher.publishEvent(
+                        new StudySessionAccumulatedEvent(userId, part.date(), part.seconds())
+                );
+            }
+        }
     }
 
     // StudyLap(도메인) -> LapItem(Response) 변환 + 순번 매기기
