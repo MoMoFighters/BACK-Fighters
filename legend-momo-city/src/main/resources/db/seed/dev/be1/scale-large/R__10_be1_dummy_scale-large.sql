@@ -53,7 +53,12 @@ INSERT INTO `access_log` (`id`, `action`, `created_at`, `ip`, `user_id`) VALUES
   (47, 'LOGIN', NOW() - INTERVAL 234 HOUR, '127.161.37.3', 42),
   (48, 'LOGIN', NOW() - INTERVAL 109 HOUR, '154.51.37.138', 93),
   (49, 'LOGIN', NOW() - INTERVAL 35 HOUR, '77.67.178.226', 34),
-  (50, 'FORBIDDEN', NOW() - INTERVAL 278 HOUR, '104.145.80.113', 14);
+  (50, 'FORBIDDEN', NOW() - INTERVAL 278 HOUR, '104.145.80.113', 14)
+    ON DUPLICATE KEY UPDATE
+                         action = VALUES(action),
+                         created_at = VALUES(created_at),
+                         ip = VALUES(ip),
+                         user_id = VALUES(user_id);
 
 -- =====================================================================
 --  2. error_log — 20건
@@ -78,7 +83,14 @@ INSERT INTO `error_log` (`id`, `created_at`, `updated_at`, `level`, `message`, `
   (17, NOW() - INTERVAL 68 DAY, NOW() - INTERVAL 68 DAY, 'CRITICAL', '스트릭 갱신 배치 처리 중 DB 락 타임아웃', NOW() - INTERVAL 68 DAY, 'StreakService'),
   (18, NOW() - INTERVAL 72 DAY, NOW() - INTERVAL 72 DAY, 'ERROR', '신고 처리 중 중복 키 예외 발생', NOW() - INTERVAL 72 DAY, 'ReportService'),
   (19, NOW() - INTERVAL 76 DAY, NOW() - INTERVAL 76 DAY, 'WARNING', '수강 등록 처리 중 동시성 문제 발생', NOW() - INTERVAL 76 DAY, 'EnrollmentService'),
-  (20, NOW() - INTERVAL 80 DAY, NOW() - INTERVAL 80 DAY, 'CRITICAL', '리뷰 등록 시 rating 값 범위 초과', NOW() - INTERVAL 80 DAY, 'ReviewService');
+  (20, NOW() - INTERVAL 80 DAY, NOW() - INTERVAL 80 DAY, 'CRITICAL', '리뷰 등록 시 rating 값 범위 초과', NOW() - INTERVAL 80 DAY, 'ReviewService')
+    ON DUPLICATE KEY UPDATE
+                         created_at = VALUES(created_at),
+                         updated_at = VALUES(updated_at),
+                         level = VALUES(level),
+                         message = VALUES(message),
+                         occurred_at = VALUES(occurred_at),
+                         source = VALUES(source);
 
 -- =====================================================================
 --  3. report — 30건 (reason/target_type 다양화, 해결률 40%)
@@ -113,7 +125,18 @@ INSERT INTO `report` (`id`, `created_at`, `detail`, `is_resolved`, `reason`, `re
   (27, NOW() - INTERVAL 3 DAY, '채팅 내 욕설/비방', 0, 'ABUSE', 48, 34, NULL, 60, NULL, 'CHAT'),
   (28, NOW() - INTERVAL 130 DAY, NULL, 1, 'OTHER', 67, 52, NOW() - INTERVAL 125 DAY, 85, NULL, 'CHAT'),
   (29, NOW() - INTERVAL 2 DAY, '공지 페이지 오류 신고', 0, 'OTHER', NULL, 19, NULL, NULL, '/community/notice/3', 'PAGE'),
-  (30, NOW() - INTERVAL 140 DAY, NULL, 1, 'OTHER', NULL, 105, NOW() - INTERVAL 135 DAY, NULL, '/help/faq', 'PAGE');
+  (30, NOW() - INTERVAL 140 DAY, NULL, 1, 'OTHER', NULL, 105, NOW() - INTERVAL 135 DAY, NULL, '/help/faq', 'PAGE')
+    ON DUPLICATE KEY UPDATE
+                         created_at = VALUES(created_at),
+                         detail = VALUES(detail),
+                         is_resolved = VALUES(is_resolved),
+                         reason = VALUES(reason),
+                         reported_user_id = VALUES(reported_user_id),
+                         reporter_user_id = VALUES(reporter_user_id),
+                         resolved_at = VALUES(resolved_at),
+                         target_id = VALUES(target_id),
+                         target_path = VALUES(target_path),
+                         target_type = VALUES(target_type);
 
 -- =====================================================================
 --  4. admin_notice — 10건 (pinned 1건)
@@ -128,6 +151,12 @@ INSERT INTO `admin_notice` (`id`, `content`, `created_at`, `is_pinned`, `title`,
   (7, '일부 사용자분들의 로그인 오류가 확인되어 조치 완료하였습니다.', NOW() - INTERVAL 15 DAY, 1, '[긴급] 일부 사용자 로그인 오류 안내 및 조치 완료', NOW() - INTERVAL 15 DAY),
   (8, '친구를 초대하고 함께 포인트 혜택을 받아보세요.', NOW() - INTERVAL 10 DAY, 0, '[이벤트] 친구 초대 이벤트 진행 안내', NOW() - INTERVAL 10 DAY),
   (9, '이용약관 개정 사항을 사전 고지드립니다.', NOW() - INTERVAL 5 DAY, 0, '[공지] 이용약관 개정 사전고지', NOW() - INTERVAL 5 DAY),
-  (10, '앱스토어 리뷰 이벤트가 종료되었습니다. 참여해주셔서 감사합니다.', NOW() - INTERVAL 1 DAY, 0, '[안내] 앱스토어 리뷰 이벤트 종료 안내', NOW() - INTERVAL 1 DAY);
+  (10, '앱스토어 리뷰 이벤트가 종료되었습니다. 참여해주셔서 감사합니다.', NOW() - INTERVAL 1 DAY, 0, '[안내] 앱스토어 리뷰 이벤트 종료 안내', NOW() - INTERVAL 1 DAY)
+    ON DUPLICATE KEY UPDATE
+                         content = VALUES(content),
+                         created_at = VALUES(created_at),
+                         is_pinned = VALUES(is_pinned),
+                         title = VALUES(title),
+                         updated_at = VALUES(updated_at);
 
 SET FOREIGN_KEY_CHECKS = 1;

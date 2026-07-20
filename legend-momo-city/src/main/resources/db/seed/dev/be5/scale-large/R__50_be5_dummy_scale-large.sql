@@ -1,13 +1,5 @@
 SET FOREIGN_KEY_CHECKS = 0;
 
-TRUNCATE TABLE `calendar`;
-TRUNCATE TABLE `streak`;
-TRUNCATE TABLE `learning_history`;
-TRUNCATE TABLE `comment`;
-TRUNCATE TABLE `post_like`;
-TRUNCATE TABLE `post_content`;
-TRUNCATE TABLE `post`;
-
 -- =====================================================================
 --  1. post — 90개 large 원본
 -- =====================================================================
@@ -101,7 +93,17 @@ INSERT INTO `post` (`id`, `created_at`, `updated_at`, `category`, `deleted_at`, 
   (87, NOW() - INTERVAL 4 DAY, NOW() - INTERVAL 4 DAY, 'COOK', NULL, 1, 'https://d1w7ptjpsyo7f4.cloudfront.net/community/images/ea874288-902d-4892-a7f0-5ef7acef4b02_CommunityCookThumbnail.png', '베이킹 완전 정복', 43, 51),
   (88, NOW() - INTERVAL 3 DAY, NOW() - INTERVAL 3 DAY, 'STUDY', NULL, 3, 'https://d1w7ptjpsyo7f4.cloudfront.net/community/images/6753510c-9f74-4e18-8ee7-9661a5626e46_CommunityStudyThumbnail.png', '강의 퀄리티 너무 좋아요', 23, 56),
   (89, NOW() - INTERVAL 2 DAY, NOW() - INTERVAL 2 DAY, 'COOK', NULL, 0, 'https://d1w7ptjpsyo7f4.cloudfront.net/community/images/ab0b11b9-597e-4fa4-b81b-fe09b5bae86d_chapter42Thumbnail.jpg', '베이킹 실패담 ㅠㅠ', 3, 12),
-  (90, NOW() - INTERVAL 1 DAY, NOW() - INTERVAL 1 DAY, 'BEAUTY', NULL, 30, 'https://d1w7ptjpsyo7f4.cloudfront.net/community/images/dedb70ae-195f-452e-9db8-7daf5691a530_CommunityBeautyThumbnail.png', '커뮤니티 첫 글입니다', 12, 227);
+  (90, NOW() - INTERVAL 1 DAY, NOW() - INTERVAL 1 DAY, 'BEAUTY', NULL, 30, 'https://d1w7ptjpsyo7f4.cloudfront.net/community/images/dedb70ae-195f-452e-9db8-7daf5691a530_CommunityBeautyThumbnail.png', '커뮤니티 첫 글입니다', 12, 227)
+    ON DUPLICATE KEY UPDATE
+                         created_at = VALUES(created_at),
+                         updated_at = VALUES(updated_at),
+                         category = VALUES(category),
+                         deleted_at = VALUES(deleted_at),
+                         post_like = VALUES(post_like),
+                         thumbnail_url = VALUES(thumbnail_url),
+                         title = VALUES(title),
+                         user_id = VALUES(user_id),
+                         view_count = VALUES(view_count);
 -- =====================================================================
 --  2. post_like — 200건
 -- =====================================================================
@@ -305,7 +307,11 @@ INSERT INTO `post_like` (`id`, `created_at`, `post_id`, `user_id`) VALUES
   (197, NOW() - INTERVAL 196 DAY, 17, 95),
   (198, NOW() - INTERVAL 197 DAY, 18, 96),
   (199, NOW() - INTERVAL 198 DAY, 19, 97),
-  (200, NOW() - INTERVAL 199 DAY, 20, 98);
+  (200, NOW() - INTERVAL 199 DAY, 20, 98)
+    ON DUPLICATE KEY UPDATE
+                         created_at = VALUES(created_at),
+                         post_id = VALUES(post_id),
+                         user_id = VALUES(user_id);
 -- =====================================================================
 --  3. comment — 50건
 -- =====================================================================
@@ -359,7 +365,15 @@ INSERT INTO `comment` (`id`, `created_at`, `updated_at`, `content`, `deleted_at`
   (47, NOW() - INTERVAL 92 DAY, NOW() - INTERVAL 92 DAY, '댓글 내용 47', NULL, NULL, 47, 58),
   (48, NOW() - INTERVAL 94 DAY, NOW() - INTERVAL 94 DAY, '댓글 내용 48', NULL, NULL, 48, 59),
   (49, NOW() - INTERVAL 96 DAY, NOW() - INTERVAL 96 DAY, '댓글 내용 49', NULL, NULL, 49, 60),
-  (50, NOW() - INTERVAL 98 DAY, NOW() - INTERVAL 98 DAY, '댓글 내용 50', NULL, NULL, 50, 61);
+  (50, NOW() - INTERVAL 98 DAY, NOW() - INTERVAL 98 DAY, '댓글 내용 50', NULL, NULL, 50, 61)
+    ON DUPLICATE KEY UPDATE
+                         created_at = VALUES(created_at),
+                         updated_at = VALUES(updated_at),
+                         content = VALUES(content),
+                         deleted_at = VALUES(deleted_at),
+                         parent_id = VALUES(parent_id),
+                         post_id = VALUES(post_id),
+                         user_id = VALUES(user_id);
 -- =====================================================================
 --  4. learning_history — large 원본
 -- =====================================================================
@@ -1783,7 +1797,19 @@ INSERT INTO `learning_history` (`id`, `created_at`, `updated_at`, `chapter_id`, 
   (1417, NOW() - INTERVAL 1 DAY, NOW() - INTERVAL 1 DAY, 46, 1, 752, CURDATE() - INTERVAL 1 DAY, 10, 100, 125, 0, 724),
   (1418, NOW() - INTERVAL 1 DAY, NOW() - INTERVAL 1 DAY, 47, 1, 201, CURDATE() - INTERVAL 1 DAY, 10, 100, 125, 0, 195),
   (1419, NOW() - INTERVAL 0 DAY, NOW() - INTERVAL 0 DAY, 48, 1, 182, CURDATE() - INTERVAL 0 DAY, 10, 100, 125, 0, 179),
-  (1420, NOW() - INTERVAL 2 DAY, NOW() - INTERVAL 2 DAY, 49, 0, 31, CURDATE() - INTERVAL 2 DAY, 10, 11, 125, 0, 31);
+  (1420, NOW() - INTERVAL 2 DAY, NOW() - INTERVAL 2 DAY, 49, 0, 31, CURDATE() - INTERVAL 2 DAY, 10, 11, 125, 0, 31)
+    ON DUPLICATE KEY UPDATE
+                         created_at = VALUES(created_at),
+                         updated_at = VALUES(updated_at),
+                         chapter_id = VALUES(chapter_id),
+                         is_completed = VALUES(is_completed),
+                         last_position_sec = VALUES(last_position_sec),
+                         last_watched_at = VALUES(last_watched_at),
+                         lecture_id = VALUES(lecture_id),
+                         progress_rate = VALUES(progress_rate),
+                         user_id = VALUES(user_id),
+                         version = VALUES(version),
+                         watched_seconds = VALUES(watched_seconds);
 -- =====================================================================
 --  5. streak — large 원본
 -- =====================================================================
@@ -3025,7 +3051,13 @@ INSERT INTO `streak` (`id`, `created_at`, `daily_watched_seconds`, `level`, `str
   (1235, CURDATE() - INTERVAL 3 DAY, 292, 'LEVEL0', CURDATE() - INTERVAL 3 DAY, 125),
   (1236, CURDATE() - INTERVAL 2 DAY, 1476, 'LEVEL1', CURDATE() - INTERVAL 2 DAY, 125),
   (1237, CURDATE() - INTERVAL 1 DAY, 1022, 'LEVEL1', CURDATE() - INTERVAL 1 DAY, 125),
-  (1238, CURDATE() - INTERVAL 0 DAY, 399, 'LEVEL0', CURDATE() - INTERVAL 0 DAY, 125);
+  (1238, CURDATE() - INTERVAL 0 DAY, 399, 'LEVEL0', CURDATE() - INTERVAL 0 DAY, 125)
+    ON DUPLICATE KEY UPDATE
+                         created_at = VALUES(created_at),
+                         daily_watched_seconds = VALUES(daily_watched_seconds),
+                         level = VALUES(level),
+                         streak_date = VALUES(streak_date),
+                         user_id = VALUES(user_id);
 -- =====================================================================
 --  6. calendar — 50건
 -- =====================================================================
@@ -3079,6 +3111,13 @@ INSERT INTO `calendar` (`id`, `category`, `end`, `is_completed`, `start`, `title
   (47, 'MEMO', NULL, 0, CURDATE() - INTERVAL 138 DAY, '목표 47', 58),
   (48, 'TODO', NULL, 0, CURDATE() - INTERVAL 141 DAY, '목표 48', 59),
   (49, 'MEMO', NULL, 0, CURDATE() - INTERVAL 144 DAY, '목표 49', 60),
-  (50, 'TODO', NULL, 0, CURDATE() - INTERVAL 147 DAY, '목표 50', 61);
+  (50, 'TODO', NULL, 0, CURDATE() - INTERVAL 147 DAY, '목표 50', 61)
+    ON DUPLICATE KEY UPDATE
+                         category = VALUES(category),
+end = VALUES(end),
+  is_completed = VALUES(is_completed),
+  start = VALUES(start),
+  title = VALUES(title),
+  user_id = VALUES(user_id);
 
 SET FOREIGN_KEY_CHECKS = 1;
