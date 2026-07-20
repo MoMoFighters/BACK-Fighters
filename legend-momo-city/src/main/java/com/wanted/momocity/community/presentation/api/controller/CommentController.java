@@ -115,9 +115,9 @@ public class CommentController {
             @PathVariable Long postId,
             @RequestParam(required = false) Long cursor,
             @RequestParam(defaultValue = "10") int size,
-            @AuthenticationPrincipal CustomUserDetails userDetails
+            @AuthenticationPrincipal(errorOnInvalidType = false) CustomUserDetails userDetails
     ) {
-        Long userId = userDetails.getUserId();
+        Long userId = userDetails != null ? userDetails.getUserId() : null;
 
         return ResponseEntity.ok(ApiResponse.success(
                 CommunityResponseCode.COMMENT_FOUND,
@@ -135,10 +135,10 @@ public class CommentController {
             @PathVariable Long commentId,
             @RequestParam(required = false) Long cursor,
             @RequestParam(defaultValue = "5") int size,
-            @AuthenticationPrincipal CustomUserDetails userDetails
+            @AuthenticationPrincipal(errorOnInvalidType = false) CustomUserDetails userDetails
     ) {
 
-        Long userId = userDetails.getUserId();
+        Long userId = userDetails != null ? userDetails.getUserId() : null;
 
         return ResponseEntity.ok(ApiResponse.success(
                 CommunityResponseCode.COMMENT_FOUND,
