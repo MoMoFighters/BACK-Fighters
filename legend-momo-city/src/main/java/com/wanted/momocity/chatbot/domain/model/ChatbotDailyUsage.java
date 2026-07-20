@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 
 public class ChatbotDailyUsage {
 
-    private static final int DAILY_LIMIT = 5;
+    private static final int DAILY_LIMIT = 40;
 
     private Long id;
     private final Long userId;

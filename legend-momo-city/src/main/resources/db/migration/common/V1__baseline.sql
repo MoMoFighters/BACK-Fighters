@@ -8,6 +8,8 @@ SET NAMES utf8mb4;
 -- =====================================================================
 --  DROP (역순 안전 삭제)
 -- =====================================================================
+DROP TABLE IF EXISTS `user_fortune_logs`;
+DROP TABLE IF EXISTS `fortunes`;
 DROP TABLE IF EXISTS `study_lap`;
 DROP TABLE IF EXISTS `daily_study_record`;
 DROP TABLE IF EXISTS `monthly_study_record`;
