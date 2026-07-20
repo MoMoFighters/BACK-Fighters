@@ -10,6 +10,7 @@ import com.wanted.momocity.calendar.presentation.api.response.MemoResponse;
 import com.wanted.momocity.calendar.presentation.api.response.TodoResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -34,6 +35,7 @@ import java.time.LocalDate;
 public class CalendarCommandService implements CalendarCommandUseCase {
 
     private final CalendarRepository calendarRepository;
+    private final CacheManager redisCacheManager;
 
     // Todo
     @Override
@@ -88,7 +90,6 @@ public class CalendarCommandService implements CalendarCommandUseCase {
     }
 
     @Override
-    @CacheEvict(value = "calendar", key = "#command.userId() + ':' + #command.start().year + ':' + #command.start().monthValue", cacheManager = "redisCacheManager")
     public void handle(DeleteTodoCommand command) {
 
         // 조회
@@ -100,8 +101,19 @@ public class CalendarCommandService implements CalendarCommandUseCase {
             throw new CalendarAccessDeniedException("본인의 Todo 만 삭제할 수 있습니다.");
         }
 
+        // 삭제 전에 캐시 키 계산에 필요한 start를 미리 확보 (삭제 후엔 조회 위험하므로 순서 중요)
+        String cacheKey = command.userId() + ":" + calendar.getStart().getYear() + ":" + calendar.getStart().getMonthValue();
+
         // 삭제
         calendarRepository.delete(command.calendarId());
+
+        // 수동 evict - 캐시가 아직 등록 전이거나 예기치 않게 null인 경우까지 방어
+        var cache = redisCacheManager.getCache("calendar");
+        if (cache != null) {
+            cache.evict(cacheKey);
+        } else {
+            log.warn("[Calendar] calendar 캐시를 찾을 수 없어 evict 스킵 | key={}", cacheKey);
+        }
 
         log.info("[Calendar] Todo 삭제 완료 | userId={}, calendarId={}",
                 command.userId(), command.calendarId());
@@ -190,7 +202,6 @@ public class CalendarCommandService implements CalendarCommandUseCase {
     }
 
     @Override
-    @CacheEvict(value = "calendar", key = "#command.userId() + ':' + #command.start().year + ':' + #command.start().monthValue", cacheManager = "redisCacheManager")
     public void handle(DeleteMemoCommand command) {
 
         // 조회
@@ -202,8 +213,19 @@ public class CalendarCommandService implements CalendarCommandUseCase {
             throw new CalendarAccessDeniedException("본인의 메모만 삭제할 수 있습니다.");
         }
 
+        // 삭제 전에 캐시 키 계산에 필요한 start를 미리 확보
+        String cacheKey = command.userId() + ":" + calendar.getStart().getYear() + ":" + calendar.getStart().getMonthValue();
+
         // 삭제
         calendarRepository.delete(command.calendarId());
+
+        //  수동 evict - 방어적으로 null 체크
+        var cache = redisCacheManager.getCache("calendar");
+        if (cache != null) {
+            cache.evict(cacheKey);
+        } else {
+            log.warn("[Calendar] calendar 캐시를 찾을 수 없어 evict 스킵 | key={}", cacheKey);
+        }
 
         log.info("[Calendar] Memo 삭제 완료 | userId={}, calendarId={}",
                 command.userId(), command.calendarId());

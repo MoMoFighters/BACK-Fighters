@@ -1,5 +1,7 @@
 package com.wanted.momocity.study.application.member.service;
 
+import com.wanted.momocity.auth.domain.model.User;
+import com.wanted.momocity.study.application.common.port.StudyUserInfoPort;
 import com.wanted.momocity.study.application.common.service.StudyLapService;
 import com.wanted.momocity.study.application.member.command.InviteMemberCommand;
 import com.wanted.momocity.study.application.member.port.FriendCatalogPort;
@@ -54,6 +56,7 @@ public class MemberCommandService implements MemberCommandUseCase {
     private final GroupRoomMemberCountAdapter groupRoomMemberCountAdapter;
     private final ApplicationEventPublisher eventPublisher;
     private final StudyLapService studyLapService;
+    private final StudyUserInfoPort studyUserInfoPort;
 
     /*
      * comment.
@@ -115,7 +118,14 @@ public class MemberCommandService implements MemberCommandUseCase {
                 .orElseGet(() -> GroupRoomMember.invite(roomId, inviteeId, LocalDateTime.now()));
         GroupRoomMember saved = groupRoomMemberRepository.save(target);
 
-        // 알림 발송은 별도 이벤트(예: InvitationCreatedEvent)로 확장 가능 - 여기서는 notification 테이블 연동은 생략 -> 추후 구현
+        // 초대자 닉네임 조회 후 알림용 이벤트 발행
+        // findById가 Optional이라 못 찾으면 "익명"으로 방어 (사실상 인증된 유저라 없을 일은 거의 없음)
+        String inviterNickname = studyUserInfoPort.findById(userId)
+                .map(User::getNickname)
+                .orElse("익명");
+        eventPublisher.publishEvent(new StudyInviteEvent(roomId, inviteeId, inviterNickname, LocalDateTime.now()));
+
+        // 알림 발송은 별도 이벤트(예: InvitationCreatedEvent)로 확장
         log.info("[Study] 그룹방 초대 발송 완료 | roomId={}, inviterId={}, inviteeId={}", roomId, userId, inviteeId);
         return InvitationResult.ofInvited(saved);
     }
