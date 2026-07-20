@@ -1,6 +1,7 @@
 package com.wanted.momocity.study.infrastructure.event;
 
 import com.wanted.momocity.study.domain.event.*;
+import com.wanted.momocity.study.presentation.api.stomp.StudyRoomBroadcastMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
