@@ -33,7 +33,7 @@ INSERT INTO `user_oauth` (`id`, `created_at`, `provider`, `provider_id`, `user_i
   (27, NOW() - INTERVAL 130 DAY, 'KAKAO', 'oauth_user_027', 38),
   (28, NOW() - INTERVAL 135 DAY, 'GOOGLE', 'oauth_user_028', 39),
   (29, NOW() - INTERVAL 140 DAY, 'KAKAO', 'oauth_user_029', 40),
-  (30, NOW() - INTERVAL 145 DAY, 2, 'oauth_user_030', 41)
+  (30, NOW() - INTERVAL 145 DAY, 'GOOGLE', 'oauth_user_030', 41)
     ON DUPLICATE KEY UPDATE
                          created_at = VALUES(created_at),
                          provider = VALUES(provider),
