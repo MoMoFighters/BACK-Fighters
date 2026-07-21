@@ -27,7 +27,8 @@ public class GeminiClientAdapter implements GeminiClientPort {
     @Override
     public void streamAnswer(String prompt, StreamCallback callback) {
         Map<String, Object> requestBody = Map.of(
-                "contents", List.of(Map.of("parts", List.of(Map.of("text", prompt))))
+                "contents", List.of(Map.of("parts", List.of(Map.of("text", prompt)))),
+                "generationConfig", Map.of("temperature", 0.3)
         );
 
         geminiWebClient.post()
