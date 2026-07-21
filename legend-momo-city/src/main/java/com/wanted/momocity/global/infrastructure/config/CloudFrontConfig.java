@@ -20,10 +20,10 @@ import java.util.Base64;
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
-@EnableConfigurationProperties(CloudFrontProperties.class)
+@EnableConfigurationProperties(CloudFrontSignedUrlProperties.class)
 public class CloudFrontConfig {
 
-    private final CloudFrontProperties cloudFrontProperties;
+    private final CloudFrontSignedUrlProperties cloudFrontSignedUrlProperties;
 
     // CloudFrontUtilities: AWS SDK 가 제공하는 서명 URL 생성 전용 객체
     @Bean
@@ -36,7 +36,7 @@ public class CloudFrontConfig {
     @Bean
     public PrivateKey cloudFrontPrivateKey() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
 
-        String pem = Files.readString(Path.of(cloudFrontProperties.privateKeyPath()));
+        String pem = Files.readString(Path.of(cloudFrontSignedUrlProperties.privateKeyPath()));
 
         // PEM 헤더/푸터, 개행 제거 후 Base64 디코딩
         String privateKeyPem = pem

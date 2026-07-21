@@ -39,6 +39,7 @@ public class PostCommandService implements PostCommandUseCase {
     private final PostContentRepository postContentRepository;
     private final CloudFrontUrlConverter cloudFrontUrlConverter;
     private final S3UploadPort s3UploadPort;
+    private final ThumbnailAsyncService thumbnailAsyncService;
     // 카테고리별 기본 썸네일
     // thumbnailUrl 미지정 + 이미지 없는 게시글에 한해 카테고리 기준 기본 썸네일 자동 생성
     private static final String DEFAULT_THUMBNAIL_BASE_URL =
@@ -113,6 +114,11 @@ public class PostCommandService implements PostCommandUseCase {
         post.updateThumbnail(resolvedThumbnailUrl);
         postRepository.save(post);
 
+        // 사용자가 직접 지정한 썸네일일 때만 비동기 리사이징 트리거
+        if (!resolvedThumbnailUrl.startsWith(DEFAULT_THUMBNAIL_BASE_URL)) {
+            thumbnailAsyncService.resizeThumbnailAsync(postId, resolvedThumbnailUrl);
+        }
+
         // 새 컨텐츠 목록 생성
         List<PostContent> postContents = new ArrayList<>();
         for (int i = 0; i < contents.size(); i++) {
@@ -176,6 +182,11 @@ public class PostCommandService implements PostCommandUseCase {
         // 썸네일 업데이트
         post.updateThumbnail(resolvedThumbnailUrl);
         postRepository.save(post);
+
+        // 사용자가 직접 지정한 썸네일일 때만 비동기 리사이징  트리거
+        if (!resolvedThumbnailUrl.startsWith(DEFAULT_THUMBNAIL_BASE_URL)) {
+            thumbnailAsyncService.resizeThumbnailAsync(postId, resolvedThumbnailUrl);
+        }
 
         // 기존 콘텐츠 전체 소프트딜리트 -> 새 콘텐츠 저장
         postContentRepository.deleteAllByPostId(postId);

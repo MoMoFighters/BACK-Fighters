@@ -12,7 +12,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  */
 
 @ConfigurationProperties(prefix = "cloudfront")
-public record CloudFrontProperties(
+public record CloudFrontSignedUrlProperties(
         String domain,
         String keyPairId,
         String privateKeyPath,

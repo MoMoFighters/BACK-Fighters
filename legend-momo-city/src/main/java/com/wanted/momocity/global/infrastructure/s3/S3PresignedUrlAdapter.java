@@ -1,7 +1,7 @@
 package com.wanted.momocity.global.infrastructure.s3;
 
 import com.wanted.momocity.global.application.s3.S3PresignedUrlPort;
-import com.wanted.momocity.global.infrastructure.config.CloudFrontProperties;
+import com.wanted.momocity.global.infrastructure.config.CloudFrontSignedUrlProperties;
 import com.wanted.momocity.viewing.application.port.S3Port;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +38,7 @@ public class S3PresignedUrlAdapter implements S3Port , S3PresignedUrlPort {
     // 신규 - CloudFront 서명에 필요한 의존성 주입
     private final CloudFrontUtilities cloudFrontUtilities;
     private final PrivateKey cloudFrontPrivateKey;
-    private final CloudFrontProperties cloudFrontProperties;
+    private final CloudFrontSignedUrlProperties cloudFrontSignedUrlProperties;
 
     // application.yaml 에서 버킷 이름 주입
     @Value("${cloud.aws.s3.bucket}")
@@ -92,14 +92,14 @@ public class S3PresignedUrlAdapter implements S3Port , S3PresignedUrlPort {
     public String generateCloudFrontSignedUrl(String videoUrl) {
 
         // CloudFront 도메인 + key 조합 -> 서명 대상 리소스 URL
-        String resourceUrl = "https://" + cloudFrontProperties.domain() + "/" + videoUrl;
+        String resourceUrl = "https://" + cloudFrontSignedUrlProperties.domain() + "/" + videoUrl;
 
         // CannedSignerRequest: 단순 만료시간 기반 서명 (IP 제한 등 없는 기본형)
         CannedSignerRequest request = CannedSignerRequest.builder()
                 .resourceUrl(resourceUrl)
                 .privateKey(cloudFrontPrivateKey)
-                .keyPairId(cloudFrontProperties.keyPairId())
-                .expirationDate(Instant.now().plusSeconds(cloudFrontProperties.expirationSeconds()))
+                .keyPairId(cloudFrontSignedUrlProperties.keyPairId())
+                .expirationDate(Instant.now().plusSeconds(cloudFrontSignedUrlProperties.expirationSeconds()))
                 .build();
 
         SignedUrl signedUrl = cloudFrontUtilities.getSignedUrlWithCannedPolicy(request);

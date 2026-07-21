@@ -1,6 +1,6 @@
 package com.wanted.momocity.viewing.application.service;
 
-import com.wanted.momocity.global.infrastructure.config.CloudFrontProperties;
+import com.wanted.momocity.global.infrastructure.config.CloudFrontSignedUrlProperties;
 import com.wanted.momocity.viewing.application.policy.EnrollmentAccessPolicy;
 import com.wanted.momocity.viewing.application.policy.SequentialAccessPolicy;
 import com.wanted.momocity.viewing.application.port.*;
@@ -42,7 +42,7 @@ public class ViewingQueryService implements ViewingQueryUseCase {
     private final EnrollmentAccessPolicy enrollmentAccessPolicy;
     private final SequentialAccessPolicy sequentialAccessPolicy;
     private final ViewingMetrics viewingMetrics;
-    private final CloudFrontProperties cloudFrontProperties;
+    private final CloudFrontSignedUrlProperties cloudFrontSignedUrlProperties;
 
     @Override
     public StreamingUrlResponse getStreamingUrl(Long userId, Long lectureId, Long chapterId) {
@@ -74,7 +74,7 @@ public class ViewingQueryService implements ViewingQueryUseCase {
 
         return new StreamingUrlResponse(
                 signedUrl,
-                cloudFrontProperties.expirationSeconds(),
+                cloudFrontSignedUrlProperties.expirationSeconds(),
 //                presignedUrl,
 //                3600,
                 history.getLastPositionSec()
