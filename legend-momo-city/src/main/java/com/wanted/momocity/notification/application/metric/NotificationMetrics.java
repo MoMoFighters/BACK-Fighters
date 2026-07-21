@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 public class NotificationMetrics {
     private final MeterRegistry meterRegistry;
 
-    // 💡 알림 목록 조회 N+1 및 다대다 그룹화 가공 지연 시간 측정 타이머
+    // 알림 목록 조회 N+1 및 다대다 그룹화 가공 지연 시간 측정 타이머
     private final Timer notificationListTimer;
 
     public NotificationMetrics(MeterRegistry meterRegistry) {
