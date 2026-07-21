@@ -34,7 +34,7 @@ public class FriendQueryService implements FriendQueryUseCase {
     //친구 목록 조회
     @Override
     public List<FriendView> getFriendQueryHandle(GetFriendQuery query) {
-        // 🎯 1. 타이머 측정 시작
+        // 1. 타이머 측정 시작
         return friendMetrics.getFriendListTimer().record(() -> {
             log.info("[FriendQueryService] 친구 목록 조회 요청 진입 - 조회 요청 유저ID: {}", query.userId());
 

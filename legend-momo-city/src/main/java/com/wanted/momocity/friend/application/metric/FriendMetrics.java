@@ -29,7 +29,7 @@ public class FriendMetrics {
                 .register(meterRegistry);
     }
 
-    // 🎯 [컴파일 버그 수정]: 서비스단에서 meterRegistry 없이 바로 시간을 잴 수 있도록 스타트 대행
+    // 서비스단에서 meterRegistry 없이 바로 시간을 잴 수 있도록 스타트 대행
     public Timer.Sample start() {
         return Timer.start(this.meterRegistry);
     }
