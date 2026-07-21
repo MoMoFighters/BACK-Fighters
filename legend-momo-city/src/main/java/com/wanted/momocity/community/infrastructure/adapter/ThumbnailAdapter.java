@@ -64,8 +64,16 @@ public class ThumbnailAdapter implements ThumbnailPort {
         try {
             // 1. 원본 이미지 다운로드 (URL 스트림으로 바로 읽음)
             URI uri = new URI(originalImageUrl);
-            String host = uri.getHost();
 
+            // 프로토콜 검증 (http/https 만 허용)
+            String scheme = uri.getScheme();
+            if (scheme == null || !(scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https"))) {
+                log.warn("[Thumbnail] 허용되지 않은 프로토콜 요청 차단 | scheme={}", scheme);
+                return originalImageUrl;
+            }
+
+            // 호스트 화이트리스트 검증
+            String host = uri.getHost();
             if (host == null || ALLOWED_HOSTS.stream().noneMatch(host::equalsIgnoreCase)) {
                 log.warn("[Thumbnail] 허용되지 않은 호스트 요청 차단 | host={}", host);
                 return originalImageUrl;   // 검증 실패 시 원본 URL 그대로 유지 (리사이징만 스킵)
@@ -78,6 +86,10 @@ public class ThumbnailAdapter implements ThumbnailPort {
             connection.setConnectTimeout(5000);
             connection.setReadTimeout(10000);
             connection.setRequestMethod("GET");
+
+            // 자동 리다이렉트 비활성화
+            // 화이트리스트 호스트가 3xx 로 다른(악성) 호스트로 리다이렉트시켜도 따라가지 않도록 차단
+            connection.setInstanceFollowRedirects(false);
 
             long contentLength = connection.getContentLengthLong();
             if (contentLength > MAX_DOWNLOAD_BYTES) {

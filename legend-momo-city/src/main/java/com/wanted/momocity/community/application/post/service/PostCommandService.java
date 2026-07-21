@@ -117,7 +117,7 @@ public class PostCommandService implements PostCommandUseCase {
         postRepository.save(post);
 
         // 사용자가 직접 지정한 썸네일일 때만 비동기 리사이징 트리거
-        if (!resolvedThumbnailUrl.startsWith(DEFAULT_THUMBNAIL_BASE_URL)) {
+        if (!resolvedThumbnailUrl.contains("/community/thumbnails/")) {
             eventPublisher.publishEvent(new ThumbnailResizeRequestedEvent(postId, resolvedThumbnailUrl));
         }
 
@@ -186,7 +186,7 @@ public class PostCommandService implements PostCommandUseCase {
         postRepository.save(post);
 
         // 사용자가 직접 지정한 썸네일일 때만 비동기 리사이징  트리거
-        if (!resolvedThumbnailUrl.startsWith(DEFAULT_THUMBNAIL_BASE_URL)) {
+        if (!resolvedThumbnailUrl.contains("/community/thumbnails/")) {
             eventPublisher.publishEvent(new ThumbnailResizeRequestedEvent(postId, resolvedThumbnailUrl));
         }
 
