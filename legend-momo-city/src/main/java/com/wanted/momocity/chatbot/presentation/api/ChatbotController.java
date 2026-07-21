@@ -78,9 +78,9 @@ public class ChatbotController {
         }
 
         Long userId = userDetails.getUserId();
-        // 90초로 상향: geminiWebClient의 responseTimeout(60초)보다 여유를 둬서
-        // WebClient가 먼저 끊기고 SseEmitter가 그 결과를 정상적으로 받아 전달하게 함
-        SseEmitter emitter = new SseEmitter(90_000L);
+        // 150초 샹향 : geminiWebClient 의 ResponseTimeout(120초)보다 여유를 둬서
+        // WebClient가 먼저 끊키고 SseEmitter 가 그 결과를 정상적으로 받아 전달하게 함
+        SseEmitter emitter = new SseEmitter(150_000L);
 
         // 타임아웃 시에도 "완료"가 아니라 "타임아웃으로 끊김"을 클라이언트가 구분할 수 있게 이벤트를 먼저 보냄
         emitter.onTimeout(() -> {

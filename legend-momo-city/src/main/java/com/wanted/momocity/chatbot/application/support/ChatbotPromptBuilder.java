@@ -26,6 +26,7 @@ public class ChatbotPromptBuilder {
                 .append("\"해당 내용은 확인되지 않습니다\"라고 명확히 답변하세요. ")
                 .append("답변은 마크다운 형식(굵게, 목록 등)을 활용해 가독성 있게 작성하세요.\n\n");
 
+
         //강의 관련 질문이면 강의 정보 + 수강평 블럭 추가
         if (context.lectureSummary() != null) {
             prompt.append("[강의 정보]\n제목: ").append(context.lectureSummary().title()).append("\n")
@@ -41,6 +42,9 @@ public class ChatbotPromptBuilder {
             prompt.append("[관련 정책/FAQ]\n");
             context.policyResults().forEach(policy -> prompt.append("- ").append(policy).append("\n"));
             prompt.append("\n");
+
+        } else {
+            prompt.append("[관련 정보]\n검색된 관련 정보가 없습니다.\n\n");
         }
 
         prompt.append("[질문]\n").append(context.question());
