@@ -3,23 +3,18 @@ package com.wanted.momocity.message.application.policy;
 import com.wanted.momocity.friend.fmexception.FMBusinessRuleViolationException;
 import com.wanted.momocity.friend.fmexception.FMResourceAccessDeniedException;
 import com.wanted.momocity.friend.fmexception.FMResourceConflictException;
-import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
-import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 
 import com.wanted.momocity.message.domain.repository.MessageRepository;
 import com.wanted.momocity.message.infrastructure.persistence.ChatRoomJpaEntity;
 import com.wanted.momocity.message.infrastructure.persistence.ChatRoomMemberJpaEntity;
-import com.wanted.momocity.message.infrastructure.persistence.SpringDataChatRoomMemberRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 @Component
 @Slf4j

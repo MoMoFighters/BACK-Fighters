@@ -1,6 +1,5 @@
 package com.wanted.momocity.message.application.service;
 
-import com.wanted.momocity.friend.enrollment.EnrollmentWithFMJpaEntity;
 import com.wanted.momocity.friend.fmexception.FMBusinessRuleViolationException;
 import com.wanted.momocity.friend.fmexception.FMResourceNotFoundException;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
@@ -9,14 +8,11 @@ import com.wanted.momocity.message.application.command.*;
 import com.wanted.momocity.message.application.manager.ChatRoomSessionManager;
 import com.wanted.momocity.message.application.metric.MessageMetrics;
 import com.wanted.momocity.message.application.policy.MessageEligibilityPolicy;
-import com.wanted.momocity.message.application.query.FindChatRoomQuery;
-import com.wanted.momocity.message.application.query.GetMessageHistoryQuery;
 import com.wanted.momocity.message.application.usecase.MessageCommandUseCase;
 import com.wanted.momocity.message.application.usecase.MessageQueryUseCase;
 import com.wanted.momocity.message.domain.event.*;
 import com.wanted.momocity.message.domain.repository.MessageRepository;
 import com.wanted.momocity.message.infrastructure.persistence.*;
-import com.wanted.momocity.notification.application.query.GetPhoneAppCountsQuery;
 import com.wanted.momocity.notification.application.usecase.NotificationQueryUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -116,9 +112,6 @@ public class MessageCommandService implements MessageCommandUseCase {
                 // 🎯 [SQL 최적화]: 루프 내 N+1 쿼리를 막기 위해, 상대방이 참여 중인 1인실(나만 퇴장한 일대일 방) 목록을 한 방 쿼리로 먼저 가져옵니다.
                 List<ChatRoomMemberJpaEntity> singleCandidateMemberships = messageRepository.findOnePersonRoomsByUserId(targetUserId, command.userId());
 
-                //상대방이 참여 중인 모든 멤버 다져옴
-//                List<ChatRoomMemberJpaEntity> targetMemberships = messageRepository.findChatRoomMembersByUserId(targetUserId);
-
                 for (ChatRoomMemberJpaEntity membership : singleCandidateMemberships) {
                     //내가 나간 방일 가능성 있는 후보방
                     Long candidateRoomId = membership.getRoomId().getId();
@@ -212,7 +205,7 @@ public class MessageCommandService implements MessageCommandUseCase {
         }
 
         messageRepository.fastSaveChanges();
-        // 🚀 [신규 추가]: 신규 채팅방 생성 완료에 따른 참여자 전원 화면 리로드 웹소켓 비동기 이벤트 발행!
+        // 신규 채팅방 생성 완료에 따른 참여자 전원 화면 리로드 웹소켓 비동기 이벤트 발행!
         // ReenteredPublishedEvent를 공용으로 재활용하셔도 좋고, 별도 개설 이벤트(RoomCreatedPublishedEvent)를 파셔도 좋습니다.
         eventPublisher.publishEvent(new ChatRoomReenteredPublishedEvent(newRoom.getId(), allMemberIds));
         log.info("[CreateChatRoomCommandService] 신규 채팅방 개설 완료 및 웹소켓 전송 이벤트 발행 성공 - 방ID: {}", newRoom.getId());
@@ -241,7 +234,7 @@ public class MessageCommandService implements MessageCommandUseCase {
                 inMemberCount //로그인 유저 포함 멤버수이므로 초대된 멤버 + 1
         );
 
-        // 🎯 딱 한 줄: 신규 개설 방의 멤버 수 분포 수집 (기존 코드가 명세서의 지표와 완벽히 일치하므로 유지)
+        // 신규 개설 방의 멤버 수 분포 수집
         messageMetrics.recordRoomMemberCount((double) inMemberCount);
 
         return new CreateRoomView(
@@ -299,7 +292,7 @@ public class MessageCommandService implements MessageCommandUseCase {
         MessageJpaEntity newMessage = MessageJpaEntity.createNewMessage(chatRoom, sender, command.content());
         messageRepository.saveMessage(newMessage);
 
-        // 🎯 딱 한 줄: 메시지가 성공적으로 적재 및 유효 통과 시점에 글로벌 TPS 카운트 증가
+        // 메시지가 성공적으로 적재 및 유효 통과 시점에 글로벌 TPS 카운트 증가
         messageMetrics.incrementMessageSendCount();
 
         List<MessageReadJpaEntity> readOtherUsers = new ArrayList<>();
@@ -334,13 +327,13 @@ public class MessageCommandService implements MessageCommandUseCase {
         messageRepository.fastSaveChanges();
 
         //위에서 상대가 화면에 머무르는지 여부로 읽음 여부를 설정했으므로 재활용
-        // 🎯 [컴파일 버그 수정 완료]: 수신자들 중 '안 읽은 사람(방에 없는 사람)'이 한 명이라도 존재하는지 검증
+        // 수신자들 중 '안 읽은 사람(방에 없는 사람)'이 한 명이라도 존재하는지 검증
         boolean hasUnreadReceiver = readOtherUsers.stream()
                 .anyMatch(mr -> !mr.isMsgRead()); // 하나라도 안 읽었으면(false) true 반환
 
         //웹소켓으로 채팅방에 머무르는 사람이 없을 때만 notification테이블에 행 생성
         if (hasUnreadReceiver) {
-            // 🎯 2. 나와의 채팅방이 아닐 때만 상대방(targetUser)에게 알림 이벤트 발행
+            //나와의 채팅방이 아닐 때만 상대방(targetUser)에게 알림 이벤트 발행
             if (!targetUser.getId().equals(command.senderId())) {
                 log.info("[SendMessageService] 메시지 전송 성공 - 알림 발행. 방번호: {}", command.roomId());
                 eventPublisher.publishEvent(new SendMessagePublishedEvent(
@@ -362,34 +355,6 @@ public class MessageCommandService implements MessageCommandUseCase {
 
         eventPublisher.publishEvent(new ChatMessageSentWebsocketPublishedEvent(command.roomId(), command.senderId(), currentMemberIds));
         log.info("[SendMessageService] 메시지 적재 완료 및 실시간 화면 갱신 비동기 이벤트 발행 성공");
-
-//        //WebSocketConfig에서 설정한 prefix "/sub" 채널로 발송
-//        String destination = "/sub/chat/room/" + command.roomId();
-//
-//        //방에 있는 모든 사람 찾기(로그인 유저 포함)
-//        for (ChatRoomMemberJpaEntity member: members) {
-//            //수신자
-//            UserWithFMJpaEntity receiver = member.getUserId();
-//
-//            //메시지 내역 웹소켓
-//            List<MessageQueryUseCase.MessageHistoryView> historyPayload =
-//                    messageQueryUseCase.getMessageHistoryQueryHandle(new GetMessageHistoryQuery(command.roomId(), receiver.getId(), null));
-//            messagingTemplate.convertAndSendToUser(receiver.getId().toString(), destination, historyPayload);
-//
-//            //채팅방 목록 웹소켓
-//            List<MessageQueryUseCase.ChatRoomView> chatRoomListPayload =
-//                    messageQueryUseCase.getChatRoomQueryHandle(new FindChatRoomQuery(receiver.getId()));
-//            messagingTemplate.convertAndSendToUser(receiver.getId().toString(), "/sub/chat/rooms", chatRoomListPayload);
-//
-//            // ==========================================
-//            // 🎯 [여기서 추가] 메시지를 받은 사람들의 휴대폰 앱 알림 개수도 실시간으로 올려줌!
-//            // ==========================================
-//            if (!receiver.getId().equals(command.senderId())) { // 내가 보낸 게 아닐 때 (진짜 수신자들만)
-//                notificationQueryUseCase.getPhoneAppCountsQueryHandle(new GetPhoneAppCountsQuery(receiver.getId()));  // 🔥 휴대폰 앱 배지 개수 갱신!
-//            }
-//        }
-//        log.info("[웹소켓 실시간 발송] QueryService 기존 로직 재활용");
-
 
         return new SendView(
                 command.roomId(),
@@ -425,7 +390,7 @@ public class MessageCommandService implements MessageCommandUseCase {
         UserWithFMJpaEntity targetUser = null;
 
         //상대방 닉네임 추출(일대일인 경우)
-        List<ChatRoomMemberJpaEntity> members = messageRepository.findMembersByRoomId(command.roomId()); // 🎯 비동기 아이디 추출을 위해 상단으로 올림
+        List<ChatRoomMemberJpaEntity> members = messageRepository.findMembersByRoomId(command.roomId()); //비동기 아이디 추출을 위해 상단으로 올림
         if (isOneToOne) {
             targetUser = members.stream()
                     .map(ChatRoomMemberJpaEntity::getUserId)
@@ -434,7 +399,7 @@ public class MessageCommandService implements MessageCommandUseCase {
                     .orElse(members.get(0).getUserId()); //나와의 채팅방 대비
         }
 
-        // 🎯 [벌크 연산 튜닝 적용]: 자바 루프 없이, 단 1방의 UPDATE 쿼리로 수백 건 일괄 읽음 처리 완료!
+        // 벌크 연산 튜닝 적용: 자바 루프 없이, 단 1방의 UPDATE 쿼리로 수백 건 일괄 읽음 처리 완료!
         int updatedCount = messageRepository.bulkUpdateReadStatus(command.roomId(), command.userId());
         boolean hasUnread = updatedCount > 0; // 바뀐 행이 1개라도 있다면 안 읽은 메시지가 존재했던 것
 
@@ -444,11 +409,11 @@ public class MessageCommandService implements MessageCommandUseCase {
             log.info("[ReadMessageCommandService] 읽을 메시지가 존재하지 않아 기존 상태 유지");
         }
 
-        // 🎯 [웹소켓 실시간 발송 추가]
+        //[웹소켓 실시간 발송 추가]
         // 1. 상태 변경 사항을 DB와 완전히 동기화 시키기 위해 영속성 플러시 실행
         messageRepository.fastSaveChanges();
 
-        // 🎯 [컴파일 에러 해결]: 주석 처리되었던 멤버 ID 수집 로직을 안전하게 복구합니다.
+        //[컴파일 에러 해결]: 주석 처리되었던 멤버 ID 수집 로직을 안전하게 복구합니다.
         List<Long> currentMemberIds = members.stream()
                 .map(m -> m.getUserId().getId())
                 .toList();
@@ -520,7 +485,7 @@ public class MessageCommandService implements MessageCommandUseCase {
         messageRepository.saveLeaveAnnounce(chatRoom, loginUser, loginUser.getNickname() + "님이 나갔습니다.");
 
         // =========================================================================
-        // 🎯 [핵심 최적화]: 지옥의 웹소켓 화면 갱신 루프를 비동기 이벤트로 이관
+        // [핵심 최적화]: 지옥의 웹소켓 화면 갱신 루프를 비동기 이벤트로 이관
         // =========================================================================
         // 남은 사람들의 ID 목록을 먼저 안전하게 추출합니다.
         List<Long> remainingUserIds = allMembers.stream()
@@ -533,7 +498,7 @@ public class MessageCommandService implements MessageCommandUseCase {
         log.info("[LeaveChatRoomCommandService] 퇴장 처리 완료 및 남은 멤버 화면 갱신 비동기 이벤트 발행 성공");
         // =========================================================================
 
-        // 🎯 [수정]: 전체 멤버 중 '내가 아닌 사람(남겨진 사람)'을 정확히 찾아옵니다.
+        // [수정]: 전체 멤버 중 '내가 아닌 사람(남겨진 사람)'을 정확히 찾아옵니다.
         // 이러면 나중에 다대다로 확장되어도 최소한 남은 사람 중 한 명을 안전하게 찝어올 수 있습니다.
         UserWithFMJpaEntity targetUser = null;
         String friendStatus = "none";
@@ -637,19 +602,19 @@ public class MessageCommandService implements MessageCommandUseCase {
         //기본 검증(접근 권한, 중복 사용자)
         messageEligibilityPolicy.validateBeforeLoop(chatRoom, command.userId(), command.chatMember());
 
-        // 💡 [인메모리 최적화 1]: 현재 방에 있는 기존 멤버들의 유저 ID 목록을 '패치 조인' 메서드로 단 1번만 조회
+        // [인메모리 최적화 1]: 현재 방에 있는 기존 멤버들의 유저 ID 목록을 '패치 조인' 메서드로 단 1번만 조회
         List<ChatRoomMemberJpaEntity> existingMembers = messageRepository.findMembersByRoomId(chatRoom.getId());
         Set<Long> existingMemberUserIds = existingMembers.stream()
                 .map(m -> m.getUserId().getId())
                 .collect(Collectors.toSet());
 
-        // 💡 [인메모리 최적화 2]: 초대 타겟 유저 리스트를 IN 쿼리로 한방에 일괄 조회 (반복문 조회 제거)
+        // [인메모리 최적화 2]: 초대 타겟 유저 리스트를 IN 쿼리로 한방에 일괄 조회 (반복문 조회 제거)
         List<UserWithFMJpaEntity> invitees = messageRepository.findUsersWithFMByIds(command.chatMember());
         if (invitees.size() != command.chatMember().size()) {
             throw new FMResourceNotFoundException("존재하지 않는 사용자가 포함되어 있어 초대할 수 없습니다.");
         }
 
-        // 💡 [인메모리 최적화 3]: 로그인 유저와 초대 대상자들 간의 친구 관계 목록을 IN 쿼리로 한방에 일괄 조회 및 Map 전환
+        // [인메모리 최적화 3]: 로그인 유저와 초대 대상자들 간의 친구 관계 목록을 IN 쿼리로 한방에 일괄 조회 및 Map 전환
         List<FriendJpaEntity> friendRelations = messageRepository.findFriendRelationsByUserIdAndTargetIds(command.userId(), command.chatMember());
         Set<Long> targetIds = new HashSet<>(command.chatMember());
         Long myId = command.userId();
@@ -686,8 +651,6 @@ public class MessageCommandService implements MessageCommandUseCase {
 
             //정책 위임
             messageEligibilityPolicy.inviteRoomMember(chatRoom, command.userId(), command.chatMember(), hasMe, friendStatus, isExistMember, isNotStudentOrActive);
-
-//            invitees.add(invitee);
 
             //초대한 멤버들 저장
             messageRepository.saveInviteChatRoomMember(chatRoom, invitee, invitedAt);

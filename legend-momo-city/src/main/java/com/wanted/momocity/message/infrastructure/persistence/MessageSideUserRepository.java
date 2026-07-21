@@ -13,7 +13,7 @@ import java.util.Optional;
 public interface MessageSideUserRepository extends JpaRepository<UserWithFMJpaEntity, Long> {
 
     //개선
-    // 🎯 [패치 조인 적용] 단건 조회가 아니라 내부 연관 필드까지 한방에 퍼올리도록 튜닝합니다.
+    //단건 조회가 아니라 내부 연관 필드까지 한방에 퍼올리도록 튜닝합니다.
     @Query("select u from FMUser u " +
             "where u.id = :userId")
     Optional<UserWithFMJpaEntity> findUserWithFMById(@Param("userId") Long userId);
