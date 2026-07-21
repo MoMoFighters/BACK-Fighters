@@ -1,16 +1,22 @@
 package com.wanted.momocity.global.infrastructure.s3;
 
 import com.wanted.momocity.global.application.s3.S3PresignedUrlPort;
+import com.wanted.momocity.global.infrastructure.config.CloudFrontProperties;
 import com.wanted.momocity.viewing.application.port.S3Port;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import software.amazon.awssdk.services.cloudfront.CloudFrontUtilities;
+import software.amazon.awssdk.services.cloudfront.model.CannedSignerRequest;
+import software.amazon.awssdk.services.cloudfront.url.SignedUrl;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 
+import java.security.PrivateKey;
 import java.time.Duration;
+import java.time.Instant;
 
 /*
 * comment.
@@ -28,6 +34,11 @@ public class S3PresignedUrlAdapter implements S3Port , S3PresignedUrlPort {
     // S3Presigned: AWS SDK 가 제공하는 Presigned URL 생성 전용 객체
     // S3Config 에서 Bean 으로 등록해둔 것을 주입받음
     private final S3Presigner s3Presigner;
+
+    // 신규 - CloudFront 서명에 필요한 의존성 주입
+    private final CloudFrontUtilities cloudFrontUtilities;
+    private final PrivateKey cloudFrontPrivateKey;
+    private final CloudFrontProperties cloudFrontProperties;
 
     // application.yaml 에서 버킷 이름 주입
     @Value("${cloud.aws.s3.bucket}")
@@ -70,4 +81,32 @@ public class S3PresignedUrlAdapter implements S3Port , S3PresignedUrlPort {
                 .url()
                 .toString();
     }
+
+    /*
+     * comment.
+     *  신규 - CloudFront Signed URL 발급
+     *  - videoUrl 은 DB 에 key 형태로만 저장되어 있음 (ex. lectures/1/chapters/1/chapter01.mp4)
+     *  - 별도 파싱 없이 바로 CloudFront resourceUrl 조합에 사용
+     */
+    @Override
+    public String generateCloudFrontSignedUrl(String videoUrl) {
+
+        // CloudFront 도메인 + key 조합 -> 서명 대상 리소스 URL
+        String resourceUrl = "https://" + cloudFrontProperties.domain() + "/" + videoUrl;
+
+        // CannedSignerRequest: 단순 만료시간 기반 서명 (IP 제한 등 없는 기본형)
+        CannedSignerRequest request = CannedSignerRequest.builder()
+                .resourceUrl(resourceUrl)
+                .privateKey(cloudFrontPrivateKey)
+                .keyPairId(cloudFrontProperties.keyPairId())
+                .expirationDate(Instant.now().plusSeconds(cloudFrontProperties.expirationSeconds()))
+                .build();
+
+        SignedUrl signedUrl = cloudFrontUtilities.getSignedUrlWithCannedPolicy(request);
+
+        log.info("[CloudFront] Signed URL 발급 완료 | key={}", videoUrl);
+
+        return signedUrl.url();
+    }
+
 }
