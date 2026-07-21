@@ -25,7 +25,7 @@ import java.time.LocalDateTime;
  *  그룹방 자체 쓰기 작업 UseCase 구현체
  *  - 방 생성만 담당 (방장 위임/방 종료는 member 도메인에서 처리 - RoomCommandUseCase 주석 참고)
  *  -
- *  1. GroupRoom 저장 (invite_code는 여기서 랜덤 생성 후 유니크 재시도)
+ *  1. GroupRoom 저장
  *  2. GroupRoomMember를 JOINED 상태로 즉시 저장 (방장 본인)
  *     - GroupRoomMember.invite()가 아니라 joinAsHost()를 쓰는 이유는,
  *       방장은 초대 절차 없이 바로 참가 확정 상태여야 하기 때문 (INVITED를 거치지 않음)
