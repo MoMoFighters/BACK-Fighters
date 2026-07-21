@@ -6,6 +6,7 @@ import com.wanted.momocity.report.application.port.ChatContentPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+// 메시지 신고 내용을 위한 클래스
 @Component
 @RequiredArgsConstructor
 public class ChatContentAdapter implements ChatContentPort {

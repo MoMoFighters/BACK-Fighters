@@ -1,7 +1,4 @@
 package com.wanted.momocity.message.domain.event;
-
-import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
-
 import java.time.LocalDateTime;
 
 public record SendMessagePublishedEvent(
