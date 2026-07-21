@@ -78,10 +78,15 @@ public class ChatbotController {
         }
 
         Long userId = userDetails.getUserId();
-        SseEmitter emitter = new SseEmitter(60_000L);
+        // 90초로 상향: geminiWebClient의 responseTimeout(60초)보다 여유를 둬서
+        // WebClient가 먼저 끊기고 SseEmitter가 그 결과를 정상적으로 받아 전달하게 함
+        SseEmitter emitter = new SseEmitter(90_000L);
 
-        // 타임아웃(60초 경과) 시 emitter 정리
-        emitter.onTimeout(emitter::complete);
+        // 타임아웃 시에도 "완료"가 아니라 "타임아웃으로 끊김"을 클라이언트가 구분할 수 있게 이벤트를 먼저 보냄
+        emitter.onTimeout(() -> {
+            sendEvent(emitter, "timeout", "응답 시간이 초과되었습니다. 다시 시도해주세요.");
+            emitter.complete();
+        });
         // 클라이언트 연결 종료/스트림 완료 시 정리 로그(필요시 리소스 정리 지점)
         emitter.onCompletion(() -> {});
 
@@ -96,12 +101,16 @@ public class ChatbotController {
                 sendEvent(emitter, "chunk", textChunk);
             }
 
+            // AI 가 답변을 다 보냈을 때 호출된다. 클라이언트한테 done 이벤트를 보내고
+            // SSE 연결 자체를 정상적으로 종료시킨다.
             @Override
             public void onComplete() {
                 sendEvent(emitter, "done", null);
                 emitter.complete();
             }
 
+            // 답변 생성 도중 예외가 터졌을 때 호출된다.
+            // error 이벤트를 클라이언트에 보내고, completeWithError() 로 연결을 에러 상태로 종료.
             @Override
             public void onError(Throwable error) {
                 sendEvent(emitter, "error", error.getMessage());
@@ -127,4 +136,3 @@ public class ChatbotController {
     }
 
 }
-

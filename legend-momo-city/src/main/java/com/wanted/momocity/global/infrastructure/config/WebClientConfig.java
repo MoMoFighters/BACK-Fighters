@@ -73,7 +73,8 @@ public class WebClientConfig {
     @Bean
     public WebClient geminiWebClient(GeminiProperties props) {
         HttpClient httpClient = HttpClient.create()
-                // 스트리밍 응답이라 5초로는 부족함 - SSE 전체 타임아웃(60초) 기준에 맞춤
+                // 응답 스트림 자체는 60초에서 끊음 - SseEmitter(90초)보다 먼저 끊기게 일부러 여유를 둠
+                // WebClient가 먼저 죽어야 그 에러를 SseEmitter가 받아서 "error" 이벤트로 클라이언트에 정상 전달 가능
                 .responseTimeout(Duration.ofSeconds(60))
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 3000);
 
