@@ -31,10 +31,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         //프론트엔드가 웹소켓 연결을 처음 맺을 주소
         registry.addEndpoint("/ws-chat")
                 .setAllowedOriginPatterns(ALLOWED_ORIGIN_PATTERNS);
-
-        registry.addEndpoint("/ws-chat")
-                .setAllowedOriginPatterns(ALLOWED_ORIGIN_PATTERNS)
-                .withSockJS();
     }
 
     @Override
