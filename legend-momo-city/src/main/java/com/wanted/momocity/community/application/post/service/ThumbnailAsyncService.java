@@ -4,10 +4,9 @@ import com.wanted.momocity.community.application.post.port.ThumbnailPort;
 import com.wanted.momocity.community.domain.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.Cache;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /*
  * comment.
@@ -25,10 +24,9 @@ public class ThumbnailAsyncService {
 
     private final ThumbnailPort thumbnailPort;
     private final PostRepository postRepository;
+    private final org.springframework.cache.CacheManager cacheManager;
 
     @Async("domainEventExecutor")
-    @Transactional
-    @CacheEvict(value = "posts", allEntries = true, cacheManager = "redisCacheManager")
     public void resizeThumbnailAsync(Long postId, String originalThumbnailUrl) {
 
         String resizedUrl = thumbnailPort.generateThumbnail(originalThumbnailUrl);
@@ -40,6 +38,15 @@ public class ThumbnailAsyncService {
                         post.updateThumbnail(resizedUrl);
                         postRepository.save(post);
                         log.info("[Thumbnail] DB 갱신 완료 | postId={}, resizedUrl={}", postId, resizedUrl);
+
+                        // DB 갱신 성공 시에만 캐시 무효화 (프로그래매틱 방식)
+                        // @CacheEvict와 달리 "성공한 경우에만" 명시적으로 제어 가능
+                        Cache postsCache = cacheManager.getCache("posts");
+                        if (postsCache != null) {
+                            postsCache.clear();
+                            log.info("[Thumbnail] posts 캐시 무효화 완료 | postId={}", postId);
+                        }
+
                     },
                     () -> log.warn("[Thumbnail] 게시글을 찾을 수 없어 갱신 스킵 | postId={}", postId)
             );
