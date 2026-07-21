@@ -255,7 +255,7 @@ public class MessageQueryService implements MessageQueryUseCase {
             // 2. [핵심] 어댑터가 가져온 메시지 시간이 내 입장 시각(joinedAt)보다 과거라면 덮어쓰기!
             if (pro.lastMessage() != null && pro.lastMessage().getCreatedAt().isBefore(myJoinedAt)) {
                 lastContent = "채팅방에 입장했습니다. 대화를 시작해 보세요!";
-                lastChattedAt = myJoinedAt; // 과거 톡 시간은 노출 및 정렬에서 제외하기 위해 null 처리
+                lastChattedAt = myJoinedAt; // 과거 톡 시간은 노출 및 정렬에서 제외하기 위해 재입장 시간으로 처리
             }
 
                 //안내 문구 시간 정렬 기준 추가
@@ -596,8 +596,6 @@ public class MessageQueryService implements MessageQueryUseCase {
                             }
                         }
                     } else if ("TEACHER".equals(loginUser.getRole())) {
-
-                        //이거나 myEnrollments나 똑같은 역할 아닌가? 변수명 하나로 처리해도 되는 거 아닌가?
                         List<EnrollmentWithFMJpaEntity> targetEnrollments = targetEnrollmentsMap.getOrDefault(targetUser.getId(), new ArrayList<>());
                         for (EnrollmentWithFMJpaEntity enrollment : targetEnrollments) {
                             LectureWithFMJpaEntity lecture = enrollment.getLectureId();
