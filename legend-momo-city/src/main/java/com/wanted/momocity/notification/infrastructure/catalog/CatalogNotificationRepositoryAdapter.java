@@ -1,7 +1,6 @@
 package com.wanted.momocity.notification.infrastructure.catalog;
 
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
-import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.message.infrastructure.persistence.MessageReadJpaEntity;
 import com.wanted.momocity.notification.domain.model.Notification;
 import com.wanted.momocity.notification.infrastructure.persistence.*;
@@ -23,8 +22,6 @@ import java.util.Optional;
 public class CatalogNotificationRepositoryAdapter implements NotificationRepository {
 
     private final SpringDataNotificationRepository springDataNotificationRepository;
-    private final SpringDataUserRepository springDataUserRepository;
-    private final NotificationSideUserRepository notificationSideUserRepository;
     private final NotificationSideChatRoomRepository notificationSideChatRoomRepository;
     private final NotificationSideMessageReadRepository notificationSideMessageReadRepository;
     private final EntityManager em;
@@ -35,7 +32,7 @@ public class CatalogNotificationRepositoryAdapter implements NotificationReposit
         log.info("[CatalogNotificationRepositoryAdapter] 알림 테이블 새 행 삽입 시도 - 대상자ID: {}, 타입: {}",
                 notification.getUserId(), notification.getType());
         //도메인 모델에 담긴 userId로 연관된 UserJpaEntity 조회
-        // 🎯 [기존 병목 제거] findById 단건 SELECT 쿼리 삭제 후 프록시 참조로 대체! (SELECT 1방 절약)
+        // [기존 병목 제거] findById 단건 SELECT 쿼리 삭제 후 프록시 참조로 대체! (SELECT 1방 절약)
         UserWithFMJpaEntity targetUser = getUserReference(notification.getUserId());
 
         //도메인 모델 -> JPA 엔티티 변환
@@ -139,7 +136,7 @@ public class CatalogNotificationRepositoryAdapter implements NotificationReposit
     public void fastSaveChanges() {
         log.info("[CatalogNotificationRepositoryAdapter] 벌크 연산 완료 후 영속성 컨텍스트 Flush 및 Clear 진행");
         em.flush(); // 쓰기 지연 저장소에 남아있을 수 있는 데이터 잔여물 방출
-        em.clear(); // 🎯 핵심: 1차 캐시를 완전히 비워 웹소켓용 재조회 쿼리가 무조건 DB 최신 값을 읽도록 강제!
+        em.clear(); // 핵심: 1차 캐시를 완전히 비워 웹소켓용 재조회 쿼리가 무조건 DB 최신 값을 읽도록 강제!
     }
 
     //알림 삭제 - 일반 알림
@@ -150,14 +147,14 @@ public class CatalogNotificationRepositoryAdapter implements NotificationReposit
             return;
         }
 
-        // 🎯 서비스에서 넘어온 엔티티 뭉치에서 순수 고유 Long ID 목록만 쏙 추출합니다.
+        // 서비스에서 넘어온 엔티티 뭉치에서 순수 고유 Long ID 목록만 쏙 추출합니다.
         List<Long> notificationIds = generalNotisToDelete.stream()
                 .map(NotificationJpaEntity::getId)
                 .toList();
 
         log.info("[Adapter] 일반 알림 벌크 삭제 쿼리 실행 - 대상 개수: {}건", notificationIds.size());
 
-        // 🎯 새로 만든 Spring Data JPA의 벌크 DELETE 메서드로 최종 토스!
+        // 새로 만든 Spring Data JPA의 벌크 DELETE 메서드로 최종 토스!
         springDataNotificationRepository.bulkDeleteGeneralNotifications(notificationIds);    }
 
     //알림 삭제 - 메시지 알림
@@ -186,7 +183,7 @@ public class CatalogNotificationRepositoryAdapter implements NotificationReposit
 
     @Override
     public UserWithFMJpaEntity getUserReference(Long userId) {
-        // 🎯 [최적화] 실제 DB를 조회하지 않고 가짜 프록시 객체만 즉시 반환하여 연관관계 매핑용 키값으로만 사용
+        // [최적화] 실제 DB를 조회하지 않고 가짜 프록시 객체만 즉시 반환하여 연관관계 매핑용 키값으로만 사용
         return em.getReference(UserWithFMJpaEntity.class, userId);
     }
 
@@ -198,7 +195,7 @@ public class CatalogNotificationRepositoryAdapter implements NotificationReposit
 
         springDataNotificationRepository.bulkMarkAsReadByRefIdAndUserIdAndType(refId, userId, type);
 
-        // 🎯 벌크 쿼리 실행 후 영속성 컨텍스트를 비워 웹소켓 재조회 시 DB 최신 데이터가 반영되도록 강제
+        // 벌크 쿼리 실행 후 영속성 컨텍스트를 비워 웹소켓 재조회 시 DB 최신 데이터가 반영되도록 강제
         em.flush();
         em.clear();
     }
@@ -211,14 +208,14 @@ public class CatalogNotificationRepositoryAdapter implements NotificationReposit
             return;
         }
 
-        // 🎯 서비스가 넘겨준 엔티티 리스트에서 순수 Long ID만 쏙 뽑아서 변환합니다.
+        // 서비스가 넘겨준 엔티티 리스트에서 순수 Long ID만 쏙 뽑아서 변환합니다.
         List<Long> notificationIds = generalNotisToUpdate.stream()
                 .map(NotificationJpaEntity::getId)
                 .toList();
 
         log.info("[Adapter] 일반 알림 벌크 업데이트 쿼리 실행 - 대상 개수: {}건", notificationIds.size());
 
-        // 🎯 ID 리스트를 원하는 Spring Data JPA의 벌크 메서드로 최종 전달!
+        // ID 리스트를 원하는 Spring Data JPA의 벌크 메서드로 최종 전달!
         springDataNotificationRepository.bulkMarkGeneralNotificationsAsRead(notificationIds);
     }
 }

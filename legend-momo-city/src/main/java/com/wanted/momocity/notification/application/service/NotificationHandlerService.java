@@ -1,15 +1,9 @@
 package com.wanted.momocity.notification.application.service;
 
-import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.lecture.domain.model.LectureStatus;
-import com.wanted.momocity.message.application.policy.MessageEligibilityPolicy;
-import com.wanted.momocity.notification.application.query.GetMainTotalCountsQuery;
-import com.wanted.momocity.notification.application.query.GetNotificationQuery;
-import com.wanted.momocity.notification.application.query.GetPhoneAppCountsQuery;
 import com.wanted.momocity.notification.application.usecase.NotificationQueryUseCase;
 import com.wanted.momocity.notification.domain.model.Notification;
 import com.wanted.momocity.notification.infrastructure.event.NotificationCreatedPublishedEvent;
-import com.wanted.momocity.notification.infrastructure.persistence.NotificationJpaEntity;
 import com.wanted.momocity.notification.domain.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -65,7 +59,7 @@ public class NotificationHandlerService {
 
         log.info("[NotificationHandlerService] notification 테이블 행 삭제 완료");
 
-        // 🎯 [개선 핵심] 메인 흐름을 가볍게 만들기 위해, 이미 구축해 둔 비동기 이벤트 리스너를 재활용합니다!
+        // [개선 핵심] 메인 흐름을 가볍게 만들기 위해, 이미 구축해 둔 비동기 이벤트 리스너를 재활용합니다!
         // 상대방(toUserId) 화면의 알림 목록 및 폰 카운트가 싹 갱신되어야 하므로 "ALL" 타입을 던집니다.
         eventPublisher.publishEvent(new NotificationCreatedPublishedEvent(toUserId, "ALL"));
         log.info("[알림 핸들러 -> 이벤트 발행] 온라인 유저 {}번 화면 갱신용 비동기 이벤트 전달 완료", toUserId);
@@ -184,7 +178,7 @@ public class NotificationHandlerService {
         Notification saved = notificationRepository.save(newNotification);
         log.info("[NotificationHandlerService] 자동 친구 알림 생성 완료 - 생성된 알림ID: {}", saved.getId());
 
-        // 🎯 [최적화 핵심] 메인 스레드 병목 방지! 무거운 웹소켓 재조회는 비동기 리스너에게 이벤트를 던져 위임합니다.
+        // [최적화 핵심] 메인 스레드 병목 방지! 무거운 웹소켓 재조회는 비동기 리스너에게 이벤트를 던져 위임합니다.
         // 수신 대상자인 학생(fromUserId)의 폰 카운트까지 다 채워야 하므로 "ALL" 타입을 발행합니다.
         eventPublisher.publishEvent(new NotificationCreatedPublishedEvent(fromUserId, "ALL"));
         log.info("[알림 핸들러 -> 이벤트 발행] 학생 유저 {}번 화면 갱신용 비동기 이벤트 전달 완료", fromUserId);
@@ -213,7 +207,7 @@ public class NotificationHandlerService {
         log.info("[NotificationHandlerService] 방명록 알림 생성 완료 - 생성된 알림ID: {}", saved.getId());
 
         // 5. 현재 화면을 보고 있을 도시 주인을 위해 즉시 실시간 웹소켓 푸시 연동!
-        // ⭕ 일관성을 맞추기 위해 불필요한 try-catch 제거하고 다이렉트 트리거 실행
+        // 일관성을 맞추기 위해 불필요한 try-catch 제거하고 다이렉트 트리거 실행
         eventPublisher.publishEvent(new NotificationCreatedPublishedEvent(ownerId, "NOTPHONE"));
         log.info("[알림 핸들러 -> 쿼리 연동] 온라인 유저 {}번(도시주인)에게 실시간 방명록 알림 웹소켓 전송 성공", ownerId);
     }
@@ -286,8 +280,8 @@ public class NotificationHandlerService {
 
         // ----------------------------------------------------
         // 2. 게시글 작성자에게 알림 생성
-        // 🔥 중복 방지 조건 1: 게시글 주인과 부모 댓글 주인이 같으면 이미 위에서 알림이 갔으므로 건너뜀!
-        // 🔥 조건 2: 대댓글 작성자 본인이 아니어야 함
+        // 중복 방지 조건 1: 게시글 주인과 부모 댓글 주인이 같으면 이미 위에서 알림이 갔으므로 건너뜀!
+        // 조건 2: 대댓글 작성자 본인이 아니어야 함
         // ----------------------------------------------------
         if (!postOwnerId.equals(parentCommentOwnerId) && !replyUserId.equals(postOwnerId)) {
             Notification newNotificationPost = Notification.postComment(postOwnerId, postMessage, postId);

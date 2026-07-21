@@ -13,8 +13,6 @@ public class Notification {
     private final String type;
     private final Long refId;
     private final String message;
-    //추후
-    //v2
     private final Boolean isRead;
     private final LocalDateTime createdAt;
 
@@ -51,7 +49,6 @@ public class Notification {
                 type,
                 roomId,
                 message,
-                //isRead 생기면 주석 해제
                 null,
                 LocalDateTime.now()
         );
