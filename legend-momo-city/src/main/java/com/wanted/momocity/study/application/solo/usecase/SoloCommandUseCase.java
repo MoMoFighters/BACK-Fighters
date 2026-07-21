@@ -19,4 +19,8 @@ public interface SoloCommandUseCase {
     // 솔로 세션 종료 (최종 확정 - DailyStudyRecord/MonthlyStudyRecord에 반영됨)
     SoloActionResult end(Long userId);
 
+    // 스케줄러 전용 - 특정 세션 id를 지정해서 종료
+    // 조회 시점과 처리 시점 사이에 다른 세션으로 바뀌었으면(=현재 활성 세션 id가 다르면) 아무 것도 하지 않고 넘어감
+    SoloActionResult endIfMatches(Long userId, Long expectedSessionId);
+
 }

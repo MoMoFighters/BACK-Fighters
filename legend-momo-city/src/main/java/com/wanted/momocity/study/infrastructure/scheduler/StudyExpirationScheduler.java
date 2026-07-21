@@ -41,7 +41,7 @@ public class StudyExpirationScheduler {
 
         for (SoloSession session : expired) {
             try {
-                soloCommandUseCase.end(session.getUserId());
+                soloCommandUseCase.endIfMatches(session.getUserId(), session.getId());
                 log.info("[StudyExpiration] 솔로 세션 24시간 초과 자동 종료 | userId={}, sessionId={}",
                         session.getUserId(), session.getId());
             } catch (Exception e) {
@@ -58,7 +58,7 @@ public class StudyExpirationScheduler {
 
         for (GroupRoomMember member : expired) {
             try {
-                timerCommandUseCase.pause(member.getUserId(), member.getGroupRoomId());
+                timerCommandUseCase.pauseIfMatches(member.getUserId(), member.getGroupRoomId(), member.getId());
                 log.info("[StudyExpiration] 그룹 타이머 24시간 초과 자동 일시정지 | userId={}, roomId={}",
                         member.getUserId(), member.getGroupRoomId());
             } catch (Exception e) {

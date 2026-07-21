@@ -171,6 +171,18 @@ public class SoloCommandService implements SoloCommandUseCase {
         return SoloActionResult.ofEnded(saved, closedLap == null ? null : toLapItem(closedLap, lapNumber));
     }
 
+    // 스케줄러 전용 - 조회 시점의 세션 id와 실제 처리 시점의 활성 세션 id가 일치할 때만 종료
+    @Override
+    public SoloActionResult endIfMatches(Long userId, Long expectedSessionId) {
+        SoloSession session = getActiveSession(userId);
+        if (!session.getId().equals(expectedSessionId)) {
+            log.info("[Study] 세션이 이미 교체되어 자동 만료 스킵 | userId={}, expected={}, actual={}",
+                    userId, expectedSessionId, session.getId());
+            return null;
+        }
+        return end(userId);
+    }
+
     // ===== 내부 헬퍼 =====
 
     // 진행 중(RUNNING/PAUSED)인 세션 조회 - 없으면 404

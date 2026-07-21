@@ -19,4 +19,7 @@ public interface TimerCommandUseCase {
     // 타이머 완전 종료 (방은 유지, timerStatus만 null로)
     TimerActionResult end(Long userId, Long roomId);
 
+    // 스케줄러 전용 - 특정 멤버 row id를 지정해서 일시정지
+    TimerActionResult pauseIfMatches(Long userId, Long roomId, Long expectedMemberId);
+
 }

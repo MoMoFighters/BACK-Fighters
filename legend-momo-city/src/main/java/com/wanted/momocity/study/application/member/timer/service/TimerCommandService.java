@@ -102,7 +102,7 @@ public class TimerCommandService implements TimerCommandUseCase {
         LocalDateTime now = LocalDateTime.now();
 
         // pause 시 이번 구간 증분 이벤트 발행
-        int increment = accumulateElapsed(member);
+        int increment = accumulateElapsed(member, now);
         member.pauseTimer();
         GroupRoomMember saved = groupRoomMemberRepository.save(member);
 
@@ -140,7 +140,7 @@ public class TimerCommandService implements TimerCommandUseCase {
         // RESTING 상태였다면(이미 pause 시점에 누적 끝남) increment=0이 된다.
         int increment = 0;
         if (member.getTimerStatus() == GroupRoomMember.TimerStatus.STUDYING) {
-            increment = accumulateElapsed(member);
+            increment = accumulateElapsed(member, now);
         }
         member.endTimer();
         GroupRoomMember saved = groupRoomMemberRepository.save(member);
@@ -157,6 +157,18 @@ public class TimerCommandService implements TimerCommandUseCase {
 
         log.info("[Study] 그룹 타이머 종료 | roomId={}, userId={}, increment={}", roomId, userId, increment);
         return TimerActionResult.ofEnded(saved, closedLap == null ? null : toLapItem(closedLap, lapNumber));
+    }
+
+    // 스케줄러 전용 - 조회 시점의 멤버 row id와 실제 처리 시점의 id가 일치할 때만 일시정지
+    @Override
+    public TimerActionResult pauseIfMatches(Long userId, Long roomId, Long expectedMemberId) {
+        GroupRoomMember member = getJoinedMember(userId, roomId);
+        if (!member.getId().equals(expectedMemberId)) {
+            log.info("[Study] 멤버 상태가 이미 변경되어 자동 만료 스킵 | userId={}, roomId={}, expected={}, actual={}",
+                    userId, roomId, expectedMemberId, member.getId());
+            return null;
+        }
+        return pause(userId, roomId);
     }
 
     // ===== 내부 헬퍼 (MemberCommandService와 동일한 로직, 의도적으로 중복 유지) =====
@@ -184,7 +196,7 @@ public class TimerCommandService implements TimerCommandUseCase {
     }
 
     // lastResumedAt ~ now 구간 경과 시간을 계산해서 누적, 이에 더해진 증분을 반환
-    private int accumulateElapsed(GroupRoomMember member) {
+    private int accumulateElapsed(GroupRoomMember member, LocalDateTime now) {
         if (member.getLastResumedAt() == null) {
             return 0;
         }
