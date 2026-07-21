@@ -45,19 +45,21 @@ public class S3PresignedUrlAdapter implements S3Port , S3PresignedUrlPort {
     private String bucketName;
 
     /*
-    * comment.
-    *  전체 URL → key 추출
-    *  S3 에 파일 접근할 때 필요한 것은 전체 URL 이 아니라 버킷 내 파일 경로 (key)
-    *  - contains(".amazonaws.com/") 로 전체 URL 인지 확인
-    *  -> 맞으면 ".amazonaws.com/" 이후 부분만 추출, 아니면 이미 key 형태라 그대로 사용
-     * */
+     * comment.
+     *  공통 - 전체 URL 또는 key 형태 입력을 받아 순수 S3 key 만 추출
+     *  - 레거시 데이터(풀 URL 저장) 와 현재 데이터(key 만 저장) 둘 다 대응
+     *  - generatePresignedUrl(), generateCloudFrontSignedUrl() 양쪽에서 공용으로 사용
+     */
+    private String extractKey(String urlOrKey) {
+        return urlOrKey.contains(".amazonaws.com/")
+                ? urlOrKey.substring(urlOrKey.indexOf(".amazonaws.com/") + ".amazonaws.com/".length())
+                : urlOrKey;
+    }
 
     @Override
     public String generatePresignedUrl(String videoUrl) {
 
-        String key = videoUrl.contains(".amazonaws.com/")
-                ? videoUrl.substring(videoUrl.indexOf(".amazonaws.com/") + ".amazonaws.com/".length())
-                : videoUrl;
+        String key = extractKey(videoUrl);
         log.info("[S3] key = {}", key);
 
         // GetObjectRequest: S3 에서 파일을 가져오기 위한 요청 객체
@@ -90,6 +92,9 @@ public class S3PresignedUrlAdapter implements S3Port , S3PresignedUrlPort {
      */
     @Override
     public String generateCloudFrontSignedUrl(String videoUrl) {
+
+        // 레거시 풀 URL이 들어와도 key 만 추출해서 사용 (generatePresignedUrl 과 동일 로직 재사용)
+        String key = extractKey(videoUrl);
 
         // CloudFront 도메인 + key 조합 -> 서명 대상 리소스 URL
         String resourceUrl = "https://" + cloudFrontSignedUrlProperties.domain() + "/" + videoUrl;

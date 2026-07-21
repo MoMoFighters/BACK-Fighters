@@ -3,6 +3,7 @@ package com.wanted.momocity.community.application.post.service;
 import com.wanted.momocity.community.application.post.command.PostContentCommand;
 import com.wanted.momocity.community.application.post.result.PostCreateResult;
 import com.wanted.momocity.community.application.post.usecase.PostCommandUseCase;
+import com.wanted.momocity.community.domain.event.ThumbnailResizeRequestedEvent;
 import com.wanted.momocity.community.domain.exception.CommunityAccessDeniedException;
 import com.wanted.momocity.community.domain.exception.CommunityNotFoundException;
 import com.wanted.momocity.community.domain.model.*;
@@ -14,6 +15,7 @@ import com.wanted.momocity.global.infrastructure.cloudfront.CloudFrontUrlConvert
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,7 +41,7 @@ public class PostCommandService implements PostCommandUseCase {
     private final PostContentRepository postContentRepository;
     private final CloudFrontUrlConverter cloudFrontUrlConverter;
     private final S3UploadPort s3UploadPort;
-    private final ThumbnailAsyncService thumbnailAsyncService;
+    private final ApplicationEventPublisher eventPublisher;
     // 카테고리별 기본 썸네일
     // thumbnailUrl 미지정 + 이미지 없는 게시글에 한해 카테고리 기준 기본 썸네일 자동 생성
     private static final String DEFAULT_THUMBNAIL_BASE_URL =
@@ -116,7 +118,7 @@ public class PostCommandService implements PostCommandUseCase {
 
         // 사용자가 직접 지정한 썸네일일 때만 비동기 리사이징 트리거
         if (!resolvedThumbnailUrl.startsWith(DEFAULT_THUMBNAIL_BASE_URL)) {
-            thumbnailAsyncService.resizeThumbnailAsync(postId, resolvedThumbnailUrl);
+            eventPublisher.publishEvent(new ThumbnailResizeRequestedEvent(postId, resolvedThumbnailUrl));
         }
 
         // 새 컨텐츠 목록 생성
@@ -185,7 +187,7 @@ public class PostCommandService implements PostCommandUseCase {
 
         // 사용자가 직접 지정한 썸네일일 때만 비동기 리사이징  트리거
         if (!resolvedThumbnailUrl.startsWith(DEFAULT_THUMBNAIL_BASE_URL)) {
-            thumbnailAsyncService.resizeThumbnailAsync(postId, resolvedThumbnailUrl);
+            eventPublisher.publishEvent(new ThumbnailResizeRequestedEvent(postId, resolvedThumbnailUrl));
         }
 
         // 기존 콘텐츠 전체 소프트딜리트 -> 새 콘텐츠 저장
