@@ -8,7 +8,6 @@ import com.wanted.momocity.friend.domain.event.*;
 import com.wanted.momocity.friend.domain.model.Friend;
 import com.wanted.momocity.friend.domain.repository.FriendRepository;
 import com.wanted.momocity.friend.fmexception.FMResourceAccessDeniedException;
-import com.wanted.momocity.friend.fmexception.FMResourceConflictException;
 import com.wanted.momocity.friend.fmexception.FMResourceNotFoundException;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 import com.wanted.momocity.friend.infrastructure.persistence.GuestBookJpaEntity;
@@ -51,7 +50,7 @@ public class FriendCommandService implements FriendCommandUseCase {
     public RequestFriendView requestFriendCommandHandle(RequestFriendCommand command) {
         log.info("[RequestFriendCommandService] 친구 요청 명령 수행 시작 - 요청자: {}, 대상자: {}", command.userId(), command.targetUserId());
 
-        // 🎯 [최적화 1] IN 절을 사용하여 요청자와 대상자 유저 데이터를 1방의 쿼리로 통합 조회
+        // [최적화 1] IN 절을 사용하여 요청자와 대상자 유저 데이터를 1방의 쿼리로 통합 조회
         List<UserWithFMJpaEntity> users = friendRepository.findUsersByIds(List.of(command.userId(), command.targetUserId()));
 
         UserWithFMJpaEntity loginUser = users.stream()
@@ -108,7 +107,7 @@ public class FriendCommandService implements FriendCommandUseCase {
     public CancelRequestFriendView cancelRequestFriendCommandHandle(CancelRequestFriendCommand command) {
         log.info("[CancelRequestFriendService] 친구 요청 철회 로직 시작 - 요청자: {}, 대상자: {}", command.userId(), command.targetUserId());
 
-        // 🎯 [최적화 1] 대상자와 요청자 유저를 상단에서 한방에 IN 절로 묶어 가져옴 (조회 쿼리 압축)
+        // [최적화 1] 대상자와 요청자 유저를 상단에서 한방에 IN 절로 묶어 가져옴 (조회 쿼리 압축)
         List<UserWithFMJpaEntity> users = friendRepository.findUsersByIds(List.of(command.userId(), command.targetUserId()));
 
         UserWithFMJpaEntity targetUser = users.stream()
@@ -154,7 +153,7 @@ public class FriendCommandService implements FriendCommandUseCase {
     public AcceptView acceptRequestFriendCommandHandle(AcceptRequestFriendCommand command) {
         log.info("[AcceptRequestFriendCommandService] 친구 요청 수락 로직 시작 - 수락자(로그인 유저): {}, 요청자(상대방): {}", command.userId(), command.fromUserId());
 
-        // 🎯 [최적화 1] IN 절을 사용하여 요청자와 수락자 유저 데이터를 1방의 쿼리로 통합 조회 (SELECT 1)
+        // [최적화 1] IN 절을 사용하여 요청자와 수락자 유저 데이터를 1방의 쿼리로 통합 조회 (SELECT 1)
         List<UserWithFMJpaEntity> users = friendRepository.findUsersByIds(List.of(command.userId(), command.fromUserId()));
 
         UserWithFMJpaEntity fromUser = users.stream()
@@ -333,12 +332,12 @@ public class FriendCommandService implements FriendCommandUseCase {
     public DeleteView deleteFriendCommandHandle(DeleteFriendCommand command) {
         log.info("[DeleteFriendCommandService] 친구 목록 삭제 시도 - 주체: {}, 대상: {}", command.userId(), command.targetUserId());
 
-        // 🎯 [성능 개선 핵심 1] 불필요한 단건 유저 조회(findUserById)를 아예 과감히 삭제합니다.
+        // [성능 개선 핵심 1] 불필요한 단건 유저 조회(findUserById)를 아예 과감히 삭제합니다.
         // 이미 양방향 FETCH JOIN 1방 쿼리로 관계 행뿐 아니라, 연결된 두 유저 엔티티까지 전부 한격에 긁어옵니다.
         FriendJpaEntity relation = friendRepository.findAnyRelationBetween(command.userId(), command.targetUserId())
                 .orElseThrow(() -> new FMResourceNotFoundException("삭제할 친구 내역이 존재하지 않습니다."));
 
-        // 🎯 [성능 개선 핵심 2] 이미 FETCH JOIN으로 메모리에 로딩된 객체에서 상대방 유저 정보를 안전하게 추출합니다.
+        // [성능 개선 핵심 2] 이미 FETCH JOIN으로 메모리에 로딩된 객체에서 상대방 유저 정보를 안전하게 추출합니다.
         // 영속성 컨텍스트 스냅샷을 활용하므로 이 시점에 지연 로딩(N+1 SELECT)이 단 한 방도 터지지 않습니다.
         UserWithFMJpaEntity targetUser = (relation.getFromUserId().getId().equals(command.userId()))
                 ? relation.getToUserId() : relation.getFromUserId();

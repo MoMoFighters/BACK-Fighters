@@ -5,8 +5,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
-
 @Entity(name = "FMUser")
 @Table(name = "user")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
