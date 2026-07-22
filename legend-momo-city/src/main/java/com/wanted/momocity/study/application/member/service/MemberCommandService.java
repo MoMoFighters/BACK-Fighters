@@ -21,12 +21,15 @@ import com.wanted.momocity.study.infrastructure.redis.GroupRoomMemberCountAdapte
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.concurrent.TimeUnit;
 
 /*
  * comment.
@@ -58,6 +61,7 @@ public class MemberCommandService implements MemberCommandUseCase {
     private final ApplicationEventPublisher eventPublisher;
     private final StudyLapService studyLapService;
     private final StudyUserInfoPort studyUserInfoPort;
+    private final RedissonClient redissonClient;
 
     /*
      * comment.
@@ -158,31 +162,63 @@ public class MemberCommandService implements MemberCommandUseCase {
     @Override
     public InvitationResult acceptInvitation(Long userId, Long roomId) {
 
-        GroupRoom room = getActiveRoom(roomId);
-        GroupRoomMember member = getMyInvitation(userId, roomId);
-
         /*
-         * Redis RLock 기반 원자적 카운트(GroupRoomMemberCountAdapter.tryIncrement)로 정원 확정
-         * ROOM_FULL: 실제 정원 초과 -> 명확한 안내 메시지
-         * LOCK_ACQUISITION_FAILED: 락 경합으로 인한 일시적 실패 -> 재시도를 유도하는 별도 메시지
-         * (이 시점에는 아직 DB에 JOINED로 반영되지 않았으므로 실패 시 별도 롤백 불필요)
+         * comment.
+         *  락 범위를 "카운트 증가 + DB 저장" 전체로 확장
+         *  - 동시에 같은 방에 두 번째 수락 요청이 들어와도, 첫 요청이 끝날 때까지 대기
+         *  - 첫 요청 완료 후(= member.status가 ACCEPTED로 바뀐 후) 두 번째 요청이 락을 잡으면,
+         *    getMyInvitation()의 isInvited() 체크에서 자동으로 걸러짐 (별도 DDL/버전 컬럼 불필요)
+         *  leaseTime은 명시하지 않음 -> Watchdog이 임계구역 종료(unlock)까지 자동 연장
          * */
-        GroupRoomMemberCountAdapter.IncrementResult result =
-                groupRoomMemberCountAdapter.tryIncrement(roomId, room.getMaxMember());
+        RLock lock = redissonClient.getLock("study:room:" + roomId + ":lock");
+        boolean acquired = false;
 
-        switch (result) {
-            case ROOM_FULL -> throw new DomainRuleViolationException("그룹방 인원이 가득 찼습니다.");
-            case LOCK_ACQUISITION_FAILED -> throw new DomainRuleViolationException("일시적으로 요청이 몰렸습니다. 잠시 후 다시 시도해주세요.");
-            case SUCCESS -> { /* 계속 진행 */ }
+        try {
+            acquired = lock.tryLock(2, TimeUnit.SECONDS);
+            if (!acquired) {
+                throw new DomainRuleViolationException("일시적으로 요청이 몰렸습니다. 잠시 후 다시 시도해주세요.");
+            }
+
+            GroupRoom room = getActiveRoom(roomId);
+            GroupRoomMember member = getMyInvitation(userId, roomId);
+
+            /*
+             * Redis RLock 기반 원자적 카운트(GroupRoomMemberCountAdapter.tryIncrement)로 정원 확정
+             * ROOM_FULL: 실제 정원 초과 -> 명확한 안내 메시지
+             * LOCK_ACQUISITION_FAILED: 락 경합으로 인한 일시적 실패 -> 재시도를 유도하는 별도 메시지
+             * (이 시점에는 아직 DB에 JOINED로 반영되지 않았으므로 실패 시 별도 롤백 불필요)
+            * */
+            GroupRoomMemberCountAdapter.IncrementResult result =
+                    groupRoomMemberCountAdapter.tryIncrement(roomId, room.getMaxMember());
+
+            switch (result) {
+                case ROOM_FULL -> throw new DomainRuleViolationException("그룹방 인원이 가득 찼습니다.");
+                case LOCK_ACQUISITION_FAILED -> throw new DomainRuleViolationException("일시적으로 요청이 몰렸습니다. 잠시 후 다시 시도해주세요.");
+                case SUCCESS -> { /* 계속 진행 */ }
+            }
+
+            try{
+                member.accept(LocalDateTime.now());
+                GroupRoomMember saved = groupRoomMemberRepository.save(member);
+
+                eventPublisher.publishEvent(new MemberJoinedEvent(roomId, userId));
+
+                log.info("[Study] 초대 수락 완료 | roomId={}, userId={}", roomId, userId);
+                return InvitationResult.ofAccepted(saved);
+            } catch (Exception e) {
+                // DB 저장 실패 시 Redis 카운트 보상 감소 (예약된 자리 반납)
+                groupRoomMemberCountAdapter.decrement(roomId);
+                throw e;
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new DomainRuleViolationException("요청 처리 중 인터럽트가 발생했습니다.");
+        } finally {
+             if (acquired && lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
         }
 
-        member.accept(LocalDateTime.now());
-        GroupRoomMember saved = groupRoomMemberRepository.save(member);
-
-        eventPublisher.publishEvent(new MemberJoinedEvent(roomId, userId));
-
-        log.info("[Study] 초대 수락 완료 | roomId={}, userId={}", roomId, userId);
-        return InvitationResult.ofAccepted(saved);
     }
 
     // 초대 거절 (본인 토큰 기준)
