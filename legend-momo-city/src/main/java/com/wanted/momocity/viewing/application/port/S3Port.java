@@ -16,4 +16,7 @@ public interface S3Port {
     // 반환값 : 사용자가 바로 재생할 수 있는 임시 URL
     String generatePresignedUrl (String videoUrl);
 
+    //  CloudFront Signed URL 발급
+    String generateCloudFrontSignedUrl(String videoUrl);
+
 }

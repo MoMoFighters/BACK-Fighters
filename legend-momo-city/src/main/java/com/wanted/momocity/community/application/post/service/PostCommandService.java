@@ -3,17 +3,20 @@ package com.wanted.momocity.community.application.post.service;
 import com.wanted.momocity.community.application.post.command.PostContentCommand;
 import com.wanted.momocity.community.application.post.result.PostCreateResult;
 import com.wanted.momocity.community.application.post.usecase.PostCommandUseCase;
+import com.wanted.momocity.community.domain.event.ThumbnailResizeRequestedEvent;
 import com.wanted.momocity.community.domain.exception.CommunityAccessDeniedException;
 import com.wanted.momocity.community.domain.exception.CommunityNotFoundException;
 import com.wanted.momocity.community.domain.model.*;
 import com.wanted.momocity.community.domain.repository.PostContentRepository;
 import com.wanted.momocity.community.domain.repository.PostRepository;
+import com.wanted.momocity.community.infrastructure.adapter.ThumbnailAdapter;
 import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import com.wanted.momocity.global.infrastructure.cloudfront.CloudFrontUrlConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +42,7 @@ public class PostCommandService implements PostCommandUseCase {
     private final PostContentRepository postContentRepository;
     private final CloudFrontUrlConverter cloudFrontUrlConverter;
     private final S3UploadPort s3UploadPort;
+    private final ApplicationEventPublisher eventPublisher;
     // 카테고리별 기본 썸네일
     // thumbnailUrl 미지정 + 이미지 없는 게시글에 한해 카테고리 기준 기본 썸네일 자동 생성
     private static final String DEFAULT_THUMBNAIL_BASE_URL =
@@ -113,6 +117,9 @@ public class PostCommandService implements PostCommandUseCase {
         post.updateThumbnail(resolvedThumbnailUrl);
         postRepository.save(post);
 
+        // 사용자가 직접 지정한 썸네일일 때만 비동기 리사이징 트리거
+        publishThumbnailResizeIfNeeded(postId, resolvedThumbnailUrl);
+
         // 새 컨텐츠 목록 생성
         List<PostContent> postContents = new ArrayList<>();
         for (int i = 0; i < contents.size(); i++) {
@@ -177,6 +184,9 @@ public class PostCommandService implements PostCommandUseCase {
         post.updateThumbnail(resolvedThumbnailUrl);
         postRepository.save(post);
 
+        // 사용자가 직접 지정한 썸네일일 때만 비동기 리사이징 트리거
+        publishThumbnailResizeIfNeeded(postId, resolvedThumbnailUrl);
+
         // 기존 콘텐츠 전체 소프트딜리트 -> 새 콘텐츠 저장
         postContentRepository.deleteAllByPostId(postId);
 
@@ -237,6 +247,15 @@ public class PostCommandService implements PostCommandUseCase {
             postRepository.save(post);
             log.info("[Community] 조회수 증가 완료 | postId={}", postId);
         });
+    }
+
+    // 사용자가 직접 지정한 썸네일일 때만 비동기 리사이징 이벤트 발행
+    // 기본 썸네일(카테고리 자동 지정) 또는 이미 리사이징된 썸네일은 재발행 대상에서 제외
+    // ThumbnailAdapter.THUMBNAIL_FOLDER 를 단일 기준으로 사용하여 loop-prevention 로직 일원화
+    private void publishThumbnailResizeIfNeeded(Long postId, String resolvedThumbnailUrl) {
+        if (!resolvedThumbnailUrl.contains(ThumbnailAdapter.THUMBNAIL_FOLDER)) {
+            eventPublisher.publishEvent(new ThumbnailResizeRequestedEvent(postId, resolvedThumbnailUrl));
+        }
     }
 
     // 작성자 검증

@@ -1,5 +1,6 @@
 package com.wanted.momocity.viewing.application.service;
 
+import com.wanted.momocity.global.infrastructure.config.CloudFrontSignedUrlProperties;
 import com.wanted.momocity.viewing.application.policy.EnrollmentAccessPolicy;
 import com.wanted.momocity.viewing.application.policy.SequentialAccessPolicy;
 import com.wanted.momocity.viewing.application.port.*;
@@ -41,6 +42,7 @@ public class ViewingQueryService implements ViewingQueryUseCase {
     private final EnrollmentAccessPolicy enrollmentAccessPolicy;
     private final SequentialAccessPolicy sequentialAccessPolicy;
     private final ViewingMetrics viewingMetrics;
+    private final CloudFrontSignedUrlProperties cloudFrontSignedUrlProperties;
 
     @Override
     public StreamingUrlResponse getStreamingUrl(Long userId, Long lectureId, Long chapterId) {
@@ -60,16 +62,21 @@ public class ViewingQueryService implements ViewingQueryUseCase {
         sequentialAccessPolicy.ensureSequentialAccess(userId, lectureId, chapterId);
 
         // S3 Presigned URL 발급 시간 측정
-        String presignedUrl = viewingMetrics.getS3PresignedUrlTimer().record(
-                () -> s3Port.generatePresignedUrl(chapter.getVideoUrl())
+//        String presignedUrl = viewingMetrics.getS3PresignedUrlTimer().record(
+//                () -> s3Port.generatePresignedUrl(chapter.getVideoUrl())
+//        );
+        String signedUrl = viewingMetrics.getS3PresignedUrlTimer().record(
+                () -> s3Port.generateCloudFrontSignedUrl(chapter.getVideoUrl())
         );
 
         log.info("[Viewing] S3 Presigned URL 발급 완료 | userId={}, lectureId={}, chapterId={}",
                 userId, lectureId, chapterId);
 
         return new StreamingUrlResponse(
-                presignedUrl,
-                3600,
+                signedUrl,
+                cloudFrontSignedUrlProperties.expirationSeconds(),
+//                presignedUrl,
+//                3600,
                 history.getLastPositionSec()
         );
     }
