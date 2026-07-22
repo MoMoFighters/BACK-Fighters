@@ -26,7 +26,7 @@ public class ChatTypingBroadcaster {
         Set<Long> typingUserIds = typingSessionManager.getTypingUsers(roomId);
         List<Long> typingUserIdsList = List.copyOf(typingUserIds);
 
-        // 🎯 [최적화] 타이핑 중인 유저들의 닉네임을 딱 1번만 조회해서 Map으로 캐싱
+        // [최적화] 타이핑 중인 유저들의 닉네임을 딱 1번만 조회해서 Map으로 캐싱
         Map<Long, String> nicknameMap = typingUserIdsList.isEmpty()
                 ? Map.of()
                 : messageRepository.findUsersWithFMByIds(typingUserIdsList).stream()
@@ -51,7 +51,7 @@ public class ChatTypingBroadcaster {
                 continue;
             }
 
-            // 🎯 [최적화] DB 재조회 없이 캐싱된 Map에서만 꺼내 씀
+            // [최적화] DB 재조회 없이 캐싱된 Map에서만 꺼내 씀
             List<String> nicknames = othersTyping.stream()
                     .map(nicknameMap::get)
                     .filter(Objects::nonNull)

@@ -1,7 +1,5 @@
 SET FOREIGN_KEY_CHECKS = 0;
 
-TRUNCATE TABLE `building`;
-TRUNCATE TABLE `review`;
 
 -- =====================================================================
 --  1. review — 50건
@@ -57,7 +55,15 @@ VALUES
     (47, '동작 하나하나 이유를 설명해주셔서 이해하기 좋았습니다.', NOW() - INTERVAL 1 DAY, NULL, 34, 4, 'ACTIVE', 105),
     (48, '요리 초보인데도 실패 없이 따라할 수 있었습니다.', NOW() - INTERVAL 1 DAY, NULL, 49, 4, 'ACTIVE', 20),
     (49, '매일 조금씩 따라했더니 확실히 몸이 가벼워진 느낌이에요.', NOW() - INTERVAL 1 DAY, NULL, 31, 5, 'ACTIVE', 56),
-    (50, '실습 위주라 지루하지 않고 재밌게 들었습니다.', NOW() - INTERVAL 1 DAY, NULL, 10, 2, 'ACTIVE', 23);
+    (50, '실습 위주라 지루하지 않고 재밌게 들었습니다.', NOW() - INTERVAL 1 DAY, NULL, 10, 2, 'ACTIVE', 23)
+    ON DUPLICATE KEY UPDATE
+                         content = VALUES(content),
+                         created_at = VALUES(created_at),
+                         deleted_at = VALUES(deleted_at),
+                         lecture_id = VALUES(lecture_id),
+                         rating = VALUES(rating),
+                         status = VALUES(status),
+                         user_id = VALUES(user_id);
 -- =====================================================================
 --  2. building — 50건
 -- =====================================================================
@@ -112,6 +118,13 @@ VALUES
     (47, NOW() - INTERVAL 1 DAY, NOW() - INTERVAL 1 DAY, 'FITNESS', 1, 47, 79),
     (48, NOW() - INTERVAL 1 DAY, NOW() - INTERVAL 1 DAY, 'STUDY', 1, 48, 70),
     (49, NOW() - INTERVAL 1 DAY, NOW() - INTERVAL 1 DAY, 'STUDY', 1, 49, 90),
-    (50, NOW() - INTERVAL 1 DAY, NOW() - INTERVAL 1 DAY, 'COOK', 1, 50, 61);
+    (50, NOW() - INTERVAL 1 DAY, NOW() - INTERVAL 1 DAY, 'COOK', 1, 50, 61)
+    ON DUPLICATE KEY UPDATE
+                         created_at = VALUES(created_at),
+                         updated_at = VALUES(updated_at),
+                         category = VALUES(category),
+                         level = VALUES(level),
+                         position = VALUES(position),
+                         user_id = VALUES(user_id);
 
 SET FOREIGN_KEY_CHECKS = 1;

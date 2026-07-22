@@ -212,7 +212,7 @@ public class LectureResponse {
     // 온보딩 화면의 강의 관련 통계를 프론트에 전달하는 응답 DTO
     public record OnboardingLectureStatsResponse(
 
-            // Active 상태의 강의 수를 100단위로 내린 값
+            // ACTIVE 강의 수를 자릿수에 따라 내림 처리한 값
             long lectureCount,
 
             // Active 강의에 작성된 Active 수강평의 전체 평균 별점

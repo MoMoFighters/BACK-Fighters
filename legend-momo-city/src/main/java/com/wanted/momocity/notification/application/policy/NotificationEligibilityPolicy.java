@@ -2,19 +2,12 @@ package com.wanted.momocity.notification.application.policy;
 
 import com.wanted.momocity.friend.fmexception.FMBusinessRuleViolationException;
 import com.wanted.momocity.friend.fmexception.FMResourceAccessDeniedException;
-import com.wanted.momocity.friend.fmexception.FMResourceConflictException;
-import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
-import com.wanted.momocity.message.domain.repository.MessageRepository;
-import com.wanted.momocity.message.infrastructure.persistence.ChatRoomJpaEntity;
-import com.wanted.momocity.message.infrastructure.persistence.ChatRoomMemberJpaEntity;
 import com.wanted.momocity.notification.domain.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Objects;
 
 @Component
 @Slf4j

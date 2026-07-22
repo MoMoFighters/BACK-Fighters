@@ -17,7 +17,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Slf4j
 public class NotificationWebsocketListener {
     private final NotificationQueryUseCase notificationQueryUseCase;
-    // 🎯 [핵심] 현재 스프링 서버에 연결된 실시간 세션/유저 정보를 메모리에서 관리하는 레지스트리 주입
+    // 현재 스프링 서버에 연결된 실시간 세션/유저 정보를 메모리에서 관리하는 레지스트리 주입
     private final SimpUserRegistry simpUserRegistry;
 
     @Async("domainEventExecutor") // 비동기로 처리하여 메인 알림 저장 흐름에 영향을 주지 않음
@@ -26,7 +26,7 @@ public class NotificationWebsocketListener {
         Long userId = event.userId();
         String type = event.type();
 
-        // 🌟 [핵심 최적화: Short-Circuit] 현재 오프라인인 사용자라면 무거운 DB 조회 쿼리 자체를 타지 않도록 조기 차단!
+        // [핵심 최적화: Short-Circuit] 현재 오프라인인 사용자라면 무거운 DB 조회 쿼리 자체를 타지 않도록 조기 차단!
         if (simpUserRegistry.getUser(userId.toString()) == null) {
             log.debug("[NotificationWebsocketListener] 오프라인 유저(ID: {}) 감지 -> DB 조회 및 웹소켓 발행 패스 (Short-Circuit 완료)", userId);
             return;
@@ -44,7 +44,7 @@ public class NotificationWebsocketListener {
             else if ("NOTPHONE".equals(type)) {
                 notificationQueryUseCase.getMainTotalCountsQueryHandle(new GetMainTotalCountsQuery(userId));
                 notificationQueryUseCase.getNotificationQueryHandle(new GetNotificationQuery(userId));
-                // 🎯 폰 전용 카운트 쿼리(getPhoneAppCountsQueryHandle)를 패스하여 DB 커넥션을 절약합니다!
+                // 폰 전용 카운트 쿼리(getPhoneAppCountsQueryHandle)를 패스하여 DB 커넥션을 절약합니다!
             }
         } catch (Exception e) {
             log.error("[NotificationWebsocketListener] 유저(ID: {}) 알림 실시간 데이터 갱신 중 실패 (건너뜀)", userId, e);

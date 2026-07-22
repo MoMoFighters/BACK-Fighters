@@ -17,9 +17,9 @@ public interface SpringDataNotificationRepository extends JpaRepository<Notifica
     Optional<NotificationJpaEntity> findByRefIdAndTypeAndUserId_Id(Long refId, String type, Long userId);
 
     //알림 목록
-    // 🎯 [최적화] 알림 목록 조회 시 발신자/수신자 유저 객체를 한방에 패치 조인!
+    // [최적화] 알림 목록 조회 시 발신자/수신자 유저 객체를 한방에 패치 조인!
     @Query("SELECT n, mr FROM NotificationJpaEntity n " +
-            "JOIN FETCH n.userId u " + // 👈 유저 객체 미리 묶어오기 (N+1 방어)
+            "JOIN FETCH n.userId u " + // 유저 객체 미리 묶어오기 (N+1 방어)
             "LEFT JOIN MessageReadJpaEntity mr ON n.type = 'MESSAGE' AND n.refId = mr.roomId.id AND mr.userId.id = :userId AND mr.isDeleted = false " +
             "WHERE (n.type != 'MESSAGE' AND n.userId.id = :userId) " +
             "   OR (n.type = 'MESSAGE' AND n.userId.id != :userId)")
@@ -37,9 +37,9 @@ public interface SpringDataNotificationRepository extends JpaRepository<Notifica
     long countByUserIdAndType(@Param("userId") Long userId, @Param("type") String type);
 
     //알림 읽기 - 요청온 알림이 notification 테이블에 존재하는지.
-    // 🎯 [최적화 추가] 알림 읽기 처리 시 요청 타겟 알림들과 수신자 유저 정보를 한방에 긁어옵니다.
+    // [최적화 추가] 알림 읽기 처리 시 요청 타겟 알림들과 수신자 유저 정보를 한방에 긁어옵니다.
     @Query("SELECT n FROM NotificationJpaEntity n " +
-            "JOIN FETCH n.userId u " + // 👈 N+1 원천 차단용 패치 조인
+            "JOIN FETCH n.userId u " + // N+1 원천 차단용 패치 조인
             "WHERE n.id IN :targetId")
     List<NotificationJpaEntity> findAllByIdIn(List<Long> targetId);
 
@@ -51,7 +51,7 @@ public interface SpringDataNotificationRepository extends JpaRepository<Notifica
     List<Object[]> countUnreadGroupByType(@Param("userId") Long userId);
 
     //친구 거절 알림 읽음 처리
-    // 🎯 [추가] 1방의 JPQL UPDATE 쿼리로 알림 상태만 '읽음'으로 변경
+    // [추가] 1방의 JPQL UPDATE 쿼리로 알림 상태만 '읽음'으로 변경
     @Modifying
     @Query("update NotificationJpaEntity n set n.isRead = true " +
             "where n.refId = :refId and n.userId.id = :userId and n.type = :type and n.isRead = false")
@@ -70,7 +70,7 @@ public interface SpringDataNotificationRepository extends JpaRepository<Notifica
     void bulkMarkGeneralNotificationsAsRead(@Param("notificationIds") List<Long> notificationIds);
 
     //일반 알림 삭제 벌크 처리
-    @Modifying(clearAutomatically = true) // 🎯 벌크 연산 후 영속성 컨텍스트 클리어 필수
+    @Modifying(clearAutomatically = true) //벌크 연산 후 영속성 컨텍스트 클리어 필수
     @Query("DELETE FROM NotificationJpaEntity n WHERE n.id IN :notificationIds")
     void bulkDeleteGeneralNotifications(@Param("notificationIds") List<Long> notificationIds);
 }

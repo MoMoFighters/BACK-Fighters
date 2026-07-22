@@ -5,9 +5,6 @@ import com.wanted.momocity.message.infrastructure.persistence.MessageReadJpaEnti
 import com.wanted.momocity.notification.application.command.ReadNotificationCommand;
 import com.wanted.momocity.notification.application.command.RemoveNotificationCommand;
 import com.wanted.momocity.notification.application.policy.NotificationEligibilityPolicy;
-import com.wanted.momocity.notification.application.query.GetMainTotalCountsQuery;
-import com.wanted.momocity.notification.application.query.GetNotificationQuery;
-import com.wanted.momocity.notification.application.query.GetPhoneAppCountsQuery;
 import com.wanted.momocity.notification.application.usecase.NotificationCommandUseCase;
 import com.wanted.momocity.notification.application.usecase.NotificationQueryUseCase;
 import com.wanted.momocity.notification.domain.repository.NotificationRepository;
@@ -36,23 +33,23 @@ public class NotificationCommandService implements NotificationCommandUseCase {
     //알림 읽기
     @Override
     public void readNotificationCommandHandle(ReadNotificationCommand command) {
-        // 🎯 [정책 위임 변경]: 400 빈 값 검증 정책을 최상단에서 호출하여 공회전 방지!
+        // [정책 위임 변경]: 400 빈 값 검증 정책을 최상단에서 호출하여 공회전 방지!
         notificationEligibilityPolicy.validateReadRequest(command.targetId());
 
         log.info("[ReadNotificationCommandService] 알림 읽음 처리 시작 - 유저ID: {}, 대상 알림개수: {}", command.userId(), command.targetId().size());
 
-        // 🎯 2. 중복이 섞여 들어온 targetId 리스트를 여기서 순수 고유 ID 리스트로 변환 (정규화)
+        // 2. 중복이 섞여 들어온 targetId 리스트를 여기서 순수 고유 ID 리스트로 변환 (정규화)
         List<Long> uniqueTargetIds = command.targetId().stream().distinct().toList();
 
         // 1. 요청된 알림 마스터(NotificationJpaEntity)들 한 번에 조회
         List<NotificationJpaEntity> notifications = notificationRepository.findAllByIdIn(uniqueTargetIds);
 
-        // ❌ 실패 4 — 404 미존재 검증 (요청한 개수와 DB에서 찾은 개수가 다르면 없는 게 섞여 있음)
+        // 실패 4 — 404 미존재 검증 (요청한 개수와 DB에서 찾은 개수가 다르면 없는 게 섞여 있음)
         if (notifications.size() != uniqueTargetIds.size()) {
             throw new FMResourceNotFoundException("존재하지 않는 알림이 포함되어 있습니다.");
         }
 
-        // 🎯 권한 상태의 기본값을 true로 두고 검증 결과에 따라 스위칭합니다.
+        // 권한 상태의 기본값을 true로 두고 검증 결과에 따라 스위칭합니다.
         boolean hasGeneralAccess = true;
         boolean hasMsgNotiAccess = true;
 
@@ -63,7 +60,7 @@ public class NotificationCommandService implements NotificationCommandUseCase {
         // 2. 알림별 권한 검증 및 분기
         for (NotificationJpaEntity noti : notifications) {
 
-            // 📌 A. 일반 알림 처리
+            // A. 일반 알림 처리
             if (!"MESSAGE".equals(noti.getType())) {
                 // 내 알림이 맞는지 유무를 불린으로 판단하여 정책 클래스에 위임
                 // 내 알림이 아니라면 일반 알림 권한 플래그를 false로 변경
@@ -77,24 +74,24 @@ public class NotificationCommandService implements NotificationCommandUseCase {
                     generalNotisToUpdate.add(noti);
                 }
             }
-            // 📌 B. 메시지 알림 처리 (방 ID만 수집)
+            // B. 메시지 알림 처리 (방 ID만 수집)
             else {
                 messageRoomIds.add(noti.getRefId());
             }
         }
 
         if (!messageRoomIds.isEmpty()) {
-            // 🎯 notification의 refId(방 ID 목록)를 기준으로 관련 message_read 테이블 행들을 전부 조회
+            // notification의 refId(방 ID 목록)를 기준으로 관련 message_read 테이블 행들을 전부 조회
             List<MessageReadJpaEntity> roomMessageReads = notificationRepository
-                    .findMessageReadsByRoomIdsAndUserId(messageRoomIds, command.userId()); // ✨ 유저 아이디 조건 없이 방 기준으로만 조회
+                    .findMessageReadsByRoomIdsAndUserId(messageRoomIds, command.userId()); // 유저 아이디 조건 없이 방 기준으로만 조회
 
-            // 🎯 [수정]: 읽기에서도 권한을 가진 방의 개수를 정확히 집계 (anyMatch 차단)
+            // [수정]: 읽기에서도 권한을 가진 방의 개수를 정확히 집계 (anyMatch 차단)
             long myAuthorizedRoomCount = roomMessageReads.stream()
                     .map(mr -> mr.getRoomId().getId())
                     .distinct()
                     .count();
 
-            // 🎯 요청한 고유 방 개수와 조회된 내 방 개수가 '전부 일치'해야 승인
+            // 요청한 고유 방 개수와 조회된 내 방 개수가 '전부 일치'해야 승인
             long requestedRoomCount = messageRoomIds.stream().distinct().count();
             hasMsgNotiAccess = (myAuthorizedRoomCount == requestedRoomCount);
         }
@@ -120,23 +117,23 @@ public class NotificationCommandService implements NotificationCommandUseCase {
     //알림 삭제
     @Override
     public void removeNotificationCommandHandle(RemoveNotificationCommand command) {
-        // 🎯 [정책 위임 변경]: 400 빈 값 검증 정책을 최상단에서 호출하여 공회전 방지!
+        // [정책 위임 변경]: 400 빈 값 검증 정책을 최상단에서 호출하여 공회전 방지!
         notificationEligibilityPolicy.validateRemoveRequest(command.targetId());
 
         log.info("[RemoveNotificationCommandService] 알림 삭제 처리 시작 - 유저ID: {}, 대상 알림개수: {}", command.userId(), command.targetId().size());
 
-        // 🎯 2. 중복이 섞여 들어온 targetId 리스트를 여기서 순수 고유 ID 리스트로 변환 (정규화)
+        // 2. 중복이 섞여 들어온 targetId 리스트를 여기서 순수 고유 ID 리스트로 변환 (정규화)
         List<Long> uniqueTargetIds = command.targetId().stream().distinct().toList();
 
         // 1. 요청된 알림 마스터(NotificationJpaEntity)들 한 번에 조회
         List<NotificationJpaEntity> notifications = notificationRepository.findAllByIdIn(uniqueTargetIds);
 
-        // ❌ 실패 4 — 404 미존재 검증 (요청한 개수와 DB에서 찾은 개수가 다르면 없는 게 섞여 있음)
+        // 실패 4 — 404 미존재 검증 (요청한 개수와 DB에서 찾은 개수가 다르면 없는 게 섞여 있음)
         if (notifications.size() != uniqueTargetIds.size()) {
             throw new FMResourceNotFoundException("존재하지 않는 알림이 포함되어 있습니다.");
         }
 
-        // 🎯 권한 상태의 기본값을 true로 두고 검증 결과에 따라 스위칭합니다.
+        // 권한 상태의 기본값을 true로 두고 검증 결과에 따라 스위칭합니다.
         boolean hasGeneralAccess = true;
         boolean hasMsgNotiAccess = true;
 
@@ -147,7 +144,7 @@ public class NotificationCommandService implements NotificationCommandUseCase {
         // 2. 알림별 권한 검증 및 분기
         for (NotificationJpaEntity noti : notifications) {
 
-            // 📌 A. 일반 알림 처리
+            // A. 일반 알림 처리
             if (!"MESSAGE".equals(noti.getType())) {
                 // 내 알림이 맞는지 유무를 불린으로 판단하여 정책 클래스에 위임
                 // 내 알림이 아니라면 일반 알림 권한 플래그를 false로 변경
@@ -157,7 +154,7 @@ public class NotificationCommandService implements NotificationCommandUseCase {
                 }
                 generalNotisToDelete.add(noti);
             }
-            // 📌 B. 메시지 알림 처리 (방 ID만 수집)
+            // B. 메시지 알림 처리 (방 ID만 수집)
             else {
                 messageRoomIds.add(noti.getRefId());
             }

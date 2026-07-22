@@ -40,7 +40,7 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
     private final JwtTokenProvider jwtTokenProvider;
     private final BlacklistPort blacklistPort;
 
-    // 🎯 [핵심 추가]: 세션ID + 구독ID 조합을 key로 삼아 실제 destination 주소를 기억하는 메모리 지도
+    // [핵심 추가]: 세션ID + 구독ID 조합을 key로 삼아 실제 destination 주소를 기억하는 메모리 지도
     private final Map<String, String> subscriptionRegistry = new ConcurrentHashMap<>();
 
     private final ChatTypingSessionManager typingSessionManager;
@@ -62,7 +62,7 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 token = authHeader.substring(7).trim();
             } else {
-                // 🎯 2. [배포 환경 우회용] 헤더에 없다면 쿼리 스트링(?token=xxxx)에서 추출합니다.
+                // 2. [배포 환경 우회용] 헤더에 없다면 쿼리 스트링(?token=xxxx)에서 추출합니다.
                 // STOMP CONNECT 프레임의 nativeHeaders나 simpConnectMessage의 쿼리 파라미터를 활용
                 Object simpConnectMessage = accessor.getHeader("simpConnectMessage");
                 if (simpConnectMessage instanceof Message<?>) {
@@ -94,7 +94,7 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
                         org.springframework.security.core.Authentication authentication =
                                 jwtTokenProvider.getAuthentication(token);
 
-                        // 🎯 핵심: STOMP 세션에 유저 Principal을 강제로 주입!
+                        // 핵심: STOMP 세션에 유저 Principal을 강제로 주입!
                         // 이렇게 해야 이후 SUBSCRIBE나 다른 프레임에서 accessor.getUser()로 꺼낼 수 있음
                         accessor.setUser(authentication);
 
@@ -119,10 +119,10 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
 
             if (userId == null) {
                 log.warn("[웹소켓 인터셉터] 인증 실패로 구독 거부됨: {}", destination);
-                return null; // 🚨 프론트 브로커 에러 유발 차단 및 거부
+                return null; // 프론트 브로커 에러 유발 차단 및 거부
             }
 
-            // 🎯 [추가]: 나중에 UNSUBSCRIBE 할 때 찾아 쓰려고 장부에 적어둠
+            // [추가]: 나중에 UNSUBSCRIBE 할 때 찾아 쓰려고 장부에 적어둠
             if (sessionId != null && subId != null && destination != null) {
                 subscriptionRegistry.put(sessionId + "_" + subId, destination);
             }
@@ -139,14 +139,14 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
                 }
             }
 
-            // 2. 🎯 [핵심 수정] 종 모양 알림 개수 채널 구독 처리
+            // 2. [핵심 수정] 종 모양 알림 개수 채널 구독 처리
             // 스프링이 주소를 변환하므로 앞의 접두사를 제외하고 핵심 키워드로만 낚아챕니다.
             if (destination != null && destination.contains("/notice/total-counts")) {
                 notificationSessionManager.enterNotificationChannel(userId, accessor.getSessionId());
                 log.info("[웹소켓 인터셉터] 유저 {}번이 실시간 알림 개수 채널을 구독했습니다. (최종매핑주소: {})", userId, destination);
             }
 
-            // 3. 🎯 채팅방 목록, 휴대폰 속 앱별 알림 개수, 일반 알림 목록 공통 안전 통과 처리
+            // 3. 채팅방 목록, 휴대폰 속 앱별 알림 개수, 일반 알림 목록 공통 안전 통과 처리
             if (destination != null && (
                     destination.contains("/chat/rooms") ||
                             destination.contains("/notice/app-counts") ||
@@ -164,7 +164,7 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
             Long userId = getUserIdFromAccessor(accessor);
             String subId = accessor.getSubscriptionId();
 
-            // 🎯 [핵심] STOMP 명세상 accessor.getDestination()이 null이어도,
+            // [핵심] STOMP 명세상 accessor.getDestination()이 null이어도,
             // 네이티브 메시지 헤더 내부에는 원래 구독 주소 정보가 남아있습니다.
             String destination = null;
             if (sessionId != null && subId != null) {
@@ -191,7 +191,7 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
                         log.error("[웹소켓 인터셉터] UNSUBSCRIBE 방 ID 파싱 실패: {}", destination);
                     }
                 }
-                // 🔔 알림 채널 구독 해제 (이제 완벽하게 매칭되어 정상 작동함!)
+                // 알림 채널 구독 해제 (이제 완벽하게 매칭되어 정상 작동함!)
                 else if (destination.contains("/notice/total-counts") || destination.contains("/total-counts")) {
                     notificationSessionManager.leaveNotificationChannel(userId, sessionId);
                     log.info("[웹소켓 인터셉터] 유저 {}번 실시간 알림 채널 세션 제거 완료 (주소 역추적: {})", userId, destination);
@@ -244,7 +244,7 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
                         (org.springframework.security.core.Authentication) accessor.getUser();
                 com.wanted.momocity.auth.infrastructure.security.CustomUserDetails userDetails =
                         (com.wanted.momocity.auth.infrastructure.security.CustomUserDetails) authentication.getPrincipal();
-                return userDetails.getUserId(); // 🎯 깔끔하게 ID 반환!
+                return userDetails.getUserId(); // 깔끔하게 ID 반환!
             } catch (Exception e) {
                 log.warn("[웹소켓 인터셉터] Principal 객체에서 유저 ID 추출 실패: {}", e.getMessage());
             }

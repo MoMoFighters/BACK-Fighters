@@ -1,6 +1,5 @@
 package com.wanted.momocity.message.presentation.api.response;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.wanted.momocity.message.application.usecase.MessageQueryUseCase.MemberInfoView;
 import com.wanted.momocity.message.application.usecase.MessageQueryUseCase.MessageHistoryView;
 
@@ -63,7 +62,7 @@ public record GetMessageHistoryResponse(
                         targetName = null;
                     }
 
-                    // 🎯 [핵심 추가] 멤버 목록 닉네임 마스킹 처리
+                    // [핵심 추가] 멤버 목록 닉네임 마스킹 처리
                     // 활성 유저이면서 마스킹 대상이거나, 이미 방을 나간 상태라면 (알 수 없음) 부여
                     if (!member.isNotActive() && (member.shouldMasked() || member.isLeftRoom())) {
                         if (targetNickname == null || targetNickname.isEmpty()) {
@@ -96,7 +95,6 @@ public record GetMessageHistoryResponse(
                             displayNickname = msg.nickname();
                         } else if (!"me".equals(msg.status())) {
 
-                            // 🎯 var 대신 정확한 UseCase 내부의 레코드 타입을 명시했습니다.
                             MemberInfoView currentMember = view.memberInfo().stream()
                                     .filter(m -> m.userId().equals(msg.senderId()))
                                     .findFirst()

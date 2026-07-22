@@ -11,7 +11,8 @@ import com.wanted.momocity.chatbot.application.usecase.ChatbotUsageUseCase;
 // 아래의 내용은 API 계약이고, UsageStatus 는 내부 값 객체라 별개로 유지했음.
 public record ChatbotUsageResponse(
         int callCount,
-        int dailyLimit
+        int dailyLimit,
+        double usagePercentage
 ) {
 
     // Controller 가 ChatbotUsageUseCase.getTodayUsage() 결과를 그대로
@@ -20,7 +21,8 @@ public record ChatbotUsageResponse(
     of(ChatbotUsageUseCase.UsageStatus status) {
 
         return new
-                ChatbotUsageResponse(status.callCount(), status.dailyLimit());
+                ChatbotUsageResponse(status.callCount(), status.dailyLimit(),
+                status.usagePercentage());
     }
 
 }

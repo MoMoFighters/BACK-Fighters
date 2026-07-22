@@ -11,6 +11,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       LOKI_URL: http://${MONITOR_HOST}:3100
+      MOMO_AI_BASE_URL: ${MOMO_AI_BASE_URL}
       GOOGLE_DRIVE_CLIENT_ID: ${GOOGLE_DRIVE_CLIENT_ID}
       GOOGLE_DRIVE_CLIENT_SECRET: ${GOOGLE_DRIVE_CLIENT_SECRET}
       GOOGLE_DRIVE_REFRESH_TOKEN: ${GOOGLE_DRIVE_REFRESH_TOKEN}
@@ -23,6 +24,15 @@ services:
       CLOUDFRONT_PRIVATE_KEY_PATH: ${CLOUDFRONT_PRIVATE_KEY_PATH}
     volumes:
         - /etc/momocity/secrets/cloudfront-private-key.pem:/app/secrets/cloudfront-private-key.pem:ro
+      JWT_SECRET: ${JWT_SECRET}
+      NAVER_CLIENT_ID: ${NAVER_CLIENT_ID}
+      NAVER_CLIENT_SECRET: ${NAVER_CLIENT_SECRET}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
+      KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
     depends_on:
       mysql:
         condition: service_healthy

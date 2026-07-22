@@ -7,6 +7,7 @@ import com.wanted.momocity.auth.infrastructure.handler.CustomAuthenticationEntry
 import com.wanted.momocity.auth.infrastructure.jwt.JwtAuthenticationFilter;
 import com.wanted.momocity.auth.infrastructure.jwt.JwtTokenProvider;
 import com.wanted.momocity.chatbot.infrastructure.security.ChatbotSseTokenFilter;
+import jakarta.servlet.DispatcherType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -63,7 +64,8 @@ public class SecurityConfig {
                 "http://localhost:3000", // React, Vue 등의 개발서버
                 "http://localhost:8081", // 다른 로컬 개발 환경
                 "https://momocity-six.vercel.app", // 배포하게 될 경우
-                "https://momocity.kro.kr"
+                "https://momocity.kro.kr",
+                "http://localhost:4444"
         ));
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
@@ -128,6 +130,12 @@ public class SecurityConfig {
 //                =================================================================
                 // URL별 입장 규칙
                 .authorizeHttpRequests(auth -> auth
+                        // [챗봇 SSE 스트림 끊김 버그 수정] emitter.complete() 시 서블릿 컨테이너가 내부적으로
+                        // ASYNC 재디스패치를 한 번 더 태우는데, 이때 우리 커스텀 인증 필터들은 재실행되지 않아
+                        // SecurityContext가 비어있는 상태로 anyRequest().authenticated()에 걸려
+                        // AuthorizationDeniedException이 터지고 이미 커밋된 SSE 응답이 조용히 끊기는 문제가 있었음.
+                        // 최초 REQUEST 단계에서 이미 인증 검증이 끝났으므로, 내부 마무리용 ASYNC 재디스패치는 재검사 없이 통과시킨다.
+                        .dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll()
                         // 여기서 1차 인가 관련 방호벽
                         // /api/user/ 하위에 endpoint 중에 admin / user 권한 별로 접근하기 위해서는
                         // 메서드 레벨에서 2차 방호벽 구축

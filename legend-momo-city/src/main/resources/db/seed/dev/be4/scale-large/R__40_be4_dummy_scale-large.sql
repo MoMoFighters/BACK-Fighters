@@ -33,7 +33,12 @@ INSERT INTO `user_oauth` (`id`, `created_at`, `provider`, `provider_id`, `user_i
   (27, NOW() - INTERVAL 130 DAY, 'KAKAO', 'oauth_user_027', 38),
   (28, NOW() - INTERVAL 135 DAY, 'GOOGLE', 'oauth_user_028', 39),
   (29, NOW() - INTERVAL 140 DAY, 'KAKAO', 'oauth_user_029', 40),
-  (30, NOW() - INTERVAL 145 DAY, 2, 'oauth_user_030', 41);
+  (30, NOW() - INTERVAL 145 DAY, 'GOOGLE', 'oauth_user_030', 41)
+    ON DUPLICATE KEY UPDATE
+                         created_at = VALUES(created_at),
+                         provider = VALUES(provider),
+                         provider_id = VALUES(provider_id),
+                         user_id = VALUES(user_id);
 -- =====================================================================
 --  2. store — 8건
 -- =====================================================================
@@ -88,7 +93,13 @@ VALUES
 
     -- 1000 (프리미엄)
     (33, 1000, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/momo-gorila.png', '프리미엄 고릴라', NOW() - INTERVAL 4 DAY),
-    (34, 1000, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/momo-cat.png',    '프리미엄 고양이', NOW() - INTERVAL 2 DAY);-- =====================================================================
+    (34, 1000, 'PROFILE', 'https://momocity-media.s3.ap-northeast-2.amazonaws.com/store/momo-cat.png',    '프리미엄 고양이', NOW() - INTERVAL 2 DAY)-- =====================================================================
+    ON DUPLICATE KEY UPDATE
+                         price = VALUES(price),
+                         type = VALUES(type),
+                         url = VALUES(url),
+                         name = VALUES(name),
+                         created_at = VALUES(created_at);
 --  3. order_history — 50건
 -- =====================================================================
 INSERT INTO `order_history` (`id`, `amount`, `created_at`, `item_id`, `reason`, `type`, `user_id`) VALUES
@@ -141,7 +152,14 @@ INSERT INTO `order_history` (`id`, `amount`, `created_at`, `item_id`, `reason`, 
   (47, 510, NOW() - INTERVAL 138 DAY, NULL, 'COMPLETE', 'GAINED', 58),
   (48, 520, NOW() - INTERVAL 141 DAY, NULL, 'REVIEW', 'GAINED', 59),
   (49, 530, NOW() - INTERVAL 144 DAY, 1, 'BUS', 'USED', 60),
-  (50, 540, NOW() - INTERVAL 147 DAY, NULL, 'GUESTBOOK', 'GAINED', 61);
+  (50, 540, NOW() - INTERVAL 147 DAY, NULL, 'GUESTBOOK', 'GAINED', 61)
+    ON DUPLICATE KEY UPDATE
+                         amount = VALUES(amount),
+                         created_at = VALUES(created_at),
+                         item_id = VALUES(item_id),
+                         reason = VALUES(reason),
+                         type = VALUES(type),
+                         user_id = VALUES(user_id);
 
 
 -- =====================================================================
@@ -194,5 +212,14 @@ INSERT INTO `payment` (`id`, `user_id`, `payment_id`, `original_payment_id`, `pl
 
 -- 구글유저 (30) - PRO 결제 실패 후 재시도 성공
 (18, 30, 'pay-30-001', NULL, 'PRO', 49900, 'FAILED',  NOW() - INTERVAL 10 DAY, NOW() - INTERVAL 10 DAY),
-(19, 30, 'pay-30-002', NULL, 'PRO', 49900, 'SUCCESS', NOW() - INTERVAL 8 DAY,  NOW() - INTERVAL 8 DAY);
+(19, 30, 'pay-30-002', NULL, 'PRO', 49900, 'SUCCESS', NOW() - INTERVAL 8 DAY,  NOW() - INTERVAL 8 DAY)
+    ON DUPLICATE KEY UPDATE
+                         user_id = VALUES(user_id),
+                         payment_id = VALUES(payment_id),
+                         original_payment_id = VALUES(original_payment_id),
+                         plan = VALUES(plan),
+                         price = VALUES(price),
+                         status = VALUES(status),
+                         created_at = VALUES(created_at),
+                         updated_at = VALUES(updated_at);
 SET FOREIGN_KEY_CHECKS = 1;
