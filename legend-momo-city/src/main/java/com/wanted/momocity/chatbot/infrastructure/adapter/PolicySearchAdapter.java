@@ -32,7 +32,7 @@ public class PolicySearchAdapter implements PolicySearchPort {
         try {
             response = policySearchWebClient.post()
                     .uri("/search")
-                    .bodyValue(Map.of("query", query, "top_k", 5))
+                    .bodyValue(Map.of("query", query, "top_k", 8))
                     .retrieve()
                     .bodyToMono(Map.class)
                     .block();
