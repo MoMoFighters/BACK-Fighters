@@ -3,6 +3,7 @@ package com.wanted.momocity.study.application.member.service;
 import com.wanted.momocity.auth.domain.model.User;
 import com.wanted.momocity.study.application.common.port.StudyUserInfoPort;
 import com.wanted.momocity.study.application.common.service.StudyLapService;
+import com.wanted.momocity.study.application.common.util.MidnightSplitter;
 import com.wanted.momocity.study.application.member.command.InviteMemberCommand;
 import com.wanted.momocity.study.application.member.port.FriendCatalogPort;
 import com.wanted.momocity.study.application.member.result.InvitationResult;
@@ -20,12 +21,19 @@ import com.wanted.momocity.study.infrastructure.redis.GroupRoomMemberCountAdapte
 import com.wanted.momocity.global.domain.common.exception.DomainRuleViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.concurrent.TimeUnit;
+
+import static org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive;
+import static org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization;
 
 /*
  * comment.
@@ -57,6 +65,7 @@ public class MemberCommandService implements MemberCommandUseCase {
     private final ApplicationEventPublisher eventPublisher;
     private final StudyLapService studyLapService;
     private final StudyUserInfoPort studyUserInfoPort;
+    private final RedissonClient redissonClient;
 
     /*
      * comment.
@@ -157,29 +166,72 @@ public class MemberCommandService implements MemberCommandUseCase {
     @Override
     public InvitationResult acceptInvitation(Long userId, Long roomId) {
 
-        GroupRoom room = getActiveRoom(roomId);
-        GroupRoomMember member = getMyInvitation(userId, roomId);
-
         /*
-         * 기존 : DB에서 findAllByGroupRoomIdAndJoined().size()로 카운트를 세서 비교하는 방식
-         * 해당 방식은 동시에 여러 명이 수락할 때 "조회 -> 판단 -> 저장" 사이에 레이스 컨디션이 생길 수 있는 문제 존재
-         * -> Redis INCR 기반 원자적 카운트(GroupRoomMemberCountAdapter.tryIncrement)로 교체
-         * tryIncrement가 false를 반환하면 이미 정원이 가득 찬 것이므로 즉시 예외를 던지고,
-         * 이 시점에는 아직 DB에 JOINED로 반영되지 않았으므로 Redis 카운트도 자동으로 롤백된 상태
+         * comment.
+         *  락 범위를 "카운트 증가 + DB 저장" 전체로 확장
+         *  - 동시에 같은 방에 두 번째 수락 요청이 들어와도, 첫 요청이 끝날 때까지 대기
+         *  - 첫 요청 완료 후(= member.status가 ACCEPTED로 바뀐 후) 두 번째 요청이 락을 잡으면,
+         *    getMyInvitation()의 isInvited() 체크에서 자동으로 걸러짐 (별도 DDL/버전 컬럼 불필요)
+         *  leaseTime은 명시하지 않음 -> Watchdog이 임계구역 종료(unlock)까지 자동 연장
          * */
+        RLock lock = redissonClient.getLock("study:room:" + roomId + ":lock");
+        boolean acquired = false;
 
-        boolean acquired = groupRoomMemberCountAdapter.tryIncrement(roomId, room.getMaxMember());
-        if (!acquired) {
-            throw new DomainRuleViolationException("그룹방 인원이 가득 찼습니다.");
+        try {
+            acquired = lock.tryLock(2, TimeUnit.SECONDS);
+            if (!acquired) {
+                throw new DomainRuleViolationException("일시적으로 요청이 몰렸습니다. 잠시 후 다시 시도해주세요.");
+            }
+
+            GroupRoom room = getActiveRoom(roomId);
+            GroupRoomMember member = getMyInvitation(userId, roomId);
+
+            /*
+             * Redis RLock 기반 원자적 카운트(GroupRoomMemberCountAdapter.tryIncrement)로 정원 확정
+             * ROOM_FULL: 실제 정원 초과 -> 명확한 안내 메시지
+             * LOCK_ACQUISITION_FAILED: 락 경합으로 인한 일시적 실패 -> 재시도를 유도하는 별도 메시지
+             * (이 시점에는 아직 DB에 JOINED로 반영되지 않았으므로 실패 시 별도 롤백 불필요)
+            * */
+            GroupRoomMemberCountAdapter.IncrementResult result =
+                    groupRoomMemberCountAdapter.tryIncrement(roomId, room.getMaxMember());
+
+            switch (result) {
+                case ROOM_FULL -> throw new DomainRuleViolationException("그룹방 인원이 가득 찼습니다.");
+                case LOCK_ACQUISITION_FAILED -> throw new DomainRuleViolationException("일시적으로 요청이 몰렸습니다. 잠시 후 다시 시도해주세요.");
+                case SUCCESS -> { /* 계속 진행 */ }
+            }
+
+            try{
+                member.accept(LocalDateTime.now());
+                GroupRoomMember saved = groupRoomMemberRepository.save(member);
+
+                eventPublisher.publishEvent(new MemberJoinedEvent(roomId, userId));
+
+                log.info("[Study] 초대 수락 완료 | roomId={}, userId={}", roomId, userId);
+
+                // 락 해제는 즉시 하지 않고, 트랜잭션이 실제로 커밋된 이후로 미룸
+                // (커밋 전에 락을 풀면, 아직 반영 안 된 DB 상태를 다른 스레드가 재조회해서
+                //  중복 수락을 걸러내지 못하는 문제가 생김)
+                registerUnlockAfterCommit(lock);
+                acquired = false; // finally에서 다시 풀지 않도록 플래그 해제
+
+                return InvitationResult.ofAccepted(saved);
+            } catch (Exception e) {
+                // DB 저장 실패 시 Redis 카운트 보상 감소 (예약된 자리 반납)
+                groupRoomMemberCountAdapter.decrement(roomId);
+                throw e;
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new DomainRuleViolationException("요청 처리 중 인터럽트가 발생했습니다.");
+        } finally {
+            // 정상 흐름(AFTER_COMMIT 등록)에서는 acquired=false로 바뀌어 여기서 풀지 않음
+            // 예외로 빠진 경우(트랜잭션 롤백 예정)에는 여기서 즉시 해제
+            if (acquired && lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
         }
 
-        member.accept(LocalDateTime.now());
-        GroupRoomMember saved = groupRoomMemberRepository.save(member);
-
-        eventPublisher.publishEvent(new MemberJoinedEvent(roomId, userId));
-
-        log.info("[Study] 초대 수락 완료 | roomId={}, userId={}", roomId, userId);
-        return InvitationResult.ofAccepted(saved);
     }
 
     // 초대 거절 (본인 토큰 기준)
@@ -217,6 +269,8 @@ public class MemberCommandService implements MemberCommandUseCase {
         GroupRoom room = getActiveRoom(roomId);
 
         LocalDateTime now = LocalDateTime.now();
+        // 자정 분할용 시작 시각 확보 (STUDYING 블록 안에서만 의미 있음)
+        LocalDateTime from = member.getLastResumedAt();
 
         // 진행 중인 타이머(STUDYING) 존재 시, 마지막 구간 시간을 확정해서 누적 -> increment 기억
         // RESTING이었다면 increment=0.
@@ -227,12 +281,8 @@ public class MemberCommandService implements MemberCommandUseCase {
             studyLapService.closeLap(roomId, member.getId(), now);
         }
 
-        // increment > 0 이상이면 전부 이벤트 발행 -> 기록 누적
-        if (increment > 0) {
-            eventPublisher.publishEvent(
-                    new StudySessionAccumulatedEvent(userId, now.toLocalDate(), increment)
-            );
-        }
+        // 자정 분할 발행 하나만 남김 (increment<=0이면 내부 가드로 아무것도 안 나감)
+        publishAccumulatedEvents(userId, from, now, increment);
 
         member.leave(now);
         groupRoomMemberRepository.save(member);
@@ -298,6 +348,8 @@ public class MemberCommandService implements MemberCommandUseCase {
                 .orElseThrow(() -> new StudyNotFoundException("그룹방 참가자가 아닙니다."));
 
         LocalDateTime now = LocalDateTime.now();
+        // 자정 분할용 시작 시각 확보 (STUDYING 블록 안에서만 의미 있음)
+        LocalDateTime from = target.getLastResumedAt();
 
         int increment = 0;
         if (target.getTimerStatus() == GroupRoomMember.TimerStatus.STUDYING) {
@@ -305,12 +357,8 @@ public class MemberCommandService implements MemberCommandUseCase {
             studyLapService.closeLap(roomId, target.getId(), now);
         }
 
-        // getTotalSeconds() > 0 이상이면 전부 이벤트 발행 -> 기록 누적
-        if (increment > 0) {
-            eventPublisher.publishEvent(
-                    new StudySessionAccumulatedEvent(targetUserId, now.toLocalDate(), increment)
-            );
-        }
+        // getTotalSeconds() > 0 이상이면 자정 분할 이벤트 발행 (예전 단일 발행 블록 삭제)
+        publishAccumulatedEvents(targetUserId, from, now, increment);
 
         target.kick(now);
         groupRoomMemberRepository.save(target);
@@ -374,4 +422,46 @@ public class MemberCommandService implements MemberCommandUseCase {
         member.accumulateSeconds(increment);
         return increment;
     }
+
+    // 내부 헬퍼 - TimerCommandService/SoloCommandService와 동일 패턴
+    private void publishAccumulatedEvents(Long userId, LocalDateTime from, LocalDateTime to, int increment) {
+        if (increment <= 0 || from == null) {
+            return;
+        }
+        for (MidnightSplitter.DateSeconds part : MidnightSplitter.split(from, to)) {
+            if (part.seconds() > 0) {
+                eventPublisher.publishEvent(
+                        new StudySessionAccumulatedEvent(userId, part.date(), part.seconds())
+                );
+            }
+        }
+    }
+
+    // 트랜잭션이 활성 상태면 AFTER_COMMIT에 락 해제를 등록, 아니면 즉시 해제
+    private void registerUnlockAfterCommit(RLock lock) {
+        if (isSynchronizationActive()) {
+            registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            if (lock.isHeldByCurrentThread()) {
+                                lock.unlock();
+                            }
+                        }
+
+                        @Override
+                        public void afterCompletion(int status) {
+                            // 커밋이 아니라 롤백으로 끝난 경우 (afterCommit이 호출 안 됐을 때) 대비
+                            if (status != TransactionSynchronization.STATUS_COMMITTED
+                                    && lock.isHeldByCurrentThread()) {
+                                lock.unlock();
+                            }
+                        }
+                    }
+            );
+        } else if (lock.isHeldByCurrentThread()) {
+            lock.unlock();
+        }
+    }
+
 }

@@ -37,7 +37,7 @@ public interface SpringDataMessageReadRepository extends JpaRepository<MessageRe
     Long countByMessageId_IdAndIsMsgReadFalse(Long messageId);
 
     //메시지 내역 조회(말풍선 안읽음 수)
-    // 🎯 1. 모든 메시지의 안 읽은 사람 수를 단 한 번에 가져오는 벌크 쿼리 (Object[] 형태로 [메시지ID, 카운트])
+    // 1. 모든 메시지의 안 읽은 사람 수를 단 한 번에 가져오는 벌크 쿼리 (Object[] 형태로 [메시지ID, 카운트])
     @Query("select mr.messageId.id, count(mr) from MessageReadJpaEntity mr " +
             "where mr.messageId.id in :messageIds and mr.isMsgRead = false " +
             "group by mr.messageId.id")

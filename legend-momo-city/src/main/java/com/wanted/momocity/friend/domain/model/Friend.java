@@ -2,9 +2,6 @@ package com.wanted.momocity.friend.domain.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
-
-import java.time.Instant;
 
 //도메인 애그리거트
 @AllArgsConstructor

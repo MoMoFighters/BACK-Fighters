@@ -27,6 +27,7 @@ public class GroupRoomMember {
     private TimerStatus timerStatus;
     private LocalDateTime lastResumedAt;
     private int totalSeconds;
+    private LocalDateTime timerStartedAt;
     private LocalDateTime invitedAt;
     private LocalDateTime joinedAt;
     private LocalDateTime leftAt;
@@ -59,7 +60,7 @@ public class GroupRoomMember {
     // DB 복원용
     public static GroupRoomMember reconstitute(
             Long id, Long groupRoomId, Long userId, MemberStatus status, TimerStatus timerStatus,
-            LocalDateTime lastResumedAt, int totalSeconds,
+            LocalDateTime lastResumedAt, int totalSeconds, LocalDateTime timerStartedAt,
             LocalDateTime invitedAt, LocalDateTime joinedAt, LocalDateTime leftAt,
             LocalDateTime createdAt, LocalDateTime updatedAt
     ) {
@@ -71,6 +72,7 @@ public class GroupRoomMember {
         member.timerStatus = timerStatus;
         member.lastResumedAt = lastResumedAt;
         member.totalSeconds = totalSeconds;
+        member.timerStartedAt = timerStartedAt;
         member.invitedAt = invitedAt;
         member.joinedAt = joinedAt;
         member.leftAt = leftAt;
@@ -101,6 +103,7 @@ public class GroupRoomMember {
         this.status = MemberStatus.LEFT;
         this.timerStatus = null;
         this.lastResumedAt = null;
+        this.timerStartedAt = null;
         this.leftAt = now;
     }
 
@@ -114,6 +117,7 @@ public class GroupRoomMember {
         this.totalSeconds = 0;
         this.timerStatus = null;
         this.lastResumedAt = null;
+        this.timerStartedAt = null;
     }
 
     // 강퇴 (JOINED -> KICKED, 방장에 의한 처리)
@@ -122,6 +126,7 @@ public class GroupRoomMember {
         this.status = MemberStatus.KICKED;
         this.timerStatus = null;
         this.lastResumedAt = null;
+        this.timerStartedAt = null;
         this.leftAt = now;
     }
 
@@ -129,6 +134,9 @@ public class GroupRoomMember {
     public void startTimer(LocalDateTime now) {
         this.timerStatus = TimerStatus.STUDYING;
         this.lastResumedAt = now;
+        if (this.timerStartedAt == null) {
+            this.timerStartedAt = now;
+        }
     }
 
     // 타이머 일시정지
@@ -142,6 +150,7 @@ public class GroupRoomMember {
     public void endTimer() {
         this.timerStatus = null;
         this.lastResumedAt = null;
+        this.timerStartedAt = null;
     }
 
     // 누적 시간 더하기 (Service가 lastResumedAt ~ now 구간을 계산해서 전달)
@@ -168,6 +177,7 @@ public class GroupRoomMember {
     public TimerStatus getTimerStatus() { return timerStatus; }
     public LocalDateTime getLastResumedAt() { return lastResumedAt; }
     public int getTotalSeconds() { return totalSeconds; }
+    public LocalDateTime getTimerStartedAt() { return timerStartedAt; }
     public LocalDateTime getInvitedAt() { return invitedAt; }
     public LocalDateTime getJoinedAt() { return joinedAt; }
     public LocalDateTime getLeftAt() { return leftAt; }

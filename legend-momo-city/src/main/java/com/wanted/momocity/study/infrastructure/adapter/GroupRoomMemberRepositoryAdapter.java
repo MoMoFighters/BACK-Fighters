@@ -7,6 +7,7 @@ import com.wanted.momocity.study.infrastructure.persistence.GroupRoomMemberJpaRe
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -90,6 +91,19 @@ public class GroupRoomMemberRepositoryAdapter implements GroupRoomMemberReposito
         return groupRoomMemberJpaRepository
                 .findAllByUserIdAndStatusAndTimerStatus(
                         userId, GroupRoomMember.MemberStatus.JOINED, GroupRoomMember.TimerStatus.STUDYING
+                )
+                .stream()
+                .map(GroupRoomMemberJpaEntity::toDomain)
+                .toList();
+    }
+
+    // 24시간 초과로 방치된 그룹방 타이머 목록 조회 (스케줄러용)
+    @Override
+    public List<GroupRoomMember> findExpiredActiveSessions(LocalDateTime threshold) {
+        return groupRoomMemberJpaRepository.findAllByStatusAndTimerStatusAndTimerStartedAtBefore(
+                        GroupRoomMember.MemberStatus.JOINED,
+                        GroupRoomMember.TimerStatus.STUDYING,
+                        threshold
                 )
                 .stream()
                 .map(GroupRoomMemberJpaEntity::toDomain)

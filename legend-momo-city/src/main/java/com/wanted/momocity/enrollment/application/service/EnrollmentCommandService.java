@@ -5,6 +5,7 @@ import com.wanted.momocity.enrollment.application.port.EnrollmentLecturePort;
 import com.wanted.momocity.enrollment.application.port.StudentAccountPort;
 import com.wanted.momocity.enrollment.application.usecase.EnrollmentCommandUseCase;
 import com.wanted.momocity.enrollment.domain.event.EnrollmentCompletedEvent;
+import com.wanted.momocity.enrollment.domain.exception.BasicMembershipEnrollmentNotAllowedException;
 import com.wanted.momocity.enrollment.domain.exception.DuplicateEnrollmentException;
 import com.wanted.momocity.enrollment.domain.exception.InvalidEnrollmentLectureStatusException;
 import com.wanted.momocity.enrollment.domain.model.Building;
@@ -53,8 +54,24 @@ public class EnrollmentCommandService implements EnrollmentCommandUseCase {
                 command.position()
                 );
 
-            // Authorization 토큰에서 꺼낸 email로 학생 ID를 조회
-            Long userId = studentAccountPort.getStudentId(command.studentId());
+        // 토큰의 사용자 ID를 사용하여 학생 ID와 수강 가능 여부를 조회
+        StudentAccountPort.StudentEnrollmentInfo studentInfo =
+                studentAccountPort.getStudentEnrollmentInfo(command.studentId());
+
+        // BASIC 회원처럼 현재 멤버십으로 수강신청할 수 없는 경우를 검사
+        if (!studentInfo.enrollmentAllowed()) {
+            log.warn(
+                    "수강신청 실패 - 멤버십 권한 부족, userId={}, lectureId={}",
+                    studentInfo.studentId(),
+                    command.lectureId()
+            );
+            throw new BasicMembershipEnrollmentNotAllowedException(
+                    "BASIC 회원은 강의를 수강신청할 수 없습니다."
+            );
+        }
+
+        // 멤버십 검증을 통과한 사용자의 ID를 이후 수강신청 로직에서 사용합
+        Long userId = studentInfo.studentId();
 
             // 수강신청 대상 강의의 현재 상태를 조회
             LectureStatus lectureStatus = enrollmentLecturePort.getLectureStatus(command.lectureId());

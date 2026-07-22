@@ -1,13 +1,11 @@
 package com.wanted.momocity.friend.domain.repository;
 
 
-import com.wanted.momocity.friend.application.usecase.FriendQueryUseCase.FriendView;
 import com.wanted.momocity.friend.enrollment.EnrollmentWithFMJpaEntity;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 
 import com.wanted.momocity.friend.infrastructure.persistence.GuestBookJpaEntity;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
-import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.Optional;

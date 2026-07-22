@@ -61,6 +61,11 @@ public class GroupRoomMemberJpaEntity extends BaseTimeEntity {
     @Column(name = "total_seconds", nullable = false)
     private int totalSeconds;
 
+    // 현재 진행 중인 연속 학습 구간의 최초 시작 시각 (24시간 자동 만료 판정 기준)
+    // startTimer() 최초 호출 시에만 세팅, pauseTimer()로는 리셋 안 됨, endTimer() 시점에 null로 리셋
+    @Column(name = "timer_started_at")
+    private LocalDateTime timerStartedAt;
+
     @Column(name = "invited_at")
     private LocalDateTime invitedAt;
 
@@ -80,6 +85,7 @@ public class GroupRoomMemberJpaEntity extends BaseTimeEntity {
         entity.timerStatus = domain.getTimerStatus();
         entity.lastResumedAt = domain.getLastResumedAt();
         entity.totalSeconds = domain.getTotalSeconds();
+        entity.timerStartedAt = domain.getTimerStartedAt();
         entity.invitedAt = domain.getInvitedAt();
         entity.joinedAt = domain.getJoinedAt();
         entity.leftAt = domain.getLeftAt();
@@ -90,7 +96,7 @@ public class GroupRoomMemberJpaEntity extends BaseTimeEntity {
     public GroupRoomMember toDomain() {
         return GroupRoomMember.reconstitute(
                 id, groupRoomId, userId, status, timerStatus,
-                lastResumedAt, totalSeconds,
+                lastResumedAt, totalSeconds, timerStartedAt,
                 invitedAt, joinedAt, leftAt,
                 getCreatedAt(), getUpdatedAt()
         );

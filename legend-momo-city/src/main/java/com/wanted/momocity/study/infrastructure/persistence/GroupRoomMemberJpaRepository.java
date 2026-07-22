@@ -3,6 +3,7 @@ package com.wanted.momocity.study.infrastructure.persistence;
 import com.wanted.momocity.study.domain.model.GroupRoomMember;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -38,6 +39,18 @@ public interface GroupRoomMemberJpaRepository extends JpaRepository<GroupRoomMem
 
     List<GroupRoomMemberJpaEntity> findAllByUserIdAndStatusAndTimerStatus(
             Long userId, GroupRoomMember.MemberStatus status, GroupRoomMember.TimerStatus timerStatus
+    );
+
+    /*
+     * comment.
+     *  24시간 초과로 방치된 STUDYING 멤버 목록 조회 (스케줄러용)
+     *  - status=JOINED, timerStatus=STUDYING, timerStartedAt이 threshold보다 이전인 것
+     *  - Spring Data 파생 쿼리로는 "이전"(Before) 조건이 자연스럽게 표현되므로 @Query 없이 처리 가능
+     * */
+    List<GroupRoomMemberJpaEntity> findAllByStatusAndTimerStatusAndTimerStartedAtBefore(
+            GroupRoomMember.MemberStatus status,
+            GroupRoomMember.TimerStatus timerStatus,
+            LocalDateTime threshold
     );
 
 }

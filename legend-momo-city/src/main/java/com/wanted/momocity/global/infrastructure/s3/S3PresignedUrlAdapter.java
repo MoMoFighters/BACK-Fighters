@@ -1,16 +1,22 @@
 package com.wanted.momocity.global.infrastructure.s3;
 
 import com.wanted.momocity.global.application.s3.S3PresignedUrlPort;
+import com.wanted.momocity.global.infrastructure.config.CloudFrontSignedUrlProperties;
 import com.wanted.momocity.viewing.application.port.S3Port;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import software.amazon.awssdk.services.cloudfront.CloudFrontUtilities;
+import software.amazon.awssdk.services.cloudfront.model.CannedSignerRequest;
+import software.amazon.awssdk.services.cloudfront.url.SignedUrl;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 
+import java.security.PrivateKey;
 import java.time.Duration;
+import java.time.Instant;
 
 /*
 * comment.
@@ -29,24 +35,31 @@ public class S3PresignedUrlAdapter implements S3Port , S3PresignedUrlPort {
     // S3Config 에서 Bean 으로 등록해둔 것을 주입받음
     private final S3Presigner s3Presigner;
 
+    // 신규 - CloudFront 서명에 필요한 의존성 주입
+    private final CloudFrontUtilities cloudFrontUtilities;
+    private final PrivateKey cloudFrontPrivateKey;
+    private final CloudFrontSignedUrlProperties cloudFrontSignedUrlProperties;
+
     // application.yaml 에서 버킷 이름 주입
     @Value("${cloud.aws.s3.bucket}")
     private String bucketName;
 
     /*
-    * comment.
-    *  전체 URL → key 추출
-    *  S3 에 파일 접근할 때 필요한 것은 전체 URL 이 아니라 버킷 내 파일 경로 (key)
-    *  - contains(".amazonaws.com/") 로 전체 URL 인지 확인
-    *  -> 맞으면 ".amazonaws.com/" 이후 부분만 추출, 아니면 이미 key 형태라 그대로 사용
-     * */
+     * comment.
+     *  공통 - 전체 URL 또는 key 형태 입력을 받아 순수 S3 key 만 추출
+     *  - 레거시 데이터(풀 URL 저장) 와 현재 데이터(key 만 저장) 둘 다 대응
+     *  - generatePresignedUrl(), generateCloudFrontSignedUrl() 양쪽에서 공용으로 사용
+     */
+    private String extractKey(String urlOrKey) {
+        return urlOrKey.contains(".amazonaws.com/")
+                ? urlOrKey.substring(urlOrKey.indexOf(".amazonaws.com/") + ".amazonaws.com/".length())
+                : urlOrKey;
+    }
 
     @Override
     public String generatePresignedUrl(String videoUrl) {
 
-        String key = videoUrl.contains(".amazonaws.com/")
-                ? videoUrl.substring(videoUrl.indexOf(".amazonaws.com/") + ".amazonaws.com/".length())
-                : videoUrl;
+        String key = extractKey(videoUrl);
         log.info("[S3] key = {}", key);
 
         // GetObjectRequest: S3 에서 파일을 가져오기 위한 요청 객체
@@ -70,4 +83,35 @@ public class S3PresignedUrlAdapter implements S3Port , S3PresignedUrlPort {
                 .url()
                 .toString();
     }
+
+    /*
+     * comment.
+     *  신규 - CloudFront Signed URL 발급
+     *  - videoUrl 은 DB 에 key 형태로만 저장되어 있음 (ex. lectures/1/chapters/1/chapter01.mp4)
+     *  - 별도 파싱 없이 바로 CloudFront resourceUrl 조합에 사용
+     */
+    @Override
+    public String generateCloudFrontSignedUrl(String videoUrl) {
+
+        // 레거시 풀 URL이 들어와도 key 만 추출해서 사용 (generatePresignedUrl 과 동일 로직 재사용)
+        String key = extractKey(videoUrl);
+
+        // CloudFront 도메인 + key 조합 -> 서명 대상 리소스 URL
+        String resourceUrl = "https://" + cloudFrontSignedUrlProperties.domain() + "/" + videoUrl;
+
+        // CannedSignerRequest: 단순 만료시간 기반 서명 (IP 제한 등 없는 기본형)
+        CannedSignerRequest request = CannedSignerRequest.builder()
+                .resourceUrl(resourceUrl)
+                .privateKey(cloudFrontPrivateKey)
+                .keyPairId(cloudFrontSignedUrlProperties.keyPairId())
+                .expirationDate(Instant.now().plusSeconds(cloudFrontSignedUrlProperties.expirationSeconds()))
+                .build();
+
+        SignedUrl signedUrl = cloudFrontUtilities.getSignedUrlWithCannedPolicy(request);
+
+        log.info("[CloudFront] Signed URL 발급 완료 | key={}", videoUrl);
+
+        return signedUrl.url();
+    }
+
 }

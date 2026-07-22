@@ -12,5 +12,14 @@ public interface ChatbotUsageUseCase {
     // 호출 한도 체크 후 카운트 증가, 초과 시 ChatbotDailyLimitExceededException
     void checkAndIncrease(Long userId);
 
-    record UsageStatus(int callCount, int dailyLimit) {}
+    record UsageStatus(int callCount, int dailyLimit) {
+
+        // callCount/dailyLimit 을 퍼센트로 환산해준다.
+        // 이를 통해서 FE 측에서는 중복 계산을 하지 않고 이 값을 그대로 쓸 수 있게 된다.
+        public double usagePercentage() {
+            return (callCount * 100.0) / dailyLimit;
+
+        }
+
+    }
 }

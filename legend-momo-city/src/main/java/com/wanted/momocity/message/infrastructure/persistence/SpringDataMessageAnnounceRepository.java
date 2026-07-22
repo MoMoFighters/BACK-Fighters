@@ -1,6 +1,5 @@
 package com.wanted.momocity.message.infrastructure.persistence;
 
-import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -14,7 +13,7 @@ public interface SpringDataMessageAnnounceRepository extends JpaRepository<Messa
 
 
     //채팅방 목록 정렬을 위한 안내 문구 시간 확인
-    // 🎯 [패치 조인 적용] 방 ID로 가장 최신의 안내 문구를 조회할 때,
+    // [패치 조인 적용] 방 ID로 가장 최신의 안내 문구를 조회할 때,
     // 안내 문구의 대상이 되는 유저 정보(targetId)까지 한방에 패치 조인으로 묶어서 가져옵니다.
     @Query("select ma from MessageAnnounceJpaEntity ma " +
             "join fetch ma.targetId " +

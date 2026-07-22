@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -27,7 +28,8 @@ public class GeminiClientAdapter implements GeminiClientPort {
     @Override
     public void streamAnswer(String prompt, StreamCallback callback) {
         Map<String, Object> requestBody = Map.of(
-                "contents", List.of(Map.of("parts", List.of(Map.of("text", prompt))))
+                "contents", List.of(Map.of("parts", List.of(Map.of("text", prompt)))),
+                "generationConfig", Map.of("temperature", 0.3)
         );
 
         geminiWebClient.post()
@@ -35,6 +37,8 @@ public class GeminiClientAdapter implements GeminiClientPort {
                 .bodyValue(requestBody)
                 .retrieve()
                 .bodyToFlux(GeminiStreamChunk.class)
+                // responseTimeOut 은 청크 간 간격(read timeout) 이라 총 시간 제한이 안된다. 진짜 전체 데드라인은 여기서 별도로 건다.
+                .timeout(Duration.ofSeconds(120))
                 .subscribe(
                         chunk -> extractText(chunk).forEach(callback::onChunk),
                         callback::onError,
