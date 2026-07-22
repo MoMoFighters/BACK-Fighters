@@ -19,6 +19,10 @@ services:
       MESSAGE_ENCRYPTION_KEY: ${MESSAGE_ENCRYPTION_KEY}
       PORTONE_API_SECRET: ${PORTONE_API_SECRET}
       PORTONE_WEBHOOK_SECRET: ${PORTONE_WEBHOOK_SECRET}
+      CLOUDFRONT_KEY_PAIR_ID: ${CLOUDFRONT_KEY_PAIR_ID}
+      CLOUDFRONT_PRIVATE_KEY_PATH: ${CLOUDFRONT_PRIVATE_KEY_PATH}
+    volumes:
+        - /etc/momocity/secrets/cloudfront-private-key.pem:/app/secrets/cloudfront-private-key.pem:ro
     depends_on:
       mysql:
         condition: service_healthy
