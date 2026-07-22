@@ -13,9 +13,6 @@ public record SentRequestResponse(
         //ACTIVE 아니면 (알 수 없음) 가공
         //비활성 유저 닉네임 가공
         String displayNickname = view.nickname();
-//        if (view.isNotActive()) {
-//            displayNickname += "(알 수 없음)";
-//        }
         //user 담당자가 가공해서 주석처리함
 
         return new SentRequestResponse(

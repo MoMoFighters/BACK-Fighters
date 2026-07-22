@@ -15,8 +15,6 @@ public interface MessageQueryUseCase {
     record ChatRoomView(
             RoomInfo roomInfo,
             List<MemberInfo> memberInfo,
-//            Boolean isNotActive, //ACTIVE아닌 것
-//            boolean shouldMasked,
             LocalDateTime lastestOrderTime //채팅방 목록 정령을 위함
     ) {}
     record RoomInfo(
@@ -47,9 +45,6 @@ public interface MessageQueryUseCase {
             RoomInfoView roomInfo,
             List<MemberInfoView> memberInfo,
             List<MessageDetail> messages
-//            boolean isNotActive, //활성 상태 아닌 것
-//            boolean isRead
-//            boolean shouldMasked
     ) {}
 
     record RoomInfoView(

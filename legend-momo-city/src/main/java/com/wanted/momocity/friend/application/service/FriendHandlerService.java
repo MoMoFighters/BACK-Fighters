@@ -1,9 +1,7 @@
 package com.wanted.momocity.friend.application.service;
 
-import com.wanted.momocity.friend.application.policy.FriendEligibilityPolicy;
 import com.wanted.momocity.friend.domain.event.TeacherStudentAutoFriendPublishedEvent;
 import com.wanted.momocity.friend.domain.model.Friend;
-import com.wanted.momocity.friend.fmexception.FMResourceNotFoundException;
 import com.wanted.momocity.friend.infrastructure.catalog.CatalogFriendAdapter;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 import com.wanted.momocity.friend.infrastructure.persistence.FriendSideLectureRepository;
@@ -41,11 +39,10 @@ public class FriendHandlerService {
                 .orElseThrow(() -> new DomainRuleViolationException("존재하지 않는 강의입니다."));
 
         //강의 테이블에서 강사 아이디 꺼내기
-//        UserWithFMJpaEntity teacher = lecture.getTeacherId();
         Long teacherId = lecture.getTeacherId().getId();
         log.info("[FriendHandlerService] 강의 테이블 분석 완료 - 담당 강사ID: {}", teacherId);
 
-        // 🎯 [최적화 1] 학생 ID와 강사 ID를 묶어서 IN 절 1방으로 일괄 조회 (SELECT 2)
+        // [최적화 1] 학생 ID와 강사 ID를 묶어서 IN 절 1방으로 일괄 조회 (SELECT 2)
         // 기존에 각자 따로 날아가던 학생 조회, 강사 조회 쿼리가 이거 1방으로 통합됩니다.
         List<UserWithFMJpaEntity> users = catalogFriendAdapter.findUsersByIds(List.of(studentId, teacherId));
 

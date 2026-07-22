@@ -58,9 +58,4 @@ public class MessageJpaEntity {
         return entity;
     }
 
-    //메시지 읽음 처리
-//    public void changeIsRead(boolean isRead) {
-//        this.isRead = isRead;
-//    }
-    //message_read 테이블로 연계
 }

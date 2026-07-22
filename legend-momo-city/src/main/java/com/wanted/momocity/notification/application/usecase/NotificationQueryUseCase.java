@@ -6,7 +6,6 @@ import com.wanted.momocity.notification.application.query.GetPhoneAppCountsQuery
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 public interface NotificationQueryUseCase {
 

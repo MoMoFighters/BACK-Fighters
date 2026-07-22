@@ -3,6 +3,7 @@ package com.wanted.momocity.study.application.member.service;
 import com.wanted.momocity.auth.domain.model.User;
 import com.wanted.momocity.study.application.common.port.StudyUserInfoPort;
 import com.wanted.momocity.study.application.common.service.StudyLapService;
+import com.wanted.momocity.study.application.common.util.MidnightSplitter;
 import com.wanted.momocity.study.application.member.command.InviteMemberCommand;
 import com.wanted.momocity.study.application.member.port.FriendCatalogPort;
 import com.wanted.momocity.study.application.member.result.InvitationResult;
@@ -217,6 +218,8 @@ public class MemberCommandService implements MemberCommandUseCase {
         GroupRoom room = getActiveRoom(roomId);
 
         LocalDateTime now = LocalDateTime.now();
+        // 자정 분할용 시작 시각 확보 (STUDYING 블록 안에서만 의미 있음)
+        LocalDateTime from = member.getLastResumedAt();
 
         // 진행 중인 타이머(STUDYING) 존재 시, 마지막 구간 시간을 확정해서 누적 -> increment 기억
         // RESTING이었다면 increment=0.
@@ -227,12 +230,8 @@ public class MemberCommandService implements MemberCommandUseCase {
             studyLapService.closeLap(roomId, member.getId(), now);
         }
 
-        // increment > 0 이상이면 전부 이벤트 발행 -> 기록 누적
-        if (increment > 0) {
-            eventPublisher.publishEvent(
-                    new StudySessionAccumulatedEvent(userId, now.toLocalDate(), increment)
-            );
-        }
+        // 자정 분할 발행 하나만 남김 (increment<=0이면 내부 가드로 아무것도 안 나감)
+        publishAccumulatedEvents(userId, from, now, increment);
 
         member.leave(now);
         groupRoomMemberRepository.save(member);
@@ -298,6 +297,8 @@ public class MemberCommandService implements MemberCommandUseCase {
                 .orElseThrow(() -> new StudyNotFoundException("그룹방 참가자가 아닙니다."));
 
         LocalDateTime now = LocalDateTime.now();
+        // 자정 분할용 시작 시각 확보 (STUDYING 블록 안에서만 의미 있음)
+        LocalDateTime from = target.getLastResumedAt();
 
         int increment = 0;
         if (target.getTimerStatus() == GroupRoomMember.TimerStatus.STUDYING) {
@@ -305,12 +306,8 @@ public class MemberCommandService implements MemberCommandUseCase {
             studyLapService.closeLap(roomId, target.getId(), now);
         }
 
-        // getTotalSeconds() > 0 이상이면 전부 이벤트 발행 -> 기록 누적
-        if (increment > 0) {
-            eventPublisher.publishEvent(
-                    new StudySessionAccumulatedEvent(targetUserId, now.toLocalDate(), increment)
-            );
-        }
+        // getTotalSeconds() > 0 이상이면 자정 분할 이벤트 발행 (예전 단일 발행 블록 삭제)
+        publishAccumulatedEvents(targetUserId, from, now, increment);
 
         target.kick(now);
         groupRoomMemberRepository.save(target);
@@ -374,4 +371,19 @@ public class MemberCommandService implements MemberCommandUseCase {
         member.accumulateSeconds(increment);
         return increment;
     }
+
+    // 내부 헬퍼 - TimerCommandService/SoloCommandService와 동일 패턴
+    private void publishAccumulatedEvents(Long userId, LocalDateTime from, LocalDateTime to, int increment) {
+        if (increment <= 0 || from == null) {
+            return;
+        }
+        for (MidnightSplitter.DateSeconds part : MidnightSplitter.split(from, to)) {
+            if (part.seconds() > 0) {
+                eventPublisher.publishEvent(
+                        new StudySessionAccumulatedEvent(userId, part.date(), part.seconds())
+                );
+            }
+        }
+    }
+
 }

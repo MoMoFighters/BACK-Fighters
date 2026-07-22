@@ -2,6 +2,7 @@ package com.wanted.momocity.study.domain.repository;
 
 import com.wanted.momocity.study.domain.model.GroupRoomMember;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,5 +46,15 @@ public interface GroupRoomMemberRepository {
     // 특정 방에서 현재 타이머가 STUDYING인 멤버가 있는지 확인
     // (동시 타이머 검증 - 유저가 다른 방/솔로에서 이미 진행 중인지 체크할 때 활용)
     List<GroupRoomMember> findAllByUserIdAndStudying(Long userId);
+
+    /*
+     * comment.
+     *  24시간 초과로 아직 정리되지 않은 그룹방 타이머(STUDYING) 목록 조회
+     *  - 스케줄러(StudyExpirationScheduler)가 주기적으로 조회해서 강제 pause 처리할 때 사용
+     *  - status=JOINED, timerStatus=STUDYING, lastResumedAt < threshold(현재시각-24시간)
+     *  - lastResumedAt 기준인 이유: 그룹방은 이어하기(재개)가 반복될 수 있어서
+     *    "마지막으로 재개한 시점"부터 24시간을 재는 게 솔로의 startTime 기준보다 정확함
+     * */
+    List<GroupRoomMember> findExpiredActiveSessions(LocalDateTime threshold);
 
 }

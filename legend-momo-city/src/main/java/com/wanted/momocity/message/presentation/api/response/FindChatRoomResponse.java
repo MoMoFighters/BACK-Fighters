@@ -1,11 +1,9 @@
 package com.wanted.momocity.message.presentation.api.response;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.wanted.momocity.message.application.usecase.MessageQueryUseCase.ChatRoomView;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 //채팅방 목록
 public record FindChatRoomResponse(

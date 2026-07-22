@@ -1,18 +1,16 @@
 package com.wanted.momocity.message.infrastructure.persistence;
 
-import com.wanted.momocity.friend.infrastructure.persistence.FriendJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 public interface SpringDataChatRoomMemberRepository extends JpaRepository<ChatRoomMemberJpaEntity, Long> {
     //개선
     //로그인 유저가 들어있는 모든 채팅방 멤버 행 조회
-    // 🎯 [패치 조인 적용] 로그인 유저의 멤버 행들을 조회할 때, 연관된 채팅방(roomId) 정보까지 한방에 긁어옵니다.
+    // [패치 조인 적용] 로그인 유저의 멤버 행들을 조회할 때, 연관된 채팅방(roomId) 정보까지 한방에 긁어옵니다.
     @Query("select cm from ChatRoomMemberJpaEntity cm " +
             "join fetch cm.roomId " +
             "join fetch cm.userId " +
@@ -20,7 +18,7 @@ public interface SpringDataChatRoomMemberRepository extends JpaRepository<ChatRo
     List<ChatRoomMemberJpaEntity> findByUserId_Id(@Param("userId") Long userId);
 
     //특정 방에 속한 모든 멤버들 조회(상대방을 고르기 위함)
-    // 🎯 [패치 조인 적용] 특정 방 ID로 멤버들을 긁어올 때,
+    // [패치 조인 적용] 특정 방 ID로 멤버들을 긁어올 때,
     // 연관된 유저(userId) 정보까지 한방에 패치 조인으로 묶어서 가져옵니다.
     @Query("select cm from ChatRoomMemberJpaEntity cm " +
             "join fetch cm.userId " +
@@ -51,9 +49,6 @@ public interface SpringDataChatRoomMemberRepository extends JpaRepository<ChatRo
     //친구 삭제 후 채팅방 나가기 버그 수정
     @Query("select m from ChatRoomMemberJpaEntity m where m.roomId.id = :roomId and m.userId.id = :userId")
     Optional<ChatRoomMemberJpaEntity> findMemberByRoomIdAndUserId(@Param("roomId") Long roomId, @Param("userId") Long userId);
-
-//    //로그인한 유저가 참여하는 방중 가장 먼저 만들어진 방 찾기(나와의 채팅방)
-//    Long findFirstRoomIdByUserId(Long userId);
 
     //채팅방 목록 조회 개선 보강
     // SpringDataChatRoomMemberRepository

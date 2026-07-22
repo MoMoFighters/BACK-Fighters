@@ -2,8 +2,6 @@ package com.wanted.momocity.message.application.service;
 
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import com.wanted.momocity.message.application.policy.MessageEligibilityPolicy;
-import com.wanted.momocity.message.application.query.FindChatRoomQuery;
-import com.wanted.momocity.message.application.query.GetMessageHistoryQuery;
 import com.wanted.momocity.message.application.usecase.MessageQueryUseCase;
 import com.wanted.momocity.message.domain.event.LeaveChatRoomWebsocketPublishedEvent;
 import com.wanted.momocity.message.domain.repository.MessageRepository;
@@ -15,7 +13,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.List;
 
 @Service
 @Slf4j
