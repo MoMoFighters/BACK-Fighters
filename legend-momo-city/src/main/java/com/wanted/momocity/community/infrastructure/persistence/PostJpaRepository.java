@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.security.core.parameters.P;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -54,6 +55,7 @@ public interface PostJpaRepository extends JpaRepository<PostJpaEntity, Long> {
      */
 
     @Modifying
+    @Transactional
     @Query("""
         UPDATE PostJpaEntity p
         SET p.thumbnailUrl = :newThumbnailUrl

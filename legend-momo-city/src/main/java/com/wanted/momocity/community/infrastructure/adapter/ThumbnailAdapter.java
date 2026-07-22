@@ -9,6 +9,9 @@ import net.coobird.thumbnailator.Thumbnails;
 import net.coobird.thumbnailator.geometry.Positions;
 import org.springframework.stereotype.Component;
 
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -58,6 +61,10 @@ public class ThumbnailAdapter implements ThumbnailPort {
 
     // 원본 다운로드 최대 허용 크기 (10MB) - 이 이상이면 리사이징 시도 안 하고 원본 URL 유지
     private static final long MAX_DOWNLOAD_BYTES = 10 * 1024 * 1024;
+
+    // 디코딩 전 픽셀 수 상한 (4000 × 4000 = 16,000,000)
+    // 압축 파일이 10MB 미만이어도 고해상도 이미지는 디코딩 시 수억 픽셀 버퍼 요구 가능
+    private static final long MAX_PIXEL_COUNT = 4000L * 4000L;
 
     @Override
     public String generateThumbnail(String originalImageUrl) {
@@ -109,6 +116,31 @@ public class ThumbnailAdapter implements ThumbnailPort {
 
             if (boundedBytes == null) {
                 log.warn("[Thumbnail] 스트림 크기 초과로 리사이징 중단 | url={}", originalImageUrl);
+                return originalImageUrl;
+            }
+
+            // 신규 - 디코딩 전 픽셀 수 검증
+            // ImageReader로 실제 디코딩 없이 헤더만 읽어서 width × height 확인
+            // Thumbnailator는 리사이징 전 원본을 전부 디코딩하므로
+            // 고해상도 이미지(예: 단색에 가까운 JPEG)가 OOM을 유발할 수 있음
+            try (ImageInputStream iis = ImageIO.createImageInputStream(
+                    new java.io.ByteArrayInputStream(boundedBytes))) {
+
+                ImageReader reader = ImageIO.getImageReaders(iis).next();
+                reader.setInput(iis, true, true);
+
+                long width = reader.getWidth(0);
+                long height = reader.getHeight(0);
+                reader.dispose();
+
+                if (width * height > MAX_PIXEL_COUNT) {
+                    log.warn("[Thumbnail] 픽셀 수 초과로 리사이징 스킵 | url={}, width={}, height={}",
+                            originalImageUrl, width, height);
+                    return originalImageUrl;
+                }
+            } catch (Exception e) {
+                log.warn("[Thumbnail] 픽셀 수 확인 실패, 리사이징 스킵 | url={}, error={}",
+                        originalImageUrl, e.getMessage());
                 return originalImageUrl;
             }
 

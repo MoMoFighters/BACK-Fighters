@@ -1,33 +1,33 @@
 package com.wanted.momocity.study.infrastructure.redis;
 
 import lombok.RequiredArgsConstructor;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
+import java.util.concurrent.TimeUnit;
+
 
 /*
  * comment.
  *  그룹방 인원수를 Redis에서 원자적으로 관리하는 어댑터
  *  -
- *  방 정원(4명) 체크를 DB 카운트(SELECT COUNT)로만 하면, 여러 명이 동시에 마지막 자리를
- *  두고 수락 요청을 보낼 때 "조회 -> 판단 -> 저장" 사이에 다른 요청이 끼어들어
- *  정원을 초과해서 저장되는 레이스 컨디션이 존재 가능
- *  Redis의 INCR 연산은 "읽고 -> 더하고 -> 저장"이 하나의 원자적 명령으로 처리,
- *  동시에 여러 요청이 와도 순서가 보장되어 절대 초과 불가능
+ *  [Redisson RLock으로 교체한 이유]
+ *  Lua 스크립트(GET+INCR 원자적 처리)로도 이미 검증된 안전한 방식이었으나,
+ *  향후 여러 Redis 키를 넘나드는 복잡한 로직이나 MySQL 트랜잭션과 섞인 검증이 필요해질 가능성을 고려해
+ *  "진짜 분산 락" 패턴(임계구역을 락으로 감싸는 방식)으로 전환
+ *  -
+ *  Lua는 "GET+INCR" 딱 그 안에서만 원자성을 보장하는 반면,
+ *  RLock은 락을 잡은 뒤 그 안에서 여러 작업(DB 조회, 다른 Redis 키 조작 등)을 자유롭게 수행 가능
  *  -
  *  [역할 분담]
  *  발송 시점(선제 차단)은 MemberCommandService가 DB(JOINED+INVITED 개수)로 대략 확인,
  *  이 어댑터는 "수락 시점 최종 방어선" 역할만 담당
- *  (발송 시점까지 Redis로 엄격하게 처리할 필요는 없음 - 최종 확정 = 수락 시점)
  *  -
  *  [키 구조]
- *  study:room:{roomId}:member-count
- *  - 방 생성 시(RoomCommandService.createRoom) 방장 포함 1로 초기화
- *  - 수락 성공 시 tryIncrement()로 +1
- *  - 퇴장/강퇴 시(MemberCommandService.leave/kick) decrement()로 -1
- *  - 방 종료 시(인원 0명) clear()로 키 자체 삭제
+ *  카운트 키: study:room:{roomId}:member-count
+ *  락 키: study:room:{roomId}:lock (카운트 키와 별개의 락 전용 키)
  *  -
  *  [TTL을 두지 않는 이유]
  *  방이 살아있는 동안에는 언제든 정확한 카운트가 필요하므로 자동 만료시키면 안됨
@@ -40,13 +40,17 @@ public class GroupRoomMemberCountAdapter {
 
     // Redis 키 접두사/접미사 - 다른 도메인 키와 충돌하지 않도록 study:room: 으로 네임스페이스 구분
     private static final String KEY_PREFIX = "study:room:";
-    private static final String KEY_SUFFIX = ":member-count";
+    private static final String COUNT_KEY_SUFFIX = ":member-count";
+    private static final String LOCK_KEY_SUFFIX = ":lock";
+
+    // 락 대기 시간 / 락 점유 시간 - 정원 체크 로직 자체가 GET+INCR 두 줄이라 짧게 설정
+    private static final long WAIT_TIME_SECONDS = 2L;
+    private static final long LEASE_TIME_SECONDS = 3L;
 
     // 단순 문자열(숫자) 값 하나만 다루면 되므로 StringRedisTemplate 사용 (직렬화 오버헤드 없음)
     private final StringRedisTemplate redisTemplate;
+    private final RedissonClient redissonClient;
 
-    // GET+INCR을 원자적으로 묶은 Lua 스크립트 - StudyRedisScriptConfig에서 빈 등록
-    private final RedisScript<Long> tryIncrementScript;
 
     /*
      * comment.
@@ -56,7 +60,7 @@ public class GroupRoomMemberCountAdapter {
      *  - 기존 키가 있어도 덮어쓴다(set) - 같은 roomId가 재사용될 일은 없으므로 안전
      * */
     public void initialize(Long roomId, long initialCount) {
-        redisTemplate.opsForValue().set(key(roomId), String.valueOf(initialCount));
+        redisTemplate.opsForValue().set(countKey(roomId), String.valueOf(initialCount));
     }
 
     /*
@@ -73,19 +77,35 @@ public class GroupRoomMemberCountAdapter {
      * */
 
     public boolean tryIncrement(Long roomId, int maxMember) {
-        Long result = redisTemplate.execute(
-                tryIncrementScript,
-                Collections.singletonList(key(roomId)),
-                String.valueOf(maxMember)
-        );
+        RLock lock = redissonClient.getLock(lockKey(roomId));
+        boolean acquired = false;
 
-        if (result == null) {
-            // Redis 연결 자체에 문제가 있는 극히 예외적인 상황 - 안전하게 실패 처리
+        try {
+            acquired = lock.tryLock(WAIT_TIME_SECONDS, LEASE_TIME_SECONDS, TimeUnit.SECONDS);
+            if (!acquired) {
+                // 락 획득 자체에 실패 - 정원 초과와는 다른 의미의 실패지만 호출부에서는 동일하게 처리
+                return false;
+            }
+
+            String current = redisTemplate.opsForValue().get(countKey(roomId));
+            int currentCount = (current != null) ? Integer.parseInt(current) : 0;
+
+            if (currentCount >= maxMember) {
+                return false;
+            }
+
+            redisTemplate.opsForValue().increment(countKey(roomId));
+            return true;
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             return false;
+        } finally {
+            // 락을 실제로 획득했을 때만 해제 (획득 못 했는데 unlock 시도하면 예외 발생)
+            if (acquired && lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
         }
-
-        // -1이면 정원 초과로 인해 스크립트가 INCR을 실행하지 않은 것
-        return result != -1;
     }
 
     /*
@@ -94,7 +114,7 @@ public class GroupRoomMemberCountAdapter {
      *  - MemberCommandService.leave(), kick()에서 각각 호출
      * */
     public void decrement(Long roomId) {
-        redisTemplate.opsForValue().decrement(key(roomId));
+        redisTemplate.opsForValue().decrement(countKey(roomId));
     }
 
     /*
@@ -105,11 +125,14 @@ public class GroupRoomMemberCountAdapter {
      *    키를 계속 남겨두면 Redis 메모리만 낭비하게 되므로 명시적으로 정리
      * */
     public void clear(Long roomId) {
-        redisTemplate.delete(key(roomId));
+        redisTemplate.delete(countKey(roomId));
     }
 
-    // Redis 키 조합 - study:room:{roomId}:member-count 형태로 생성
-    private String key(Long roomId) {
-        return KEY_PREFIX + roomId + KEY_SUFFIX;
+    private String countKey(Long roomId) {
+        return KEY_PREFIX + roomId + COUNT_KEY_SUFFIX;
+    }
+
+    private String lockKey(Long roomId) {
+        return KEY_PREFIX + roomId + LOCK_KEY_SUFFIX;
     }
 }
