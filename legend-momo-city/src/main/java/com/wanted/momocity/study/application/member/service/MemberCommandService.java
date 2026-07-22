@@ -162,16 +162,18 @@ public class MemberCommandService implements MemberCommandUseCase {
         GroupRoomMember member = getMyInvitation(userId, roomId);
 
         /*
-         * 기존 : DB에서 findAllByGroupRoomIdAndJoined().size()로 카운트를 세서 비교하는 방식
-         * 해당 방식은 동시에 여러 명이 수락할 때 "조회 -> 판단 -> 저장" 사이에 레이스 컨디션이 생길 수 있는 문제 존재
-         * -> Redis INCR 기반 원자적 카운트(GroupRoomMemberCountAdapter.tryIncrement)로 교체
-         * tryIncrement가 false를 반환하면 이미 정원이 가득 찬 것이므로 즉시 예외를 던지고,
-         * 이 시점에는 아직 DB에 JOINED로 반영되지 않았으므로 Redis 카운트도 자동으로 롤백된 상태
+         * Redis RLock 기반 원자적 카운트(GroupRoomMemberCountAdapter.tryIncrement)로 정원 확정
+         * ROOM_FULL: 실제 정원 초과 -> 명확한 안내 메시지
+         * LOCK_ACQUISITION_FAILED: 락 경합으로 인한 일시적 실패 -> 재시도를 유도하는 별도 메시지
+         * (이 시점에는 아직 DB에 JOINED로 반영되지 않았으므로 실패 시 별도 롤백 불필요)
          * */
+        GroupRoomMemberCountAdapter.IncrementResult result =
+                groupRoomMemberCountAdapter.tryIncrement(roomId, room.getMaxMember());
 
-        boolean acquired = groupRoomMemberCountAdapter.tryIncrement(roomId, room.getMaxMember());
-        if (!acquired) {
-            throw new DomainRuleViolationException("그룹방 인원이 가득 찼습니다.");
+        switch (result) {
+            case ROOM_FULL -> throw new DomainRuleViolationException("그룹방 인원이 가득 찼습니다.");
+            case LOCK_ACQUISITION_FAILED -> throw new DomainRuleViolationException("일시적으로 요청이 몰렸습니다. 잠시 후 다시 시도해주세요.");
+            case SUCCESS -> { /* 계속 진행 */ }
         }
 
         member.accept(LocalDateTime.now());

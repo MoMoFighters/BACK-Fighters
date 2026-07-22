@@ -43,14 +43,26 @@ public class GroupRoomMemberCountAdapter {
     private static final String COUNT_KEY_SUFFIX = ":member-count";
     private static final String LOCK_KEY_SUFFIX = ":lock";
 
-    // 락 대기 시간 / 락 점유 시간 - 정원 체크 로직 자체가 GET+INCR 두 줄이라 짧게 설정
+    // 락 대기 시간 - 정원 체크 로직 자체가 GET+INCR 두 줄이라 짧게 설정
     private static final long WAIT_TIME_SECONDS = 2L;
-    private static final long LEASE_TIME_SECONDS = 3L;
 
     // 단순 문자열(숫자) 값 하나만 다루면 되므로 StringRedisTemplate 사용 (직렬화 오버헤드 없음)
     private final StringRedisTemplate redisTemplate;
     private final RedissonClient redissonClient;
 
+    /*
+     * comment.
+     *  tryIncrement()의 결과를 세분화한 열거형
+     *  - ROOM_FULL: 실제로 정원이 가득 참 (정확한 사용자 메시지 필요)
+     *  - LOCK_ACQUISITION_FAILED: 락 획득 자체에 실패 (일시적 경합, 정원 초과와 다른 의미)
+     *  기존에는 둘 다 boolean false로 뭉뚱그려서 "정원이 가득 찼습니다"로 나갔는데,
+     *  실제로는 원인이 다르므로 호출부에서 구분해서 처리할 수 있도록 분리
+     * */
+    public enum IncrementResult {
+        SUCCESS,
+        ROOM_FULL,
+        LOCK_ACQUISITION_FAILED
+    }
 
     /*
      * comment.
@@ -76,30 +88,30 @@ public class GroupRoomMemberCountAdapter {
      *  다른 명령이 절대 끼어들 수 없으므로, 기존 방식에 있던 "일시적 초과" 순간이 사라짐
      * */
 
-    public boolean tryIncrement(Long roomId, int maxMember) {
+    public IncrementResult tryIncrement(Long roomId, int maxMember) {
         RLock lock = redissonClient.getLock(lockKey(roomId));
         boolean acquired = false;
 
         try {
-            acquired = lock.tryLock(WAIT_TIME_SECONDS, LEASE_TIME_SECONDS, TimeUnit.SECONDS);
+            acquired = lock.tryLock(WAIT_TIME_SECONDS, TimeUnit.SECONDS);
             if (!acquired) {
                 // 락 획득 자체에 실패 - 정원 초과와는 다른 의미의 실패지만 호출부에서는 동일하게 처리
-                return false;
+                return IncrementResult.LOCK_ACQUISITION_FAILED;
             }
 
             String current = redisTemplate.opsForValue().get(countKey(roomId));
             int currentCount = (current != null) ? Integer.parseInt(current) : 0;
 
             if (currentCount >= maxMember) {
-                return false;
+                return IncrementResult.ROOM_FULL;
             }
 
             redisTemplate.opsForValue().increment(countKey(roomId));
-            return true;
+            return IncrementResult.SUCCESS;
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            return false;
+            return IncrementResult.LOCK_ACQUISITION_FAILED;
         } finally {
             // 락을 실제로 획득했을 때만 해제 (획득 못 했는데 unlock 시도하면 예외 발생)
             if (acquired && lock.isHeldByCurrentThread()) {
