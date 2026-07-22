@@ -38,9 +38,17 @@ public interface CalendarJpaRepository extends JpaRepository<CalendarJpaEntity, 
     );
 
     // 스케줄러용 - 전체 유저 오늘 날짜 포함 일정 조회
-    // Todo  : start = today
-    // Memo  : start <= today <= end
-    List<CalendarJpaEntity> findAllByStartLessThanEqualAndEndGreaterThanEqual(
-            LocalDate start, LocalDate end);
+    // Todo  : start = today AND 아직 미완료(isCompleted = false)인 것만 (완료한 건 알림 필요 없음)
+    // Memo  : start <= today <= end (end가 null이면 start 당일만 있는 일정으로 간주)
+    @Query("""
+    SELECT c FROM CalendarJpaEntity c
+    WHERE (
+        (c.category = 'TODO' AND c.start = :date AND c.isCompleted = false)
+        OR
+        (c.category = 'MEMO' AND c.start <= :date
+            AND (c.end >= :date OR c.end IS NULL))
+    )
+    """)
+    List<CalendarJpaEntity> findAllNotificationTargetsByDate(@Param("date") LocalDate date);
 
 }

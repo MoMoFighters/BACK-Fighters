@@ -75,11 +75,19 @@ public class CalendarCommandService implements CalendarCommandUseCase {
             throw new CalendarAccessDeniedException("본인의 Todo 만 수정할 수 있습니다.");
         }
 
+        // 날짜(달)가 바뀌는 케이스 방어 -> 수정 전 start 를 먼저 기억해둠
+        // (@CacheEvict 로는 "새 start" 캐시만 지워져서, 옛 달로 옮겨진 Todo가 옛 달 캐시에 유령으로 남는 문제가 있었음)
+        LocalDate oldStart = calendar.getStart();
+
         // 수정 (도메인 메서드)
         calendar.update(command.title(), command.start(), null);
 
         // 저장
         Calendar saved = calendarRepository.save(calendar);
+
+        // 옛 달 + 새 달 캐시 둘 다 커밋 이후 evict (Todo는 end 없으므로 null 전달)
+        evictCalendarCacheAfterCommit(command.userId(), oldStart, null);
+        evictCalendarCacheAfterCommit(command.userId(), saved.getStart(), null);
 
         log.info("[Calendar] Todo 수정 완료 | userId={}, calendarId={}",
                 command.userId(), saved.getId());
@@ -113,7 +121,6 @@ public class CalendarCommandService implements CalendarCommandUseCase {
     }
 
     @Override
-    @CacheEvict(value = "calendar", key = "#command.userId() + ':' + #command.start().year + ':' + #command.start().monthValue", cacheManager = "redisCacheManager")
     public TodoResponse handle(CheckTodoCommand command) {
 
         // 조회
@@ -130,6 +137,10 @@ public class CalendarCommandService implements CalendarCommandUseCase {
 
         // 저장
         Calendar saved = calendarRepository.save(calendar);
+
+        // CheckTodoCommand 에는 start 필드가 없어 #command.start() SpEL이 런타임 예외를 던졌음
+        // -> 조회해둔 calendar 의 start 로 수동 evict
+        evictCalendarCacheAfterCommit(command.userId(), calendar.getStart(), null);
 
         log.info("[Calendar] Todo 체크 변경 완료 | userId={}, calendarId={}, isCompleted={}",
                 command.userId(), saved.getId(), saved.isCompleted());
@@ -206,7 +217,7 @@ public class CalendarCommandService implements CalendarCommandUseCase {
             throw new CalendarAccessDeniedException("본인의 메모만 삭제할 수 있습니다.");
         }
 
-        // [수정] 즉시 evict 대신 커밋 이후로 미루고, end가 다른 달이면 그 쪽도 같이 evict
+        // 즉시 evict 대신 커밋 이후로 미루고, end가 다른 달이면 그 쪽도 같이 evict
         evictCalendarCacheAfterCommit(command.userId(), calendar.getStart(), calendar.getEnd());
 
         calendarRepository.delete(command.calendarId());
