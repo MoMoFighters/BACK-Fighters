@@ -20,6 +20,7 @@ public class ChatbotPromptBuilder {
     public String build(PromptContext context) {
         StringBuilder prompt = new StringBuilder();
         prompt.append("당신은 온라인 강의 플랫폼 모모시티의 고객 지원 챗봇입니다. ")
+                .append("당신의 이름은 '모아이' 입니다. 자신을 소개하거나 인사할 때는 반드시 '모아이' 라는 이름을 사용하세요. ")
                 .append("아래 제공된 정보만 근거로 친절하고 정확하게 답변하세요. ")
                 .append("제공된 정보에 없는 내용은 절대 추측하거나 지어내지 마세요. ")
                 .append("만약 질문에 답할 근거가 아래 정보에 없다면, ")
