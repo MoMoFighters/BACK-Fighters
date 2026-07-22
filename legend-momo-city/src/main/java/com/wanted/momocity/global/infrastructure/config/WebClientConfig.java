@@ -73,9 +73,9 @@ public class WebClientConfig {
     @Bean
     public WebClient geminiWebClient(GeminiProperties props) {
         HttpClient httpClient = HttpClient.create()
-                // 응답 스트림 자체는 60초에서 끊음 - SseEmitter(90초)보다 먼저 끊기게 일부러 여유를 둠
-                // WebClient가 먼저 죽어야 그 에러를 SseEmitter가 받아서 "error" 이벤트로 클라이언트에 정상 전달 가능
-                .responseTimeout(Duration.ofSeconds(60))
+                // 청크 간 응답 간격(read timeout) 이 120초 넘으면 끊음 - 전체 응답 총 시간 제한이 아님
+                // 진짜 전체 데드라인은 GeminiClientAdapter 의 .timeout(120초)이 담당한다.
+                .responseTimeout(Duration.ofSeconds(120))
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 3000);
 
         return WebClient.builder()
