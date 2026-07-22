@@ -83,5 +83,16 @@ public interface SpringDataPaymentRepository extends JpaRepository<PaymentJpaEnt
             "GROUP BY MONTH(p.createdAt), p.plan " +
             "ORDER BY MONTH(p.createdAt)")
     List<MonthlyPlanCount> getMonthlyPlanDistribution(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+
+
+    @Query("SELECT p FROM PaymentJpaEntity p WHERE p.userId = :userId " +
+            "AND p.plan = :plan AND p.status = 'SUCCESS' " +
+            "AND p.createdAt >= :membershipStart " +
+            "AND NOT EXISTS (SELECT 1 FROM PaymentJpaEntity r WHERE r.originalPaymentId = p.paymentId AND r.status IN ('REFUND', 'CANCEL_FAILED'))")
+    Optional<PaymentJpaEntity> findUnrefundedSuccessPayment(
+            @Param("userId") Long userId,
+            @Param("plan") Plan plan,
+            @Param("membershipStart") LocalDateTime membershipStart
+    );
 }
 

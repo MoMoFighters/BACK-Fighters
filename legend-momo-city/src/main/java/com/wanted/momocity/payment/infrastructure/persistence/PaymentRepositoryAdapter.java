@@ -115,4 +115,11 @@ public class PaymentRepositoryAdapter implements PaymentRepository {
                 ))
                 .toList();
     }
+
+    @Override
+    public Optional<Payment> findUnrefundedSuccessPayment(Long userId, Plan plan, LocalDateTime membershipStart) {
+        return springDataPaymentRepository
+                .findUnrefundedSuccessPayment(userId, plan, membershipStart)
+                .map(PaymentJpaEntity::toDomain);
+    }
 }

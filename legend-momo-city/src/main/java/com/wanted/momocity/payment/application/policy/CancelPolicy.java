@@ -3,12 +3,15 @@ package com.wanted.momocity.payment.application.policy;
 import com.wanted.momocity.payment.domain.exception.PaymentAccessDeniedException;
 import com.wanted.momocity.payment.domain.exception.PaymentRefundNotAllowedException;
 import com.wanted.momocity.payment.domain.model.Payment;
+import com.wanted.momocity.payment.domain.model.Plan;
 import com.wanted.momocity.payment.domain.model.Status;
 import com.wanted.momocity.payment.domain.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -41,5 +44,29 @@ public class CancelPolicy {
             throw new PaymentRefundNotAllowedException(
                     "환불 가능 기간이 지났거나 이미 환불된 결제 건입니다.");
         }
+    }
+
+    public boolean isWithinRefundPeriod(Payment payment) {
+        return payment.getCreatedAt().plusDays(REFUNDABLE_DAYS).isAfter(LocalDateTime.now());
+    }
+
+    public Optional<Plan> resolveResultPlan(Payment mainTarget, List<Payment> succeeded) {
+        if (succeeded.isEmpty()) {
+            return Optional.empty();
+        }
+
+        boolean plusRefunded = succeeded.stream().anyMatch(p -> p.getPlan() == Plan.PLUS);
+        boolean proRefunded = succeeded.stream().anyMatch(p -> p.getPlan() == Plan.PRO);
+
+        if (mainTarget.getPlan() == Plan.PLUS) {
+            return Optional.of(Plan.BASIC);
+        }
+        if (proRefunded && plusRefunded) {
+            return Optional.of(Plan.BASIC);
+        }
+        if (proRefunded) {
+            return Optional.of(Plan.PLUS);
+        }
+        return Optional.empty();
     }
 }
