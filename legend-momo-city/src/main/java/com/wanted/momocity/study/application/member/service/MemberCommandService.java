@@ -26,10 +26,14 @@ import org.redisson.api.RedissonClient;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
+
+import static org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive;
+import static org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization;
 
 /*
  * comment.
@@ -204,6 +208,13 @@ public class MemberCommandService implements MemberCommandUseCase {
                 eventPublisher.publishEvent(new MemberJoinedEvent(roomId, userId));
 
                 log.info("[Study] 초대 수락 완료 | roomId={}, userId={}", roomId, userId);
+
+                // 락 해제는 즉시 하지 않고, 트랜잭션이 실제로 커밋된 이후로 미룸
+                // (커밋 전에 락을 풀면, 아직 반영 안 된 DB 상태를 다른 스레드가 재조회해서
+                //  중복 수락을 걸러내지 못하는 문제가 생김)
+                registerUnlockAfterCommit(lock);
+                acquired = false; // finally에서 다시 풀지 않도록 플래그 해제
+
                 return InvitationResult.ofAccepted(saved);
             } catch (Exception e) {
                 // DB 저장 실패 시 Redis 카운트 보상 감소 (예약된 자리 반납)
@@ -214,7 +225,9 @@ public class MemberCommandService implements MemberCommandUseCase {
             Thread.currentThread().interrupt();
             throw new DomainRuleViolationException("요청 처리 중 인터럽트가 발생했습니다.");
         } finally {
-             if (acquired && lock.isHeldByCurrentThread()) {
+            // 정상 흐름(AFTER_COMMIT 등록)에서는 acquired=false로 바뀌어 여기서 풀지 않음
+            // 예외로 빠진 경우(트랜잭션 롤백 예정)에는 여기서 즉시 해제
+            if (acquired && lock.isHeldByCurrentThread()) {
                 lock.unlock();
             }
         }
@@ -421,6 +434,33 @@ public class MemberCommandService implements MemberCommandUseCase {
                         new StudySessionAccumulatedEvent(userId, part.date(), part.seconds())
                 );
             }
+        }
+    }
+
+    // 트랜잭션이 활성 상태면 AFTER_COMMIT에 락 해제를 등록, 아니면 즉시 해제
+    private void registerUnlockAfterCommit(RLock lock) {
+        if (isSynchronizationActive()) {
+            registerSynchronization(
+                    new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            if (lock.isHeldByCurrentThread()) {
+                                lock.unlock();
+                            }
+                        }
+
+                        @Override
+                        public void afterCompletion(int status) {
+                            // 커밋이 아니라 롤백으로 끝난 경우 (afterCommit이 호출 안 됐을 때) 대비
+                            if (status != TransactionSynchronization.STATUS_COMMITTED
+                                    && lock.isHeldByCurrentThread()) {
+                                lock.unlock();
+                            }
+                        }
+                    }
+            );
+        } else if (lock.isHeldByCurrentThread()) {
+            lock.unlock();
         }
     }
 

@@ -45,6 +45,9 @@ public class ThumbnailAsyncService {
 
         if (updatedRows == 0) {
             log.info("[Thumbnail] 이미 다른 썸네일로 교체됨, 갱신 스킵 | postId={}", postId);
+            // 그 사이 사용자가 썸네일을 다시 바꿔 이 리사이징 결과가 더 이상 유효하지 않음
+            // -> 방금 업로드한 resizedUrl 은 아무 데서도 참조되지 않는 orphan 파일이므로 S3 에서 정리
+            thumbnailPort.deleteThumbnail(resizedUrl);
             return;
         }
 

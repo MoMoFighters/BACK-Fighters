@@ -12,4 +12,7 @@ public interface ThumbnailPort {
     // 원본 이미지 URL -> 리사이징 -> S3 재업로드 -> 새 URL 반환
     String generateThumbnail(String originalImageUrl);
 
+    // 더 이상 참조되지 않는(orphan) 썸네일 파일을 S3 에서 삭제
+    void deleteThumbnail(String thumbnailUrl);
+
 }

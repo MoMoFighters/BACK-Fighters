@@ -1,6 +1,7 @@
 package com.wanted.momocity.community.infrastructure.adapter;
 
 import com.wanted.momocity.community.application.post.port.ThumbnailPort;
+import com.wanted.momocity.global.application.s3.S3DeletePort;
 import com.wanted.momocity.global.application.s3.S3UploadPort;
 import com.wanted.momocity.global.infrastructure.cloudfront.CloudFrontUrlConverter;
 import lombok.RequiredArgsConstructor;
@@ -42,13 +43,14 @@ public class ThumbnailAdapter implements ThumbnailPort {
     // 기존 S3UploadPort 재사용 - 업로드는 이미 있는 로직 그대로 씀
     private final S3UploadPort s3UploadPort;
     private final CloudFrontUrlConverter cloudFrontUrlConverter;
+    private final S3DeletePort s3DeletePort;
 
     private static final int THUMBNAIL_SIZE = 400;
     private static final float THUMBNAIL_QUALITY = 0.8f;
 
     // S3UploadPort.upload() 가 folder 인자를 받으므로,
     // 기존 업로드 구조와 맞춰 community/thumbnails 를 폴더로 지정
-    private static final String THUMBNAIL_FOLDER = "community/thumbnails";
+    public static final String THUMBNAIL_FOLDER = "community/thumbnails";
 
     // 원본 이미지를 내려받을 수 있는 허용 도메인 (SSRF 방지용 화이트리스트)
     // - 우리 서비스 S3/CloudFront 도메인만 허용, 그 외 호스트는 전부 거부
@@ -179,6 +181,23 @@ public class ThumbnailAdapter implements ThumbnailPort {
             return originalImageUrl;
         }
 
+    }
+
+    @Override
+    public void deleteThumbnail(String thumbnailUrl) {
+        try {
+            // CloudFront URL에서 S3 key 추출
+            // ex) https://d2anv5bir30ioa.cloudfront.net/community/thumbnails/xxx_thumb.jpg
+            //  → community/thumbnails/xxx_thumb.jpg
+            URI uri = new URI(thumbnailUrl);
+            String key = uri.getPath().substring(1);  // 맨 앞 '/' 제거
+
+            s3DeletePort.delete(key);
+            log.info("[Thumbnail] S3 파일 삭제 완료 | key={}", key);
+
+        } catch (Exception e) {
+            log.error("[Thumbnail] S3 파일 삭제 실패 | url={}, error={}", thumbnailUrl, e.getMessage());
+        }
     }
 
     /*
