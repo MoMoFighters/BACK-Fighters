@@ -29,13 +29,13 @@ public class EnrollmentController {
 
     @Operation(
             summary = "수강신청",
-            description = "로그인한 학생이 특정 강의를 수강신청합니다."
+            description = "로그인한 PLUS 또는 PRO 학생 회원이 특정 강의를 수강신청합니다."
     )
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "수강신청 성공"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청 또는 건물 위치값 오류"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "학생 권한 없음"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "학생 권한 없음 또는 BASIC 멤버십으로 인한 수강신청 제한"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "강의를 찾을 수 없음"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "이미 수강신청한 강의")
     })
