@@ -59,7 +59,10 @@ public class UserCommandService implements UserCommandUsecase {
     public void updateUserInfo(UpdateUserInfoCommand command) {
 
         // 프사 이름으로 프사 url 가져오기
-        String url = getItemUrlPort.getItemUrl(command.itemName(),command.userId());
+        String url = null;
+        if (command.itemName() != null) {
+            url = getItemUrlPort.getItemUrl(command.itemName(), command.userId());
+        }
 
         // 닉네임 있으면 중복 확인
         if (command.nickname() != null) {

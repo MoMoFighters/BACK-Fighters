@@ -1,7 +1,7 @@
 package com.wanted.momocity.payment.domain.repository;
 
 import com.wanted.momocity.payment.domain.model.*;
-
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,4 +33,7 @@ public interface PaymentRepository {
     long countAdminPaymentList(Status status);
     // 월별 + 플랜별 분포
     List<MonthlyPlanDistributionResult> getMonthlyPlanDistribution();
+
+    // PLUS -> PRO 환불 시
+    Optional<Payment> findUnrefundedSuccessPayment(Long userId, Plan plan, LocalDateTime membershipStart);
 }
