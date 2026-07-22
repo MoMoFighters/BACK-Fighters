@@ -2,7 +2,10 @@ package com.wanted.momocity.study.infrastructure.redis;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Component;
+
+import java.util.Collections;
 
 /*
  * comment.
@@ -42,6 +45,9 @@ public class GroupRoomMemberCountAdapter {
     // 단순 문자열(숫자) 값 하나만 다루면 되므로 StringRedisTemplate 사용 (직렬화 오버헤드 없음)
     private final StringRedisTemplate redisTemplate;
 
+    // GET+INCR을 원자적으로 묶은 Lua 스크립트 - StudyRedisScriptConfig에서 빈 등록
+    private final RedisScript<Long> tryIncrementScript;
+
     /*
      * comment.
      *  인원 카운트 초기화 (방 생성 시 호출)
@@ -57,32 +63,29 @@ public class GroupRoomMemberCountAdapter {
      * comment.
      *  원자적으로 인원 +1을 시도한다. (초대 수락 시 최종 방어선)
      *  -
-     *  동작 순서 :
-     *  1. INCR로 먼저 +1 실행 (일단 자리를 선점)
-     *  2. 그 결과값이 maxMember를 넘으면, 자리가 없었다는 뜻이므로 즉시 DECR로 되돌리고 false 반환
-     *  3. 넘지 않으면 정상적으로 자리를 확보한 것이므로 true 반환
+     *  Lua 스크립트 내부 동작 :
+     *  1. 현재 카운트를 GET으로 확인
+     *  2. maxMember 미만이면 INCR 실행 후 증가된 값 반환
+     *  3. maxMember 이상이면 INCR 자체를 실행하지 않고 -1 반환
      *  -
-     *  INCR 후 초과분을 되돌리는 방식이라, 아주 짧은 순간 "일시적으로 초과된 값"이 Redis에 존재 가능
-     *  다만 그 순간에 그 값을 읽어서 판단에 쓰는 다른 로직이 없으므로 실질적인 문제는 없다고 판단
+     *  이 GET+INCR 두 단계는 Redis 싱글 스레드 특성상 Lua 스크립트 실행 중에는
+     *  다른 명령이 절대 끼어들 수 없으므로, 기존 방식에 있던 "일시적 초과" 순간이 사라짐
      * */
 
     public boolean tryIncrement(Long roomId, int maxMember) {
-        // increment()는 Redis INCR 명령을 그대로 호출 - 키가 없으면 0에서 시작해서 1을 반환
-        Long current = redisTemplate.opsForValue().increment(key(roomId));
+        Long result = redisTemplate.execute(
+                tryIncrementScript,
+                Collections.singletonList(key(roomId)),
+                String.valueOf(maxMember)
+        );
 
-        if (current == null) {
+        if (result == null) {
             // Redis 연결 자체에 문제가 있는 극히 예외적인 상황 - 안전하게 실패 처리
             return false;
         }
 
-        if (current > maxMember) {
-            // 정원을 넘겼으므로 방금 올린 카운트를 즉시 되돌린다 (자리를 선점했다가 취소)
-            redisTemplate.opsForValue().decrement(key(roomId));
-            return false;
-        }
-
-        // 정원 이내이므로 자리 확보 성공
-        return true;
+        // -1이면 정원 초과로 인해 스크립트가 INCR을 실행하지 않은 것
+        return result != -1;
     }
 
     /*

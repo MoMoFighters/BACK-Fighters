@@ -1,6 +1,8 @@
 package com.wanted.momocity.global.infrastructure.config;
 
+import jakarta.validation.constraints.Positive;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.validation.annotation.Validated;
 
 /*
  * comment.
@@ -11,11 +13,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *  - expirationSeconds : Signed URL 유효시간 (기존 3600초와 동일하게 시작)
  */
 
+@Validated
 @ConfigurationProperties(prefix = "cloudfront")
 public record CloudFrontSignedUrlProperties(
         String domain,
         String keyPairId,
         String privateKeyPath,
-        int expirationSeconds
+        @Positive int expirationSeconds
 ) {
 }
