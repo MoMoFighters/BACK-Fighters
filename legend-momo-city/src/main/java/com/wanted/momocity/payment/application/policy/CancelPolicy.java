@@ -50,7 +50,7 @@ public class CancelPolicy {
         return payment.getCreatedAt().plusDays(REFUNDABLE_DAYS).isAfter(LocalDateTime.now());
     }
 
-    public Optional<Plan> resolveResultPlan(Payment mainTarget, List<Payment> succeeded) {
+    public Optional<Plan> resolveResultPlan(Payment mainTarget, List<Payment> succeeded, boolean plusPaymentExists) {
         if (succeeded.isEmpty()) {
             return Optional.empty();
         }
@@ -64,8 +64,11 @@ public class CancelPolicy {
         if (proRefunded && plusRefunded) {
             return Optional.of(Plan.BASIC);
         }
-        if (proRefunded) {
+        if (proRefunded && plusPaymentExists) {
             return Optional.of(Plan.PLUS);
+        }
+        if (proRefunded) {
+            return Optional.of(Plan.BASIC);
         }
         return Optional.empty();
     }

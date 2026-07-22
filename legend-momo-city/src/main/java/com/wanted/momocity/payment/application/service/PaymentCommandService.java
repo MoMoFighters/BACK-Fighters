@@ -151,12 +151,19 @@ public class PaymentCommandService implements PaymentCommandUseCase {
         refundTargets.add(payment);
 
         // PRO 결제를 취소하는 경우에만
+        boolean plusPaymentExists = false;
+
         if (payment.getPlan() == Plan.PRO) {
             GetUserMembershipPort.UserMembership membership =
                     getUserMembershipPort.getUserMembership(command.userId());
 
-            paymentRepository.findUnrefundedSuccessPayment(command.userId(), Plan.PLUS, membership.membershipStart())
-                    .filter(cancelPolicy::isWithinRefundPeriod) // 3일 지났으면 제외
+            var existingPlus = paymentRepository
+                    .findUnrefundedSuccessPayment(command.userId(), Plan.PLUS, membership.membershipStart());
+
+            plusPaymentExists = existingPlus.isPresent();
+
+            existingPlus
+                    .filter(cancelPolicy::isWithinRefundPeriod)
                     .ifPresent(refundTargets::add);
         }
 
@@ -201,7 +208,7 @@ public class PaymentCommandService implements PaymentCommandUseCase {
                     Payment cancelFailed = Payment.createCancelFailed(target, UUID.randomUUID().toString());
                     paymentStatusUpdater.saveCancelFailed(cancelFailed); // 실패한 target 기준
 
-                    applyMembership(command.userId(), payment, succeeded);
+                    applyMembership(command.userId(), payment, succeeded, plusPaymentExists);
 
                     throw new PaymentCancelFailedException(
                             "일부 결제 건 환불 실패. 성공: "
@@ -210,7 +217,7 @@ public class PaymentCommandService implements PaymentCommandUseCase {
                 }
             }
 
-            applyMembership(command.userId(), payment, succeeded);
+            applyMembership(command.userId(), payment, succeeded, plusPaymentExists);
 
         } finally {
             lockedPlans.forEach(p -> paymentLockPort.unlock(command.userId(), p));
@@ -218,8 +225,8 @@ public class PaymentCommandService implements PaymentCommandUseCase {
 
     }
 
-    private void applyMembership(Long userId, Payment mainTarget, List<Payment> succeeded) {
-        cancelPolicy.resolveResultPlan(mainTarget, succeeded).ifPresent(resultPlan -> {
+    private void applyMembership(Long userId, Payment mainTarget, List<Payment> succeeded, boolean plusPaymentExists) {
+        cancelPolicy.resolveResultPlan(mainTarget, succeeded, plusPaymentExists).ifPresent(resultPlan -> {
             LocalDateTime resultMembershipStart = resultPlan == Plan.BASIC
                     ? LocalDateTime.now()
                     : getUserMembershipPort.getUserMembership(userId).membershipStart();
