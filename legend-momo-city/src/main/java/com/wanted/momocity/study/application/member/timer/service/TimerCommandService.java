@@ -200,7 +200,7 @@ public class TimerCommandService implements TimerCommandUseCase {
         if (member.getLastResumedAt() == null) {
             return 0;
         }
-        long elapsed = Duration.between(member.getLastResumedAt(), LocalDateTime.now()).getSeconds();
+        long elapsed = Duration.between(member.getLastResumedAt(), now).getSeconds();
         int increment = (int) Math.max(elapsed, 0);
         member.accumulateSeconds(increment);
         return increment;
