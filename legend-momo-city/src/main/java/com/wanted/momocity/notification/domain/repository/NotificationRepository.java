@@ -57,7 +57,7 @@ public interface NotificationRepository {
     //알림 삭제 - 메시지 알림
     void bulkMarkMessageNotificationsAsDeleted(List<Long> messageRoomIds, Long userId);
 
-    // 🎯 [추가] 여러 채팅방의 타이틀 한방에 조회
+    // 여러 채팅방의 타이틀 한방에 조회
     List<Object[]> findRoomTitlesByIdsIn(List<Long> roomIds);
 
     //개선 - 앱별 알림 통합해서 가져오기

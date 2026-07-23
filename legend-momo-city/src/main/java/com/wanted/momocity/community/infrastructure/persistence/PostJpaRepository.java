@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.security.core.parameters.P;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -41,6 +42,32 @@ public interface PostJpaRepository extends JpaRepository<PostJpaEntity, Long> {
         AND p.deletedAt IS NULL
     """)
     Optional<PostJpaEntity> findByIdWithContents(@Param("postId") Long postId);
+
+    // 기존 메서드들 아래에 추가
+
+    /*
+     * comment.
+     *  조건부 썸네일 UPDATE
+     *  - currentThumbnailUrl 이 현재 DB 값과 일치할 때만 UPDATE 수행
+     *  - 비동기 리사이징 작업이 뒤늦게 완료됐을 때,
+     *    그 사이에 사용자가 썸네일을 교체한 경우 덮어쓰는 걸 방지
+     *  - 반환값: 실제로 변경된 행 수 (1이면 성공, 0이면 이미 다른 값으로 교체됨)
+     */
+
+    @Modifying
+    @Transactional
+    @Query("""
+        UPDATE PostJpaEntity p
+        SET p.thumbnailUrl = :newThumbnailUrl
+        WHERE p.id = :postId
+        AND p.thumbnailUrl = :currentThumbnailUrl
+        AND p.deletedAt IS NULL
+        """)
+    int updateThumbnailIfUnchanged(
+            @Param("postId") Long postId,
+            @Param("currentThumbnailUrl") String currentThumbnailUrl,
+            @Param("newThumbnailUrl") String newThumbnailUrl
+    );
 
     /*
     * comment.

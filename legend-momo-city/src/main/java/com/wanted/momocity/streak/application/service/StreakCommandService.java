@@ -51,7 +51,7 @@ public class StreakCommandService implements StreakCommandUseCase {
             ),
             // 연간 캐시 무효화
             @CacheEvict(
-                    value = "streakYeatly",
+                    value = "streakYearly",
                     key = "#userId + ':yearly:' + #date.year",
                     cacheManager = "redisCacheManager"
             )
@@ -59,15 +59,12 @@ public class StreakCommandService implements StreakCommandUseCase {
     public void accumulate(Long userId, LocalDate date, int watchedSeconds) {
 
         // 오늘 잔디 조회 -> 있으면 누적, 없으면 신규 생성
-        Streak streak = streakRepository
-                .findByUserIdAndStreakDate(userId, date)
-                .orElse(Streak.create(userId, date, 0));
-
-        // 신규 생성 여부 판단
-        boolean isNew = streak == null;
+        // Optional 상태에서 먼저 isNew를 판단하도록 순서 변경
+        var existing = streakRepository.findByUserIdAndStreakDate(userId, date);
+        boolean isNew = existing.isEmpty();
+        Streak streak = existing.orElseGet(() -> Streak.create(userId, date, 0));
 
         if (isNew) {
-            streak = Streak.create(userId, date, 0);
             // 신규 생성 횟수 카운트
             streakMetrics.recordStreakCreated();
         }

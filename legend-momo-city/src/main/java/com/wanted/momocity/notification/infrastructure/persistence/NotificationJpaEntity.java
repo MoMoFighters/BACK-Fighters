@@ -32,8 +32,6 @@ public class NotificationJpaEntity {
     @Column(name = "message")
     private String message;
 
-    //추후
-    //v2
     @Column(name = "is_read")
     private Boolean isRead;
 

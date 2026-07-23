@@ -1,6 +1,7 @@
 package com.wanted.momocity.enrollment.infrastructure.adapter;
 
 import com.wanted.momocity.auth.application.port.LoadUserPort;
+import com.wanted.momocity.auth.domain.model.Membership;
 import com.wanted.momocity.auth.domain.model.Role;
 import com.wanted.momocity.auth.domain.model.User;
 import com.wanted.momocity.enrollment.application.port.StudentAccountPort;
@@ -30,4 +31,34 @@ public class AuthStudentAccountAdapter implements StudentAccountPort {
         // 수강신청 도메인에서는 email이 아니라 내부 PK인 user.id를 학생 식별자로 사용한다.
         return user.getId();
     }
+
+    // 수강신청에 필요한 학생 Id와 멤버십 자격을 함께 반환
+    @Override
+    public StudentEnrollmentInfo getStudentEnrollmentInfo(Long userId) {
+        User user = getStudent(userId);
+
+        // PLUS 또는 PRO만 수강 신청 가능
+        boolean enrollmentAllowed =
+                user.getMembership() == Membership.PLUS || user.getMembership() == Membership.PRO;
+
+        return new StudentEnrollmentInfo(
+                user.getId(),
+                enrollmentAllowed
+        );
+    }
+
+    private User getStudent(Long userId) {
+
+        // 토큰 기준으로 사용자가 없드면 예외
+        User user = loadUserPort.findById(userId)
+                .orElseThrow(() -> new AuthenticationCredentialsNotFoundException("인증된 사용자 정보를 찾을 수 없습니다."));
+
+        // 학생이 아니면 예외
+        if (user.getRole() != Role.STUDENT) {
+            throw new AccessDeniedException("학생 회원만 접근할 수 있습니다.");
+        }
+
+        return user;
+    }
+
 }

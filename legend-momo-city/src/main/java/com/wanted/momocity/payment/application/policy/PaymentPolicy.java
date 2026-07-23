@@ -5,8 +5,8 @@ import com.wanted.momocity.payment.domain.exception.PaymentSamePlanException;
 import com.wanted.momocity.payment.domain.model.Plan;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 
 @Component
 public class PaymentPolicy {
@@ -23,10 +23,11 @@ public class PaymentPolicy {
      */
 
     public Long calculatePrice(Plan currentPlan, Plan targetPlan, LocalDateTime membershipStart) {
-        boolean hasRemainingTime = membershipStart.plusDays(MEMBERSHIP_PERIOD_DAYS).isAfter(LocalDateTime.now());
+        LocalDateTime membershipUntil = membershipStart.plusDays(MEMBERSHIP_PERIOD_DAYS);
+        boolean hasRemainingTime = membershipUntil.isAfter(LocalDateTime.now());
 
         if (currentPlan == targetPlan) {
-            long remainingDays = calculateRemainingDays(membershipStart);
+            long remainingDays = calculateRemainingDaysCeil(membershipUntil); // 갱신 가능 여부 판단
             if (remainingDays <= RENEWAL_ALLOWED_DAYS) {
                 return targetPlan.getPrice();
             }
@@ -44,22 +45,18 @@ public class PaymentPolicy {
             );
         }
 
-        long remainingDays = calculateRemainingDays(membershipStart);
+        long remainingSeconds = Math.max(Duration.between(LocalDateTime.now(), membershipUntil).getSeconds(), 0);
+        long totalSeconds = MEMBERSHIP_PERIOD_DAYS * 24 * 60 * 60;
         long priceDiff = targetPlan.getPrice() - currentPlan.getPrice();
-        long amount = priceDiff * remainingDays / MEMBERSHIP_PERIOD_DAYS;
+        long amount = priceDiff * remainingSeconds / totalSeconds;
 
         return Math.max(amount, MINIMUM_PAYMENT_AMOUNT);
     }
 
-
-    private long calculateRemainingDays(LocalDateTime membershipStart) {
-        LocalDateTime membershipUntil = membershipStart.plusDays(MEMBERSHIP_PERIOD_DAYS);
-        long remaining = ChronoUnit.DAYS.between(LocalDateTime.now(), membershipUntil);
-        return Math.max(remaining, 0);
-        /*comment
-        *  ChronoUnit.DAYS.between(start, end)는 두 시각 사이에 완전히 지나간 일수만 셈
-        *  시/분/초는 버리고 정수로 내림 처리
-        *  -> 15일 5시간 남아도 결과는 15 : 항상 내림 처리
-        *  이미 만료돼서 음수가 나올 수 있어서 다음 줄에 Math.max(remaining, 0) */
+    // 갱신 가능 여부 판단용
+    private long calculateRemainingDaysCeil(LocalDateTime membershipUntil) {
+        long remainingSeconds = Duration.between(LocalDateTime.now(), membershipUntil).getSeconds();
+        if (remainingSeconds <= 0) return 0;
+        return (long) Math.ceil(remainingSeconds / (double) (24 * 60 * 60));
     }
 }

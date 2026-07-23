@@ -12,14 +12,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.Objects;
 import java.util.Optional;
 
 @Component
 @Slf4j
 @RequiredArgsConstructor
 public class FriendEligibilityPolicy {
-    private final FriendMetrics friendMetrics; // 🎯 정책 클래스에 메트릭 주입
+    private final FriendMetrics friendMetrics; //정책 클래스에 메트릭 주입
 
     //친구 요청이 가능한 상태인지 검증하는 규칙
     public void ensureEligible(Long fromUserId, Long toUserId, Optional<FriendJpaEntity> existingRelation, String targetRole) {
@@ -196,11 +195,6 @@ public class FriendEligibilityPolicy {
 
     //친구 삭제 검증
     public void ensureDeletable(FriendJpaEntity relation, String targetRole) {
-        //관계 행 자체가 없는지 확인(404)
-//        if (relation.getStatus().isEmpty()) {
-//            log.warn("[FriendEligibilityPolicy] 친구 삭제 검증 실패 - 관계 내역이 존재하지 않음");
-//            throw new FMResourceNotFoundException("삭제할 친구 내역이 존재하지 않습니다.");
-//        }
 
         //강사는 수강이 유지되는 한 임의로 삭제 불가(409)
         if ("TEACHER".equals(targetRole)) {

@@ -1,7 +1,5 @@
 package com.wanted.momocity.notification.application.service;
 
-import com.wanted.momocity.message.application.usecase.MessageQueryUseCase;
-import com.wanted.momocity.message.infrastructure.persistence.MessageJpaEntity;
 import com.wanted.momocity.message.infrastructure.persistence.MessageReadJpaEntity;
 import com.wanted.momocity.notification.application.manager.NotificationSessionManager;
 import com.wanted.momocity.notification.application.metric.NotificationMetrics;
@@ -39,10 +37,10 @@ public class NotificationQueryService implements NotificationQueryUseCase {
     public List<NotiView> getNotificationQueryHandle(GetNotificationQuery query) {
         log.info("[GetNotificationQueryService] 알림 목록 조회 시작 - 유저ID:{}", query.userId());
 
-        // 🎯 1. 시작 한 줄: 알림 목록 조회 및 가공 타이머 스타트!
+        // 시작 한 줄: 알림 목록 조회 및 가공 타이머 스타트!
         Timer.Sample sample = io.micrometer.core.instrument.Timer.start();
 
-        // 1. 개발자님이 완성하신 명칭과 조인 쿼리로 DB에서 데이터를 싹 들고옵니다.
+        // 조인 쿼리로 DB에서 데이터를 싹 들고옵니다.
         List<Object[]> rawLogs = notificationRepository.findAllByUserId(query.userId());
 
         List<NotiView> finalResultList = new ArrayList<>();
@@ -75,11 +73,11 @@ public class NotificationQueryService implements NotificationQueryUseCase {
             }
         }
 
-        // 2. 🔥 메시지 알림 합치기 및 읽음 상태 동기화
-        // 🎯 [최적화] 루프 돌기 전, 묶여있는 모든 roomId 세트를 추출합니다.
+        // 메시지 알림 합치기 및 읽음 상태 동기화
+        // [최적화] 루프 돌기 전, 묶여있는 모든 roomId 세트를 추출합니다.
         List<Long> allRoomIds = new ArrayList<>(messageGroupByRoom.keySet());
 
-        // 🎯 [최적화 핵심]: 루프에 진입하기 전에 IN 절로 방 제목을 단 1방의 쿼리로 다 쓸어 담아 Map으로 바인딩합니다.
+        // [최적화 핵심]: 루프에 진입하기 전에 IN 절로 방 제목을 단 1방의 쿼리로 다 쓸어 담아 Map으로 바인딩합니다.
         List<Object[]> roomTitlesRaw = notificationRepository.findRoomTitlesByIdsIn(allRoomIds);
         Map<Long, String> roomTitleMap = roomTitlesRaw.stream()
                 .collect(Collectors.toMap(
@@ -91,27 +89,27 @@ public class NotificationQueryService implements NotificationQueryUseCase {
             Long roomId = entry.getKey();
             List<Object[]> roomRows = entry.getValue();
 
-            // 🚨 [검증]: 가져온 알림 목록 중 "isNotiRead가 false(안읽음)"인 건이 하나라도 존재하나요?
+            // [검증]: 가져온 알림 목록 중 "isNotiRead가 false(안읽음)"인 건이 하나라도 존재하나요?
             boolean hasUnread = roomRows.stream()
                     .map(row -> (MessageReadJpaEntity) row[1])
-                    .anyMatch(mr -> !mr.isNotiRead()); // 👈 하나라도 안 읽었으면 true가 됨
+                    .anyMatch(mr -> !mr.isNotiRead()); // 하나라도 안 읽었으면 true가 됨
 
             // 시간순 정렬 후 가장 최근 알림 마스터 정보 채택
             roomRows.sort((a, b) -> ((NotificationJpaEntity) b[0]).getCreatedAt()
                     .compareTo(((NotificationJpaEntity) a[0]).getCreatedAt()));
             NotificationJpaEntity latestNoti = (NotificationJpaEntity) roomRows.get(0)[0];
 
-            // 🚨 [핵심]: notification의 userId(발신자) 닉네임 수집
+            //[핵심]: notification의 userId(발신자) 닉네임 수집
             List<String> senders = roomRows.stream()
                     .map(row -> ((NotificationJpaEntity) row[0]).getUserId().getNickname())
                     .distinct()
                     .toList();
 
             // DB에서 룸 타이틀 조회
-            // 🎯 [개선 코드]: DB에 가기 않고, 미리 만들어둔 메모리 Map에서 O(1) 속도로 꺼내옵니다.
+            // [개선 코드]: DB에 가기 않고, 미리 만들어둔 메모리 Map에서 O(1) 속도로 꺼내옵니다.
             String roomTitle = roomTitleMap.getOrDefault(roomId, null);
 
-            // 🚨 [문구 가공]: notification 테이블의 userId(발신자)를 꺼내서 닉네임들을 조립
+            // [문구 가공]: notification 테이블의 userId(발신자)를 꺼내서 닉네임들을 조립
             String finalCombinedMessage = latestNoti.getMessage();
             if (roomRows.size() > 1) {
                 //다대다이면서 발신인 1명 이상
@@ -140,13 +138,13 @@ public class NotificationQueryService implements NotificationQueryUseCase {
             ));
         }
 
-        // 3. 최종 전체 목록 최신순 정렬
+        //최종 전체 목록 최신순 정렬
         finalResultList.sort((a, b) -> b.createdAt().compareTo(a.createdAt()));
 
-        // 🔒 안전하게 불변 리스트나 복사본으로 복사해서 내보내기
+        // 안전하게 불변 리스트나 복사본으로 복사해서 내보내기
         List<NotiView> immutableResult = List.copyOf(finalResultList);
 
-        // 🎯 [핵심]: 조회된 알림 목록을 즉시 웹소켓 채널로 발송! (순서, 내용, 시간 다 가공된 상태)
+        // [핵심]: 조회된 알림 목록을 즉시 웹소켓 채널로 발송! (순서, 내용, 시간 다 가공된 상태)
         if (notificationSessionManager.isUserSubscribed(query.userId())) {
             messagingTemplate.convertAndSendToUser(query.userId().toString(), "/sub/notice/list", finalResultList);
             log.info("[알림 쿼리 웹소켓] 유저 {}번에게 가공된 알림 목록 실시간 전송 완료", query.userId());
@@ -154,7 +152,7 @@ public class NotificationQueryService implements NotificationQueryUseCase {
             log.info("[알림 쿼리 웹소켓] 유저 {}번이 오프라인(비구독)이므로 실시간 웹소켓 발송만 스킵합니다. (DB 조회 데이터는 정상 반환)", query.userId());
         }
 
-        // 🎯 2. 끝 한 줄: 반환 직전에 타이머를 안전하게 멈추고 지표 기록!
+        // 2. 끝 한 줄: 반환 직전에 타이머를 안전하게 멈추고 지표 기록!
         sample.stop(notificationMetrics.getNotificationListTimer());
 
         return immutableResult;
@@ -176,7 +174,7 @@ public class NotificationQueryService implements NotificationQueryUseCase {
 
         MainTotalCountsView response = new MainTotalCountsView(totalCount);
 
-        // 🎯 [수정 핵심]: 유저가 실시간 알림 채널을 '구독'하고 있는 상태일 때만 웹소켓 발송을 합니다!
+        // [수정 핵심]: 유저가 실시간 알림 채널을 '구독'하고 있는 상태일 때만 웹소켓 발송을 합니다!
         // 이렇게 해야 구독도 안 했는데 먼저 쏴버려서 유실되는 현상을 막을 수 있습니다.
         if (notificationSessionManager.isUserSubscribed(query.userId())) {
             messagingTemplate.convertAndSendToUser(query.userId().toString(), "/sub/notice/total-counts", response);
@@ -198,7 +196,7 @@ public class NotificationQueryService implements NotificationQueryUseCase {
 
         Long userId = query.userId();
 
-        // 🎯 [개선 핵심] 원래 3방 나가던 쿼리를 단 1방으로 통합!
+        // [개선 핵심] 원래 3방 나가던 쿼리를 단 1방으로 통합!
         List<Object[]> rawCounts = notificationRepository.countUnreadGroupByType(userId);
 
         // 결과를 찾기 쉽게 Map으로 가공 (Key: 타입명, Value: 개수)
@@ -214,20 +212,20 @@ public class NotificationQueryService implements NotificationQueryUseCase {
         long friendRequestCount = countMap.getOrDefault("FRIEND_REQUEST", 0L);
         long studyCount = countMap.getOrDefault("STUDY_INVITE", 0L);
 
-        // 4. 🔥 안 읽은 메시지 전체 개수 (message_read 테이블에서 isMsgRead = false 인 건수)
-        // 💡 룸 개수가 아니라 '쌓인 메시지 총 개수'를 가져오는 포트/어댑터 메서드로 매핑합니다.
+        // 안 읽은 메시지 전체 개수 (message_read 테이블에서 isMsgRead = false 인 건수)
+        // 룸 개수가 아니라 '쌓인 메시지 총 개수'를 가져오는 포트/어댑터 메서드로 매핑합니다.
         long totalUnreadMessageCount = notificationRepository.countTotalUnreadMessages(userId);
 
-        // 5. 최종 메시지 + 친구 요청 합산
+        // 최종 메시지 + 친구 요청 합산
         long totalMsgFriendCount = totalUnreadMessageCount + friendRequestCount;
 
         log.info("[GetPhoneAppCountsQueryService] 앱별 알림 조회 완료 -> 메시지(총 {}건)+친구({}건): {}, 캘린더: {}, 커뮤니티: {}",
                 totalUnreadMessageCount, friendRequestCount, totalMsgFriendCount, calendarCount, communityCount);
 
-        // 🎯 [반환 객체 생성 및 변수 통일]
+        // [반환 객체 생성 및 변수 통일]
         PhoneAppCountsView response = new PhoneAppCountsView(totalMsgFriendCount, calendarCount, communityCount, studyCount);
 
-        // 🎯 [핵심 웹소켓 실시간 발송]: 정형화된 채널 주소(/sub/notice/app-counts)로 가공 데이터를 브로드캐스팅합니다.
+        // [핵심 웹소켓 실시간 발송]: 정형화된 채널 주소(/sub/notice/app-counts)로 가공 데이터를 브로드캐스팅합니다.
         messagingTemplate.convertAndSendToUser(userId.toString(), "/sub/notice/app-counts", response);
         log.info("[알림 쿼리 웹소켓] 유저 {}번에게 각 휴대폰 앱별 안읽은 알림 데이터 실시간 전송 완료", userId);
 

@@ -19,7 +19,6 @@ import com.wanted.momocity.notification.presentation.api.response.GetMainTotalCo
 import com.wanted.momocity.notification.presentation.api.response.GetNotificationResponse;
 import com.wanted.momocity.notification.presentation.api.response.GetPhoneAppCountsResponse;
 import io.swagger.v3.oas.annotations.Operation;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

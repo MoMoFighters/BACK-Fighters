@@ -7,3 +7,5 @@ docs/
 k6/
 *.iml
 .DS_Store
+keys/
+*.pem

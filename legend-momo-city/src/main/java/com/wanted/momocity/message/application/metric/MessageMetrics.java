@@ -14,7 +14,7 @@ public class MessageMetrics {
     private final Timer messageHistoryTimer;
     private final Timer chatRoomListTimer;
     private final Counter chatReenterCounter;
-    private final Counter messageSendCounter;                 // 🎯 5. 메시지 발송 TPS 추적 카운터 추가
+    private final Counter messageSendCounter;                 // 5. 메시지 발송 TPS 추적 카운터 추가
 
     public MessageMetrics(MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;
@@ -48,7 +48,7 @@ public class MessageMetrics {
         chatReenterCounter.increment();
     }
 
-    // 🎯 메시지 발송 카운터 체이닝 메서드
+    // 메시지 발송 카운터 체이닝 메서드
     public void incrementMessageSendCount() {
         messageSendCounter.increment();
     }

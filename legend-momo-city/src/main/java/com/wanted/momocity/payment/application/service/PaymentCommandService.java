@@ -21,6 +21,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -145,29 +147,91 @@ public class PaymentCommandService implements PaymentCommandUseCase {
         cancelPolicy.validateOwnership(payment, command.userId());
         cancelPolicy.checkRefundable(payment);
 
+        List<Payment> refundTargets = new ArrayList<>();
+        refundTargets.add(payment);
+
+        // PRO 결제를 취소하는 경우에만
+        boolean plusPaymentExists = false;
+
+        if (payment.getPlan() == Plan.PRO) {
+            GetUserMembershipPort.UserMembership membership =
+                    getUserMembershipPort.getUserMembership(command.userId());
+
+            var existingPlus = paymentRepository
+                    .findUnrefundedSuccessPayment(command.userId(), Plan.PLUS, membership.membershipStart());
+
+            plusPaymentExists = existingPlus.isPresent();
+
+            existingPlus
+                    .filter(cancelPolicy::isWithinRefundPeriod)
+                    .ifPresent(refundTargets::add);
+        }
+
+        // PLUS 결제를 취소하려는데 그 위에 아직 살아있는 PRO 결제가 있으면 막음
+        if (payment.getPlan() == Plan.PLUS) {
+            GetUserMembershipPort.UserMembership membership =
+                    getUserMembershipPort.getUserMembership(command.userId());
+
+            boolean proExists = paymentRepository
+                    .findUnrefundedSuccessPayment(command.userId(), Plan.PRO, membership.membershipStart())
+                    .isPresent();
+
+            if (proExists) {
+                throw new PaymentRefundNotAllowedException(
+                        "상위 플랜(PRO) 결제가 남아있어 이 결제는 단독으로 환불할 수 없습니다.");
+            }
+        }
+
         // 동시 취소 요청 방지
-        if (!paymentLockPort.tryLock(command.userId(), payment.getPlan())) {
-            throw new PaymentAlreadyInProgressException("이미 처리 중인 요청이 있습니다.");
+        List<Plan> lockPlans = refundTargets.stream().map(Payment::getPlan).distinct().toList();
+        List<Plan> lockedPlans = new ArrayList<>();
+
+        for (Plan plan : lockPlans) {
+            if (!paymentLockPort.tryLock(command.userId(), plan)) {
+                lockedPlans.forEach(p -> paymentLockPort.unlock(command.userId(), p));
+                throw new PaymentAlreadyInProgressException("이미 처리 중인 요청이 있습니다.");
+            }
+            lockedPlans.add(plan);
         }
 
+        List<Payment> succeeded = new ArrayList<>();
         try {
-            portOnePaymentPort.cancelPayment(command.paymentId(), "사용자 요청에 의한 환불");
+            for (Payment target : refundTargets) {
+                try {
+                    portOnePaymentPort.cancelPayment(target.getPaymentId(), "사용자 요청에 의한 환불");
+                    Payment refund = Payment.createRefund(target, UUID.randomUUID().toString());
+                    paymentStatusUpdater.saveRefund(refund); // 즉시 독립 커밋
+                    succeeded.add(target);
+                } catch (Exception e) {
+                    log.error("[cancel] 환불 처리 실패 paymentId={}, userId={}",
+                            target.getPaymentId(), command.userId(), e);
+                    Payment cancelFailed = Payment.createCancelFailed(target, UUID.randomUUID().toString());
+                    paymentStatusUpdater.saveCancelFailed(cancelFailed); // 실패한 target 기준
 
-            String refundPaymentId = UUID.randomUUID().toString();
-            Payment refund = Payment.createRefund(payment, refundPaymentId);
-            paymentRepository.save(refund);
+                    applyMembership(command.userId(), payment, succeeded, plusPaymentExists);
 
-            setUserMembershipPort.updateMembership(command.userId(), Plan.BASIC, LocalDateTime.now());
+                    throw new PaymentCancelFailedException(
+                            "일부 결제 건 환불 실패. 성공: "
+                                    + succeeded.stream().map(Payment::getPaymentId).toList()
+                                    + ", 실패: " + target.getPaymentId() + " (관리자 확인 필요)");
+                }
+            }
 
-        } catch (Exception e) {
-            log.error("[cancel] 환불 처리 실패 paymentId={}, userId={}",
-                    command.paymentId(), command.userId(), e);
-            String failedPaymentId = UUID.randomUUID().toString();
-            Payment cancelFailed = Payment.createCancelFailed(payment, failedPaymentId);
-            paymentStatusUpdater.saveCancelFailed(cancelFailed);
-            throw new PaymentCancelFailedException("환불 취소 처리 실패 paymentId=" + command.paymentId());
+            applyMembership(command.userId(), payment, succeeded, plusPaymentExists);
+
         } finally {
-            paymentLockPort.unlock(command.userId(), payment.getPlan());
+            lockedPlans.forEach(p -> paymentLockPort.unlock(command.userId(), p));
         }
+
+    }
+
+    private void applyMembership(Long userId, Payment mainTarget, List<Payment> succeeded, boolean plusPaymentExists) {
+        cancelPolicy.resolveResultPlan(mainTarget, succeeded, plusPaymentExists).ifPresent(resultPlan -> {
+            LocalDateTime resultMembershipStart = resultPlan == Plan.BASIC
+                    ? LocalDateTime.now()
+                    : getUserMembershipPort.getUserMembership(userId).membershipStart();
+
+            paymentStatusUpdater.updateMembershipIndependently(userId, resultPlan, resultMembershipStart);
+        });
     }
 }

@@ -10,7 +10,6 @@ import jakarta.validation.constraints.NotNull;
 
 public record CheckTodoRequest(
 
-        @NotNull(message =  "체크 상태 값은 필수 항목입니다.")
         boolean isCompleted
 
 ) {

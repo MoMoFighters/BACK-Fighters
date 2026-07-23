@@ -8,13 +8,10 @@ import com.wanted.momocity.friend.infrastructure.persistence.*;
 import com.wanted.momocity.friend.user.UserWithFMJpaEntity;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.swing.text.html.Option;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -147,7 +144,7 @@ public class CatalogFriendAdapter implements FriendRepository {
         // 오늘 날짜 구하기
         LocalDate today = LocalDate.now();
 
-        // 🎯 깔끔하게 쿼리 메서드 호출
+        // 깔끔하게 쿼리 메서드 호출
         return springDataGuestBookRepository.existsWrittenToday(userId, ownerId, today);
     }
 

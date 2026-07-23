@@ -12,12 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.swing.text.html.Option;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
-
-import static org.apache.logging.log4j.ThreadContext.isEmpty;
 
 //포트 문을 통해 db세상으로 나가는 문
 //다른 테이블에서 필요한 정보 가져오기(또는 서비스에서)

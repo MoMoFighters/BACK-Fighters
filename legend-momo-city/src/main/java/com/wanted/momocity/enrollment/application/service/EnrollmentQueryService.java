@@ -136,7 +136,7 @@ public class EnrollmentQueryService implements EnrollmentQueryUsecase {
     // 카테고리와 레벨로 S3 건물 이미지 url 생성
     private String createBuildingUrl(String category, Integer level) {
         // S3 버킷 Url
-        String baseUrl = "https://momocity-meaid.s3.ap-northeast-2.amazonaws.com";
+        String baseUrl = "https://momocity-media.s3.ap-northeast-2.amazonaws.com";
         // ENUM 문자열을 소문자로 지정
         String lowerCategory = category.toLowerCase();
         // 최종 건물 이미지 URL 반환
