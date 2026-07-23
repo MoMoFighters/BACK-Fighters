@@ -10,6 +10,10 @@ services:
     container_name: momo-app
     ports:
       - "8080:8080"
+    # 리눅스(EC2)에서는 host.docker.internal이 기본 제공 안 됨 - 이 설정으로 호스트 게이트웨이에 수동 매핑
+    # (맥/윈도우 Docker Desktop에서는 이미 기본 제공되지만, 이 설정을 추가해도 무해함)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       SPRING_PROFILES_ACTIVE: dev, ai
       MYSQL_HOST: mysql

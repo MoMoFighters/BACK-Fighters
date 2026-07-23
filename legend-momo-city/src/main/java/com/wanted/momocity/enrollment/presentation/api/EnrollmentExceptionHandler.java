@@ -3,6 +3,8 @@ package com.wanted.momocity.enrollment.presentation.api;
 import com.wanted.momocity.enrollment.domain.exception.*;
 import com.wanted.momocity.global.presentation.api.common.ApiErrorResponse;
 import com.wanted.momocity.global.presentation.api.common.ApiResponseCode;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -10,6 +12,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 // enrollment 패키지에서 발생하는 예외를 API 응답으로 바꿔주는 클래스
 // @RestControllerAdvice : enrollment 패키지에서 발생한 예외만 잡아서 API 응답 형태로 바꿔주는 예외 처리기
+@Order(Ordered.HIGHEST_PRECEDENCE)
 @RestControllerAdvice(basePackages = "com.wanted.momocity.enrollment")
 public class EnrollmentExceptionHandler {
 
