@@ -236,7 +236,9 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
                 log.info("[웹소켓 인터셉터] 유저 {}번의 웹소켓 연결이 종료되어 세션에서 완전히 제거되었습니다.", userId);
             }
         }
-        return message;
+        accessor.setLeaveMutable(true);
+        return org.springframework.messaging.support.MessageBuilder
+                .createMessage(message.getPayload(), accessor.getMessageHeaders());
     }
 
     //JWT 토큰 기반의 시큐리티 컨텍스트에서 유저ID 추출하기
