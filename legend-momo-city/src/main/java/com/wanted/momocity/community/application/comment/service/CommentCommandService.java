@@ -17,6 +17,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 /*
  * comment.
  *  댓글 / 대댓글 쓰기 작업 UseCase 구현체
@@ -82,6 +84,16 @@ public class CommentCommandService implements CommentCommandUseCase {
         validateAuthor(comment.getUserId(), userId);
         comment.delete();
         commentRepository.delete(comment);
+
+        // 최상위 댓글이면(대댓글 자신은 parentId가 있어서 이 분기 안 탐) 딸린 대댓글도 함께 소프트딜리트
+        if (!comment.isReply()) {
+            var replies = commentRepository.findRepliesByCommentIds(List.of(commentId));
+            for (Comment reply : replies) {
+                reply.delete();
+                commentRepository.delete(reply);
+            }
+            log.info("[Community] 댓글 삭제에 딸린 대댓글 {}건 함께 삭제 | commentId={}", replies.size(), commentId);
+        }
 
         log.info("[Community] 댓글 삭제 완료 | commentId={}", commentId);
     }

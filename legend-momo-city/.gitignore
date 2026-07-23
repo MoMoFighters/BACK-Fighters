@@ -43,3 +43,5 @@ application-ai.yaml
 
 ### 로컬 도커 배포용 시크릿 (2026-07-01) ###
 .env
+keys/
+*.pem
