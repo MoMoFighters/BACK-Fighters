@@ -43,9 +43,15 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                     @Override
                     public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response,
                                                    WebSocketHandler wsHandler, Map<String, Object> attributes) {
-                        String query = request.getURI().getQuery(); // "token=eyJhbGci..."
-                        if (query != null && query.startsWith("token=")) {
-                            attributes.put("token", query.substring("token=".length()));
+                        String query = request.getURI().getQuery(); // "token=abc&roomId=5" 형태
+                        if (query != null) {
+                            for (String param : query.split("&")) {
+                                String[] kv = param.split("=", 2);
+                                if (kv.length == 2 && kv[0].equals("token")) {
+                                    attributes.put("token", java.net.URLDecoder.decode(kv[1], java.nio.charset.StandardCharsets.UTF_8));
+                                    break;
+                                }
+                            }
                         }
                         return true;
                     }
