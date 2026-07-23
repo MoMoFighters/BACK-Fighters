@@ -8,9 +8,10 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
+      TZ: Asia/Seoul
       # ai 프로파일 누락 시 application-ai.yaml(Gemini 설정)이 로드되지 않음
       SPRING_PROFILES_ACTIVE: dev,ai
-      MYSQL_HOST: mysql
+      MYSQL_HOST: momo-rds.c3a84ssqgmc2.ap-northeast-2.rds.amazonaws.com
       MYSQL_PORT: 3306
       REDIS_HOST: redis
       REDIS_PORT: 6379
