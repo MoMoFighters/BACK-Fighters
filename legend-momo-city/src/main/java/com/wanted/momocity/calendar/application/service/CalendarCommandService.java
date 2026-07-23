@@ -18,6 +18,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 
 /*
  * comment.
@@ -230,13 +231,14 @@ public class CalendarCommandService implements CalendarCommandUseCase {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                evictCacheKey(userId, start.getYear(), start.getMonthValue());
+                // 시작 달부터 끝 달까지 전부 순회하며 evict (Todo는 end가 null이라 시작 달만 지워짐)
+                YearMonth startMonth = YearMonth.from(start);
+                YearMonth endMonth = (end != null) ? YearMonth.from(end) : startMonth;
 
-                // end가 존재하고 start와 다른 년/월이면 그 쪽 캐시도 같이 evict
-                // (Todo는 end가 없으므로 null로 넘어오면 이 블록은 스킵됨)
-                if (end != null
-                        && (end.getYear() != start.getYear() || end.getMonthValue() != start.getMonthValue())) {
-                    evictCacheKey(userId, end.getYear(), end.getMonthValue());
+                YearMonth cursor = startMonth;
+                while (!cursor.isAfter(endMonth)) {
+                    evictCacheKey(userId, cursor.getYear(), cursor.getMonthValue());
+                    cursor = cursor.plusMonths(1);
                 }
             }
         });

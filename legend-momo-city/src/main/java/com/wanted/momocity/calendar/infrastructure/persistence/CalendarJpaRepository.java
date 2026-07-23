@@ -21,21 +21,24 @@ public interface CalendarJpaRepository extends JpaRepository<CalendarJpaEntity, 
      // Todo: start 가 해당 월 범위 안에 있는 것
      // Memo: start ~ end 가 해당 월과 겹치는 것
      //       (start <= endDate AND (end >= startDate OR end IS NULL))
-    @Query("""
+     @Query("""
     SELECT c FROM CalendarJpaEntity c
     WHERE c.userId = :userId
     AND (
         (c.category = 'TODO' AND c.start BETWEEN :startDate AND :endDate)
         OR
-        (c.category = 'MEMO' AND c.start <= :endDate
-            AND (c.end >= :startDate OR c.end IS NULL))
+        (c.category = 'MEMO' AND (
+            (c.end IS NOT NULL AND c.start <= :endDate AND c.end >= :startDate)
+            OR
+            (c.end IS NULL AND c.start BETWEEN :startDate AND :endDate)
+        ))
     )
     """)
-    List<CalendarJpaEntity> findByUserIdAndDateBetween(
-            @Param("userId") Long userId,
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate
-    );
+     List<CalendarJpaEntity> findByUserIdAndDateBetween(
+             @Param("userId") Long userId,
+             @Param("startDate") LocalDate startDate,
+             @Param("endDate") LocalDate endDate
+     );
 
     // 스케줄러용 - 전체 유저 오늘 날짜 포함 일정 조회
     // Todo  : start = today AND 아직 미완료(isCompleted = false)인 것만 (완료한 건 알림 필요 없음)
@@ -45,10 +48,12 @@ public interface CalendarJpaRepository extends JpaRepository<CalendarJpaEntity, 
     WHERE (
         (c.category = 'TODO' AND c.start = :date AND c.isCompleted = false)
         OR
-        (c.category = 'MEMO' AND c.start <= :date
-            AND (c.end >= :date OR c.end IS NULL))
+        (c.category = 'MEMO' AND (
+            (c.end IS NOT NULL AND c.start <= :date AND c.end >= :date)
+            OR
+            (c.end IS NULL AND c.start = :date)
+        ))
     )
     """)
     List<CalendarJpaEntity> findAllNotificationTargetsByDate(@Param("date") LocalDate date);
-
 }
