@@ -80,6 +80,10 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
                 token = accessor.getFirstNativeHeader("token");
             }
 
+            if (token == null && accessor.getSessionAttributes() != null) {
+                token = (String) accessor.getSessionAttributes().get("token");
+            }
+
             if (token == null) {
                 log.warn("[웹소켓] CONNECT 인증 토큰을 찾을 수 없습니다.");
                 return null; // 연결 거부

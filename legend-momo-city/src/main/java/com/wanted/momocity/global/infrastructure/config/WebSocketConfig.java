@@ -3,11 +3,17 @@ package com.wanted.momocity.global.infrastructure.config;
 import com.wanted.momocity.viewing.infrastructure.stomp.ViewingProgressChannelInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.server.ServerHttpRequest;
+import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.web.socket.server.HandshakeInterceptor;
+
+import java.util.Map;
 
 @Configuration
 @RequiredArgsConstructor
@@ -32,7 +38,23 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         //프론트엔드가 웹소켓 연결을 처음 맺을 주소
         registry.addEndpoint("/ws-chat")
-                .setAllowedOriginPatterns(ALLOWED_ORIGIN_PATTERNS);
+                .setAllowedOriginPatterns(ALLOWED_ORIGIN_PATTERNS)
+                .addInterceptors(new HandshakeInterceptor() {
+                    @Override
+                    public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response,
+                                                   WebSocketHandler wsHandler, Map<String, Object> attributes) {
+                        String query = request.getURI().getQuery(); // "token=eyJhbGci..."
+                        if (query != null && query.startsWith("token=")) {
+                            attributes.put("token", query.substring("token=".length()));
+                        }
+                        return true;
+                    }
+
+                    @Override
+                    public void afterHandshake(ServerHttpRequest request, ServerHttpResponse response,
+                                               WebSocketHandler wsHandler, Exception exception) {
+                    }
+                });
     }
 
     @Override
