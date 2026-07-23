@@ -6,7 +6,7 @@ services:
       - "8080:8080"
     environment:
       SPRING_PROFILES_ACTIVE: dev
-      MYSQL_HOST: momo-rds.c3a84ssqgmc2.ap-northeast-2.amazonaws.com
+      MYSQL_HOST: momo-rds.c3a84ssqgmc2.ap-northeast-2.rds.amazonaws.com
       MYSQL_PORT: 3306
       MYSQL_USERNAME: admin
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
