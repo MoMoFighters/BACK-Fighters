@@ -14,10 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 
 /**
@@ -50,7 +47,16 @@ public class ChatbotQuestionService implements ChatbotQuestionUseCase {
 
     // 모든 어미 패턴 케이스 분석
     private static final Pattern EOMI = Pattern.compile(
-            "(있어|있나요|있습니까|가능해|가능한가요|돼|되나요|할까요|인가요|이야)\\??$"
+            "(있어|있나요|있습니까|가능해|가능한가요|돼|되나요|할까요|인가요|이야|해줘|해줄래|해주세요|줘|줄래)\\??$"
+    );
+
+    // [챗봇팀 추가] 카테고리 추천용 키워드 매핑, 계속 늘어날 수 있는 목록
+    private static final Map<String, Set<String>> CATEGORY_KEYWORDS = Map.of(
+            "FITNESS", Set.of("운동", "헬스", "요가", "다이어트", "스트레칭", "필라테스"),
+            "STUDY", Set.of("공부", "자격증", "어학", "코딩", "학습", "시험"),
+            "COOK", Set.of("요리", "음식", "베이킹", "레시피", "쿠킹"),
+            "BEAUTY", Set.of("뷰티", "메이크업", "피부", "헤어", "화장"),
+            "ART", Set.of("그림", "미술", "디자인", "공예")
     );
 
     private final ChatbotUsageUseCase chatbotUsageUseCase;
@@ -110,11 +116,46 @@ public class ChatbotQuestionService implements ChatbotQuestionUseCase {
                     .findLectureSummary(command.lectureId())
                     .orElseThrow(ChatbotLectureNotFoundException::new);
             List<String> reviews = reviewInfoPort.getReviewContents(command.lectureId());
-            return new ChatbotPromptBuilder.PromptContext(command.question(), summary, reviews, List.of());
+            return new ChatbotPromptBuilder.PromptContext(command.question(), summary, reviews, List.of(), List.of());
+        }
+
+        // lectureId 없어도, 질문 문장 안에 강의 제목이 정확히 1개만 포함되면 강의 질문으로 처리
+        Optional<LectureInfoPort.LectureSummary> matchedLecture = findLectureMentionedInQuestion(command.question());
+        if (matchedLecture.isPresent()) {
+            LectureInfoPort.LectureSummary summary = matchedLecture.get();
+            List<String> reviews = reviewInfoPort.getReviewContents(summary.lectureId());
+            return new ChatbotPromptBuilder.PromptContext(command.question(), summary, reviews, List.of(), List.of());
+        }
+
+        // [챗봇팀 추가] 강의명 매칭 실패 시, 카테고리 키워드로 추천 시도
+        Optional<String> matchedCategory = findCategoryMentionedInQuestion(command.question());
+        if (matchedCategory.isPresent()) {
+            List<LectureInfoPort.LectureRecommendation> recommendations =
+                    lectureInfoPort.recommendTopRatedLecturesByCategory(matchedCategory.get(), 2);
+            return new ChatbotPromptBuilder.PromptContext(command.question(), null, List.of(), List.of(), recommendations);
         }
 
         List<String> policyResults = policySearchPort.search(command.question());
-        return new ChatbotPromptBuilder.PromptContext(command.question(), null, List.of(), policyResults);
+        return new ChatbotPromptBuilder.PromptContext(command.question(), null, List.of(), policyResults, List.of());
+    }
+
+    // 활성 강의 제목 중 질문 문장에 통째로 포함된 것을 찾는다. 정확히 1개일 때만 그 강의로 판단(2개 이상=애매함=실패 처리)
+    private Optional<LectureInfoPort.LectureSummary> findLectureMentionedInQuestion(String question) {
+        List<LectureInfoPort.LectureSummary> matched = lectureInfoPort.findAllActiveLectures().stream()
+                .filter(lecture -> question.contains(lecture.title()))
+                .toList();
+
+        return matched.size() == 1 ? Optional.of(matched.get(0)) : Optional.empty();
+    }
+
+    // 카테고리 키워드가 질문에 정확히 1개 카테고리에서만 걸리면 그 카테고리로 판단(여러 카테고리 겹치면 애매함=실패 처리)
+    private Optional<String> findCategoryMentionedInQuestion(String question) {
+        List<String> matched = CATEGORY_KEYWORDS.entrySet().stream()
+                .filter(entry -> entry.getValue().stream().anyMatch(question::contains))
+                .map(Map.Entry::getKey)
+                .toList();
+
+        return matched.size() == 1 ? Optional.of(matched.get(0)) : Optional.empty();
     }
 
     // 조사 제거 + 불용어 제외 후, 핵심 단어가 하나라도 겹치면 유사로 판단

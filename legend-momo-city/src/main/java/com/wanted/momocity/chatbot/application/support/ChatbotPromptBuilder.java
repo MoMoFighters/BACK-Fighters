@@ -39,6 +39,12 @@ public class ChatbotPromptBuilder {
                 prompt.append("\n");
             }
             // 분기 처리 - 강의와 무관한 질문일 경우 RAG 검색 결과 블럭 추가하기
+        } else if (!context.recommendations().isEmpty()) {
+            prompt.append("[추천 강의 후보]\n");
+            context.recommendations().forEach(rec -> prompt.append("- ").append(rec.title())
+                    .append(" (평점 ").append(rec.averageRating()).append(")\n  ")
+                    .append(rec.description()).append("\n"));
+            prompt.append("\n위 후보 중에서만 골라 추천 이유와 함께 안내하세요.\n\n");
         } else if (!context.policyResults().isEmpty()) {
             prompt.append("[관련 정책/FAQ]\n");
             context.policyResults().forEach(policy -> prompt.append("- ").append(policy).append("\n"));
@@ -58,7 +64,8 @@ public class ChatbotPromptBuilder {
             String question,
             LectureInfoPort.LectureSummary lectureSummary,
             List<String> reviews,
-            List<String> policyResults
+            List<String> policyResults,
+            List<LectureInfoPort.LectureRecommendation> recommendations
     ) {}
 
 }
