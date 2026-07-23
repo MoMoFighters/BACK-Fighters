@@ -80,6 +80,10 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
                 token = accessor.getFirstNativeHeader("token");
             }
 
+            if (token == null && accessor.getSessionAttributes() != null) {
+                token = (String) accessor.getSessionAttributes().get("token");
+            }
+
             if (token == null) {
                 log.warn("[웹소켓] CONNECT 인증 토큰을 찾을 수 없습니다.");
                 return null; // 연결 거부
@@ -105,6 +109,7 @@ public class TopicSubscriptionInterceptor implements ChannelInterceptor {
                             accessor.getSessionAttributes().put("userId", userDetails.getUserId());
                         }
                         log.info("[웹소켓] CONNECT 시점 인증 성공. 유저 인증 객체 등록 완료.");
+                        accessor.addNativeHeader("Authorization", "Bearer " + token);
             } catch (Exception e) {
                 log.error("[웹소켓] CONNECT 토큰 인증 실패: {}", e.getMessage());
                 return null; // 연결 거부
