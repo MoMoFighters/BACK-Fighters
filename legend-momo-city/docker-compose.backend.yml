@@ -6,8 +6,10 @@ services:
       - "8080:8080"
     environment:
       SPRING_PROFILES_ACTIVE: dev
-      MYSQL_HOST: mysql
+      MYSQL_HOST: momo-rds.c3a84ssqgmc2.ap-northeast-2.amazonaws.com
       MYSQL_PORT: 3306
+      MYSQL_USERNAME: admin
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       LOKI_URL: http://${MONITOR_HOST}:3100
@@ -34,26 +36,8 @@ services:
     volumes:
       - ./keys/cloudfront-private-key.pem:/app/secrets/cloudfront-private-key.pem:ro
     depends_on:
-      mysql:
-        condition: service_healthy
       redis:
         condition: service_healthy
-
-  mysql:
-    image: mysql:8.0
-    container_name: momo-mysql
-    ports:
-      - "127.0.0.1:3307:3306"
-    environment:
-      MYSQL_ROOT_PASSWORD: 1234
-      MYSQL_DATABASE: momo
-    volumes:
-      - mysql_data:/var/lib/mysql
-    healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p1234" ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
 
   redis:
     image: redis:7
@@ -75,6 +59,3 @@ services:
       - ./docker/promtail/promtail-config.backend.yml:/etc/promtail/config.yml
       - /var/run/docker.sock:/var/run/docker.sock
     command: -config.file=/etc/promtail/config.yml
-
-volumes:
-  mysql_data:
