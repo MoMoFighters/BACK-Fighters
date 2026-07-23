@@ -37,6 +37,10 @@ services:
       NAVER_CLIENT_SECRET: ${NAVER_CLIENT_SECRET}
       MAIL_USERNAME: ${MAIL_USERNAME}
       MAIL_PASSWORD: ${MAIL_PASSWORD}
+      CLOUDFRONT_KEY_PAIR_ID: ${CLOUDFRONT_KEY_PAIR_ID}
+      CLOUDFRONT_PRIVATE_KEY_PATH: ${CLOUDFRONT_PRIVATE_KEY_PATH}
+    volumes:
+      - ./keys/cloudfront-private-key.pem:/app/secrets/cloudfront-private-key.pem:ro
     depends_on:
       mysql:
         condition: service_healthy
