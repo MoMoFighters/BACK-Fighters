@@ -52,7 +52,7 @@ public class CalendarRepositoryAdapter implements CalendarRepository {
 
     @Override
     public List<Calendar> findAllByDate(LocalDate date) {
-        return jpaRepository.findAllByStartLessThanEqualAndEndGreaterThanEqual(date, date)
+        return jpaRepository.findAllNotificationTargetsByDate(date)
                 .stream()
                 .map(CalendarJpaEntity::toDomain)
                 .toList();

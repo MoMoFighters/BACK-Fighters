@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /*
@@ -204,7 +203,7 @@ public class SoloCommandService implements SoloCommandUseCase {
         if (session.getLastResumedAt() == null) {
             return 0;
         }
-        long elapsed = Duration.between(session.getLastResumedAt(), LocalDateTime.now()).getSeconds();
+        long elapsed = Duration.between(session.getLastResumedAt(), now).getSeconds();
         int increment = (int) Math.max(elapsed, 0);
         session.accumulateSeconds(increment);
         return increment;
