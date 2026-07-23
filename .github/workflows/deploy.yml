@@ -48,7 +48,7 @@ jobs:
             cd /home/ubuntu/BACK-Fighters/legend-momo-city
             git fetch origin
             git checkout testRelease
-            git pull origin testRelease
+            git reset --hard origin/testRelease
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
             docker compose -f docker-compose.backend.yml down
             docker compose -f docker-compose.backend.yml pull
