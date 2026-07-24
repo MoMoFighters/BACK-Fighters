@@ -156,6 +156,22 @@ public class EnrollmentCommandService implements EnrollmentCommandUseCase {
                 position
         );
 
+        // 사용자가 해당 카테고리 건물을 가지고 있는지 확인
+        boolean hasBuilding = buildingRepository.existsByUserIdAndCategory(
+                userId,
+                buildingCategory
+        );
+
+        // 만약 건물을 이미 가지고 있으면 생성 X
+        if (hasBuilding) {
+            log.info("수강신청 건물 생성 생략 - 이미 보유, userId={}, category={}",
+                    userId,
+                    buildingCategory
+            );
+            return;
+        }
+
+
         // position 값 검증
         validateBuildingPosition(position);
 
@@ -178,21 +194,6 @@ public class EnrollmentCommandService implements EnrollmentCommandUseCase {
             }
             // 같은 위치에 다른 카테고리 건물이 있다면 예외 발생
             throw new DomainRuleViolationException("이미 다른 건물이 생성되어 있습니다.");
-        }
-
-        // 사용자가 해당 카테고리 건물을 가지고 있는지 확인
-        boolean hasBuilding = buildingRepository.existsByUserIdAndCategory(
-                userId,
-                buildingCategory
-        );
-
-        // 만약 건물을 이미 가지고 있으면 생성 X
-        if (hasBuilding) {
-            log.info("수강신청 건물 생성 생략 - 이미 보유, userId={}, category={}",
-                    userId,
-                    buildingCategory
-            );
-            return;
         }
 
         // 새 건물 도메인 객체를 생성
