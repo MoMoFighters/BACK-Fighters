@@ -202,4 +202,17 @@ VALUES
                          position = VALUES(position),
                          user_id = VALUES(user_id);
 
+-- 민수 건물 추가
+INSERT INTO `building` (`id`, `created_at`, `updated_at`, `category`, `level`, `position`, `user_id`)
+VALUES
+    (226, NOW() - INTERVAL 5 DAY, NOW() - INTERVAL 5 DAY, 'BEAUTY', 1, 1, 12),
+    (227, NOW() - INTERVAL 1 DAY, NOW() - INTERVAL 1 DAY, 'COOK', 1, 2, 12)
+    ON DUPLICATE KEY UPDATE
+                         created_at = VALUES(created_at),
+                         updated_at = VALUES(updated_at),
+                         category = VALUES(category),
+                         level = VALUES(level),
+                         position = VALUES(position),
+                         user_id = VALUES(user_id);
+
 SET FOREIGN_KEY_CHECKS = 1;
