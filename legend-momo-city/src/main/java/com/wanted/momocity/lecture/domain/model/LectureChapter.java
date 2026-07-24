@@ -206,7 +206,7 @@ public class LectureChapter {
 
     /*
      * 동영상 파일 크기는 1byte 이상
-     * 500MB 초과 검증은 S3 업로드 전 서비스에서 먼저 처리
+     * 600MB 초과 검증은 S3 업로드 전 서비스에서 먼저 처리
      */
     private static void validateVideoSizeBytes(Long videoSizeBytes) {
         if (videoSizeBytes == null || videoSizeBytes < 1) {
