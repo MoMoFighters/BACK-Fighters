@@ -11,6 +11,7 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.Map;
+import java.util.HashMap;
 
 /*
  * comment.
@@ -67,7 +68,7 @@ public class StudyBroadcastEventHandler {
     @Async("domainEventExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleHostChanged(HostChangedEvent event) {
-        // [수정] event.newHostId() -> event.newHostUserId() (실제 필드명에 맞춤)
+        // event.newHostId() -> event.newHostUserId() (실제 필드명에 맞춤)
         broadcast(event.roomId(), "HOST_CHANGED", Map.of(
                 "newHostUserId", event.newHostUserId()
         ));
@@ -87,11 +88,14 @@ public class StudyBroadcastEventHandler {
     @Async("domainEventExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleTimerStatusChanged(TimerStatusChangedEvent event) {
-        broadcast(event.roomId(), "TIMER_STATUS_CHANGED", Map.of(
-                "userId", event.userId(),
-                // timerStatus가 null일 수 있음(타이머 완전 종료) - Map.of는 null value를 허용 안 하므로 문자열로 방어 처리
-                "timerStatus", event.timerStatus() == null ? "NONE" : event.timerStatus().name()
-        ));
+        // Map.of() -> HashMap 교체 (startedAt이 null일 수 있어서 null value 허용 필요)
+        Map<String, Object> data = new HashMap<>();
+        data.put("userId", event.userId());
+        data.put("timerStatus", event.timerStatus() == null ? "NONE" : event.timerStatus().name());
+        data.put("startedAt", event.startedAt());
+        data.put("accumulatedSeconds", event.accumulatedSeconds());
+
+        broadcast(event.roomId(), "TIMER_STATUS_CHANGED", data);
         log.info("[StudyBroadcast] TIMER_STATUS_CHANGED 전송 | roomId={}, userId={}, status={}",
                 event.roomId(), event.userId(), event.timerStatus());
     }

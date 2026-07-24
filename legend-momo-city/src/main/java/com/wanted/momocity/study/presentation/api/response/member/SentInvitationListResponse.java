@@ -18,6 +18,7 @@ public record SentInvitationListResponse(
             String title,
             Long inviteeId,
             String inviteeNickname,
+            String inviteeProfileImageUrl,
             LocalDateTime invitedAt
     ) {}
 }

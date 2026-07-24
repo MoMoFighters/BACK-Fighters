@@ -23,6 +23,7 @@ public record RankingResponse(
             int rank,
             Long userId,
             String nickname,
+            String profileImageUrl,
             int totalSeconds
     ) {}
 }
