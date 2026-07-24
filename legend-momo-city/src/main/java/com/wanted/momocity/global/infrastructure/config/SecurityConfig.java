@@ -154,6 +154,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v2/posts/search").permitAll()
                         // 게시글 상세 조회
                         .requestMatchers(HttpMethod.GET, "/api/v2/posts/{postId}").permitAll()
+                        // 연관 게시글 추천
+                        .requestMatchers(HttpMethod.GET, "/api/v2/posts/{postId}/recommendations").permitAll()
                         // 게시글 댓글 조회
                         .requestMatchers(HttpMethod.GET, "/api/v2/posts/{postId}/comments/**").permitAll()
                         // 상대방 게시글 목록 조회
