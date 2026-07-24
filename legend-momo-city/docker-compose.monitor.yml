@@ -40,7 +40,7 @@ services:
       - prometheus_data:/prometheus
 
   cloudwatch-exporter:
-    image: nerdswords/yet-another-cloudwatch-exporter:v0.60.0
+    image: prometheuscommunity/yet-another-cloudwatch-exporter:v0.63.0
     container_name: cloudwatch-exporter
     restart: unless-stopped
     environment:
