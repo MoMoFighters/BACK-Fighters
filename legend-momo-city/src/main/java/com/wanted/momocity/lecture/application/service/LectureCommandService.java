@@ -59,7 +59,7 @@ public class LectureCommandService implements
     private static final long BYTES_PER_MB = 1024L * 1024L;
 
     // 챕터 동영상 최대 업로드 크기를 MB 단위로 표현한 상수
-    private static final long MAX_VIDEO_SIZE_MB = 500L;
+    private static final long MAX_VIDEO_SIZE_MB = 600L;
 
     // 챕터 동영상 최대 업로드 크기를 바이트 단위로 변환한 상수
     private static final long MAX_VIDEO_SIZE_BYTES = MAX_VIDEO_SIZE_MB * BYTES_PER_MB;
