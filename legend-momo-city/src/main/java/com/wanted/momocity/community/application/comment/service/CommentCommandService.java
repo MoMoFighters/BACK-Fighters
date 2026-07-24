@@ -4,6 +4,7 @@ import com.wanted.momocity.auth.domain.model.User;
 import com.wanted.momocity.community.application.comment.usecase.CommentCommandUseCase;
 import com.wanted.momocity.community.application.post.port.UserInfoPort;
 import com.wanted.momocity.community.domain.event.CommentCreatedEvent;
+import com.wanted.momocity.community.domain.event.PostsCacheEvictRequestedEvent;
 import com.wanted.momocity.community.domain.event.ReplyCreatedEvent;
 import com.wanted.momocity.community.domain.exception.CommunityAccessDeniedException;
 import com.wanted.momocity.community.domain.exception.CommunityNotFoundException;
@@ -39,7 +40,6 @@ public class CommentCommandService implements CommentCommandUseCase {
 
     // 댓글 작성
     @Override
-    @CacheEvict(value = "posts", allEntries = true, cacheManager = "redisCacheManager")
     public void createComment(Long userId, Long postId, String content) {
 
         // 게시글 조회 (존재 여부 + 삭제 여부 확인)
@@ -65,13 +65,13 @@ public class CommentCommandService implements CommentCommandUseCase {
                     new CommentCreatedEvent(postId, post.getUserId(), userId, user.getNickname()));
         }
 
+        eventPublisher.publishEvent(new PostsCacheEvictRequestedEvent());
         log.info("[Community] 댓글 작성 완료 | userId={}, postId={}, commentId={}",
                 userId, postId, saved.getId());
     }
 
     // 댓글 삭제 (소프트딜리트)
     @Override
-    @CacheEvict(value = "posts", allEntries = true, cacheManager = "redisCacheManager")
     public void deleteComment(Long userId, Long postId, Long commentId) {
 
         // 댓글 조회
@@ -98,12 +98,12 @@ public class CommentCommandService implements CommentCommandUseCase {
             log.info("[Community] 댓글 삭제에 딸린 대댓글 {}건 함께 삭제 | commentId={}", replies.size(), commentId);
         }
 
+        eventPublisher.publishEvent(new PostsCacheEvictRequestedEvent());
         log.info("[Community] 댓글 삭제 완료 | commentId={}", commentId);
     }
 
     // 대댓글 작성
     @Override
-    @CacheEvict(value = "posts", allEntries = true, cacheManager = "redisCacheManager")
     public void createReply(Long userId, Long postId, Long commentId, String content) {
 
         // 부모 댓글 조회
@@ -152,13 +152,13 @@ public class CommentCommandService implements CommentCommandUseCase {
                 user.getNickname()
         ));
 
+        eventPublisher.publishEvent(new PostsCacheEvictRequestedEvent());
         log.info("[Community] 대댓글 작성 완료 | userId={}, commentId={}, replyId={}",
                 userId, commentId, saved.getId());
     }
 
     // 대댓글 삭제 (소프트딜리트)
     @Override
-    @CacheEvict(value = "posts", allEntries = true, cacheManager = "redisCacheManager")
     public void deleteReply(Long userId, Long postId, Long commentId, Long replyId) {
 
         // 대댓글 조회
@@ -175,6 +175,7 @@ public class CommentCommandService implements CommentCommandUseCase {
         reply.delete();
         commentRepository.delete(reply);
 
+        eventPublisher.publishEvent(new PostsCacheEvictRequestedEvent());
         log.info("[Community] 대댓글 삭제 완료 | replyId={}", replyId);
     }
 

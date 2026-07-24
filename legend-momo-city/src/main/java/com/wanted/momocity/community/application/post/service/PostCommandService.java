@@ -3,6 +3,7 @@ package com.wanted.momocity.community.application.post.service;
 import com.wanted.momocity.community.application.post.command.PostContentCommand;
 import com.wanted.momocity.community.application.post.result.PostCreateResult;
 import com.wanted.momocity.community.application.post.usecase.PostCommandUseCase;
+import com.wanted.momocity.community.domain.event.PostsCacheEvictRequestedEvent;
 import com.wanted.momocity.community.domain.event.ThumbnailResizeRequestedEvent;
 import com.wanted.momocity.community.domain.exception.CommunityAccessDeniedException;
 import com.wanted.momocity.community.domain.exception.CommunityNotFoundException;
@@ -84,7 +85,6 @@ public class PostCommandService implements PostCommandUseCase {
     // title, category 만 저장 -> postId 반환 후 콘텐츠 업로드 API 호출
     // 게시글 추가 시 목록 캐시 전체 무효화
     @Override
-    @CacheEvict(value = "posts", allEntries = true, cacheManager = "redisCacheManager")
     public PostCreateResult createPost(Long userId, String title, PostCategory category, String thumbnailUrl) {
 
         // 게시글 생성
@@ -92,12 +92,12 @@ public class PostCommandService implements PostCommandUseCase {
         // 게시글 저장
         Post saved = postRepository.save(post);
 
+        eventPublisher.publishEvent(new PostsCacheEvictRequestedEvent());
         log.info("[Community] 게시글 생성 완료 | userId={}, postId={}", userId, saved.getId());
         return new PostCreateResult(saved.getId());
     }
 
     @Override
-    @CacheEvict(value = "posts", allEntries = true, cacheManager = "redisCacheManager")
     public void uploadContents(Long userId, Long postId, String thumbnailUrl, List<PostContentCommand> contents) {
 
         // 게시글 조회 (존재 여부 확인)
@@ -136,13 +136,13 @@ public class PostCommandService implements PostCommandUseCase {
 
         // 새 컨텐츠 일괄 저장
         postContentRepository.saveAll(postContents);
+        eventPublisher.publishEvent(new PostsCacheEvictRequestedEvent());
         log.info("[Community] 콘텐츠 업로드 완료 | postId={}, count={}", postId, postContents.size());
     }
 
     // 게시글 제목 / 카테고리 수정
     // 제목 / 카테고리 수정 시 목록 캐시 전체 무효화
     @Override
-    @CacheEvict(value = "posts", allEntries = true, cacheManager = "redisCacheManager")
     public void updatePost(Long userId, Long postId, String title, PostCategory category) {
 
         // 게시글 조회 (존재 여부 확인)
@@ -156,13 +156,13 @@ public class PostCommandService implements PostCommandUseCase {
         post.update(title, category);
         postRepository.save(post);
 
+        eventPublisher.publishEvent(new PostsCacheEvictRequestedEvent());
         log.info("[Community] 게시글 수정 완료 | postId={}", postId);
     }
 
     // 게시글 콘텐츠 수정 (PUT)
     // 기준 콘텐츠 전체 소프트딜리트 후 새 콘텐츠 저장 -> 트랜잭션으로 한번에 처리
     @Override
-    @CacheEvict(value = "posts", allEntries = true, cacheManager = "redisCacheManager")
     public void updateContents(Long userId, Long postId, String thumbnailUrl, List<PostContentCommand> contents) {
 
         // 게시글 존재 여부 확인
@@ -208,6 +208,7 @@ public class PostCommandService implements PostCommandUseCase {
         // 새 컨텐츠 일괄 저장
         postContentRepository.saveAll(postContents);
 
+        eventPublisher.publishEvent(new PostsCacheEvictRequestedEvent());
         log.info("[Community] 콘텐츠 수정 완료 | postId={}, count={}", postId, postContents.size());
     }
 
@@ -215,7 +216,6 @@ public class PostCommandService implements PostCommandUseCase {
     // post 소프트딜리트 -> post_content 소프트딜리트
     // 게시글 삭제 시 목록 캐시 전체 무효화
     @Override
-    @CacheEvict(value = "posts", allEntries = true, cacheManager = "redisCacheManager")
     public void deletePost(Long userId, Long postId) {
 
         // 게시글 존재 여부 확인
@@ -232,6 +232,7 @@ public class PostCommandService implements PostCommandUseCase {
         // 컨텐츠 소프트 딜리트 (게시글 삭제 시 컨텐츠도 함께 삭제)
         postContentRepository.deleteAllByPostId(postId);
 
+        eventPublisher.publishEvent(new PostsCacheEvictRequestedEvent());
         log.info("[Community] 게시글 삭제 완료 | postId={}", postId);
     }
 
