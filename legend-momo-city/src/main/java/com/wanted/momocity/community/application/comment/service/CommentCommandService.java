@@ -4,6 +4,7 @@ import com.wanted.momocity.auth.domain.model.User;
 import com.wanted.momocity.community.application.comment.usecase.CommentCommandUseCase;
 import com.wanted.momocity.community.application.post.port.UserInfoPort;
 import com.wanted.momocity.community.domain.event.CommentCreatedEvent;
+import com.wanted.momocity.community.domain.event.PostsCacheEvictRequestedEvent;
 import com.wanted.momocity.community.domain.event.ReplyCreatedEvent;
 import com.wanted.momocity.community.domain.exception.CommunityAccessDeniedException;
 import com.wanted.momocity.community.domain.exception.CommunityNotFoundException;
@@ -13,6 +14,7 @@ import com.wanted.momocity.community.domain.repository.CommentRepository;
 import com.wanted.momocity.community.domain.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -63,6 +65,7 @@ public class CommentCommandService implements CommentCommandUseCase {
                     new CommentCreatedEvent(postId, post.getUserId(), userId, user.getNickname()));
         }
 
+        eventPublisher.publishEvent(new PostsCacheEvictRequestedEvent());
         log.info("[Community] 댓글 작성 완료 | userId={}, postId={}, commentId={}",
                 userId, postId, saved.getId());
     }
@@ -95,6 +98,7 @@ public class CommentCommandService implements CommentCommandUseCase {
             log.info("[Community] 댓글 삭제에 딸린 대댓글 {}건 함께 삭제 | commentId={}", replies.size(), commentId);
         }
 
+        eventPublisher.publishEvent(new PostsCacheEvictRequestedEvent());
         log.info("[Community] 댓글 삭제 완료 | commentId={}", commentId);
     }
 
@@ -138,17 +142,17 @@ public class CommentCommandService implements CommentCommandUseCase {
         User user = userInfoPort.findById(userId)
                 .orElseThrow(() -> new CommunityNotFoundException("사용자를 찾을 수 없습니다."));
 
-        // 본인 게시글 또는 본인 댓글에 대댓글 시 알림 제외
-        if (!userId.equals(post.getUserId()) && !userId.equals(parentComment.getUserId())) {
-            eventPublisher.publishEvent(new ReplyCreatedEvent(
-                    postId,
-                    post.getUserId(),
-                    parentComment.getUserId(),
-                    userId,
-                    user.getNickname()
-            ));
-        }
+        // 알림 대상 판단(본인 여부 등)은 NotificationHandlerService.createReplyNotification()이
+        // parentCommentOwnerId / postOwnerId 각각 독립적으로 처리하므로, 여기서는 무조건 발행
+        eventPublisher.publishEvent(new ReplyCreatedEvent(
+                postId,
+                post.getUserId(),
+                parentComment.getUserId(),
+                userId,
+                user.getNickname()
+        ));
 
+        eventPublisher.publishEvent(new PostsCacheEvictRequestedEvent());
         log.info("[Community] 대댓글 작성 완료 | userId={}, commentId={}, replyId={}",
                 userId, commentId, saved.getId());
     }
@@ -171,6 +175,7 @@ public class CommentCommandService implements CommentCommandUseCase {
         reply.delete();
         commentRepository.delete(reply);
 
+        eventPublisher.publishEvent(new PostsCacheEvictRequestedEvent());
         log.info("[Community] 대댓글 삭제 완료 | replyId={}", replyId);
     }
 
