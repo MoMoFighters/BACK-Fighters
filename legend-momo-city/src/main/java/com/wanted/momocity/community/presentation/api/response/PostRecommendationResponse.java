@@ -27,6 +27,7 @@ public record PostRecommendationResponse(
             String category,
             int viewCount,
             int likeCount,
+            int commentCount,
             String thumbnailUrl,
             Long authorId,
             String authorName,
