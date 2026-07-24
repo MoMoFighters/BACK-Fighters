@@ -14,6 +14,11 @@ jobs:
           APP_DEV_YAML: ${{ secrets.APPLICATION_DEV_YAML }}
         run: |
           printf '%s' "$APP_DEV_YAML" > legend-momo-city/src/main/resources/application-dev.yaml
+      - name: Create application-ai.yaml
+        env:
+          APP_AI_YAML: ${{ secrets.APPLICATION_AI_YAML }}
+        run: |
+          printf '%s' "$APP_AI_YAML" > legend-momo-city/src/main/resources/application-ai.yaml
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
