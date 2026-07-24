@@ -56,7 +56,7 @@ CREATE TABLE `user` (
     `email`             VARCHAR(100) NULL,
     `password`          VARCHAR(255) NULL,
     `name`              VARCHAR(50)  NOT NULL,
-    `nickname`          VARCHAR(30)  NOT NULL,
+    `nickname`          VARCHAR(30)  NULL,
     `profile_image_url` VARCHAR(500) NULL,
     `role`              ENUM('STUDENT','TEACHER','ADMIN')                              NOT NULL DEFAULT 'STUDENT',
     `status`            ENUM('ACTIVE','PENDING','REJECTED','BANNED','BLACK','DELETED') NOT NULL DEFAULT 'ACTIVE',
