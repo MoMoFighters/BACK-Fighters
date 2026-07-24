@@ -490,7 +490,6 @@ public class MessageCommandService implements MessageCommandUseCase {
         // 남은 사람들의 ID 목록을 먼저 안전하게 추출합니다.
         List<Long> remainingUserIds = allMembers.stream()
                 .map(m -> m.getUserId().getId())
-                .filter(id -> !id.equals(command.userId()))
                 .toList();
 
         // 메인 트랜잭션 종료(커밋) 직후 백그라운드 스레드에서 무거운 화면 리로드가 돌도록 이벤트를 쏩니다.
