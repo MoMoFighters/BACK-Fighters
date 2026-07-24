@@ -172,9 +172,10 @@ public class AuthController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "카카오 인증 실패")
     })
     public ResponseEntity<ApiResponse<LoginResponse>> kakaoLogin(
-            @Valid @RequestBody SocialLoginRequest request){
+            @Valid @RequestBody SocialLoginRequest request,
+            HttpServletRequest httpRequest){
 
-        LoginResponse result = authCommandUsecase.socialLogin(new SocialLoginCommand(Provider.KAKAO,request.code()));
+        LoginResponse result = authCommandUsecase.socialLogin(new SocialLoginCommand(Provider.KAKAO,request.code(), ClientIpResolver.resolve(httpRequest)));
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(
@@ -194,9 +195,10 @@ public class AuthController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "구글 인증 실패")
     })
     public ResponseEntity<ApiResponse<LoginResponse>> googleLogin(
-            @Valid @RequestBody SocialLoginRequest request){
+            @Valid @RequestBody SocialLoginRequest request,
+            HttpServletRequest httpRequest){
 
-        LoginResponse result = authCommandUsecase.socialLogin(new SocialLoginCommand(Provider.GOOGLE,request.code()));
+        LoginResponse result = authCommandUsecase.socialLogin(new SocialLoginCommand(Provider.GOOGLE,request.code(), ClientIpResolver.resolve(httpRequest)));
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(
@@ -216,9 +218,10 @@ public class AuthController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "네이버 인증 실패")
     })
     public ResponseEntity<ApiResponse<LoginResponse>> naverLogin(
-            @Valid @RequestBody SocialLoginRequest request){
+            @Valid @RequestBody SocialLoginRequest request,
+            HttpServletRequest httpRequest){
 
-        LoginResponse result = authCommandUsecase.socialLogin(new SocialLoginCommand(Provider.NAVER,request.code()));
+        LoginResponse result = authCommandUsecase.socialLogin(new SocialLoginCommand(Provider.NAVER,request.code(), ClientIpResolver.resolve(httpRequest)));
 
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponse.success(

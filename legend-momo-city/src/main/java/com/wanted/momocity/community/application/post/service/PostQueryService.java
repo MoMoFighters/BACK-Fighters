@@ -151,6 +151,10 @@ public class PostQueryService implements PostQueryUseCase {
         // 현재 로그인 유저가 게시글 작성자인지 확인
         boolean isMine = userId != null && post.getUserId().equals(userId);
 
+        // 댓글 수 조회 (단건 postId 하나만 담아서 기존 메서드 재사용)
+        int commentCount = commentRepository.countByPostIds(List.of(postId))
+                .getOrDefault(postId, 0L).intValue();
+
         log.info("[Community] 게시글 단건 조회 완료 | postId={}, userId={}", postId, userId);
 
         return new PostDetailResponse(
@@ -159,6 +163,7 @@ public class PostQueryService implements PostQueryUseCase {
                 post.getCategory().name(),
                 post.getViewCount(),
                 post.getLikeCount(),
+                commentCount,
                 isLiked,
                 isMine,
                 post.getUserId(),
@@ -351,6 +356,16 @@ public class PostQueryService implements PostQueryUseCase {
                 post.getUserId(), postId, topPostIds, 2
         );
 
+        // N+1 개선: topPosts + authorPosts 전체 postId 모아서 댓글 수 한 번에 조회
+        List<Long> allPostIds = java.util.stream.Stream.concat(
+                topPosts.stream().map(Post::getId),
+                authorPosts.stream().map(Post::getId)
+        ).toList();
+
+        Map<Long, Long> commentCountMap = allPostIds.isEmpty()
+                ? Map.of()
+                : commentRepository.countByPostIds(allPostIds);
+
         // topPosts -> RecommendItem 변환
         List<PostRecommendationResponse.RecommendItem> topItems = topPosts.stream()
                 .map(p -> {
@@ -363,6 +378,7 @@ public class PostQueryService implements PostQueryUseCase {
                             p.getCategory().name(),
                             p.getViewCount(),
                             p.getLikeCount(),
+                            commentCountMap.getOrDefault(p.getId(), 0L).intValue(),
                             p.getThumbnailUrl(),
                             p.getUserId(),
                             author.getNickname(),
@@ -383,6 +399,7 @@ public class PostQueryService implements PostQueryUseCase {
                             p.getCategory().name(),
                             p.getViewCount(),
                             p.getLikeCount(),
+                            commentCountMap.getOrDefault(p.getId(), 0L).intValue(),
                             p.getThumbnailUrl(),
                             p.getUserId(),
                             author.getNickname(),
