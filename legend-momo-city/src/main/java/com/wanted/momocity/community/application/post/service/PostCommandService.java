@@ -97,6 +97,7 @@ public class PostCommandService implements PostCommandUseCase {
     }
 
     @Override
+    @CacheEvict(value = "posts", allEntries = true, cacheManager = "redisCacheManager")
     public void uploadContents(Long userId, Long postId, String thumbnailUrl, List<PostContentCommand> contents) {
 
         // 게시글 조회 (존재 여부 확인)

@@ -13,6 +13,7 @@ import com.wanted.momocity.community.domain.repository.CommentRepository;
 import com.wanted.momocity.community.domain.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +39,7 @@ public class CommentCommandService implements CommentCommandUseCase {
 
     // 댓글 작성
     @Override
+    @CacheEvict(value = "posts", allEntries = true, cacheManager = "redisCacheManager")
     public void createComment(Long userId, Long postId, String content) {
 
         // 게시글 조회 (존재 여부 + 삭제 여부 확인)
@@ -69,6 +71,7 @@ public class CommentCommandService implements CommentCommandUseCase {
 
     // 댓글 삭제 (소프트딜리트)
     @Override
+    @CacheEvict(value = "posts", allEntries = true, cacheManager = "redisCacheManager")
     public void deleteComment(Long userId, Long postId, Long commentId) {
 
         // 댓글 조회
@@ -100,6 +103,7 @@ public class CommentCommandService implements CommentCommandUseCase {
 
     // 대댓글 작성
     @Override
+    @CacheEvict(value = "posts", allEntries = true, cacheManager = "redisCacheManager")
     public void createReply(Long userId, Long postId, Long commentId, String content) {
 
         // 부모 댓글 조회
@@ -154,6 +158,7 @@ public class CommentCommandService implements CommentCommandUseCase {
 
     // 대댓글 삭제 (소프트딜리트)
     @Override
+    @CacheEvict(value = "posts", allEntries = true, cacheManager = "redisCacheManager")
     public void deleteReply(Long userId, Long postId, Long commentId, Long replyId) {
 
         // 대댓글 조회
