@@ -9,6 +9,7 @@ import com.wanted.momocity.chatbot.presentation.api.response.ChatbotUsageRespons
 import com.wanted.momocity.global.presentation.api.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -66,7 +67,8 @@ public class ChatbotController {
     public SseEmitter streamAnswer(
             @RequestParam String question,
             @RequestParam(required = false) Long lectureId,
-            @AuthenticationPrincipal CustomUserDetails userDetails
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            HttpServletResponse response
     ) {
         // @Valid 자동 검증이 안 붙는 GET+쿼리파라미터 구조라 직접적으로 검사
         if (question == null || question.isBlank()) {
@@ -80,6 +82,7 @@ public class ChatbotController {
         Long userId = userDetails.getUserId();
         // 150초 샹향 : geminiWebClient 의 ResponseTimeout(120초)보다 여유를 둬서
         // WebClient가 먼저 끊키고 SseEmitter 가 그 결과를 정상적으로 받아 전달하게 함
+        response.setHeader("X-Accel-Buffering", "no");
         SseEmitter emitter = new SseEmitter(150_000L);
 
         // 타임아웃 시에도 "완료"가 아니라 "타임아웃으로 끊김"을 클라이언트가 구분할 수 있게 이벤트를 먼저 보냄
