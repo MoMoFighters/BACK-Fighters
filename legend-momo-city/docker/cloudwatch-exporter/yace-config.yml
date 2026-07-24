@@ -1,0 +1,28 @@
+apiVersion: v1alpha1
+sts-region: ap-northeast-2
+discovery:
+  jobs:
+    - type: AWS/RDS
+      regions:
+        - ap-northeast-2
+      period: 300
+      length: 300
+      dimensionNameRequirements:
+        - DBInstanceIdentifier
+      metrics:
+        - name: CPUUtilization
+          statistics: [Average]
+        - name: FreeableMemory
+          statistics: [Average]
+        - name: DatabaseConnections
+          statistics: [Average, Maximum]
+        - name: FreeStorageSpace
+          statistics: [Average]
+        - name: ReadLatency
+          statistics: [Average]
+        - name: WriteLatency
+          statistics: [Average]
+        - name: ReadIOPS
+          statistics: [Average]
+        - name: WriteIOPS
+          statistics: [Average]
