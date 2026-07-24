@@ -59,7 +59,7 @@ public class LectureCommandService implements
     private static final long BYTES_PER_MB = 1024L * 1024L;
 
     // 챕터 동영상 최대 업로드 크기를 MB 단위로 표현한 상수
-    private static final long MAX_VIDEO_SIZE_MB = 600L;
+    private static final long MAX_VIDEO_SIZE_MB = 500L;
 
     // 챕터 동영상 최대 업로드 크기를 바이트 단위로 변환한 상수
     private static final long MAX_VIDEO_SIZE_BYTES = MAX_VIDEO_SIZE_MB * BYTES_PER_MB;
@@ -404,7 +404,7 @@ public class LectureCommandService implements
         }
 
         if (command.video().getSize() > MAX_VIDEO_SIZE_BYTES) {
-            throw new DomainRuleViolationException("동영상 파일 크기는 600MB 이하만 가능합니다.");
+            throw new DomainRuleViolationException("동영상 파일 크기는 500MB 이하만 가능합니다.");
         }
 
         // 챕터 동영상 파일을 S3에 업로드
