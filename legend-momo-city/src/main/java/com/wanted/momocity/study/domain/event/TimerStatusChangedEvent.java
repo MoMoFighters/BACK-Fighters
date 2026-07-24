@@ -1,6 +1,7 @@
 package com.wanted.momocity.study.domain.event;
 
 import com.wanted.momocity.study.domain.model.GroupRoomMember;
+import java.time.LocalDateTime;
 
 /*
  * comment.
@@ -13,6 +14,8 @@ import com.wanted.momocity.study.domain.model.GroupRoomMember;
 public record TimerStatusChangedEvent(
         Long roomId,
         Long userId,
-        GroupRoomMember.TimerStatus timerStatus
+        GroupRoomMember.TimerStatus timerStatus,
+        LocalDateTime startedAt,        // 진행 중인 랩의 시작 시각 (STUDYING이 아니면 null)
+        int accumulatedSeconds          // 이번 랩 시작 전까지 누적된 초
 ) {
 }

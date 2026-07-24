@@ -119,6 +119,7 @@ public class MemberQueryService implements MemberQueryUseCase {
                                     room.getTitle(),
                                     member.getUserId(),
                                     invitee.getNickname(),
+                                    invitee.getProfileImageUrl(),
                                     member.getInvitedAt()
                             );
                         }))

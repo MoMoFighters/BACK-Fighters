@@ -57,6 +57,7 @@ public class RoomQueryService implements RoomQueryUseCase {
                     return new GroupRoomDetailResponse.MemberItem(
                             member.getUserId(),
                             user.getNickname(),
+                            user.getProfileImageUrl(),
                             member.getStatus().name(),
                             member.getTimerStatus() == null ? null : member.getTimerStatus().name(),
                             member.getTotalSeconds()
@@ -67,7 +68,7 @@ public class RoomQueryService implements RoomQueryUseCase {
         log.info("[Study] 그룹방 상세 조회 완료 | roomId={}, userId={}", roomId, userId);
 
         return new GroupRoomDetailResponse(
-                room.getId(), room.getHostUserId(), host.getNickname(),
+                room.getId(), room.getHostUserId(), host.getNickname(), host.getProfileImageUrl(),
                 room.getTitle(), room.getStatus().name(), room.getMaxMember(), members
         );
     }
