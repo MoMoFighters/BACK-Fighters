@@ -138,16 +138,15 @@ public class CommentCommandService implements CommentCommandUseCase {
         User user = userInfoPort.findById(userId)
                 .orElseThrow(() -> new CommunityNotFoundException("사용자를 찾을 수 없습니다."));
 
-        // 본인 게시글 또는 본인 댓글에 대댓글 시 알림 제외
-        if (!userId.equals(post.getUserId()) && !userId.equals(parentComment.getUserId())) {
-            eventPublisher.publishEvent(new ReplyCreatedEvent(
-                    postId,
-                    post.getUserId(),
-                    parentComment.getUserId(),
-                    userId,
-                    user.getNickname()
-            ));
-        }
+        // 알림 대상 판단(본인 여부 등)은 NotificationHandlerService.createReplyNotification()이
+        // parentCommentOwnerId / postOwnerId 각각 독립적으로 처리하므로, 여기서는 무조건 발행
+        eventPublisher.publishEvent(new ReplyCreatedEvent(
+                postId,
+                post.getUserId(),
+                parentComment.getUserId(),
+                userId,
+                user.getNickname()
+        ));
 
         log.info("[Community] 대댓글 작성 완료 | userId={}, commentId={}, replyId={}",
                 userId, commentId, saved.getId());
