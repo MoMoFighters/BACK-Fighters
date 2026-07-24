@@ -41,6 +41,7 @@ public interface CommentJpaRepository extends JpaRepository<CommentJpaEntity, Lo
     SELECT c.postId, COUNT(c)
     FROM CommentJpaEntity c
     WHERE c.postId IN :postIds
+    AND c.parentId IS NULL
     AND c.deletedAt IS NULL
     GROUP BY c.postId
 """)
