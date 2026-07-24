@@ -9,4 +9,9 @@ scrape_configs:
     static_configs:
       - targets: [ '43.203.214.25:8080' ]   # BE 서버 퍼블릭 IP
       # 앱이 같은 컴포즈 네트워크 안으로 들어와서 서비스명으로 스크랩 (2026-07-01)
-#      - targets: ['app:8080']
+      #      - targets: ['app:8080']
+
+  - job_name: 'cloudwatch-rds'
+    scrape_interval: 300s   # RDS 지표는 5분 단위라 짧게 해봐야 의미 없음
+    static_configs:
+      - targets: ['cloudwatch-exporter:5000']

@@ -5,6 +5,7 @@ import com.wanted.momocity.auth.application.port.OAuthClientPort;
 import com.wanted.momocity.auth.domain.exception.OAuthInvalidCodeException;
 import com.wanted.momocity.auth.domain.exception.OAuthTokenException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -16,6 +17,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import java.util.Map;
 
 @Component
+@Slf4j
 @RequiredArgsConstructor
 public class KakaoOAuthClient implements OAuthClientPort {
 
@@ -60,6 +62,8 @@ public class KakaoOAuthClient implements OAuthClientPort {
 
             return (String) response.get("access_token");
         }catch (WebClientResponseException e){
+            log.error("Kakao token error - status={}, body={}",
+                    e.getStatusCode(), e.getResponseBodyAsString());
             if (e.getStatusCode() == HttpStatus.BAD_REQUEST) {
                 throw new OAuthInvalidCodeException("로그인에 실패하였습니다. 다시 시도해주세요.");
             }

@@ -39,6 +39,19 @@ services:
       - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
 
+  cloudwatch-exporter:
+    image: prometheuscommunity/yet-another-cloudwatch-exporter:v0.63.0
+    container_name: cloudwatch-exporter
+    restart: unless-stopped
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_KEY}
+    command: [ "--config.file=/tmp/config.yml" ]
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./docker/cloudwatch-exporter/yace-config.yml:/tmp/config.yml
+
 volumes:
   grafana_data:
   prometheus_data:

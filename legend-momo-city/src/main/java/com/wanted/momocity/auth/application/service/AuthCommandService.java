@@ -219,6 +219,19 @@ public class AuthCommandService implements AuthCommandUsecase {
 
         log.info("[social] 소셜 로그인 인증 완료 | provider={} | userId={}", command.provider(), user.getId());
 
+        // 계정 상태 체크 (자체 로그인과 동일한 정책 적용)
+        if (user.getStatus() != Status.ACTIVE && user.getStatus() != Status.REJECTED) {
+            log.warn("[social] 비활성 계정 로그인 시도 | provider={} | userId={} | status={}",
+                    command.provider(), user.getId(), user.getStatus());
+            String message = switch (user.getStatus()) {
+                case PENDING -> "강사 승인 대기중입니다.";
+                case BANNED -> "정지된 계정입니다. 문의 사항이 있다면 yourmomocity@gmail.com 으로 문의 주시길 바람니다.";
+                case BLACK -> "정지 3회 누적으로 인해 계정이 영구적으로 정지 되었습니다.";
+                default -> "해당 계정은 현재 로그인이 불가능한 상태입니다.";
+            };
+            throw new InactiveUserException(message, user.getStatus());
+        }
+
         // 인증 성공하면 JWT 토큰 발급
         String accessToken = tokenProviderPort.createAccessToken(
                 String.valueOf(user.getId()),
@@ -235,7 +248,7 @@ public class AuthCommandService implements AuthCommandUsecase {
                 refreshToken,
                 Instant.now().plusMillis(tokenProviderPort.getRefreshTokenValidityMilliseconds())
         );
-
+        accessLogRepository.save(AccessLog.create(user.getId(), command.ip(), AccessLogAction.LOGIN));
 
         // 응답
         return new LoginResponse(accessToken, refreshToken, user.getStatus(),user.getRole(),

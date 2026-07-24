@@ -18,6 +18,7 @@ public record PostDetailResponse (
         String category,
         int viewCount,
         int likeCount,
+        int commentCount,
         boolean isLiked,
         boolean isMine,
         Long authorId,

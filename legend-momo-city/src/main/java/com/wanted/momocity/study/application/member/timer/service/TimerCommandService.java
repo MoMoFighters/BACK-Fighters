@@ -82,7 +82,8 @@ public class TimerCommandService implements TimerCommandUseCase {
         StudyLap newLap = studyLapService.startLap(userId, roomId, saved.getId(), now);
         int lapNumber = (int) studyLapService.countLaps(roomId, saved.getId());
 
-        eventPublisher.publishEvent(new TimerStatusChangedEvent(roomId, userId, saved.getTimerStatus()));
+        eventPublisher.publishEvent(new TimerStatusChangedEvent(
+                roomId, userId, saved.getTimerStatus(),now, saved.getTotalSeconds() ));
 
         log.info("[Study] 그룹 타이머 시작 | roomId={}, userId={}, resumed={}", roomId, userId, wasResumed);
         return TimerActionResult.ofStarted(saved, wasResumed, toLapItem(newLap, lapNumber));
@@ -112,7 +113,8 @@ public class TimerCommandService implements TimerCommandUseCase {
         StudyLap closedLap = studyLapService.closeLap(roomId, saved.getId(), now);
         int lapNumber = (int) studyLapService.countLaps(roomId, saved.getId());
 
-        eventPublisher.publishEvent(new TimerStatusChangedEvent(roomId, userId, saved.getTimerStatus()));
+        eventPublisher.publishEvent(new TimerStatusChangedEvent
+                (roomId, userId, saved.getTimerStatus(), null, saved.getTotalSeconds()));
 
         log.info("[Study] 그룹 타이머 일시정지 | roomId={}, userId={}", roomId, userId);
         return TimerActionResult.ofPaused(saved, toLapItem(closedLap, lapNumber));
@@ -153,7 +155,8 @@ public class TimerCommandService implements TimerCommandUseCase {
         // 증분 값이 존재할 때만 이벤트 발행
         // publishAccumulatedEvents 내부에 이미 increment<=0 가드 있어서 바깥 if 불필요
         publishAccumulatedEvents(userId, from, now, increment);
-        eventPublisher.publishEvent(new TimerStatusChangedEvent(roomId, userId, null));
+        eventPublisher.publishEvent(new TimerStatusChangedEvent(
+                roomId, userId, null, null, saved.getTotalSeconds()));
 
         log.info("[Study] 그룹 타이머 종료 | roomId={}, userId={}, increment={}", roomId, userId, increment);
         return TimerActionResult.ofEnded(saved, closedLap == null ? null : toLapItem(closedLap, lapNumber));
