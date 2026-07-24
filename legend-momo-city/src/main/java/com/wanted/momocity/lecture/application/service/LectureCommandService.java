@@ -404,7 +404,7 @@ public class LectureCommandService implements
         }
 
         if (command.video().getSize() > MAX_VIDEO_SIZE_BYTES) {
-            throw new DomainRuleViolationException("동영상 파일 크기는 500MB 이하만 가능합니다.");
+            throw new DomainRuleViolationException("동영상 파일 크기는 600MB 이하만 가능합니다.");
         }
 
         // 챕터 동영상 파일을 S3에 업로드
