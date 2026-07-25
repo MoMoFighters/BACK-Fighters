@@ -139,7 +139,7 @@ public class S3PresignedUrlAdapter implements S3Port , S3PresignedUrlPort {
 
         PutObjectTaggingRequest request = PutObjectTaggingRequest.builder()
                 .bucket(bucketName)   // 기존 필드명과 다르면 맞춰서 수정 필요
-                .key(s3Key)
+                .key(extractKey(s3Key))
                 .tagging(tagging)
                 .build();
 
