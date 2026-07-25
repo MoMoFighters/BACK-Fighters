@@ -224,4 +224,8 @@ public interface SpringDataLectureRepository extends JpaRepository<LectureJpaEnt
             @Param("keyword") String keyword,
             Pageable pageable
     );
+
+    // 기존에 findAllByCategoryAndStatus는 있는데 상태만 단독 조회하는 건 없어서 추가 필요
+    List<LectureJpaEntity> findAllByStatus(LectureStatus status);
+
 }

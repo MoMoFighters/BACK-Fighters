@@ -3,6 +3,8 @@ package com.wanted.momocity.global.infrastructure.s3;
 import com.wanted.momocity.global.application.s3.S3PresignedUrlPort;
 import com.wanted.momocity.global.infrastructure.config.CloudFrontSignedUrlProperties;
 import com.wanted.momocity.viewing.application.port.S3Port;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,6 +13,8 @@ import software.amazon.awssdk.services.cloudfront.CloudFrontUtilities;
 import software.amazon.awssdk.services.cloudfront.model.CannedSignerRequest;
 import software.amazon.awssdk.services.cloudfront.url.SignedUrl;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectTaggingRequest;
+import software.amazon.awssdk.services.s3.model.Tagging;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 
@@ -34,6 +38,7 @@ public class S3PresignedUrlAdapter implements S3Port , S3PresignedUrlPort {
     // S3Presigned: AWS SDK 가 제공하는 Presigned URL 생성 전용 객체
     // S3Config 에서 Bean 으로 등록해둔 것을 주입받음
     private final S3Presigner s3Presigner;
+    private final S3Client s3Client;
 
     // 신규 - CloudFront 서명에 필요한 의존성 주입
     private final CloudFrontUtilities cloudFrontUtilities;
@@ -112,6 +117,33 @@ public class S3PresignedUrlAdapter implements S3Port , S3PresignedUrlPort {
         log.info("[CloudFront] Signed URL 발급 완료 | key={}", videoUrl);
 
         return signedUrl.url();
+    }
+
+    /*
+     * comment.
+     *  [역할]
+     *  S3 객체에 archive=true 태그 부착
+     *  -> momocity-media 버킷의 lectures-archive-lifecycle 규칙(prefix=lectures/ + tag=archive:true)이
+     *    이 태그를 감지해서 30일 후 Glacier, 4년 후 Deep Archive로 자동 전환
+     */
+
+    public void markAsArchive(String s3Key) {
+        Tag archiveTag = Tag.builder()
+                .key("archive")
+                .value("true")
+                .build();
+
+        Tagging tagging = Tagging.builder()
+                .tagSet(archiveTag)
+                .build();
+
+        PutObjectTaggingRequest request = PutObjectTaggingRequest.builder()
+                .bucket(bucketName)   // 기존 필드명과 다르면 맞춰서 수정 필요
+                .key(s3Key)
+                .tagging(tagging)
+                .build();
+
+        s3Client.putObjectTagging(request);   // 기존 s3Client 필드 재사용
     }
 
 }

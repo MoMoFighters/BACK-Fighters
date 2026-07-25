@@ -19,4 +19,12 @@ public interface LecturePort {
     // 카테고리별 강의 목록 조회
     List<Lecture> findAllByCategory(String category);
 
+    /*
+     * comment.
+     *  [역할]
+     *  아카이브 후보 강의 조회
+     *  -> HOLD 상태 강의만 조회 (ACTIVE 제외, DELETED는 별도 삭제 플로우라 제외)
+     */
+    List<Lecture> findAllHoldLectures();
+
 }

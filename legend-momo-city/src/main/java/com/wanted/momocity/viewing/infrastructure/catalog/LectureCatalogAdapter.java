@@ -177,4 +177,32 @@ public class LectureCatalogAdapter implements LecturePort {
                 })
                 .toList();
     }
+
+    /*
+     * comment.
+     *  아카이브 후보 강의 조회
+     *  -> HOLD 상태 강의만 조회
+     *  -> 캐시 미적용 (스케줄러 전용, 호출 빈도 낮음)
+     */
+    @Override
+    public List<Lecture> findAllHoldLectures() {
+        return springDataLectureRepository.findAllByStatus(LectureStatus.HOLD)
+                .stream()
+                .map(entity -> {
+                    String instructorName = loadUserPort.findById(entity.getTeacherId())
+                            .map(user -> user.getName())
+                            .orElse("강사");
+                    return Lecture.reconstitute(
+                            entity.getId(),
+                            entity.getTeacherId(),
+                            entity.getTitle(),
+                            entity.getThumbnailUrl(),
+                            entity.getCategory().name(),
+                            instructorName,
+                            entity.getStatus().name()
+                    );
+                })
+                .toList();
+    }
+
 }
