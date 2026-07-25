@@ -9,6 +9,9 @@ import com.wanted.momocity.fortune.domain.model.Fortune;
 import com.wanted.momocity.fortune.domain.model.UserFortuneLog;
 import com.wanted.momocity.fortune.domain.repository.FortuneRepository;
 import com.wanted.momocity.fortune.domain.repository.UserFortuneLogRepository;
+import com.wanted.momocity.global.application.point.AddOrderHistory;
+import com.wanted.momocity.order.domain.model.Reason;
+import com.wanted.momocity.order.domain.model.Type;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +32,7 @@ public class FortuneCommandService implements FortuneCommandUseCase {
     private final FortuneRepository fortuneRepository;
     private final UserFortuneLogRepository userFortuneLogRepository;
     private final FortunePointPort fortunePointPort;
+    private final AddOrderHistory addOrderHistory;
 
     // 로그인 한 사용자의 오늘의 운세를 조회하거나 새로 뽑기
     @Override
@@ -65,6 +69,14 @@ public class FortuneCommandService implements FortuneCommandUseCase {
         if(!deducted) {
             throw new InsufficientFortunePointException();
         }
+
+        // 포인트 차감 order_history
+        addOrderHistory.saveOrderHistory(
+                userId,
+                Reason.FORTUNE,
+                Type.USED,
+                FORTUNE_DRAW_COST
+        );
 
         // 오늘 선택 된 운세를 사용자의 날짜별 운세 기록을 생성
         UserFortuneLog newLog = UserFortuneLog.create(
