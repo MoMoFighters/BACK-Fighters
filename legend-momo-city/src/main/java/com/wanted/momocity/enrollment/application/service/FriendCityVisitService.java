@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class FriendCityVisitService implements FriendCityVisitUseCase {
 
     // 친구 도시 방문 한 번에 사용하는 버스 요금
-    private static final Long BUS_FARE = 5L;
+    private static final Long BUS_FARE = 1L;
 
     private final EnrollmentQueryUsecase enrollmentQueryUsecase;
 
@@ -43,7 +43,7 @@ public class FriendCityVisitService implements FriendCityVisitUseCase {
             );
         }
 
-        // 검증이 끝난 로그인 사용자의 포인트를 5포인트 차감
+        // 검증이 끝난 로그인 사용자의 포인트를 1포인트 차감
         pointChange.usePoint(loginUserId, BUS_FARE);
 
         // 차감한 포인트를 BUS 사용 이력으로 저장
