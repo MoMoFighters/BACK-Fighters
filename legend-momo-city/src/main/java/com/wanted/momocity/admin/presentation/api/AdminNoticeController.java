@@ -50,7 +50,8 @@ public class AdminNoticeController {
 
     // MS-12 공지 목록 조회 — isPinned 필터 + 페이징
     // FE 컨벤션(1-based page)에 맞춰 page-1 변환 후 처리하고, 응답은 items 래퍼로 감싸 FE 스펙과 일치시킴
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STUDENT')")
+    // 게스트(비로그인) 랜딩 노출을 위해 인증 없이 허용
+    @PreAuthorize("permitAll()")
     @GetMapping
     @Operation(summary = "공지 목록 조회", description = "isPinned 파라미터가 없으면 전체 조회, 있으면 필터 조회한다.")
     public ResponseEntity<ApiResponse<AdminNoticePageResponse>> getNoticeList(
@@ -65,7 +66,8 @@ public class AdminNoticeController {
     }
 
     // MS-16 공지 상세 조회
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STUDENT')")
+    // 게스트(비로그인) 랜딩 노출을 위해 인증 없이 허용
+    @PreAuthorize("permitAll()")
     @GetMapping("/{id}")
     @Operation(summary = "공지 상세 조회", description = "공지 id로 단건 상세 정보를 조회한다.")
     public ResponseEntity<ApiResponse<AdminNoticeDetailResponse>> getNoticeDetail(@PathVariable Long id) {

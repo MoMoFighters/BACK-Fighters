@@ -162,6 +162,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v2/posts/users/{targetUserId}").permitAll()
                         // 상대방 대시보드 조회
                         .requestMatchers(HttpMethod.GET, "/api/v2/posts/users/{targetUserId}/dashboard").permitAll()
+                        // 공지 목록/상세 조회는 비로그인 게스트도 허용 (게스트 랜딩 노출), 등록/수정/삭제 등 CUD는 인증 유지
+                        .requestMatchers(HttpMethod.GET, "/api/v1/admin-notices").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/admin-notices/*").permitAll()
                         // /api/v1/reports : URL 역할 규칙 제거 → 메서드 레벨 @PreAuthorize 로 인가 (GET=ADMIN 조회 / POST=인증 회원 신고)
                         .requestMatchers("/api/v1/error-logs").hasAnyAuthority("ROLE_ADMIN")
                         .requestMatchers("/api/v1/teacher/**").hasAnyAuthority("ROLE_TEACHER")
