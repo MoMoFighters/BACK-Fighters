@@ -977,7 +977,13 @@ VALUES
     (327, 3, NOW() - INTERVAL 17 DAY, 18, 37, 124, FALSE),
     (328, 0, NOW() - INTERVAL 8 DAY, 24, 68, 124, FALSE),
     (329, 2, NOW() - INTERVAL 15 DAY, 48, 29, 125, FALSE),
-    (330, 5, NOW() - INTERVAL 11 DAY, 10, 77, 125, FALSE)
+    (330, 5, NOW() - INTERVAL 11 DAY, 10, 77, 125, FALSE),
+    -- 건강을 담은 비건&샐러드(lecture_id=29) 수강평 작성자들의 수강 완료 데이터
+    (331, 4, NOW() - INTERVAL 30 DAY, 29, 100, 37, TRUE),
+    (332, 4, NOW() - INTERVAL 25 DAY, 29, 100, 42, TRUE),
+    (333, 4, NOW() - INTERVAL 20 DAY, 29, 100, 65, TRUE),
+    (334, 4, NOW() - INTERVAL 15 DAY, 29, 100, 69, TRUE),
+    (335, 4, NOW() - INTERVAL 10 DAY, 29, 100, 72, TRUE)
 ON DUPLICATE KEY UPDATE
                      completed_count = VALUES(completed_count),
                      enrolled_at = VALUES(enrolled_at),

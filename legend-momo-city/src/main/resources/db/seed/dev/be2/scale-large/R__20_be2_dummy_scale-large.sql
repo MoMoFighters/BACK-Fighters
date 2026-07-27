@@ -2,7 +2,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 
 -- =====================================================================
---  1. review — 50건
+--  1. review — 55건
 -- =====================================================================
 INSERT INTO `review` (`id`, `content`, `created_at`, `deleted_at`, `lecture_id`, `rating`, `status`, `user_id`)
 VALUES
@@ -64,6 +64,27 @@ VALUES
                          rating = VALUES(rating),
                          status = VALUES(status),
                          user_id = VALUES(user_id);
+
+-- =====================================================================
+--  건강을 담은 비건&샐러드(lecture_id=29) 수강평 추가
+--  기존 review id=12를 포함하여 해당 강의의 활성 수강평은 총 6건
+-- =====================================================================
+INSERT INTO `review` (`id`, `content`, `created_at`, `deleted_at`, `lecture_id`, `rating`, `status`, `user_id`)
+VALUES
+    (51, '채소만으로도 든든한 한 끼를 만들 수 있어서 좋았어요. 샐러드 구성이 생각보다 다양했습니다.', NOW() - INTERVAL 9 DAY, NULL, 29, 5, 'ACTIVE', 37),
+    (52, '소스와 드레싱 조합을 자세히 알려줘서 집에서도 쉽게 활용할 수 있었습니다.', NOW() - INTERVAL 7 DAY, NULL, 29, 4, 'ACTIVE', 42),
+    (53, '두부와 콩을 활용한 단백질 보충 방법이 특히 유용했어요. 비건 식단에 대한 부담이 줄었습니다.', NOW() - INTERVAL 5 DAY, NULL, 29, 5, 'ACTIVE', 65),
+    (54, '익숙하지 않은 재료를 다른 재료로 대체하는 방법까지 설명해줘서 실용적이었습니다.', NOW() - INTERVAL 3 DAY, NULL, 29, 4, 'ACTIVE', 69),
+    (55, '초보자도 따라가기 쉬웠지만 일부 재료는 구하기 어려웠어요. 전체적인 구성은 만족합니다.', NOW() - INTERVAL 1 DAY, NULL, 29, 3, 'ACTIVE', 72)
+ON DUPLICATE KEY UPDATE
+    content = VALUES(content),
+    created_at = VALUES(created_at),
+    deleted_at = VALUES(deleted_at),
+    lecture_id = VALUES(lecture_id),
+    rating = VALUES(rating),
+    status = VALUES(status),
+    user_id = VALUES(user_id);
+
 -- =====================================================================
 --  2. building — 65건
 -- =====================================================================
